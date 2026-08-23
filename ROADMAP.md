@@ -14,35 +14,51 @@ Gate 00 design/code is frozen enough for strategy work, but it is not release-ce
 
 ## Gate 01 — Flop CBet
 
-### Source/audit
+### Source/audit and safety
 
-- [x] 01A — source audit and portable CBet combo/texture primitives.
-- [x] 01A.2 — handedness-aware source audit v2; true HU HUSB/HUBB ancestry corrected.
+- [x] **01A** — source audit and portable CBet combo/texture primitives.
+- [x] **01A.2** — handedness-aware source audit v2; true HU HUSB/HUBB ancestry corrected.
+- [x] **01A.3** — binding OpenPPL flat-WHEN/provenance coding contract.
+- [x] **01A.4** — deep-stack commitment decoupling: TP+/overpair no longer imply stack-off; `f$Raise_Committed`, `StackOffDraws` and global auto-jam are quarantined.
 
 ### Ordinary one-raise HU families
 
-- [x] 01B.1 — true HU SB/Button PFA IP vs BB ordinary SRP baseline.
-- [x] 01B.2 — 3-6h PFA IP vs BB ordinary SRP baseline.
-- [x] 01B.3 — 3-6h PFA IP vs SB ordinary SRP baseline.
-- [x] 01C.1 — 3-6h SB PFA OOP vs BB ordinary SRP baseline.
-- [x] 01C.2 — 3-6h opener PFA OOP vs later-position cold caller baseline (P-heavy).
-- [x] 01D — true HU SB limp -> BB raise -> call, BB PFA OOP baseline.
+- [x] **01B.1** — true HU SB/Button PFA IP vs BB ordinary SRP baseline.
+- [x] **01B.2** — 3-6h PFA IP vs BB ordinary SRP baseline.
+- [x] **01B.3** — 3-6h PFA IP vs SB ordinary SRP baseline.
+- [x] **01C.1** — 3-6h SB PFA OOP vs BB ordinary SRP baseline.
+- [x] **01C.2** — 3-6h opener PFA OOP vs later-position cold caller baseline (P-heavy).
+- [x] **01D** — true HU SB limp -> BB raise -> call, BB PFA OOP baseline.
 
-### Remaining Flop CBet pot families
+### Isolation-raise CBet
 
-- [ ] 01E — non-HU ISO CBet, IP/OOP and multiway split.
-- [ ] 01F — true-HU standard 3BP CBet.
-- [ ] 01G — 3-6h ordinary 3BP CBet, IP/OOP.
-- [ ] 01H — squeeze-pot CBet, IP/OOP/multiway.
-- [ ] 01I — 4BP CBet, only after separate range/SPR audit.
-- [ ] 01J — true multiway SRP/ISO CBet with 3-way versus 4-way+ provenance.
+- [x] **01E.1** — reduced-HU ISO versus original limper, IP/OOP.
+- [x] **01E.2** — reduced-HU ISO versus post-raise cold caller, IP/OOP.
+- [ ] **01E.3** — true multiway ISO CBet with live limper/coldcaller composition.
+
+### 3-bet-pot CBet
+
+- [x] **01F.0** — reconstruct 3BP survivor provenance: opener / pre-3bet coldcaller / post-3bet coldcaller.
+- [x] **01F.1** — true-HU standard plain 3BP: BB 3bettor OOP vs SB/Button opener-call.
+- [x] **01G.1** — 3-6h plain 3BP versus original opener-call, IP/OOP.
+- [x] **01G.2** — 3-6h plain 3BP versus post-3bet cold caller, IP/OOP.
+- [ ] **01H.1** — squeeze versus original opener, IP/OOP.
+- [ ] **01H.2** — squeeze versus pre-3bet cold caller, IP/OOP.
+- [ ] **01H.3** — squeeze versus post-3bet cold caller, IP/OOP.
+- [ ] **01H.4** — multiway squeeze/3BP CBet using exact live-range composition.
+
+### Higher re-raised pots and multiway SRP
+
+- [ ] **01I** — 4BP CBet, only after separate range/SPR audit.
+- [ ] **01J.1** — true three-way ordinary SRP CBet using legacy 3w ancestry where valid.
+- [ ] **01J.2** — four-way+ ordinary SRP CBet with new P-theory parent.
 
 ### Execution/validation
 
-- [ ] 01K — map CBet size IDs (~33/~50/~75) into final OpenPPL betsize runtime.
-- [ ] 01L — static dependency/safety lint PASS on review branch.
-- [ ] 01M — deterministic CBet policy fixtures/replays PASS.
-- [ ] 01N — ensure skipped-CBet branches have complete X/C/X/R/turn follow-through before release.
+- [ ] **01K** — map CBet size IDs (~33/~50/~75) into final OpenPPL betsize runtime.
+- [ ] **01L** — static dependency/safety lint PASS on current review head.
+- [ ] **01M** — deterministic CBet policy fixtures/replays PASS.
+- [ ] **01N** — ensure skipped-CBet branches have complete X/C/X/R/turn follow-through before release.
 
 No uncovered pot family may inherit an ordinary-SRP child as fallback.
 
@@ -74,6 +90,15 @@ After attack coverage is structurally stable, audit the 32 defensive nodes indiv
 - sizing families and actor-specific SPR.
 
 However, a defense dependency may be brought forward when an attack node explicitly creates an X/C or X/R plan; no dangling strategic plan is allowed into a release branch.
+
+### Binding defense/commitment rule
+
+A made-hand label is never sufficient to authorize stacks by itself. In particular:
+
+- TP is one pair;
+- overpair is one pair;
+- TP+ in DeepCrusher is source classification, not CashCrusher commitment permission;
+- every call/raise/jam response must be rebuilt in the exact node from range provenance, board/runout, sizing, position and actor-specific SPR.
 
 ## Final structural phases
 
