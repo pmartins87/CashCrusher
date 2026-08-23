@@ -1,0 +1,74 @@
+// ============================================================================
+// CashCrusher_Flop_CBet_TrueHU_LimpRaised.txt
+// Gate 01D — true-HU SB/Button limp -> BB raise -> SB call, BB PFA OOP
+// ============================================================================
+// Legacy parent: HUBB with Hero initiative in a limped/raised pot.
+//
+// Source concepts retained (A):
+//   * TP+ small on calmer structures, large on draw-heavy/connected structures;
+//   * strong no-made draws can skip CBet into X/R;
+//   * marginal pairs use small/protection bets selectively;
+//   * air CBet requires board/backdoor support more often on wet structures.
+//
+// Rejected (X):
+//   * shallow commitment/jam conversions;
+//   * any assumption that "CBetMin" from Spin is automatically optimal deep.
+//
+// Professional fill (P):
+//   * high-SPR weak one-pair checks;
+//   * deterministic backdoor selection for air;
+//   * 33/50/75 sizing abstraction.
+// ============================================================================
+
+##f$cc_cbet_true_hu_limpraised_context##
+f$cc_srp_true_hu_bb_pfa_oop_after_limp &&
+f$cc_flop_cbet_opportunity &&
+f$cc_spr_valid
+
+##f$cc_cbet_true_hu_limpraised_action##
+When !f$cc_cbet_true_hu_limpraised_context Return false Force
+
+When f$cc_cbet_flop_very_strong_value Return true Force
+When f$cc_cbet_flop_overpair Return true Force
+When f$cc_cbet_flop_strong_top_pair Return true Force
+
+// Medium TP bets static/high or paired; dynamic low/mid checks deeper.
+When f$cc_cbet_flop_medium_top_pair && f$cc_flop_dynamic_lowmid_parent && f$cc_cbet_high_spr Return false Force
+When f$cc_cbet_flop_medium_top_pair && !f$cc_flop_dynamic_lowmid_parent Return true Force
+When f$cc_cbet_flop_medium_top_pair && !f$cc_cbet_high_spr Return true Force
+When f$cc_cbet_flop_medium_top_pair Return false Force
+
+// Weak TP / second pair become small protection bets only on calmer boards.
+When f$cc_cbet_flop_weak_top_pair && f$cc_cbet_board_small_bet_parent && !f$cc_cbet_high_spr Return true Force
+When f$cc_cbet_flop_weak_top_pair Return false Force
+When f$cc_hand_second_pair_or_pocket && f$cc_cbet_board_small_bet_parent && !f$cc_cbet_very_high_spr Return true Force
+When f$cc_cbet_flop_showdown_pair Return false Force
+
+// HUBB source deliberately preserves X/R with strong draws on non-dry boards.
+When f$cc_cbet_flop_premium_draw && (f$cc_flop_dynamic_high_parent || f$cc_flop_dynamic_lowmid_parent) Return false Force
+When f$cc_cbet_flop_good_draw && (f$cc_flop_dynamic_high_parent || f$cc_flop_dynamic_lowmid_parent) Return false Force
+When f$cc_cbet_flop_premium_draw Return true Force
+When f$cc_cbet_flop_good_draw && f$cc_cbet_board_small_bet_parent Return true Force
+When f$cc_cbet_flop_weak_draw && f$cc_flop_static_high_parent Return true Force
+When f$cc_real_frontdoor_draw Return false Force
+
+// Air: static boards can use selected small bluffs. Dynamic boards need the
+// strongest backdoor candidate and dynamic-low still checks.
+When f$cc_cbet_flop_quality_air && (f$cc_flop_static_high_parent || f$cc_flop_paired_parent) Return true Force
+When f$cc_cbet_flop_air_best_backdoors && f$cc_flop_dynamic_high_parent Return true Force
+When Others Return false Force
+
+##f$cc_cbet_true_hu_limpraised_size_id##
+When !f$cc_cbet_true_hu_limpraised_action Return 0 Force
+
+When f$cc_flop_dynamic_lowmid_parent && f$cc_cbet_flop_very_strong_value Return 3 Force
+When f$cc_flop_dynamic_lowmid_parent Return 2 Force
+When f$cc_flop_dynamic_high_parent && (f$cc_cbet_flop_very_strong_value || f$cc_cbet_flop_overpair || f$cc_cbet_flop_top_pair_plus) Return 3 Force
+When f$cc_flop_dynamic_high_parent Return 2 Force
+When f$cc_flop_static_lowmid_parent && (f$cc_cbet_flop_very_strong_value || f$cc_cbet_flop_overpair) Return 2 Force
+When f$cc_cbet_board_small_bet_parent Return 1 Force
+When Others Return 1 Force
+
+// ============================================================================
+// End true-HU limp-raised baseline.
+// ============================================================================
