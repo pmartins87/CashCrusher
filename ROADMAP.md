@@ -35,7 +35,8 @@ Gate 00 design/code is frozen enough for strategy work, but it is not release-ce
 
 - [x] **01E.1** — reduced-HU ISO versus original limper, IP/OOP.
 - [x] **01E.2** — reduced-HU ISO versus post-raise cold caller, IP/OOP.
-- [ ] **01E.3** — true multiway ISO CBet with live limper/coldcaller composition.
+- [x] **01E.3** — exact true-threeway ISO with limper/post-raise-coldcaller composition.
+- [x] **01E.4** — exact 4/5/6-way ISO with all-limper/mixed/all-coldcaller composition.
 
 ### 3-bet-pot and squeeze CBet
 
@@ -46,18 +47,27 @@ Gate 00 design/code is frozen enough for strategy work, but it is not release-ce
 - [x] **01H.1** — HU squeeze versus original opener, IP/OOP.
 - [x] **01H.2** — HU squeeze versus pre-3bet cold caller, IP/OOP.
 - [x] **01H.3** — HU squeeze versus post-3bet cold caller, IP/OOP.
-- [ ] **01H.4** — multiway squeeze/3BP CBet using exact live-range composition.
+- [x] **01H.4** — multiway plain-3BP/squeeze CBet using exact live opener/pre3bet/post3bet composition.
 
-### Higher re-raised pots and multiway SRP
+### 4-bet pots
 
-- [ ] **01I** — 4BP CBet after separate range/SPR audit.
-- [ ] **01J.1** — true three-way ordinary SRP CBet using legacy 3w ancestry where valid.
-- [ ] **01J.2** — four-way+ ordinary SRP CBet with new P-theory parent.
+- [x] **01I.0** — conservative clean 4BP chronology reconstruction from aggregate preflop history.
+- [x] **01I.1** — clean HU 4BP: true-HU opener4; reduced-HU opener4-v-3bettor and cold4-v-opener/3bettor, IP/OOP.
+- [ ] **01I.2** — multiway 4BP policy after separate review of non-raiser caller provenance.
+- [ ] **01I.3** — reversed/limp-reraise/backraise 4BP only if stronger chronology evidence becomes available.
+- [ ] **01I.4** — 5bet+ postflop family audit.
 
-### Execution/validation
+### Multiway ordinary SRP
 
-- [ ] **01K** — map CBet size IDs (~33/~50/~75 and any separately reviewed stack-sensitive conversion) into final OpenPPL betsize runtime.
-- [ ] **01L** — static dependency/safety lint PASS on current review head.
+- [x] **01J.1** — true three-way ordinary SRP CBet; legacy 3w ancestry used only where actually supported.
+- [x] **01J.2** — exact 4/5/6-way ordinary SRP CBet with new P-theory parent.
+
+### Execution / sizing / validation
+
+- [x] **01K.1** — native size-ID adapter: 33/50/75/100 -> `BetThirdPot`/`BetHalfPot`/`BetThreeFourthPot`/`BetPot`.
+- [ ] **01K.2** — integrate CBet native adapter into eventual whole-bot `f$BestBetsize` without stealing sizing ownership from other postflop nodes.
+- [ ] **01K.3** — audit stack-sensitive size-to-all-in promotion, including DeepCrusher's historical ~60%-of-stack behavior and the global `f$allin_on_betsize_balance_ratio` callback. Review per context; do not blindly copy or globally disable.
+- [x] **01L** — static dependency/flat-WHEN/provenance lint PASS on current reviewed implementation.
 - [ ] **01M** — deterministic CBet policy fixtures/replays PASS.
 - [ ] **01N** — ensure skipped-CBet branches have complete X/C/X/R/turn follow-through before release.
 
