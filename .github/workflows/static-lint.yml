@@ -17,3 +17,5 @@ jobs:
         run: python tools/lint_custom_dependencies.py
       - name: Test multiway stack geometry contract
         run: python tools/test_multiway_stack_geometry.py
+      - name: Test flop action history contract
+        run: python tools/test_flop_action_history.py
