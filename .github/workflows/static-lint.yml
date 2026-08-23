@@ -31,3 +31,5 @@ jobs:
         run: python tools/test_turn_plain3bp.py
       - name: Test squeeze-pot Turn CBet contract
         run: python tools/test_turn_squeeze.py
+      - name: Test clean HU 4bet-pot Turn CBet contract
+        run: python tools/test_turn_4bp.py
