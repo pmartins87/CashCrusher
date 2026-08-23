@@ -1,0 +1,78 @@
+// ============================================================================
+// CashCrusher_Turn_CBet_Betsize.txt
+// Gate 02J.1 — OpenPPL runtime adapter for reviewed Turn-CBet size IDs
+// ============================================================================
+// Purpose:
+//   Translate the strategic Turn size ID into the exact OpenPPL bet action.
+//   This module does NOT decide whether to CBet and does NOT decide strategic
+//   stack commitment.
+//
+// Runtime facts verified from OpenHoldem/OpenPPL source:
+//   * BetThirdPot / BetHalfPot / BetThreeFourthPot / BetPot are native actions;
+//   * OpenPPL accepts arbitrary `RaiseBy X% Force` pot-size actions;
+//   * percentage RaiseBy is evaluated as call + X% of pot-after-call;
+//   * Turn-CBet opportunity has AmountToCall=0, so 25/40/62.5 map exactly to
+//     the requested pot fractions without a call component.
+//
+// Source/Provenance:
+//   T = OpenPPL parser/runtime semantics for native betpot and RaiseBy X%.
+//   A = reviewed CashCrusher Turn palette 25/33/40/50/62.5/75/100.
+//
+// Safety:
+//   * unknown/check/uncovered -> 0;
+//   * no BetMax is introduced here;
+//   * global f$BestBetsize / f$allin_on_betsize_balance_ratio composition remains
+//     outside this local adapter until its dedicated whole-bot audit.
+// ============================================================================
+
+// Purpose: confirm a positive reviewed Turn CBet has one canonical runtime size.
+// Source/Provenance: A/P engineering guard over the audited action/size routers.
+##f$cc_turn_cbet_runtime_size_ready##
+When !f$cc_turn_cbet_router Return false Force
+When !f$cc_turn_cbet_size_consistent Return false Force
+When f$cc_turn_cbet_size_id >= 1 && f$cc_turn_cbet_size_id <= 7 Return true Force
+When Others Return false Force
+
+// Purpose: convert Turn strategic size ID to exact pot fraction for geometry,
+// diagnostics and runtime-mapping validation.
+// Source/Provenance: A exact mapping of the frozen Turn size-ID palette.
+##f$cc_turn_cbet_requested_pot_fraction##
+When !f$cc_turn_cbet_runtime_size_ready Return 0 Force
+When f$cc_turn_cbet_size_id = 1 Return 0.25 Force
+When f$cc_turn_cbet_size_id = 2 Return 0.333 Force
+When f$cc_turn_cbet_size_id = 3 Return 0.40 Force
+When f$cc_turn_cbet_size_id = 4 Return 0.50 Force
+When f$cc_turn_cbet_size_id = 5 Return 0.625 Force
+When f$cc_turn_cbet_size_id = 6 Return 0.75 Force
+When f$cc_turn_cbet_size_id = 7 Return 1.00 Force
+When Others Return 0 Force
+
+// Purpose: translate strategic ID into the exact OpenPPL betsize action.
+// Source: T OpenPPL native actions plus exact `RaiseBy X%` parser/runtime.
+// Provenance: T runtime adapter + A reviewed Turn size palette.
+// Safety/Limits: 33/50/75/100 use native actions; exact non-native 25/40/62.5
+// use RaiseBy. Mechanical all-in equivalence is layered in Gate02J.2.
+##f$cc_turn_cbet_requested_betsize##
+When !f$cc_turn_cbet_runtime_size_ready Return 0 Force
+When f$cc_turn_cbet_size_id = 1 RaiseBy 25% Force
+When f$cc_turn_cbet_size_id = 2 Return BetThirdPot Force
+When f$cc_turn_cbet_size_id = 3 RaiseBy 40% Force
+When f$cc_turn_cbet_size_id = 4 Return BetHalfPot Force
+When f$cc_turn_cbet_size_id = 5 RaiseBy 62.5% Force
+When f$cc_turn_cbet_size_id = 6 Return BetThreeFourthPot Force
+When f$cc_turn_cbet_size_id = 7 Return BetPot Force
+When Others Return 0 Force
+
+// Purpose: validate that every positive Turn CBet resolves to a positive fraction
+// and one of the seven frozen size IDs before execution ownership is granted.
+// Source/Provenance: P engineering invariant over T/A mapping above.
+##f$cc_turn_cbet_runtime_mapping_valid##
+When !f$cc_turn_cbet_router Return f$cc_turn_cbet_requested_pot_fraction = 0 Force
+When !f$cc_turn_cbet_runtime_size_ready Return false Force
+When f$cc_turn_cbet_requested_pot_fraction <= 0 Return false Force
+When f$cc_turn_cbet_size_id < 1 || f$cc_turn_cbet_size_id > 7 Return false Force
+When Others Return true Force
+
+// ============================================================================
+// End Gate 02J.1 local Turn runtime adapter.
+// ============================================================================
