@@ -1,0 +1,165 @@
+// ============================================================================
+// CashCrusher_Turn_ISO_Context.txt
+// Gate 02F.0 — isolation-pot Turn-CBet range provenance
+// ============================================================================
+// Purpose:
+//   Reconstruct the exact CURRENT turn ISO field after an ACTUAL flop CBet,
+//   including pots that began flop multiway and became HU only after the CBet.
+//
+// Source/Provenance:
+//   T = persisted ISO limper/coldcaller masks, current live mask, HU Villain bit,
+//       flop-entry provenance and Gate01N actual CBet history.
+//   A = DeepCrusher requirement to preserve preflop pot history across streets.
+//   P = six-max cross-street survivor/composition safety contract.
+//
+// Safety:
+//   No betting policy lives here. Every live opponent in a supported ISO turn
+//   must belong to exactly one proven ISO range-origin mask.
+// ============================================================================
+
+// Purpose: generic proven ISO Turn-CBet context after actual standard flop CBet.
+// Source/Provenance: A/T exact pot-role/history gate.
+##f$cc_turn_iso_context##
+f$cc_turn_cbet_iso_context &&
+f$cc_pf_iso_proven &&
+f$cc_flop_entry_opp_mask_consistent
+
+// -----------------------------------------------------------------------------
+// TI.01 — HU survivor provenance, valid for origin=2 OR origin=3
+// -----------------------------------------------------------------------------
+
+// Purpose: sole current HU Villain is an original pre-raise limper.
+// Source/Provenance: T exact Villain bit intersected with persisted limper mask.
+// Safety: unlike flop-HU helper, this deliberately supports postflop-reduced HU.
+##f$cc_turn_iso_hu_villain_was_limper##
+f$cc_turn_iso_context &&
+f$cc_hu &&
+f$cc_hu_villain_pos_bit > 0 &&
+((f$cc_pf_pre_raise_limper_mask BitAnd f$cc_hu_villain_pos_bit) > 0)
+
+// Purpose: sole current HU Villain is a post-raise cold caller.
+// Source/Provenance: T/A exact survivor origin from persisted call-history mask.
+##f$cc_turn_iso_hu_villain_was_coldcaller##
+f$cc_turn_iso_context &&
+f$cc_hu &&
+f$cc_hu_villain_pos_bit > 0 &&
+((f$cc_pf_post_raise_coldcaller_mask BitAnd f$cc_hu_villain_pos_bit) > 0)
+
+// Purpose: stable current-HU ISO survivor type: 1 limper | 2 coldcaller | 0 invalid.
+// Source/Provenance: P engineering ID over T exact provenance.
+##f$cc_turn_iso_hu_survivor_type_id##
+When f$cc_turn_iso_hu_villain_was_limper Return 1 Force
+When f$cc_turn_iso_hu_villain_was_coldcaller Return 2 Force
+When Others Return 0 Force
+
+// Purpose: current HU ISO origin began flop HU (origin=2).
+// Source/Provenance: T/A HU-origin metadata.
+##f$cc_turn_iso_hu_flop_hu_origin##
+f$cc_turn_iso_context && f$cc_hu_origin_preflop_reduced
+
+// Purpose: current HU ISO origin began flop multiway and reduced only after flop.
+// Source/Provenance: T/A HU-origin metadata; strategically more selected.
+##f$cc_turn_iso_hu_postmw_origin##
+f$cc_turn_iso_context && f$cc_hu_origin_postflop_reduced
+
+// Purpose: current HU ISO survivor and origin are internally consistent.
+// Source/Provenance: P fail-closed invariant.
+##f$cc_turn_iso_hu_context_consistent##
+When !f$cc_turn_iso_context Return false Force
+When !f$cc_hu Return false Force
+When !f$cc_turn_iso_hu_flop_hu_origin && !f$cc_turn_iso_hu_postmw_origin Return false Force
+When (f$cc_turn_iso_hu_villain_was_limper + f$cc_turn_iso_hu_villain_was_coldcaller) != 1 Return false Force
+When f$cc_turn_iso_hu_survivor_type_id <= 0 Return false Force
+When f$cc_turn_iso_hu_postmw_origin && f$cc_flop_entry_count < 3 Return false Force
+When f$cc_turn_iso_hu_flop_hu_origin && f$cc_flop_entry_count != 2 Return false Force
+When Others Return true Force
+
+// Purpose: selected-range modifier after multiway flop or large flop CBet.
+// Source/Provenance: P professional-theory range-selection descriptor.
+##f$cc_turn_iso_hu_strong_selection##
+f$cc_turn_iso_hu_context_consistent &&
+(f$cc_turn_iso_hu_postmw_origin || f$cc_hist_flop_cbet_plan_size_id >= 3 || f$cc_turn_iso_hu_villain_was_coldcaller)
+
+// -----------------------------------------------------------------------------
+// TI.02 — Current multiway ISO composition
+// -----------------------------------------------------------------------------
+
+// Purpose: current live limper-origin mask on turn in a multiway ISO pot.
+// Source/Provenance: T exact live-mask intersection.
+##f$cc_turn_iso_mw_live_limper_mask##
+When !f$cc_turn_iso_context Return 0 Force
+When !f$cc_multiway Return 0 Force
+When Others Return (f$cc_opp_live_mask BitAnd f$cc_pf_pre_raise_limper_mask) Force
+
+// Purpose: current live post-raise-coldcaller mask on turn.
+// Source/Provenance: T exact live-mask intersection.
+##f$cc_turn_iso_mw_live_coldcaller_mask##
+When !f$cc_turn_iso_context Return 0 Force
+When !f$cc_multiway Return 0 Force
+When Others Return (f$cc_opp_live_mask BitAnd f$cc_pf_post_raise_coldcaller_mask) Force
+
+// Purpose: number of current live original limpers.
+// Source/Provenance: T BitCount over exact provenance mask.
+##f$cc_turn_iso_mw_live_limper_count##
+BitCount(f$cc_turn_iso_mw_live_limper_mask)
+
+// Purpose: number of current live post-raise cold callers.
+// Source/Provenance: T BitCount over exact provenance mask.
+##f$cc_turn_iso_mw_live_coldcaller_count##
+BitCount(f$cc_turn_iso_mw_live_coldcaller_mask)
+
+// Purpose: classify current MW ISO field: 1 all limpers | 2 mixed | 3 all coldcallers.
+// Source/Provenance: P range-composition metadata over T exact masks.
+##f$cc_turn_iso_mw_comp_id##
+When !f$cc_turn_iso_context || !f$cc_multiway Return 0 Force
+When f$cc_turn_iso_mw_live_limper_count = (nplayersplaying - 1) && f$cc_turn_iso_mw_live_coldcaller_count = 0 Return 1 Force
+When f$cc_turn_iso_mw_live_limper_count > 0 && f$cc_turn_iso_mw_live_coldcaller_count > 0 && (f$cc_turn_iso_mw_live_limper_count + f$cc_turn_iso_mw_live_coldcaller_count) = (nplayersplaying - 1) Return 2 Force
+When f$cc_turn_iso_mw_live_limper_count = 0 && f$cc_turn_iso_mw_live_coldcaller_count = (nplayersplaying - 1) Return 3 Force
+When Others Return 0 Force
+
+// Purpose: multiway ISO field consists entirely of original limp-call ranges.
+// Source/Provenance: P alias of exact composition ID.
+##f$cc_turn_iso_mw_all_limpers##
+f$cc_turn_iso_mw_comp_id = 1
+
+// Purpose: multiway ISO field mixes limper and post-raise-coldcaller origins.
+// Source/Provenance: P alias.
+##f$cc_turn_iso_mw_mixed##
+f$cc_turn_iso_mw_comp_id = 2
+
+// Purpose: multiway ISO field consists entirely of post-raise coldcallers.
+// Source/Provenance: P alias; generally most selected coarse composition.
+##f$cc_turn_iso_mw_all_coldcallers##
+f$cc_turn_iso_mw_comp_id = 3
+
+// Purpose: validated current multiway ISO turn context with coherent stack bounds.
+// Source/Provenance: T/P exact composition + corrected deepest/shallowest geometry.
+##f$cc_turn_iso_mw_context_consistent##
+When !f$cc_turn_iso_context Return false Force
+When !f$cc_multiway Return false Force
+When !f$cc_mw_spr_bounds_valid Return false Force
+When f$cc_turn_iso_mw_comp_id <= 0 Return false Force
+When (f$cc_turn_iso_mw_live_limper_count + f$cc_turn_iso_mw_live_coldcaller_count) != (nplayersplaying - 1) Return false Force
+When Others Return true Force
+
+// Purpose: all current multiway ISO effective relationships have SPR <4.
+// Source/Provenance: T/P deepest-effective geometry descriptor only.
+##f$cc_turn_iso_mw_all_effective_spr_below_4##
+f$cc_turn_iso_mw_context_consistent && f$cc_mw_spr_deepest_round_start >= 0 && f$cc_mw_spr_deepest_round_start < 4
+
+// Purpose: all current multiway ISO effective relationships have SPR <3.
+// Source/Provenance: T/P geometry descriptor, no automatic stackoff semantics.
+##f$cc_turn_iso_mw_all_effective_spr_below_3##
+f$cc_turn_iso_mw_context_consistent && f$cc_mw_spr_deepest_round_start >= 0 && f$cc_mw_spr_deepest_round_start < 3
+
+// Purpose: exact ISO Turn-CBet context key for audit/logging.
+// Source/Provenance: P metadata over exact current history; never strategy alone.
+##f$cc_turn_iso_context_key##
+When !f$cc_turn_iso_context Return 0 Force
+When f$cc_hu && f$cc_turn_iso_hu_context_consistent Return ((f$cc_hero_pos_id * 1000000) + (f$cc_flop_entry_count * 100000) + (nplayersplaying * 10000) + (f$cc_hu_villain_pos_id * 100) + (f$cc_turn_iso_hu_survivor_type_id * 10) + f$cc_relpos_id) Force
+When f$cc_multiway && f$cc_turn_iso_mw_context_consistent Return ((f$cc_hero_pos_id * 1000000) + (f$cc_flop_entry_count * 100000) + (nplayersplaying * 10000) + (f$cc_turn_iso_mw_comp_id * 100) + (f$cc_hist_flop_cbet_plan_size_id * 10) + f$cc_relpos_id) Force
+When Others Return 0 Force
+
+// ============================================================================
+// End Gate 02F.0 context.
+// ============================================================================
