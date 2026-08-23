@@ -13,7 +13,9 @@ Hard checks
 - legacy ``f$game_*`` dependencies in executable CashCrusher strategy code;
 - **open-ended WHEN conditions**. Every WHEN must own an explicit action before
   the next WHEN/function boundary; indentation never creates scope;
-- **every ``f$cc_*`` function must have a nearby Source/Provenance comment**.
+- **every ``f$cc_*`` function must have a nearby Source/Provenance comment**;
+- multiway flop-CBet policy may not consume ambiguous generic SPR helpers. It
+  must explicitly use shallowest/deepest/actor-specific multiway geometry.
 
 Review warnings — NOT prohibitions
 ==================================
@@ -49,6 +51,14 @@ STACKOFF_RE = re.compile(r"\bf\$hand_StackOffDraws\b")
 RAISE_COMMITTED_RE = re.compile(r"\bf\$Raise_Committed\b")
 BETMAX_RE = re.compile(r"\b(?:BetMax|Allin)\b", re.IGNORECASE)
 WHEN_RE = re.compile(r"\bWhen\b", re.IGNORECASE)
+
+# In a multiway pot there is no single universally sufficient effective stack.
+# Strategy must say whether it means shortest, deepest or a specific actor.
+GENERIC_MW_SPR_RE = re.compile(
+    r"\bf\$cc_(?:spr_round_start|spr_bucket_id|spr_sub1|spr_1_to_2|spr_2_to_4|"
+    r"spr_4_to_6|spr_6_to_10|spr_10_to_15|spr_15plus|cbet_high_spr|"
+    r"cbet_very_high_spr)\b"
+)
 
 ACTION_RE = re.compile(
     r"\b(?:Return|Set|Check|Call|Fold|RaiseTo|RaiseBy|Raise|BetMax|Bet|Allin|"
@@ -154,6 +164,7 @@ def main() -> int:
     callback_defs: list[tuple[Path, int]] = []
     open_when_hits: list[tuple[Path, int, str, str]] = []
     provenance_errors: list[tuple[Path, int, str]] = []
+    multiway_generic_spr_hits: list[tuple[Path, int, str]] = []
 
     for path in files:
         text = path.read_text(encoding="utf-8", errors="strict")
@@ -185,6 +196,8 @@ def main() -> int:
                 shortstack_review_hits.append((path, lineno, code.strip()))
             if BETMAX_RE.search(code):
                 allin_review_hits.append((path, lineno, code.strip()))
+            if path.name.startswith("CashCrusher_Flop_CBet_Multiway_") and GENERIC_MW_SPR_RE.search(code):
+                multiway_generic_spr_hits.append((path, lineno, code.strip()))
 
     duplicate_defs = {k: v for k, v in definitions.items() if len(v) > 1}
     unresolved = {k: v for k, v in references.items() if k not in definitions}
@@ -224,6 +237,12 @@ def main() -> int:
         for path, lineno, name in provenance_errors:
             print(f"  {path.relative_to(ROOT)}:{lineno}: {name}")
 
+    if multiway_generic_spr_hits:
+        print("\nERROR: ambiguous generic SPR helper used in multiway CBet policy:")
+        print("  Use explicit shallowest/deepest/actor-specific multiway stack geometry.")
+        for path, lineno, code in multiway_generic_spr_hits:
+            print(f"  {path.relative_to(ROOT)}:{lineno}: {code}")
+
     if shortstack_review_hits:
         print("\nWARNING: inherited short-stack helper used; cash-context review required:")
         for path, lineno, code in shortstack_review_hits:
@@ -250,11 +269,12 @@ def main() -> int:
         or legacy_game_hits
         or open_when_hits
         or provenance_errors
+        or multiway_generic_spr_hits
     )
     if hard_error:
         return 1
 
-    print("\nPASS: dependency, flat-WHEN, global provenance and safety checks passed")
+    print("\nPASS: dependency, flat-WHEN, global provenance, multiway-SPR and safety checks passed")
     return 0
 
 
