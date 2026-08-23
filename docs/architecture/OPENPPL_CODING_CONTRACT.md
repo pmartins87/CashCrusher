@@ -135,14 +135,37 @@ Examples:
 
 Cross-street flags must record the exact node that produced the state so later streets do not infer history from the current board alone.
 
-## 9. Sizing and all-in safety
+## 9. Sizing, one-pair and all-in safety
 
-For the current CashCrusher baseline:
+The DeepCrusher source was designed around Spin/short-stack geometry and contains many lines where TP+, overpair or an already-profitable call rapidly becomes a commitment/all-in decision. **That implication is X in CashCrusher unless an exact deep-stack node proves it again from scratch.**
 
-- canonical postflop size families: ~33%, 50%, 75%, 100%, and explicit all-in only when a reviewed node owns it;
+Binding CashCrusher rules:
+
+- **top pair is a made-hand descriptor, not a stack-off class;**
+- **overpair is a one-pair hand, not an automatic stack-off class;**
+- `TP+` may be useful as a broad source category for attack/check/value routing, but it must never mean "play for stacks" by itself;
+- even two-pair+ does not authorize an all-in solely from hand-category name when board, range, SPR, pot family or multiway topology can materially change nut strength;
+- a positive CBet/Donk/Probe/Float decision owns **that street's bet only**. It does not silently pre-authorize calling a raise, 3betting a raise, barreling future streets or stacking off;
+- every raise/jam/stack-off decision must re-evaluate the exact node using at least relevant pot family, Hero/Villain range provenance, IP/OOP or multiway position, board/runout, effective stack/SPR, Villain sizing/line and current hand/nut class;
+- canonical ordinary postflop size families remain ~33%, 50%, 75%, 100%; explicit all-in is allowed only when a reviewed strategic node owns it;
 - global inherited auto-jam conversion remains disabled;
-- no strategy function may use `BetMax` merely because a planned bet consumes a large part of the stack;
+- the inherited `f$Raise_Committed` call-to-shove promotion is prohibited in CashCrusher;
+- no strategy function may use `BetMax` merely because a planned bet/call consumes a large part of the stack;
 - raw SPR is an input, not an automatic commitment instruction.
+
+### Explicit all-in ownership
+
+Any future strategic function that returns `BetMax` must be locally documented as an explicit reviewed all-in owner. The comment must state **why this exact range/node is willing to play for stacks at the current SPR**, rather than relying on generic labels such as `TP+`, `OverPair`, `StrongMade`, `call already expensive`, or `bet uses >50% of stack`.
+
+Examples that are forbidden as generic logic:
+
+```text
+When f$cc_hand_top_pair_or_better Return BetMax Force
+When f$cc_cbet_flop_strong_top_pair && f$cc_spr_round_start < 6 Return BetMax Force
+When f$some_call && AmountToCall > StackSize*0.55 Return BetMax Force
+```
+
+A legitimate low-SPR one-pair stack-off may exist in a specific 3BP/4BP/range matchup, but it must be derived and owned by that exact defense/raise node. It is never inherited automatically from the DeepCrusher TP+ convention.
 
 ## 10. Review rule
 
