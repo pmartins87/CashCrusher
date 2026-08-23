@@ -13,6 +13,8 @@
 // Stack-depth note:
 //   this node owns only first flop CBet/check + size; commitment helpers remain
 //   available for later exact-node review and are not globally disabled.
+//   Any low-SPR one-pair exception requires all effective opponent relations to
+//   be shallow enough, implemented through the deepest-effective SPR envelope.
 //
 // OpenPPL safety: flat complete WHENs; unresolved composition fails closed.
 // Size IDs: 1 ~33% | 2 ~50% | 3 ~75% | 0 check
@@ -36,10 +38,10 @@ When f$cc_cbet_flop_overpair && f$cc_flop_dynamic_high_parent && f$cc_mw_iso_4pl
 When f$cc_cbet_flop_overpair Return false Force
 When f$cc_cbet_flop_strong_top_pair && f$cc_pair_plus_draw Return true Force
 When f$cc_cbet_flop_strong_top_pair && f$cc_flop_static_high_parent && !f$cc_mw_iso_4plus_all_coldcallers Return true Force
-When f$cc_cbet_flop_strong_top_pair && f$cc_flop_static_high_parent && f$cc_mw_iso_4plus_all_coldcallers && f$cc_mw_iso_4plus_last_context && f$cc_spr_round_start < 4 Return true Force
+When f$cc_cbet_flop_strong_top_pair && f$cc_flop_static_high_parent && f$cc_mw_iso_4plus_all_coldcallers && f$cc_mw_iso_4plus_last_context && f$cc_mw_all_effective_spr_below_4 Return true Force
 When f$cc_cbet_flop_strong_top_pair && f$cc_flop_paired_parent && f$cc_mw_iso_4plus_all_limpers Return true Force
 When f$cc_cbet_flop_strong_top_pair Return false Force
-When f$cc_cbet_flop_medium_top_pair && f$cc_flop_static_high_parent && f$cc_mw_iso_4plus_all_limpers && f$cc_mw_iso_4plus_last_context && f$cc_spr_round_start < 4 Return true Force
+When f$cc_cbet_flop_medium_top_pair && f$cc_flop_static_high_parent && f$cc_mw_iso_4plus_all_limpers && f$cc_mw_iso_4plus_last_context && f$cc_mw_all_effective_spr_below_4 Return true Force
 When f$cc_cbet_flop_medium_top_pair Return false Force
 When f$cc_cbet_flop_weak_top_pair Return false Force
 When f$cc_cbet_flop_showdown_pair Return false Force
