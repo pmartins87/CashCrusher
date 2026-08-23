@@ -1,0 +1,160 @@
+// ============================================================================
+// CashCrusher_Turn_Texture.txt
+// Gate 02A — portable turn/runout texture descriptors
+// ============================================================================
+// Purpose:
+//   Preserve mechanical turn facts used repeatedly by audited DeepCrusher
+//   second-barrel rules without importing any old game label, sizing or
+//   short-stack action implication.
+//
+// Source hierarchy:
+//   T = OpenPPL/OpenHoldem turn-card / straight / flush board symbols.
+//   A = cleaned direct descendants of DeepCrusher `f$turn_Completed`,
+//       `f$turn_SuperCompleted`, `f$TurnCardCompletedTheBoard`, `f$turn_mOC`,
+//       `f$turn_Under`, `f$turn_Grued_Overcard` and `f$turn_Paired`.
+//   P = compact runout IDs used only for routing/logging.
+//
+// Safety:
+//   These functions describe the board/runout only. `completed`, `overcard` or
+//   `undercard` never implies bet/check/jam by itself.
+// ============================================================================
+
+// Purpose: board topology permits a made straight by the turn.
+// Source/Provenance: T OpenPPL `StraightPossibleOnTurn`.
+##f$cc_turn_straight_possible##
+IsTurn && StraightPossibleOnTurn
+
+// Purpose: board topology permits a made flush by the turn.
+// Source/Provenance: T OpenPPL `FlushPossibleOnTurn`.
+##f$cc_turn_flush_possible##
+IsTurn && FlushPossibleOnTurn
+
+// Purpose: source-compatible broad completed-turn descriptor.
+// Source: DeepCrusher `f$turn_Completed` = flush possible OR straight possible.
+// Provenance: T/A direct mechanical transplant.
+##f$cc_turn_completed##
+IsTurn && (FlushPossibleOnTurn || StraightPossibleOnTurn)
+
+// Purpose: source-compatible super-completed turn: both straight and flush are
+// possible from public board topology.
+// Source: DeepCrusher `f$turn_SuperCompleted`.
+// Provenance: T/A direct mechanical transplant.
+##f$cc_turn_super_completed##
+IsTurn && FlushPossibleOnTurn && StraightPossibleOnTurn
+
+// Purpose: turn newly changes board from no straight-possible flop to
+// straight-possible turn.
+// Source: first branch of DeepCrusher `f$TurnCardCompletedTheBoard`.
+// Provenance: T/A direct mechanical condition.
+##f$cc_turn_new_straight_completion##
+IsTurn && !StraightPossibleOnFlop && StraightPossibleOnTurn
+
+// Purpose: turn newly completes a three-flush from a two-suit flop.
+// Source: second branch of DeepCrusher `f$TurnCardCompletedTheBoard`.
+// Provenance: T/A direct mechanical condition.
+##f$cc_turn_new_flush_completion##
+IsTurn && !FlushPossibleOnFlop && SuitsOnFlop = 2 && FlushPossibleOnTurn
+
+// Purpose: exact source-style "turn card completed the board" union.
+// Source/Provenance: A union of the two direct DeepCrusher completion branches.
+// Safety: broader `f$cc_turn_completed` may already have been true on flop;
+// this function specifically means the TURN created the new completion.
+##f$cc_turn_new_completion##
+f$cc_turn_new_straight_completion || f$cc_turn_new_flush_completion
+
+// Purpose: turn card is a strict overcard to the flop board.
+// Source/Provenance: T OpenPPL `TurnCardIsOvercardToBoard`.
+##f$cc_turn_overcard_to_flop##
+IsTurn && TurnCardIsOvercardToBoard > 0
+
+// Purpose: source-compatible "mOC" pressure card: above flop second-highest card
+// or a strict board overcard.
+// Source: DeepCrusher `f$turn_mOC`.
+// Provenance: T/A direct mechanical transplant.
+##f$cc_turn_meaningful_overcard##
+IsTurn && (SecondTopFlopCard < TurnCard || TurnCardIsOvercardToBoard > 0)
+
+// Purpose: strict undercard below every flop rank.
+// Source: DeepCrusher `f$turn_Under`.
+// Provenance: T/A direct mechanical transplant.
+##f$cc_turn_undercard##
+IsTurn && TurnCard < LowestFlopCard
+
+// Purpose: one-rank-above-top-flop "glued overcard" used by several source trees.
+// Source: DeepCrusher `f$turn_Grued_Overcard`.
+// Provenance: T/A direct mechanical transplant.
+##f$cc_turn_glued_overcard##
+IsTurn && (TurnCard - TopFlopCard = 1)
+
+// Purpose: turn pairs one of the three flop ranks.
+// Source: DeepCrusher `f$turn_Paired`.
+// Provenance: T/A direct mechanical transplant.
+##f$cc_turn_pairs_flop_rank##
+IsTurn && (FirstFlopCard = TurnCard || SecondFlopCard = TurnCard || ThirdFlopCard = TurnCard)
+
+// Purpose: turn is an Ace.
+// Source/Provenance: T exact card-rank fact used in source-specific runout rules.
+##f$cc_turn_is_ace##
+IsTurn && TurnCard = ace
+
+// Purpose: turn is a King.
+// Source/Provenance: T exact card-rank fact.
+##f$cc_turn_is_king##
+IsTurn && TurnCard = king
+
+// Purpose: turn is a broadway rank T-A.
+// Source/Provenance: T/A mechanical grouping used only as strategy ingredient.
+##f$cc_turn_is_broadway##
+IsTurn && TurnCard >= ten
+
+// Purpose: current public cards expose a four-card straight or four-card flush
+// structure, matching an explicit 3wBB-v-SB source exception.
+// Source: DeepCrusher uses `nstraightcommon >= 4 || nsuitedcommon >= 4`.
+// Provenance: T/A direct source condition; action remains downstream.
+##f$cc_turn_four_card_straight_or_flush##
+IsTurn && (nstraightcommon >= 4 || nsuitedcommon >= 4)
+
+// Purpose: count flop cards in the exact low 2-6 interval.
+// Source: HUSB Starting Strategy air-pressure rule requires two flop cards 6 or
+// lower; DeepCrusher stored this as a dedicated low-card helper.
+// Provenance: T/A reconstruction from persistent exact flop cards.
+##f$cc_flop_cards_2_to_6_count_on_turn##
+When !IsTurn Return 0 Force
+When Others Return (((FirstFlopCard >= two && FirstFlopCard <= six) ? 1 : 0) + ((SecondFlopCard >= two && SecondFlopCard <= six) ? 1 : 0) + ((ThirdFlopCard >= two && ThirdFlopCard <= six) ? 1 : 0)) Force
+
+// Purpose: source HUSB pressure-board prerequisite: at least two flop cards 2-6.
+// Source/Provenance: A exact mechanical reconstruction of source wording.
+##f$cc_flop_had_two_cards_2_to_6##
+f$cc_flop_cards_2_to_6_count_on_turn >= 2
+
+// Purpose: exact HUSB source-shaped air second-barrel pressure-card predicate.
+// Source: New Crushfest HUSB says air may second barrel when flop contains two
+// cards 6 or lower and turn brings an mOC/OC that neither pairs nor newly
+// completes straight/flush; audited DeepCrusher additionally uses TurnCard >
+// SecondTopFlopCard for the executable branch.
+// Provenance: A source predicate only. It does NOT authorize the bet by itself.
+##f$cc_turn_husb_air_pressure_card_source##
+IsTurn &&
+f$cc_flop_had_two_cards_2_to_6 &&
+TurnCard > SecondTopFlopCard &&
+!f$cc_turn_pairs_flop_rank &&
+!f$cc_turn_new_completion
+
+// Purpose: compact runout ID for logs/tests.
+// IDs: 1 super-completed; 2 newly completed; 3 pairs flop; 4 glued overcard;
+// 5 other strict overcard; 6 undercard; 7 residual/neutral.
+// Source/Provenance: P engineering metadata over T/A runout facts.
+// Safety: this ID is not a strategy lookup on its own.
+##f$cc_turn_runout_id##
+When !IsTurn Return 0 Force
+When f$cc_turn_super_completed Return 1 Force
+When f$cc_turn_new_completion Return 2 Force
+When f$cc_turn_pairs_flop_rank Return 3 Force
+When f$cc_turn_glued_overcard Return 4 Force
+When f$cc_turn_overcard_to_flop Return 5 Force
+When f$cc_turn_undercard Return 6 Force
+When Others Return 7 Force
+
+// ============================================================================
+// End portable turn/runout texture descriptors.
+// ============================================================================
