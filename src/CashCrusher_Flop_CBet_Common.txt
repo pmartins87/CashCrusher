@@ -2,38 +2,56 @@
 // CashCrusher_Flop_CBet_Common.txt
 // Gate 01A — flop CBet strategic combo/size descriptors
 // ============================================================================
-// These functions are NOT generic hand-strength truth. They are deterministic
-// selection tools used to approximate professional mixed CBet strategies with
-// meaningful combo properties instead of arbitrary always-bet/always-check.
+// Purpose:
+//   Provide deterministic hand/board selectors shared by reviewed flop-CBet
+//   families.  They approximate mixed professional strategies by meaningful
+//   combo properties rather than arbitrary always-bet / always-check decisions.
 //
-// Provenance:
-//   A — inherits DeepCrusher distinctions between made hands, draw quality,
-//       backdoors and board dynamism.
-//   P — deep-stack deterministic combo selection and sizing families.
+// Source hierarchy / provenance:
+//   A — DeepCrusher distinctions between made-hand class, kicker, draw quality,
+//       backdoors and board dynamism are preserved as ingredients.
+//   P — the exact deep-stack thresholds and deterministic mix selectors are
+//       CashCrusher professional-theory fills, not claimed as solver-exact.
+//   X — the Spin concept `StackOffDraws` is intentionally NOT reproduced.
 //
-// No function in this file identifies a pot family. Context must be proven by
-// the caller before consuming these descriptors.
+// Safety:
+//   No function in this file proves a pot/range context and no function directly
+//   authorizes a poker action.  A reviewed child strategy must establish context
+//   before consuming these descriptors.
 // ============================================================================
 
 // -----------------------------------------------------------------------------
 // C.01 — Hole-card high-card / blocker descriptors
 // -----------------------------------------------------------------------------
 
+// Purpose: expose whether Hero holds an ace for blocker/high-card selection.
+// Source/Provenance: OpenPPL hole-card ranks, T mechanical descriptor.
 ##f$cc_hole_has_ace##
 RankOfFirstHoleCard = ace || RankOfSecondHoleCard = ace
 
+// Purpose: expose whether Hero holds a king for blocker/high-card selection.
+// Source/Provenance: OpenPPL hole-card ranks, T mechanical descriptor.
 ##f$cc_hole_has_king##
 RankOfFirstHoleCard = king || RankOfSecondHoleCard = king
 
+// Purpose: expose whether Hero holds a queen; kept for future exact-combo work.
+// Source/Provenance: OpenPPL hole-card ranks, T mechanical descriptor.
 ##f$cc_hole_has_queen##
 RankOfFirstHoleCard = queen || RankOfSecondHoleCard = queen
 
+// Purpose: expose whether Hero holds a jack; kept for future exact-combo work.
+// Source/Provenance: OpenPPL hole-card ranks, T mechanical descriptor.
 ##f$cc_hole_has_jack##
 RankOfFirstHoleCard = jack || RankOfSecondHoleCard = jack
 
+// Purpose: count Hero hole cards in the T/J/Q/K/A broadway band.
+// Source/Provenance: mechanical OpenPPL ranks, T/A convenience descriptor.
 ##f$cc_hole_broadway_count##
 ((RankOfFirstHoleCard >= ten) ? 1 : 0) + ((RankOfSecondHoleCard >= ten) ? 1 : 0)
 
+// Purpose: identify two-broadway high-card holdings used in deterministic bluff
+// selection on some static/high boards.
+// Source/Provenance: A mechanical composition; betting relevance is P by caller.
 ##f$cc_hole_two_broadways##
 f$cc_hole_broadway_count = 2
 
@@ -41,66 +59,110 @@ f$cc_hole_broadway_count = 2
 // C.02 — Made-hand CBet tiers
 // -----------------------------------------------------------------------------
 
+// Purpose: robust value bucket beginning at two pair.
+// Source: DeepCrusher made-hand ladder.
+// Provenance: A descriptor; whether to bet depends on context/board/SPR.
 ##f$cc_cbet_flop_very_strong_value##
 f$cc_hand_two_pair_or_better
 
+// Purpose: isolate an overpair that is not already two-pair+.
+// Source: DeepCrusher overpair/value distinctions.
+// Provenance: A descriptor only.
 ##f$cc_cbet_flop_overpair##
 HaveOverPair && !f$cc_hand_two_pair_or_better
 
+// Purpose: strong top-pair tier, using at most two unavailable better kicker ranks.
+// Source: DeepCrusher kicker-quality concept.
+// Provenance: A/P — source supports kicker stratification; exact <=2 boundary is
+// a CashCrusher deterministic deep-stack split, not a universal solver cutoff.
 ##f$cc_cbet_flop_strong_top_pair##
 f$cc_hand_just_top_pair && f$cc_number_better_kickers <= 2
 
+// Purpose: middle top-pair kicker tier between strong and weak buckets.
+// Source: DeepCrusher TP kicker hierarchy.
+// Provenance: A/P — exact >2 and <=4 boundary is a CashCrusher mix abstraction.
 ##f$cc_cbet_flop_medium_top_pair##
 f$cc_hand_just_top_pair && f$cc_number_better_kickers > 2 && f$cc_number_better_kickers <= 4
 
+// Purpose: weakest top-pair kicker tier for pot-control/check-range decisions.
+// Source: DeepCrusher TPWK concept.
+// Provenance: A/P — >4 is an engineering split and remains matchup-adjustable.
 ##f$cc_cbet_flop_weak_top_pair##
 f$cc_hand_just_top_pair && f$cc_number_better_kickers > 4
 
+// Purpose: aggregate top pair, overpair and stronger made hands.
+// Source/Provenance: A alias over portable DeepCrusher-derived primitives.
 ##f$cc_cbet_flop_top_pair_plus##
 f$cc_hand_top_pair_or_better
 
+// Purpose: aggregate lower pair / pocket-pair showdown value below top pair.
+// Source: DeepCrusher MP/BP treatment.
+// Provenance: A descriptor; no automatic CBet is implied.
 ##f$cc_cbet_flop_showdown_pair##
 f$cc_hand_middle_or_bottom_pair && !f$cc_hand_top_pair_or_better
 
 // -----------------------------------------------------------------------------
 // C.03 — Draw tiers for deep-stack betting selection
 // -----------------------------------------------------------------------------
-// The old Spin label "StackOffDraws" is intentionally not reproduced.
+// The old Spin label `StackOffDraws` is deliberately absent.  Draw quality is
+// descriptive; later strategy chooses bet/check/XR/XC using position and SPR.
 
+// Purpose: highest-equity/nut-potential no-made draw bucket.
+// Source: DeepCrusher distinguishes combo, nut FD and strong draw+overcard cases.
+// Provenance: A/P — ingredients are source-derived, exact grouping is a deep-stack
+// CashCrusher replacement for the rejected StackOffDraws action shortcut.
 ##f$cc_cbet_flop_premium_draw##
 f$cc_real_combo_draw ||
 f$cc_real_nut_fd ||
 (f$cc_real_oesd && f$cc_two_overcards) ||
 (f$cc_real_fd && f$cc_two_overcards)
 
+// Purpose: useful frontdoor draws below premium tier.
+// Source: DeepCrusher good/medium draw distinctions.
+// Provenance: A/P — deterministic grouping for six-max deep-stack selection.
 ##f$cc_cbet_flop_good_draw##
 !f$cc_cbet_flop_premium_draw &&
 (f$cc_real_fd || f$cc_real_oesd || (f$cc_real_gutshot && f$cc_two_overcards))
 
+// Purpose: residual real frontdoor draws after premium/good tiers are removed.
+// Source: DeepCrusher weak/medium draw architecture.
+// Provenance: A/P; action is intentionally decided downstream.
 ##f$cc_cbet_flop_weak_draw##
 !f$cc_cbet_flop_premium_draw && !f$cc_cbet_flop_good_draw && f$cc_real_frontdoor_draw
 
 // -----------------------------------------------------------------------------
 // C.04 — Air-combo quality
 // -----------------------------------------------------------------------------
-// A deterministic hardcoded strategy needs a principled subset of air for the
-// betting range. Backdoors/high cards are used as selectors; this is not a claim
-// that every listed combo is a solver-preferred bluff in every exact matchup.
+// Professional-theory fill (P): deterministic hardcoding needs principled bluff
+// subsets.  Backdoors/high cards are selection features, not a claim that every
+// such combo is solver-preferred in every matchup.
 
+// Purpose: highest-quality air selector with both BDFD and BDSD.
+// Source/Provenance: A backdoor ingredients + P deterministic bluff selection.
 ##f$cc_cbet_flop_air_best_backdoors##
 f$cc_air_no_frontdoor && f$cc_combo_backdoors
 
+// Purpose: air with at least one backdoor plus a meaningful high-card/blocker.
+// Source/Provenance: P professional-theory selector built from T/A primitives.
+// Limitation: exact blocker value remains board/matchup dependent.
 ##f$cc_cbet_flop_air_highcard_backdoor##
 f$cc_air_no_frontdoor &&
 (f$cc_backdoor_fd || f$cc_backdoor_sd) &&
 (f$cc_hole_two_broadways || f$cc_hole_has_ace || f$cc_hole_has_king)
 
+// Purpose: air with two overcards and at least one backdoor equity route.
+// Source/Provenance: P deterministic mixed-strategy approximation.
 ##f$cc_cbet_flop_air_two_oc_backdoor##
 f$cc_air_no_frontdoor && f$cc_two_overcards && (f$cc_backdoor_fd || f$cc_backdoor_sd)
 
+// Purpose: union of reviewed high-quality air selectors available to CBet policy.
+// Source/Provenance: P aggregation; context-specific child policy decides usage.
 ##f$cc_cbet_flop_quality_air##
 f$cc_cbet_flop_air_best_backdoors || f$cc_cbet_flop_air_highcard_backdoor || f$cc_cbet_flop_air_two_oc_backdoor
 
+// Purpose: residual air without the currently reviewed bluff-selection features.
+// Source/Provenance: P negative descriptor; it does NOT mean automatic give-up on
+// every future node/street.
 ##f$cc_cbet_flop_pure_air##
 f$cc_air_no_frontdoor && !f$cc_cbet_flop_quality_air
 
@@ -108,47 +170,67 @@ f$cc_air_no_frontdoor && !f$cc_cbet_flop_quality_air
 // C.05 — Board-pressure convenience tiers
 // -----------------------------------------------------------------------------
 
+// Purpose: board parents where a broad/small pressure strategy is most plausible.
+// Source: DeepCrusher repeatedly uses smaller bets on calmer/high/paired boards.
+// Provenance: A source concept + P generalized six-max parent abstraction.
 ##f$cc_cbet_board_small_bet_parent##
 f$cc_flop_static_high_parent || f$cc_flop_paired_parent
 
+// Purpose: convenience union for boards generally needing more selective/medium
+// pressure than static-high/paired parents.
+// Source/Provenance: P engineering parent built on audited texture primitives.
 ##f$cc_cbet_board_medium_parent##
 f$cc_flop_dynamic_high_parent || f$cc_flop_static_lowmid_parent
 
+// Purpose: identify the most caller-interactive low/mid dynamic parent where
+// betting ranges become selective/polar.
+// Source: source checks more on straight/low-connected boards.
+// Provenance: A principle + P six-max abstraction.
 ##f$cc_cbet_board_polar_parent##
 f$cc_flop_dynamic_lowmid_parent
 
 // -----------------------------------------------------------------------------
 // C.06 — Sizing family IDs
 // -----------------------------------------------------------------------------
-// IDs are strategic intentions only. The OpenPPL betsize/action mapping is a
-// separate runtime layer.
-//   1 = SMALL_33
-//   2 = MEDIUM_50
-//   3 = LARGE_75
-//   4 = POT_100 (reserved; no SRP baseline currently uses it)
-//   0 = CHECK / no CBet size
+// IDs are strategic intentions only.  Runtime OpenPPL bet/action mapping remains
+// separate so these descriptors cannot accidentally jam.
 
+// Purpose: stable ID for the small (~33% pot) flop sizing family.
+// Source/Provenance: A maps source 25/30/33/40 small families into a clean cash ID.
 ##f$cc_cbet_size_small_id##
 1
 
+// Purpose: stable ID for the medium (~50% pot) flop sizing family.
+// Source/Provenance: A maps source 50% family; exact use is policy-specific.
 ##f$cc_cbet_size_medium_id##
 2
 
+// Purpose: stable ID for the large (~75% pot) flop sizing family.
+// Source/Provenance: A maps source 66/75 pressure families into deep-stack palette.
 ##f$cc_cbet_size_large_id##
 3
 
+// Purpose: stable ID for pot-sized flop betting, reserved for explicit polar nodes.
+// Source/Provenance: A/P sizing architecture; no current SRP baseline assumes it.
 ##f$cc_cbet_size_pot_id##
 4
 
 // -----------------------------------------------------------------------------
 // C.07 — High-SPR marginal-value caution
 // -----------------------------------------------------------------------------
-// DeepCrusher's <=16/20BB rules are not transplanted. Round-start raw SPR is
-// used only to avoid turning weak one-pair hands into automatic deep-pot builders.
+// DeepCrusher's <=16/20BB tactical thresholds are X.  Raw round-start SPR is
+// instead used only as a cautious deep-pot-building modifier.
 
+// Purpose: mark a materially deep postflop geometry for one-pair caution.
+// Source: no literal DeepCrusher threshold survives.
+// Provenance: P engineering/professional-theory bucket at SPR >=6; raw SPR remains
+// canonical and future matchup nodes may refine this boundary.
 ##f$cc_cbet_high_spr##
 f$cc_spr_round_start >= 6
 
+// Purpose: mark very deep geometry where marginal one-pair automatic betting is
+// especially undesirable.
+// Source/Provenance: P conservative engineering bucket at SPR >=10, not GTO truth.
 ##f$cc_cbet_very_high_spr##
 f$cc_spr_round_start >= 10
 
