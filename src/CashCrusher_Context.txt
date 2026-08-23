@@ -60,24 +60,37 @@
 //   9 UNRAISED_BB_CHECK
 // Relative-position IDs:
 //   1 FIRST | 2 MIDDLE | 3 LAST
+//
+// Provenance contract:
+//   T = direct OpenHoldem/OpenPPL mechanical fact.
+//   A = structural adaptation of audited DeepCrusher scenario/history concepts.
+//   P = six-max engineering inference where the source has no literal state.
+// This file classifies context only; it contains no strategic bet frequency.
 // ============================================================================
 
 // -----------------------------------------------------------------------------
 // 00F.01 — Dynamic table/deal handedness
 // -----------------------------------------------------------------------------
 
+// Purpose: number of players actually dealt into this hand, limited to supported 2-6h.
+// Source/Provenance: OpenPPL `nplayersdealt`; T mechanical fact.
 ##f$cc_deal_size##
 When nplayersdealt >= 2 && nplayersdealt <= 6 Return nplayersdealt Force
 When Others Return 0 Force
 
+// Purpose: boolean guard for the supported CashCrusher handedness domain.
+// Source/Provenance: A alias over `f$cc_deal_size`.
 ##f$cc_supported_deal##
 f$cc_deal_size >= 2 && f$cc_deal_size <= 6
 
+// Purpose: count physically seated players, which may exceed players actually dealt.
+// Source/Provenance: OpenPPL `OpponentsAtTable`/`nopponentsseated`; T.
 ##f$cc_table_seated_count##
-// OpponentsAtTable is backed by nopponentsseated in OpenPPL.
 When OpponentsAtTable < 1 Return 0 Force
 When Others Return (OpponentsAtTable + 1) Force
 
+// Purpose: reject impossible seated/dealt count combinations before range routing.
+// Source/Provenance: P engineering consistency invariant over T player counts.
 ##f$cc_table_count_consistent##
 When f$cc_table_seated_count < 2 Return false Force
 When f$cc_table_seated_count > 6 Return false Force
@@ -85,38 +98,58 @@ When f$cc_deal_size <= 0 Return false Force
 When f$cc_table_seated_count < f$cc_deal_size Return false Force
 When Others Return true Force
 
+// Purpose: identify a physical table with only two seats currently occupied.
+// Source/Provenance: T/A alias over seated-player count; not a hand-range origin by itself.
 ##f$cc_physical_table_hu##
 f$cc_table_seated_count = 2
 
+// Purpose: identify a hand in which exactly two players were actually dealt cards.
+// Source/Provenance: T/A alias over dealt-player count.
 ##f$cc_deal_hu##
 f$cc_deal_size = 2
 
+// Purpose: strategic true-HU origin flag: only two players were dealt into the hand.
+// Source/Provenance: A replacement for blindly using legacy HUSB/HUBB table labels.
 ##f$cc_true_hu##
-// Strategic HU-deal flag. Two players were actually dealt into the hand.
 f$cc_deal_hu
 
+// Purpose: distinguish a true-HU hand on a physically two-player table.
+// Source/Provenance: P/A diagnostic composition of true-HU and seated count.
 ##f$cc_true_hu_full_table##
 f$cc_true_hu && f$cc_physical_table_hu
 
+// Purpose: true-HU hand even though extra seats remain shown/seated but were not dealt.
+// Source/Provenance: P/A handedness distinction required for dynamic cash tables.
 ##f$cc_true_hu_with_waiters##
-// Same HU deal/rules, but one or more extra seats are still shown as seated.
 f$cc_true_hu && f$cc_table_seated_count > 2
 
+// Purpose: explicit six-handed deal descriptor for audit/range modifiers.
+// Source/Provenance: T alias over `f$cc_deal_size`.
 ##f$cc_sixhanded_deal##
 f$cc_deal_size = 6
 
+// Purpose: explicit five-handed deal descriptor for audit/range modifiers.
+// Source/Provenance: T alias over `f$cc_deal_size`.
 ##f$cc_fivehanded_deal##
 f$cc_deal_size = 5
 
+// Purpose: explicit four-handed deal descriptor for audit/range modifiers.
+// Source/Provenance: T alias over `f$cc_deal_size`.
 ##f$cc_fourhanded_deal##
 f$cc_deal_size = 4
 
+// Purpose: explicit three-handed deal descriptor for audit/range modifiers.
+// Source/Provenance: T alias over `f$cc_deal_size`.
 ##f$cc_threehanded_deal##
 f$cc_deal_size = 3
 
+// Purpose: explicit two-handed deal descriptor; SB is also Button under HU rules.
+// Source/Provenance: T alias over `f$cc_deal_size`.
 ##f$cc_twohanded_deal##
 f$cc_deal_size = 2
 
+// Purpose: verify persisted dealt-player bitmask agrees with reported deal size.
+// Source/Provenance: OpenPPL `playersdealtbits` + `BitCount`; T/P safety check.
 ##f$cc_dealt_bits_consistent##
 When !f$cc_supported_deal Return false Force
 When BitCount(playersdealtbits) != f$cc_deal_size Return false Force
@@ -126,6 +159,8 @@ When Others Return true Force
 // 00F.02 — Conditional chair-map validity
 // -----------------------------------------------------------------------------
 
+// Purpose: ensure every chair alias required by the current handedness is in range.
+// Source/Provenance: OpenHoldem chair symbols; T/P scrape/geometry sanity guard.
 ##f$cc_chair_map_in_range##
 When !f$cc_supported_deal Return false Force
 When userchair < 0 || userchair >= 10 Return false Force
@@ -137,38 +172,22 @@ When f$cc_deal_size >= 5 && (mp3chair < 0 || mp3chair >= 10) Return false Force
 When f$cc_deal_size = 6 && (utgchair < 0 || utgchair >= 10) Return false Force
 When Others Return true Force
 
+// Purpose: verify canonical position chairs are distinct for current handedness.
+// Source/Provenance: T chair geometry + P invariant; true HU intentionally permits dealer=SB.
 ##f$cc_chair_map_distinct##
-// True HU is the deliberate exception: dealerchair == smallblindchair.
 When f$cc_deal_size = 2 && dealerchair = smallblindchair && smallblindchair != bigblindchair Return true Force
-
-When f$cc_deal_size = 3 &&
-     dealerchair != smallblindchair && dealerchair != bigblindchair && smallblindchair != bigblindchair
-Return true Force
-
-When f$cc_deal_size = 4 &&
-     cutoffchair != dealerchair && cutoffchair != smallblindchair && cutoffchair != bigblindchair &&
-     dealerchair != smallblindchair && dealerchair != bigblindchair && smallblindchair != bigblindchair
-Return true Force
-
-When f$cc_deal_size = 5 &&
-     mp3chair != cutoffchair && mp3chair != dealerchair && mp3chair != smallblindchair && mp3chair != bigblindchair &&
-     cutoffchair != dealerchair && cutoffchair != smallblindchair && cutoffchair != bigblindchair &&
-     dealerchair != smallblindchair && dealerchair != bigblindchair && smallblindchair != bigblindchair
-Return true Force
-
-When f$cc_deal_size = 6 &&
-     utgchair != mp3chair && utgchair != cutoffchair && utgchair != dealerchair && utgchair != smallblindchair && utgchair != bigblindchair &&
-     mp3chair != cutoffchair && mp3chair != dealerchair && mp3chair != smallblindchair && mp3chair != bigblindchair &&
-     cutoffchair != dealerchair && cutoffchair != smallblindchair && cutoffchair != bigblindchair &&
-     dealerchair != smallblindchair && dealerchair != bigblindchair && smallblindchair != bigblindchair
-Return true Force
-
+When f$cc_deal_size = 3 && dealerchair != smallblindchair && dealerchair != bigblindchair && smallblindchair != bigblindchair Return true Force
+When f$cc_deal_size = 4 && cutoffchair != dealerchair && cutoffchair != smallblindchair && cutoffchair != bigblindchair && dealerchair != smallblindchair && dealerchair != bigblindchair && smallblindchair != bigblindchair Return true Force
+When f$cc_deal_size = 5 && mp3chair != cutoffchair && mp3chair != dealerchair && mp3chair != smallblindchair && mp3chair != bigblindchair && cutoffchair != dealerchair && cutoffchair != smallblindchair && cutoffchair != bigblindchair && dealerchair != smallblindchair && dealerchair != bigblindchair && smallblindchair != bigblindchair Return true Force
+When f$cc_deal_size = 6 && utgchair != mp3chair && utgchair != cutoffchair && utgchair != dealerchair && utgchair != smallblindchair && utgchair != bigblindchair && mp3chair != cutoffchair && mp3chair != dealerchair && mp3chair != smallblindchair && mp3chair != bigblindchair && cutoffchair != dealerchair && cutoffchair != smallblindchair && cutoffchair != bigblindchair && dealerchair != smallblindchair && dealerchair != bigblindchair && smallblindchair != bigblindchair Return true Force
 When Others Return false Force
 
 // -----------------------------------------------------------------------------
 // 00F.03 — Canonical six-max-equivalent absolute positions
 // -----------------------------------------------------------------------------
 
+// Purpose: map Hero to stable UTG/HJ/CO/BTN/SB/BB IDs across 2-6 handed deals.
+// Source/Provenance: T chair aliases + P canonical short-handed six-max mapping.
 ##f$cc_hero_pos_id##
 When f$cc_deal_size = 6 && userchair = utgchair Return 1 Force
 When f$cc_deal_size >= 5 && userchair = mp3chair Return 2 Force
@@ -178,31 +197,46 @@ When userchair = smallblindchair Return 5 Force
 When userchair = bigblindchair Return 6 Force
 When Others Return 0 Force
 
+// Purpose: prove Hero is still a live player in the current hand state.
+// Source/Provenance: OpenPPL `playersplayingbits`; T mechanical fact.
 ##f$cc_hero_playing##
 When userchair < 0 Return false Force
 When Others Return (((playersplayingbits >> userchair) BitAnd 1) = 1) Force
 
+// Purpose: verify live-player and opponent counts agree and do not exceed deal size.
+// Source/Provenance: OpenPPL player-count symbols; T/P consistency invariant.
 ##f$cc_player_count_valid##
 (nplayersplaying >= 2) &&
 (nplayersplaying <= f$cc_deal_size) &&
 (nopponentsplaying = (nplayersplaying - 1))
 
+// Purpose: current-live HU only; it deliberately says nothing about HU origin.
+// Source/Provenance: OpenPPL live-player counts; T/A replacement for overloaded legacy HU labels.
 ##f$cc_hu##
-// CURRENT-LIVE HU only. Always inspect f$cc_hu_origin_id before strategy.
 nplayersplaying = 2 && nopponentsplaying = 1
 
+// Purpose: current live field has exactly three players.
+// Source/Provenance: T player-count alias.
 ##f$cc_threeway##
 nplayersplaying = 3 && nopponentsplaying = 2
 
+// Purpose: current live field has exactly four players.
+// Source/Provenance: T player-count alias.
 ##f$cc_fourway##
 nplayersplaying = 4 && nopponentsplaying = 3
 
+// Purpose: current live field has exactly five players.
+// Source/Provenance: T player-count alias.
 ##f$cc_fiveway##
 nplayersplaying = 5 && nopponentsplaying = 4
 
+// Purpose: current live field has all six players.
+// Source/Provenance: T player-count alias.
 ##f$cc_sixway##
 nplayersplaying = 6 && nopponentsplaying = 5
 
+// Purpose: compact current player-count class for logging/routing metadata.
+// Source/Provenance: A/P engineering ID over T live-player aliases.
 ##f$cc_player_count_class##
 When f$cc_hu Return 2 Force
 When f$cc_threeway Return 3 Force
@@ -219,17 +253,25 @@ When Others Return 0 Force
 // This is critical on turn/river: a 3-way flop that later becomes HU must not
 // be rewritten into an ordinary HU hand.
 
+// Purpose: ensure persisted preflop folds are a subset of players actually dealt.
+// Source/Provenance: OpenPPL `foldbits1`/`playersdealtbits`; T/P bitmask sanity check.
 ##f$cc_preflop_fold_bits_valid##
 When ((foldbits1 BitAnd playersdealtbits) != foldbits1) Return false Force
 When Others Return true Force
 
+// Purpose: reconstruct exact set of players that survived preflop and reached flop.
+// Source/Provenance: T persisted dealt/fold bitmasks; A context reconstruction.
 ##f$cc_flop_entry_bits##
 playersdealtbits - (playersdealtbits BitAnd foldbits1)
 
+// Purpose: exact number of players who entered the flop, preserved on later streets.
+// Source/Provenance: T `BitCount` over reconstructed flop-entry mask.
 ##f$cc_flop_entry_count##
 When IsPreflop Return 0 Force
 When Others Return BitCount(f$cc_flop_entry_bits) Force
 
+// Purpose: reject impossible flop-entry counts and later live counts.
+// Source/Provenance: P mechanical consistency invariant over T persisted masks.
 ##f$cc_flop_entry_valid##
 When IsPreflop Return false Force
 When f$cc_flop_entry_count < 2 Return false Force
@@ -237,18 +279,28 @@ When f$cc_flop_entry_count > f$cc_deal_size Return false Force
 When nplayersplaying > f$cc_flop_entry_count Return false Force
 When Others Return true Force
 
+// Purpose: exactly two players reached the flop, regardless of original deal size.
+// Source/Provenance: A alias over exact flop-entry count.
 ##f$cc_reached_flop_hu##
 f$cc_flop_entry_count = 2
 
+// Purpose: three or more players reached the flop; provenance must survive later folds.
+// Source/Provenance: A multiway-origin alias over exact flop-entry count.
 ##f$cc_reached_flop_multiway##
 f$cc_flop_entry_count >= 3
 
+// Purpose: current HU came from a 3-6h deal reduced to two before flop.
+// Source/Provenance: P/A key range-topology distinction absent from Spin scenario labels.
 ##f$cc_preflop_reduced_hu##
 f$cc_hu && f$cc_deal_size >= 3 && f$cc_reached_flop_hu
 
+// Purpose: current HU arose only after a multiway flop lost players postflop.
+// Source/Provenance: P/A provenance guard preventing ordinary HU-policy leakage.
 ##f$cc_postflop_reduced_to_hu##
 f$cc_hu && f$cc_reached_flop_multiway
 
+// Purpose: stable HU-origin ID: 1 true deal, 2 reduced preflop, 3 reduced postflop.
+// Source/Provenance: P/A engineering classification over exact mechanical facts.
 ##f$cc_hu_origin_id##
 When !f$cc_hu Return 0 Force
 When f$cc_true_hu Return 1 Force
@@ -256,12 +308,18 @@ When f$cc_preflop_reduced_hu Return 2 Force
 When f$cc_postflop_reduced_to_hu Return 3 Force
 When Others Return 0 Force
 
+// Purpose: alias for HU-origin true deal.
+// Source/Provenance: A metadata alias.
 ##f$cc_hu_origin_true##
 f$cc_hu_origin_id = 1
 
+// Purpose: alias for HU-origin preflop-reduced from 3-6 handed deal.
+// Source/Provenance: A metadata alias.
 ##f$cc_hu_origin_preflop_reduced##
 f$cc_hu_origin_id = 2
 
+// Purpose: alias for HU-origin postflop-reduced from a multiway flop.
+// Source/Provenance: A metadata alias.
 ##f$cc_hu_origin_postflop_reduced##
 f$cc_hu_origin_id = 3
 
@@ -271,30 +329,44 @@ f$cc_hu_origin_id = 3
 // Position aliases that do not exist at the current handedness are ignored.
 // This prevents true-HU dealer/SB from being double-counted as BTN + SB.
 
+// Purpose: whether a live opponent occupies canonical UTG.
+// Source/Provenance: OpenPPL `opponentsplayingbits`; T with handedness guard.
 ##f$cc_opp_live_utg##
 When f$cc_deal_size != 6 Return false Force
 When Others Return (((opponentsplayingbits >> utgchair) BitAnd 1) = 1) Force
 
+// Purpose: whether a live opponent occupies canonical HJ/MP3.
+// Source/Provenance: T opponent bitmask with handedness guard.
 ##f$cc_opp_live_hj##
 When f$cc_deal_size < 5 Return false Force
 When Others Return (((opponentsplayingbits >> mp3chair) BitAnd 1) = 1) Force
 
+// Purpose: whether a live opponent occupies canonical CO.
+// Source/Provenance: T opponent bitmask with handedness guard.
 ##f$cc_opp_live_co##
 When f$cc_deal_size < 4 Return false Force
 When Others Return (((opponentsplayingbits >> cutoffchair) BitAnd 1) = 1) Force
 
+// Purpose: whether a live opponent occupies canonical BTN, excluding true-HU dealer/SB aliasing.
+// Source/Provenance: T opponent bitmask with handedness guard.
 ##f$cc_opp_live_btn##
 When f$cc_deal_size < 3 Return false Force
 When Others Return (((opponentsplayingbits >> dealerchair) BitAnd 1) = 1) Force
 
+// Purpose: whether a live opponent occupies SB.
+// Source/Provenance: T opponent bitmask projected through `smallblindchair`.
 ##f$cc_opp_live_sb##
 When smallblindchair < 0 Return false Force
 When Others Return (((opponentsplayingbits >> smallblindchair) BitAnd 1) = 1) Force
 
+// Purpose: whether a live opponent occupies BB.
+// Source/Provenance: T opponent bitmask projected through `bigblindchair`.
 ##f$cc_opp_live_bb##
 When bigblindchair < 0 Return false Force
 When Others Return (((opponentsplayingbits >> bigblindchair) BitAnd 1) = 1) Force
 
+// Purpose: compact six-bit exact current opponent-position mask.
+// Source/Provenance: A/P canonical mask built entirely from T live-position flags.
 ##f$cc_opp_live_mask##
 (f$cc_opp_live_utg * 1) +
 (f$cc_opp_live_hj * 2) +
@@ -303,6 +375,8 @@ When Others Return (((opponentsplayingbits >> bigblindchair) BitAnd 1) = 1) Forc
 (f$cc_opp_live_sb * 16) +
 (f$cc_opp_live_bb * 32)
 
+// Purpose: canonical absolute position of the sole current HU Villain.
+// Source/Provenance: OpenPPL `headsupchair` + P/A handedness-aware canonical mapping.
 ##f$cc_hu_villain_pos_id##
 When !f$cc_hu Return 0 Force
 When f$cc_deal_size = 6 && headsupchair = utgchair Return 1 Force
@@ -313,6 +387,8 @@ When headsupchair = smallblindchair Return 5 Force
 When headsupchair = bigblindchair Return 6 Force
 When Others Return 0 Force
 
+// Purpose: compact exact Hero-v-Villain HU matchup ID, e.g. 46 = BTN vs BB.
+// Source/Provenance: P engineering metadata over canonical T/A position IDs.
 ##f$cc_hu_matchup_id##
 When !f$cc_hu Return 0 Force
 When f$cc_hero_pos_id <= 0 Return 0 Force
@@ -324,18 +400,26 @@ When Others Return (f$cc_hero_pos_id * 10 + f$cc_hu_villain_pos_id) Force
 // 00C.06 — Relative post-flop position
 // -----------------------------------------------------------------------------
 
+// Purpose: normalize OpenPPL First/Middle/Last into numeric relative-position ID.
+// Source/Provenance: OpenPPL `Position`; T/A adapter.
 ##f$cc_relpos_id##
 When Position = First Return 1 Force
 When Position = Middle Return 2 Force
 When Position = Last Return 3 Force
 When Others Return 0 Force
 
+// Purpose: current HU Hero acts first and is therefore OOP.
+// Source/Provenance: T relative position + A HU alias.
 ##f$cc_hu_oop##
 f$cc_hu && Position = First
 
+// Purpose: current HU Hero acts last and is therefore IP.
+// Source/Provenance: T relative position + A HU alias.
 ##f$cc_hu_ip##
 f$cc_hu && Position = Last
 
+// Purpose: ensure HU does not report impossible `Middle`/unknown relative position.
+// Source/Provenance: P sanity invariant over T/A HU position flags.
 ##f$cc_hu_relpos_valid##
 When !f$cc_hu Return true Force
 When f$cc_hu_oop Return true Force
@@ -346,71 +430,105 @@ When Others Return false Force
 // 00C.07 — Stable preflop raise/call history projected onto canonical positions
 // -----------------------------------------------------------------------------
 
+// Purpose: persisted total number of preflop raises after preflop has ended.
+// Source/Provenance: OpenPPL `NumberOfRaisesBeforeFlop`; T. Negative values fail to 0.
 ##f$cc_pf_raise_count##
 When IsPreflop Return 0 Force
 When NumberOfRaisesBeforeFlop < 0 Return 0 Force
 When Others Return NumberOfRaisesBeforeFlop Force
 
+// Purpose: whether canonical UTG raised at least once preflop.
+// Source/Provenance: persisted OpenPPL `raisbits1`; T with handedness guard.
 ##f$cc_pf_raise_utg##
 When f$cc_deal_size != 6 Return false Force
 When Others Return (((raisbits1 >> utgchair) BitAnd 1) = 1) Force
 
+// Purpose: whether canonical HJ raised at least once preflop.
+// Source/Provenance: persisted `raisbits1`; T with handedness guard.
 ##f$cc_pf_raise_hj##
 When f$cc_deal_size < 5 Return false Force
 When Others Return (((raisbits1 >> mp3chair) BitAnd 1) = 1) Force
 
+// Purpose: whether canonical CO raised at least once preflop.
+// Source/Provenance: persisted `raisbits1`; T with handedness guard.
 ##f$cc_pf_raise_co##
 When f$cc_deal_size < 4 Return false Force
 When Others Return (((raisbits1 >> cutoffchair) BitAnd 1) = 1) Force
 
+// Purpose: whether canonical BTN raised at least once preflop.
+// Source/Provenance: persisted `raisbits1`; T with handedness guard.
 ##f$cc_pf_raise_btn##
 When f$cc_deal_size < 3 Return false Force
 When Others Return (((raisbits1 >> dealerchair) BitAnd 1) = 1) Force
 
+// Purpose: whether SB raised at least once preflop.
+// Source/Provenance: persisted `raisbits1`; T.
 ##f$cc_pf_raise_sb##
 When smallblindchair < 0 Return false Force
 When Others Return (((raisbits1 >> smallblindchair) BitAnd 1) = 1) Force
 
+// Purpose: whether BB raised at least once preflop.
+// Source/Provenance: persisted `raisbits1`; T.
 ##f$cc_pf_raise_bb##
 When bigblindchair < 0 Return false Force
 When Others Return (((raisbits1 >> bigblindchair) BitAnd 1) = 1) Force
 
+// Purpose: whether canonical UTG called at least once preflop.
+// Source/Provenance: persisted OpenPPL `callbits1`; T with handedness guard.
 ##f$cc_pf_call_utg##
 When f$cc_deal_size != 6 Return false Force
 When Others Return (((callbits1 >> utgchair) BitAnd 1) = 1) Force
 
+// Purpose: whether canonical HJ called at least once preflop.
+// Source/Provenance: persisted `callbits1`; T with handedness guard.
 ##f$cc_pf_call_hj##
 When f$cc_deal_size < 5 Return false Force
 When Others Return (((callbits1 >> mp3chair) BitAnd 1) = 1) Force
 
+// Purpose: whether canonical CO called at least once preflop.
+// Source/Provenance: persisted `callbits1`; T with handedness guard.
 ##f$cc_pf_call_co##
 When f$cc_deal_size < 4 Return false Force
 When Others Return (((callbits1 >> cutoffchair) BitAnd 1) = 1) Force
 
+// Purpose: whether canonical BTN called at least once preflop.
+// Source/Provenance: persisted `callbits1`; T with handedness guard.
 ##f$cc_pf_call_btn##
 When f$cc_deal_size < 3 Return false Force
 When Others Return (((callbits1 >> dealerchair) BitAnd 1) = 1) Force
 
+// Purpose: whether SB called/limped at least once preflop.
+// Source/Provenance: persisted `callbits1`; T.
 ##f$cc_pf_call_sb##
 When smallblindchair < 0 Return false Force
 When Others Return (((callbits1 >> smallblindchair) BitAnd 1) = 1) Force
 
+// Purpose: whether BB called at least once preflop.
+// Source/Provenance: persisted `callbits1`; T.
 ##f$cc_pf_call_bb##
 When bigblindchair < 0 Return false Force
 When Others Return (((callbits1 >> bigblindchair) BitAnd 1) = 1) Force
 
+// Purpose: whether Hero raised at least once preflop, independent of final action.
+// Source/Provenance: persisted `raisbits1` at `userchair`; T.
 ##f$cc_pf_hero_ever_raised##
 When userchair < 0 Return false Force
 When Others Return (((raisbits1 >> userchair) BitAnd 1) = 1) Force
 
+// Purpose: whether Hero called/limped at least once preflop.
+// Source/Provenance: persisted `callbits1` at `userchair`; T. Aggregate, not chronology.
 ##f$cc_pf_hero_ever_called##
 When userchair < 0 Return false Force
 When Others Return (((callbits1 >> userchair) BitAnd 1) = 1) Force
 
+// Purpose: count distinct seats that raised preflop, not number of raise actions.
+// Source/Provenance: `BitCount(raisbits1)`; T and explicitly non-chronological.
 ##f$cc_pf_unique_raiser_count##
 When IsPreflop Return 0 Force
 When Others Return BitCount(raisbits1) Force
 
+// Purpose: identify the sole raiser's canonical position in a one-raise pot.
+// Source/Provenance: A dispatcher over T raiser bits; exact because unique raiser=1.
 ##f$cc_pf_single_raiser_pos_id##
 When f$cc_pf_raise_count != 1 Return 0 Force
 When f$cc_pf_unique_raiser_count != 1 Return 0 Force
@@ -426,6 +544,9 @@ When Others Return 0 Force
 // 00C/00F.08 — Pot family and conservative subtype proofs
 // -----------------------------------------------------------------------------
 
+// Purpose: classify broad preflop pot family solely by total raise count.
+// Source/Provenance: T raise count + A/P normalized pot-family IDs.
+// Safety: this does not prove detailed chronology inside reraised pots.
 ##f$cc_pot_family_id##
 When f$cc_pf_raise_count = 0 Return 1 Force
 When f$cc_pf_raise_count = 1 Return 2 Force
@@ -434,10 +555,10 @@ When f$cc_pf_raise_count = 3 Return 4 Force
 When f$cc_pf_raise_count >= 4 Return 5 Force
 When Others Return 0 Force
 
+// Purpose: prove true-HU SB/Button limp -> BB raise one-raise topology.
+// Source: DeepCrusher distinguishes HU limped/raised initiative from ordinary SRP.
+// Provenance: A exact true-HU adaptation over T call/raiser evidence; not ISO.
 ##f$cc_pf_hu_limp_raise_proven##
-// True HU special case: SB/Button limps, BB raises. This is NOT an isolation
-// raise; there is no third player to isolate. Keep it as its own post-flop
-// range topology.
 When !f$cc_true_hu Return false Force
 When f$cc_pf_raise_count != 1 Return false Force
 When f$cc_pf_unique_raiser_count != 1 Return false Force
@@ -445,9 +566,11 @@ When f$cc_pf_single_raiser_pos_id != 6 Return false Force
 When f$cc_pf_call_sb Return true Force
 When Others Return false Force
 
+// Purpose: conservatively prove a non-HU isolation raise from a pre-raise limper.
+// Source: DeepCrusher has separate GotRaised/Isolated routing.
+// Provenance: A/P six-max chronology inference from position order + aggregate call bits.
+// Safety: only one-raise first-orbit cases; true HU explicitly excluded.
 ##f$cc_pf_iso_proven##
-// One raise only. An earlier call proves a voluntary limper before the raise.
-// True HU is explicitly excluded and uses f$cc_pf_hu_limp_raise_proven.
 When f$cc_true_hu Return false Force
 When f$cc_pf_raise_count != 1 Return false Force
 When f$cc_pf_unique_raiser_count != 1 Return false Force
@@ -459,11 +582,14 @@ When f$cc_pf_single_raiser_pos_id = 5 && (f$cc_pf_call_utg || f$cc_pf_call_hj ||
 When f$cc_pf_single_raiser_pos_id = 6 && (f$cc_pf_call_utg || f$cc_pf_call_hj || f$cc_pf_call_co || f$cc_pf_call_btn || f$cc_pf_call_sb) Return true Force
 When Others Return false Force
 
+// Purpose: one-raise pot that is neither proven ISO nor true-HU limp-raised.
+// Source/Provenance: P/A negative-definition router for ordinary SRP family.
 ##f$cc_pf_one_raise_ordinary_srp##
 f$cc_pf_raise_count = 1 && !f$cc_pf_iso_proven && !f$cc_pf_hu_limp_raise_proven
 
+// Purpose: in a two-raise pot with Hero among exactly two raisers, identify other raiser.
+// Source/Provenance: A dispatcher over T raiser bits; prerequisite for 3BP reconstruction.
 ##f$cc_pf_other_raiser_pos_id##
-// Defined only for a two-raise pot where Hero is one of exactly two unique raisers.
 When f$cc_pf_raise_count != 2 Return 0 Force
 When f$cc_pf_unique_raiser_count != 2 Return 0 Force
 When !f$cc_pf_hero_ever_raised Return 0 Force
@@ -475,15 +601,18 @@ When f$cc_pf_raise_sb && userchair != smallblindchair Return 5 Force
 When f$cc_pf_raise_bb && userchair != bigblindchair Return 6 Force
 When Others Return 0 Force
 
+// Purpose: identify original opener in supported two-raise history involving Hero.
+// Source/Provenance: A/P reconstruction from other raiser + Hero last preflop action.
+// Safety: aggregate raisbits alone cannot order actions; unsupported cases return 0.
 ##f$cc_pf_3bet_first_raiser_pos_id##
-// Proven only when Hero is one of the two raisers and Hero's LAST preflop action
-// tells us whether Hero was final aggressor or opener who called.
 When f$cc_pf_raise_count != 2 Return 0 Force
 When f$cc_pf_other_raiser_pos_id <= 0 Return 0 Force
 When (BotsLastPreflopAction = Raise || BotsLastPreflopAction = RaiseMax) Return f$cc_pf_other_raiser_pos_id Force
 When BotsLastPreflopAction = Call && f$cc_pf_hero_ever_raised Return f$cc_hero_pos_id Force
 When Others Return 0 Force
 
+// Purpose: identify final 3bettor in supported two-raise history involving Hero.
+// Source/Provenance: A/P reconstruction from Hero last action and other raiser.
 ##f$cc_pf_3bet_final_raiser_pos_id##
 When f$cc_pf_raise_count != 2 Return 0 Force
 When f$cc_pf_other_raiser_pos_id <= 0 Return 0 Force
@@ -491,14 +620,18 @@ When (BotsLastPreflopAction = Raise || BotsLastPreflopAction = RaiseMax) Return 
 When BotsLastPreflopAction = Call && f$cc_pf_hero_ever_raised Return f$cc_pf_other_raiser_pos_id Force
 When Others Return 0 Force
 
+// Purpose: prove normal first-orbit opener -> later-position 3bet ordering.
+// Source/Provenance: P chronology guard over A reconstructed positions.
+// Safety: reversed order may be limp-reraise/backraise and remains unknown.
 ##f$cc_pf_3bet_order_supported##
-// Normal first-orbit open -> later-position 3bet uses increasing canonical IDs.
-// Reversed order may be a limp-reraise or wrapped action and is kept unknown.
 When f$cc_pf_3bet_first_raiser_pos_id <= 0 Return false Force
 When f$cc_pf_3bet_final_raiser_pos_id <= 0 Return false Force
 When f$cc_pf_3bet_first_raiser_pos_id < f$cc_pf_3bet_final_raiser_pos_id Return true Force
 When Others Return false Force
 
+// Purpose: detect a call by a seat strictly between opener and final 3bettor.
+// Source/Provenance: P/A squeeze proof from canonical position order + T call bits.
+// Safety: only called after standard 3bet ordering is proven.
 ##f$cc_pf_call_between_3bet_raisers##
 When !f$cc_pf_3bet_order_supported Return false Force
 When f$cc_pf_3bet_first_raiser_pos_id = 1 && f$cc_pf_3bet_final_raiser_pos_id = 3 && f$cc_pf_call_hj Return true Force
@@ -513,16 +646,22 @@ When f$cc_pf_3bet_first_raiser_pos_id = 3 && f$cc_pf_3bet_final_raiser_pos_id = 
 When f$cc_pf_3bet_first_raiser_pos_id = 4 && f$cc_pf_3bet_final_raiser_pos_id = 6 && f$cc_pf_call_sb Return true Force
 When Others Return false Force
 
+// Purpose: prove a squeeze: non-HU standard 3bet with at least one intervening caller.
+// Source: DeepCrusher distinguishes isolated/reraised histories but not full 6max squeeze range.
+// Provenance: A concept + P exact six-max subtype proof.
 ##f$cc_pf_squeeze_proven##
-// Impossible in a true HU deal by construction.
 !f$cc_true_hu &&
 f$cc_pf_raise_count = 2 &&
 f$cc_pf_3bet_order_supported &&
 f$cc_pf_call_between_3bet_raisers
 
+// Purpose: prove standard two-raise pot with no intervening cold caller before 3bet.
+// Source/Provenance: P/A complement of squeeze inside supported 3bet chronology.
 ##f$cc_pf_3bet_plain_proven##
 f$cc_pf_raise_count = 2 && f$cc_pf_3bet_order_supported && !f$cc_pf_call_between_3bet_raisers
 
+// Purpose: mark two-raise histories whose chronology is not safely reconstructed.
+// Source/Provenance: P fail-closed evidence-limit state.
 ##f$cc_pf_3bet_subtype_unknown##
 f$cc_pf_raise_count = 2 && !f$cc_pf_3bet_order_supported
 
@@ -530,46 +669,63 @@ f$cc_pf_raise_count = 2 && !f$cc_pf_3bet_order_supported
 // 00C.09 — Hero preflop role
 // -----------------------------------------------------------------------------
 
+// Purpose: classify Hero's broad preflop role from total raises, Hero history and final action.
+// Source: audited DeepCrusher initiative/history concept generalized to six-max pot families.
+// Provenance: A/P role taxonomy; aggregate bits do not replace later subtype modules.
 ##f$cc_pf_role_id##
 When f$cc_pf_raise_count = 0 && BotsLastPreflopAction = Call Return 8 Force
 When f$cc_pf_raise_count = 0 && BotsLastPreflopAction = Check Return 9 Force
-
 When f$cc_pf_raise_count = 1 && (BotsLastPreflopAction = Raise || BotsLastPreflopAction = RaiseMax) Return 1 Force
 When f$cc_pf_raise_count = 1 && BotsLastPreflopAction = Call && !f$cc_pf_hero_ever_raised Return 2 Force
-
 When f$cc_pf_raise_count = 2 && (BotsLastPreflopAction = Raise || BotsLastPreflopAction = RaiseMax) && f$cc_pf_hero_ever_raised Return 3 Force
 When f$cc_pf_raise_count = 2 && BotsLastPreflopAction = Call && f$cc_pf_hero_ever_raised Return 4 Force
 When f$cc_pf_raise_count = 2 && BotsLastPreflopAction = Call && !f$cc_pf_hero_ever_raised Return 5 Force
-
 When f$cc_pf_raise_count = 3 && (BotsLastPreflopAction = Raise || BotsLastPreflopAction = RaiseMax) && f$cc_pf_hero_ever_raised Return 6 Force
 When f$cc_pf_raise_count = 3 && BotsLastPreflopAction = Call Return 7 Force
-
 When Others Return 0 Force
 
+// Purpose: Hero is final aggressor in a one-raise pot.
+// Source/Provenance: A alias over role ID 1.
 ##f$cc_pf_role_pfa##
 f$cc_pf_role_id = 1
 
+// Purpose: Hero called a one-raise pot without having raised.
+// Source/Provenance: A alias over role ID 2.
 ##f$cc_pf_role_srp_caller##
 f$cc_pf_role_id = 2
 
+// Purpose: Hero is final aggressor in a two-raise pot (3bettor role).
+// Source/Provenance: A alias over role ID 3; exact plain/squeeze subtype is separate.
 ##f$cc_pf_role_3bettor##
 f$cc_pf_role_id = 3
 
+// Purpose: Hero raised first and later called the 3bet.
+// Source/Provenance: A/P alias over role ID 4; exact chronology validated separately.
 ##f$cc_pf_role_open_call_3bet##
 f$cc_pf_role_id = 4
 
+// Purpose: Hero called a 3bet without ever raising preflop.
+// Source/Provenance: P/A cold-call role alias over role ID 5.
 ##f$cc_pf_role_cold_call_3bet##
 f$cc_pf_role_id = 5
 
+// Purpose: Hero is final aggressor in a three-raise pot (broad 4bettor role).
+// Source/Provenance: A/P alias over role ID 6; clean chronology is reconstructed in 4BP module.
 ##f$cc_pf_role_4bettor##
 f$cc_pf_role_id = 6
 
+// Purpose: Hero's final action was call in a three-raise pot.
+// Source/Provenance: P broad role ID 7; exact opener/3bettor/coldcaller provenance not implied.
 ##f$cc_pf_role_call_4bet##
 f$cc_pf_role_id = 7
 
+// Purpose: Hero voluntarily called/limped in an unraised pot.
+// Source/Provenance: A alias over role ID 8.
 ##f$cc_pf_role_unraised_caller##
 f$cc_pf_role_id = 8
 
+// Purpose: Hero checked option in an unraised pot, normally BB.
+// Source/Provenance: A alias over role ID 9.
 ##f$cc_pf_role_bb_check##
 f$cc_pf_role_id = 9
 
@@ -577,14 +733,18 @@ f$cc_pf_role_id = 9
 // 00C/00F.10 — Mechanical consistency checks
 // -----------------------------------------------------------------------------
 
+// Purpose: reject impossible relationships between total raises and raiser bitmask.
+// Source/Provenance: T persisted history + P consistency invariant.
+// Safety: 2+ raises may involve repeat raisers, so equality is intentionally not required.
 ##f$cc_pf_history_consistent##
 When f$cc_pf_raise_count = 0 && f$cc_pf_unique_raiser_count != 0 Return false Force
 When f$cc_pf_raise_count = 1 && f$cc_pf_unique_raiser_count != 1 Return false Force
-// In 2+ raise pots the same player may raise more than once, so unique raisers
-// need not equal raise count. Reject only impossible zero-raiser history here.
 When f$cc_pf_raise_count >= 2 && f$cc_pf_unique_raiser_count <= 0 Return false Force
 When Others Return true Force
 
+// Purpose: verify broad Hero role belongs to the reported pot-family raise count.
+// Source/Provenance: P engineering invariant over role taxonomy.
+// Safety: 4+ raise pots are not yet fully role-decomposed and pass only broad consistency.
 ##f$cc_role_consistent##
 When f$cc_pf_role_id <= 0 Return false Force
 When f$cc_pf_raise_count = 0 && (f$cc_pf_role_id = 8 || f$cc_pf_role_id = 9) Return true Force
@@ -594,10 +754,15 @@ When f$cc_pf_raise_count = 3 && (f$cc_pf_role_id = 6 || f$cc_pf_role_id = 7) Ret
 When f$cc_pf_raise_count >= 4 Return true Force
 When Others Return false Force
 
+// Purpose: verify canonical opponent live mask contains exactly all live opponents.
+// Source/Provenance: T `BitCount` + P mask consistency invariant.
 ##f$cc_live_mask_consistent##
 When BitCount(f$cc_opp_live_mask) != nopponentsplaying Return false Force
 When Others Return true Force
 
+// Purpose: master mechanical gate required before any CashCrusher strategy context fires.
+// Source/Provenance: P safety composition over all T/A context invariants above.
+// Safety: this validates mechanics/history consistency, not strategic coverage.
 ##f$cc_context_valid##
 When IsPreflop Return false Force
 When !f$cc_supported_deal Return false Force
