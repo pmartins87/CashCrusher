@@ -1,0 +1,201 @@
+// ============================================================================
+// CashCrusher_Postflop_Primitives.txt
+// Portable post-flop hand/draw primitives
+// ============================================================================
+// Purpose:
+//   transplant context-independent DeepCrusher hand classification while
+//   removing game-label, opponent-profile and shallow-stack assumptions.
+//
+// Provenance:
+//   T = mechanical hand/pair/kicker definitions inherited from mature source.
+//   A = cleaned naming / Hold'em-specific real-draw filtering.
+//   No betting policy lives here.
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// P.01 — Made-hand ladders
+// -----------------------------------------------------------------------------
+
+##f$cc_hand_pair_or_better##
+HavePair || HaveTwoPair || HaveSet || HaveTrips || HaveStraight || HaveFlush || HaveFullHouse || HaveQuads || HaveStraightFlush
+
+##f$cc_hand_overpair_or_better##
+HaveOverPair || HaveTwoPair || HaveSet || HaveTrips || HaveStraight || HaveFlush || HaveFullHouse || HaveQuads || HaveStraightFlush
+
+##f$cc_hand_two_pair_or_better##
+HaveTwoPair || HaveSet || HaveTrips || HaveStraight || HaveFlush || HaveFullHouse || HaveQuads || HaveStraightFlush
+
+##f$cc_hand_trips_or_better##
+HaveTrips || HaveSet || HaveStraight || HaveFlush || HaveFullHouse || HaveQuads || HaveStraightFlush
+
+##f$cc_have_over_nonboard_paired_pocket_pair##
+(betround >= flop) && ispair && (rankhiplayer > HighestUnpairedBoardCard)
+
+##f$cc_hand_top_pair_or_better##
+HaveTopNonBoardPairedPair || f$cc_have_over_nonboard_paired_pocket_pair || f$cc_hand_overpair_or_better
+
+##f$cc_hand_just_top_pair##
+f$cc_hand_top_pair_or_better && !f$cc_hand_overpair_or_better
+
+##f$cc_hand_no_made##
+!HavePair && !f$cc_hand_overpair_or_better
+
+// -----------------------------------------------------------------------------
+// P.02 — Pair tier reconstruction
+// These preserve the DeepCrusher correction for paired boards, where the
+// nominal OpenPPL "second/third top pair" label can shift because a board rank
+// is duplicated.
+// -----------------------------------------------------------------------------
+
+##f$cc_have_second_top_nonboard_paired_pair##
+When HaveSecondTopPair Return true Force
+When RankOfTopPairOnBoard > ThirdBestBoardCard && HaveThirdTopPair Return true Force
+When Others Return false Force
+
+##f$cc_have_third_top_nonboard_paired_pair##
+When HaveThirdTopPair Return true Force
+When RankOfTopPairOnBoard > FourthBestBoardCard && HaveFourthTopPair Return true Force
+When Others Return false Force
+
+##f$cc_have_fourth_top_nonboard_paired_pair##
+When HaveFourthTopPair Return true Force
+When RankOfTopPairOnBoard > FifthBestBoardCard && HaveFifthTopPair Return true Force
+When Others Return false Force
+
+##f$cc_have_fifth_top_nonboard_paired_pair##
+HaveFifthTopPair
+
+##f$cc_hand_second_pair_or_pocket##
+(f$cc_have_second_top_nonboard_paired_pair && !f$cc_hand_top_pair_or_better) || (ispair && IndividualOvercardsOnBoard = 1)
+
+##f$cc_hand_third_pair_or_pocket##
+(f$cc_have_third_top_nonboard_paired_pair && !f$cc_have_second_top_nonboard_paired_pair && !f$cc_hand_top_pair_or_better) || (ispair && IndividualOvercardsOnBoard = 2)
+
+##f$cc_hand_fourth_pair_or_pocket##
+(f$cc_have_fourth_top_nonboard_paired_pair && !f$cc_have_third_top_nonboard_paired_pair && !f$cc_have_second_top_nonboard_paired_pair && !f$cc_hand_top_pair_or_better) || (ispair && IndividualOvercardsOnBoard = 3)
+
+##f$cc_hand_fifth_pair_or_pocket##
+(f$cc_have_fifth_top_nonboard_paired_pair && !f$cc_have_fourth_top_nonboard_paired_pair && !f$cc_have_third_top_nonboard_paired_pair && !f$cc_have_second_top_nonboard_paired_pair && !f$cc_hand_top_pair_or_better) || (ispair && IndividualOvercardsOnBoard = 4)
+
+##f$cc_hand_middle_or_bottom_pair##
+f$cc_hand_second_pair_or_pocket || f$cc_hand_third_pair_or_pocket || f$cc_hand_fourth_pair_or_pocket || f$cc_hand_fifth_pair_or_pocket || HaveUnderPair
+
+// -----------------------------------------------------------------------------
+// P.03 — Kicker reconstruction
+// -----------------------------------------------------------------------------
+
+##f$cc_made_hand_fifth_card_rank##
+(pokerval >> 0) & 0x0F
+
+##f$cc_pair_rank##
+When !HavePair Return 0 Force
+When HaveTopPair Return TopPairRank Force
+When HaveSecondTopPair Return SecondTopPairRank Force
+When HaveThirdTopPair Return ThirdTopPairRank Force
+When HaveFourthTopPair Return FourthTopPairRank Force
+When HaveFifthTopPair Return FifthTopPairRank Force
+When Others Return 0 Force
+
+##f$cc_best_hole_rank##
+RankOfFirstHoleCard > RankOfSecondHoleCard ? RankOfFirstHoleCard : RankOfSecondHoleCard
+
+##f$cc_second_hole_rank##
+RankOfFirstHoleCard < RankOfSecondHoleCard ? RankOfFirstHoleCard : RankOfSecondHoleCard
+
+##f$cc_best_nonpaired_hole_rank##
+When f$cc_best_hole_rank = f$cc_pair_rank Return f$cc_second_hole_rank Force
+When Others Return f$cc_best_hole_rank Force
+
+##f$cc_my_kicker##
+When isfourofakind || istwopair || isthreeofakind || isonepair
+    When f$cc_best_nonpaired_hole_rank >= f$cc_made_hand_fifth_card_rank Return f$cc_best_nonpaired_hole_rank Force
+    When Others Return f$cc_made_hand_fifth_card_rank Force
+When Others Return 0 Force
+
+##f$cc_number_better_kickers##
+When f$cc_my_kicker <= 0 Return 99 Force
+When Others Return ((ace - f$cc_my_kicker) - BitCount(rankbitspoker >> (f$cc_my_kicker + 1))) Force
+
+##f$cc_hand_tpgk_or_better_legacy##
+// Legacy DeepCrusher threshold kept as a DESCRIPTOR only. Six-max policy may
+// choose a different kicker boundary for a specific range matchup.
+((HaveTopNonBoardPairedPair || f$cc_have_over_nonboard_paired_pocket_pair) && f$cc_number_better_kickers <= 3) || f$cc_hand_overpair_or_better
+
+##f$cc_hand_tpwk##
+HaveTopNonBoardPairedPair && f$cc_number_better_kickers > 3 && !f$cc_hand_overpair_or_better
+
+// -----------------------------------------------------------------------------
+// P.04 — Real frontdoor draws
+// Use Hold'em-specific evaluators and exclude a draw that exists only on board
+// where the source provides that distinction.
+// -----------------------------------------------------------------------------
+
+##f$cc_real_fd##
+!IsRiver && !HaveFlush && HoldEm_HaveFlushDraw
+
+##f$cc_real_nut_fd##
+f$cc_real_fd && HaveNutFlushDraw
+
+##f$cc_real_oesd##
+!IsRiver && !HaveStraight && HoldEm_HaveOpenEndedStraightDraw && !OpenEndedStraightDrawOnBoard
+
+##f$cc_real_gutshot##
+When IsRiver Return false Force
+When HaveStraight Return false Force
+When HaveInsideStraightDraw && (nstraightfillcommon - nstraightfill = 2) Return true Force
+When HaveNutStraightDraw Return true Force
+When Others Return false Force
+
+##f$cc_real_straight_draw##
+f$cc_real_oesd || f$cc_real_gutshot
+
+##f$cc_real_frontdoor_draw##
+f$cc_real_fd || f$cc_real_straight_draw
+
+##f$cc_real_combo_draw##
+f$cc_real_fd && f$cc_real_straight_draw
+
+// -----------------------------------------------------------------------------
+// P.05 — Backdoors / overcard descriptors
+// These are ingredients for combo selection, not automatic betting triggers.
+// -----------------------------------------------------------------------------
+
+##f$cc_backdoor_fd##
+IsFlop && HaveBackdoorFlushDraw
+
+##f$cc_backdoor_sd##
+IsFlop && HaveBackdoorStraightDraw
+
+##f$cc_combo_backdoors##
+f$cc_backdoor_fd && f$cc_backdoor_sd
+
+##f$cc_two_overcards##
+Overcards = 2
+
+##f$cc_one_or_more_overcards##
+Overcards >= 1
+
+##f$cc_two_meaningful_overcards##
+// Source-derived descriptor: both hole ranks are above the flop's second-highest
+// rank. Kept separate from policy because its value depends on matchup.
+IsFlop && !ispair && (rankloplayer > SecondTopFlopCard)
+
+##f$cc_air_no_frontdoor##
+f$cc_hand_no_made && !f$cc_real_frontdoor_draw
+
+// -----------------------------------------------------------------------------
+// P.06 — Useful compound descriptors, intentionally non-strategic
+// -----------------------------------------------------------------------------
+
+##f$cc_pair_plus_draw##
+f$cc_hand_pair_or_better && f$cc_real_frontdoor_draw
+
+##f$cc_draw_plus_two_overcards##
+f$cc_real_frontdoor_draw && f$cc_two_overcards
+
+##f$cc_nut_or_combo_draw##
+f$cc_real_nut_fd || f$cc_real_combo_draw
+
+// ============================================================================
+// End portable primitives.
+// ============================================================================
