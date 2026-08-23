@@ -1,0 +1,311 @@
+// ============================================================================
+// CashCrusher_Flop_ActionHistory.txt
+// Gate 01N — executed flop-action provenance for turn/river routing
+// ============================================================================
+// Purpose:
+//   Preserve the distinction between a CBet that was merely available/planned
+//   and what OpenHoldem actually executed on the flop.  Later streets consume
+//   executed history; they never infer "Hero CBet" merely because the flop CBet
+//   strategy returned true during a pre-action evaluation.
+//
+// Source findings:
+//   * DeepCrusher Retro Nothing-Here / Retro12A explicitly repaired stale flop
+//     markers that had been written before the final flop action and therefore
+//     could not distinguish actual CBet from actual check-back.
+//   * OpenHoldem updates `didchecround2`, `didcallround2`, `didraisround2`,
+//     `didbetsizeround2` and `didalliround2` only after an autoplayer action.
+//   * OpenHoldem treats successful betpot/percentage-pot execution as a
+//     `k_autoplayer_function_betsize` history action, so `didbetsizeround2`
+//     is the canonical history signal for current CashCrusher 33/50/75/pot CBet.
+//   * `lastraised2` preserves the final flop aggressor once the street is closed.
+//   * OpenPPL `user_*` variables are boolean and are cleared on hand reset.
+//
+// Provenance:
+//   T = OpenHoldem action-history and user-variable semantics.
+//   A = DeepCrusher final-action provenance repair principle.
+//   P = CashCrusher diagnostics separating intended size from executed action.
+//
+// Important runtime contract:
+//   The eventual `f$flop` CBet entrypoint must use
+//   `f$cc_flop_cbet_action_with_history` rather than raw `f$cc_flop_cbet_router`.
+//   Positive CBet execution must return `f$cc_flop_cbet_execution_betsize`, whose
+//   implementation records planned size/all-in-equivalence metadata.
+//
+// OpenPPL safety:
+//   flat complete WHENs only.  No indentation carries logical scope.
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// FH.01 — PRE-ACTION CBet opportunity capture
+// -----------------------------------------------------------------------------
+
+// Purpose: canonical action predicate for the eventual flop runtime CBet node.
+// Source: DeepCrusher final-action repair showed that only the OPPORTUNITY may be
+// safely stored before clicking; actual action is confirmed next street.
+// Provenance: A/T wrapper around the reviewed CBet router.
+// Safety: the marker means "CBet opportunity evaluated", never "CBet executed".
+##f$cc_flop_cbet_action_with_history##
+When !f$cc_flop_cbet_opportunity Return false Force
+When f$cc_flop_cbet_opportunity Set user_cc_flop_cbet_opportunity_seen
+When f$cc_flop_cbet_router Set user_cc_flop_cbet_plan_bet_seen
+When f$cc_flop_cbet_router Return true Force
+When Others Return false Force
+
+// -----------------------------------------------------------------------------
+// FH.02 — CLOSED-STREET OpenHoldem action-history primitives
+// -----------------------------------------------------------------------------
+
+// Purpose: flop has ended, so round-2 history can be treated as final.
+// Source/Provenance: T OpenHoldem betround numbering: preflop=1, flop=2,
+// turn=3, river=4.
+##f$cc_hist_flop_closed##
+IsTurn || IsRiver
+
+// Purpose: Hero executed at least one flop check.
+// Source/Provenance: T `didchecround2` after autoplayer action.
+##f$cc_hist_flop_hero_checked##
+f$cc_hist_flop_closed && didchecround2 > 0
+
+// Purpose: Hero executed at least one flop call.
+// Source/Provenance: T `didcallround2`.
+##f$cc_hist_flop_hero_called##
+f$cc_hist_flop_closed && didcallround2 > 0
+
+// Purpose: Hero executed at least one generic Raise action on flop.
+// Source/Provenance: T `didraisround2`; current CBet sizing normally uses
+// `didbetsizeround2`, so a raise here usually represents later re-aggression.
+##f$cc_hist_flop_hero_raised##
+f$cc_hist_flop_closed && didraisround2 > 0
+
+// Purpose: Hero executed at least one numeric/percentage-pot betsize on flop.
+// Source: OpenHoldem registers successful betpot and OpenPPL percent-pot actions
+// as `k_autoplayer_function_betsize`.
+// Provenance: T; this is the normal executed-action signal for CashCrusher CBet.
+##f$cc_hist_flop_hero_betsized##
+f$cc_hist_flop_closed && didbetsizeround2 > 0
+
+// Purpose: Hero executed an explicit all-in action on flop.
+// Source/Provenance: T `didalliround2`.
+##f$cc_hist_flop_hero_allin##
+f$cc_hist_flop_closed && didalliround2 > 0
+
+// Purpose: count Hero's recorded aggressive flop actions.
+// Source/Provenance: T arithmetic over OpenHoldem action counters.
+// Safety: count >1 is meaningful evidence of re-aggression, not a CBet frequency.
+##f$cc_hist_flop_hero_aggression_count##
+When !f$cc_hist_flop_closed Return 0 Force
+When Others Return (didraisround2 + didbetsizeround2 + didalliround2) Force
+
+// Purpose: Hero is the final recorded flop aggressor.
+// Source: OpenHoldem `lastraised2` stable previous-round raiser history.
+// Provenance: T.
+// Safety: only meaningful together with a proven Hero aggressive flop action.
+##f$cc_hist_flop_final_aggressor_is_hero##
+f$cc_hist_flop_closed && f$cc_hist_flop_hero_aggression_count > 0 && lastraised2 = userchair
+
+// -----------------------------------------------------------------------------
+// FH.03 — PLANNED CBet size metadata
+// -----------------------------------------------------------------------------
+
+// Purpose: count mutually exclusive planned size markers written by the CBet
+// execution adapter before the action is returned to OpenHoldem.
+// Source/Provenance: P diagnostic over T per-hand user variables.
+##f$cc_hist_flop_cbet_plan_size_marker_count##
+(user_cc_flop_cbet_plan_size_33 * 1) +
+(user_cc_flop_cbet_plan_size_50 * 1) +
+(user_cc_flop_cbet_plan_size_75 * 1) +
+(user_cc_flop_cbet_plan_size_100 * 1)
+
+// Purpose: recover planned CBet strategic size ID after the flop is closed.
+// Source/Provenance: A mapping of current CashCrusher size IDs.
+// Safety: contradictory/missing size markers -> 0.
+##f$cc_hist_flop_cbet_plan_size_id##
+When !f$cc_hist_flop_closed Return 0 Force
+When !user_cc_flop_cbet_plan_size_recorded Return 0 Force
+When f$cc_hist_flop_cbet_plan_size_marker_count != 1 Return 0 Force
+When user_cc_flop_cbet_plan_size_33 Return 1 Force
+When user_cc_flop_cbet_plan_size_50 Return 2 Force
+When user_cc_flop_cbet_plan_size_75 Return 3 Force
+When user_cc_flop_cbet_plan_size_100 Return 4 Force
+When Others Return 0 Force
+
+// Purpose: planned execution was already mechanically all-in-equivalent before
+// OpenHoldem received the final action.
+// Source/Provenance: T/A marker from Gate 01K.3B, not a strategic jam label.
+##f$cc_hist_flop_cbet_plan_expected_allin##
+f$cc_hist_flop_closed && user_cc_flop_cbet_plan_expected_allin
+
+// Purpose: validate stored plan metadata.
+// Source/Provenance: P engineering invariant over per-hand boolean markers.
+##f$cc_hist_flop_cbet_plan_markers_consistent##
+When !f$cc_hist_flop_closed Return false Force
+When user_cc_flop_cbet_plan_size_recorded && !user_cc_flop_cbet_plan_bet_seen Return false Force
+When user_cc_flop_cbet_plan_size_recorded && f$cc_hist_flop_cbet_plan_size_marker_count != 1 Return false Force
+When user_cc_flop_cbet_plan_expected_allin && !user_cc_flop_cbet_plan_size_recorded Return false Force
+When user_cc_flop_cbet_plan_bet_seen && !user_cc_flop_cbet_plan_size_recorded Return false Force
+When Others Return true Force
+
+// -----------------------------------------------------------------------------
+// FH.04 — EXECUTED initial flop line after a CBet opportunity
+// -----------------------------------------------------------------------------
+
+// Purpose: prove that Hero actually executed the initial CBet.
+// Source: CBet opportunity marker is pre-action; actual action comes only from
+// closed OpenHoldem round-2 history.
+// Provenance: A/T final-action repair.
+// Safety: any prior flop CHECK wins classification; check-raise is not a CBet.
+##f$cc_hist_flop_initial_cbet_executed##
+f$cc_hist_flop_closed &&
+user_cc_flop_cbet_opportunity_seen &&
+didchecround2 = 0 &&
+(didbetsizeround2 > 0 || didalliround2 > 0)
+
+// Purpose: initial CBet was executed as a normal betsize before any later action.
+// Source/Provenance: T history semantics.
+// Note: this can coexist with a later all-in re-raise; it describes INITIAL action.
+##f$cc_hist_flop_initial_cbet_was_sized##
+f$cc_hist_flop_initial_cbet_executed && didbetsizeround2 > 0
+
+// Purpose: initial CBet itself was a direct all-in rather than a sized bet later
+// followed by an all-in re-raise.
+// Source/Provenance: T action counters + P exact initial-action disambiguation.
+##f$cc_hist_flop_initial_cbet_was_direct_allin##
+f$cc_hist_flop_initial_cbet_executed &&
+didalliround2 > 0 &&
+didbetsizeround2 = 0 &&
+didraisround2 = 0
+
+// Purpose: Hero skipped the available CBet and the flop subsequently checked
+// through to the next street.
+// Source: DeepCrusher Retro12A repair requires actual checked-back/check-through
+// history rather than stale pre-action hand-class markers.
+// Provenance: A/T.
+// Safety: if Hero later called or aggressed after checking, this is false.
+##f$cc_hist_flop_skipped_cbet_checkthrough##
+f$cc_hist_flop_closed &&
+user_cc_flop_cbet_opportunity_seen &&
+didchecround2 > 0 &&
+didcallround2 = 0 &&
+didraisround2 = 0 &&
+didbetsizeround2 = 0 &&
+didalliround2 = 0
+
+// Purpose: Hero checked the initial CBet opportunity and later called flop action.
+// Source/Provenance: T closed-street action counters.
+// Safety: belongs to defense/history, never Delayed CBet.
+##f$cc_hist_flop_checked_then_called##
+f$cc_hist_flop_closed &&
+user_cc_flop_cbet_opportunity_seen &&
+didchecround2 > 0 &&
+didcallround2 > 0 &&
+didraisround2 = 0 &&
+didbetsizeround2 = 0 &&
+didalliround2 = 0
+
+// Purpose: Hero checked the initial CBet opportunity and later raised/re-raised.
+// Source/Provenance: T action history; legacy check-raise families remain defense-owned.
+##f$cc_hist_flop_checked_then_aggressed##
+f$cc_hist_flop_closed &&
+user_cc_flop_cbet_opportunity_seen &&
+didchecround2 > 0 &&
+(didraisround2 > 0 || didbetsizeround2 > 0 || didalliround2 > 0)
+
+// Purpose: Hero CBet, then faced later flop aggression and continued by calling.
+// Source/Provenance: T action/last-raiser history + A cross-street ownership.
+// Safety: not a normal Turn CBet parent because Villain ended flop as aggressor.
+##f$cc_hist_flop_cbet_then_called_raise##
+f$cc_hist_flop_initial_cbet_executed &&
+didcallround2 > 0 &&
+lastraised2 != userchair
+
+// Purpose: Hero CBet and later re-aggressed on the same flop street.
+// Source/Provenance: T action counters + P exact route separator.
+// Safety: this is a raised-flop continuation family, not ordinary Turn CBet.
+##f$cc_hist_flop_cbet_then_reaggressed##
+f$cc_hist_flop_initial_cbet_executed &&
+(didbetsizeround2 >= 2 || didraisround2 > 0 || (didbetsizeround2 > 0 && didalliround2 > 0))
+
+// -----------------------------------------------------------------------------
+// FH.05 — CANONICAL turn-routing parents
+// -----------------------------------------------------------------------------
+
+// Purpose: standard Turn CBet parent: Hero made one sized initial flop CBet,
+// never checked/called/re-raised afterwards, and remains final flop aggressor.
+// Source: DeepCrusher initiative idea retained, but actual action is now proven
+// from OpenHoldem history instead of inferred from a pre-action strategy state.
+// Provenance: A/T.
+// Safety: direct flop all-in and raised-flop lines are excluded.
+##f$cc_hist_turn_standard_cbet_parent##
+f$cc_hist_flop_closed &&
+user_cc_flop_cbet_opportunity_seen &&
+didchecround2 = 0 &&
+didcallround2 = 0 &&
+didraisround2 = 0 &&
+didbetsizeround2 = 1 &&
+didalliround2 = 0 &&
+f$cc_hist_flop_final_aggressor_is_hero
+
+// Purpose: Delayed CBet parent: preflop aggressor had a legal CBet opportunity,
+// actually checked, and the entire flop checked through.
+// Source/Provenance: A DeepCrusher Retro12A final-check principle + T history.
+// Safety: a flop check-call/check-raise never enters this family.
+##f$cc_hist_turn_delayed_cbet_parent##
+f$cc_hist_flop_skipped_cbet_checkthrough
+
+// Purpose: prove standard Turn CBet and Delayed CBet parents cannot both be true.
+// Source/Provenance: P safety invariant.
+##f$cc_hist_turn_cbet_parent_exclusive##
+!(f$cc_hist_turn_standard_cbet_parent && f$cc_hist_turn_delayed_cbet_parent)
+
+// -----------------------------------------------------------------------------
+// FH.06 — PLAN vs EXECUTION drift diagnostics
+// -----------------------------------------------------------------------------
+
+// Purpose: strategy planned a CBet but OpenHoldem history records an initial check.
+// Source/Provenance: P runtime drift diagnostic over T history.
+##f$cc_hist_flop_planned_bet_but_checked##
+f$cc_hist_flop_closed &&
+user_cc_flop_cbet_plan_bet_seen &&
+didchecround2 > 0
+
+// Purpose: an actual CBet exists but the canonical plan capture did not run.
+// Source/Provenance: P runtime-composition diagnostic.
+// Safety: catches accidental use of raw router instead of history-aware entrypoint.
+##f$cc_hist_flop_cbet_executed_without_plan_capture##
+f$cc_hist_flop_initial_cbet_executed && !user_cc_flop_cbet_plan_bet_seen
+
+// Purpose: planned normal size became a direct all-in at execution, usually
+// evidence that some global callback or external sizing owner promoted it.
+// Source: OpenHoldem records callback-adjusted all-in through `didalliround2`.
+// Provenance: T/P diagnostic; this is not automatically an error in poker terms.
+##f$cc_hist_flop_unexpected_allin_promotion##
+f$cc_hist_flop_closed &&
+user_cc_flop_cbet_plan_size_recorded &&
+!user_cc_flop_cbet_plan_expected_allin &&
+f$cc_hist_flop_initial_cbet_was_direct_allin
+
+// Purpose: Gate01K.3B expected direct BetMax but execution history records a
+// normal initial betsize instead.
+// Source/Provenance: T/P runtime mismatch diagnostic.
+##f$cc_hist_flop_expected_allin_not_executed##
+f$cc_hist_flop_closed &&
+user_cc_flop_cbet_plan_expected_allin &&
+f$cc_hist_flop_initial_cbet_was_sized &&
+didalliround2 = 0
+
+// Purpose: compact runtime history integrity flag for logging/regression.
+// Source/Provenance: P engineering union of exact mismatches.
+// Safety: later strategy should still reason from ACTUAL executed history; this
+// flag diagnoses integration drift rather than rewriting the action that occurred.
+##f$cc_hist_flop_cbet_runtime_mismatch##
+When !f$cc_hist_flop_closed Return false Force
+When !f$cc_hist_flop_cbet_plan_markers_consistent Return true Force
+When f$cc_hist_flop_planned_bet_but_checked Return true Force
+When f$cc_hist_flop_cbet_executed_without_plan_capture Return true Force
+When f$cc_hist_flop_unexpected_allin_promotion Return true Force
+When f$cc_hist_flop_expected_allin_not_executed Return true Force
+When Others Return false Force
+
+// ============================================================================
+// End Gate 01N executed flop-action provenance layer.
+// ============================================================================
