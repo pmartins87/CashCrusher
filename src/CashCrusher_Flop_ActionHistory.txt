@@ -4,7 +4,7 @@
 // ============================================================================
 // Purpose:
 //   Preserve the distinction between a CBet that was merely available/planned
-//   and what OpenHoldem actually executed on the flop.  Later streets consume
+//   and what OpenHoldem actually executed on the flop. Later streets consume
 //   executed history; they never infer "Hero CBet" merely because the flop CBet
 //   strategy returned true during a pre-action evaluation.
 //
@@ -12,6 +12,10 @@
 //   * DeepCrusher Retro Nothing-Here / Retro12A explicitly repaired stale flop
 //     markers that had been written before the final flop action and therefore
 //     could not distinguish actual CBet from actual check-back.
+//   * Several audited Turn-CBet source families also need FLOP provenance, e.g.
+//     carried TP/OP versus TP first made on the turn, or a flop backdoor-straight
+//     proxy. Those facts cannot be reconstructed reliably from current turn hand
+//     strength, so CashCrusher snapshots them while the flop still exists.
 //   * OpenHoldem updates `didchecround2`, `didcallround2`, `didraisround2`,
 //     `didbetsizeround2` and `didalliround2` only after an autoplayer action.
 //   * OpenHoldem treats successful betpot/percentage-pot execution as a
@@ -22,8 +26,8 @@
 //
 // Provenance:
 //   T = OpenHoldem action-history and user-variable semantics.
-//   A = DeepCrusher final-action provenance repair principle.
-//   P = CashCrusher diagnostics separating intended size from executed action.
+//   A = DeepCrusher final-action provenance repair + carried-flop-class principle.
+//   P = CashCrusher diagnostics separating intended plan from executed action.
 //
 // Important runtime contract:
 //   The eventual `f$flop` CBet entrypoint must use
@@ -32,24 +36,91 @@
 //   implementation records planned size/all-in-equivalence metadata.
 //
 // OpenPPL safety:
-//   flat complete WHENs only.  No indentation carries logical scope.
+//   flat complete WHENs only. No indentation carries logical scope.
 // ============================================================================
 
 // -----------------------------------------------------------------------------
-// FH.01 — PRE-ACTION CBet opportunity capture
+// FH.01 — PRE-ACTION CBet opportunity + flop strategic snapshot
 // -----------------------------------------------------------------------------
 
 // Purpose: canonical action predicate for the eventual flop runtime CBet node.
-// Source: DeepCrusher final-action repair showed that only the OPPORTUNITY may be
-// safely stored before clicking; actual action is confirmed next street.
-// Provenance: A/T wrapper around the reviewed CBet router.
-// Safety: the marker means "CBet opportunity evaluated", never "CBet executed".
+// Source: DeepCrusher final-action repair showed that only opportunity/plan facts
+// may be stored before clicking; actual action is confirmed next street.
+// Provenance: A/T wrapper around reviewed CBet router + A/P flop snapshot.
+// Safety: all `user_cc_flop_cbet_*` markers written here describe the PLAN state,
+// never proof that the casino/autoplayer executed a bet. Later consumers must also
+// require `f$cc_hist_flop_initial_cbet_executed` where actual CBet history matters.
 ##f$cc_flop_cbet_action_with_history##
 When !f$cc_flop_cbet_opportunity Return false Force
 When f$cc_flop_cbet_opportunity Set user_cc_flop_cbet_opportunity_seen
 When f$cc_flop_cbet_router Set user_cc_flop_cbet_plan_bet_seen
+
+// Primary FLOP made-hand class. These five markers are mutually exclusive.
+When f$cc_flop_cbet_router && f$cc_cbet_flop_very_strong_value Set user_cc_flop_cbet_had_2pplus
+When f$cc_flop_cbet_router && f$cc_cbet_flop_overpair Set user_cc_flop_cbet_had_overpair
+When f$cc_flop_cbet_router && f$cc_hand_just_top_pair Set user_cc_flop_cbet_had_top_pair
+When f$cc_flop_cbet_router && f$cc_cbet_flop_showdown_pair Set user_cc_flop_cbet_had_below_top_pair
+When f$cc_flop_cbet_router && f$cc_hand_no_made Set user_cc_flop_cbet_had_no_made
+
+// FLOP top-pair kicker snapshots needed by direct 3wBTN-v-BB / BTN-v-SB source.
+When f$cc_flop_cbet_router && f$cc_hand_just_top_pair && f$cc_my_kicker < ten Set user_cc_flop_cbet_tp_kicker_below_t
+When f$cc_flop_cbet_router && f$cc_hand_just_top_pair && f$cc_my_kicker >= ten Set user_cc_flop_cbet_tp_kicker_tplus
+When f$cc_flop_cbet_router && f$cc_hand_just_top_pair && f$cc_my_kicker < jack Set user_cc_flop_cbet_tp_kicker_below_j
+When f$cc_flop_cbet_router && f$cc_hand_just_top_pair && f$cc_my_kicker >= jack Set user_cc_flop_cbet_tp_kicker_jplus
+
+// FLOP equity features. They may coexist with a made hand (pair+draw) by design.
+When f$cc_flop_cbet_router && f$cc_cbet_flop_premium_draw Set user_cc_flop_cbet_had_premium_draw
+When f$cc_flop_cbet_router && f$cc_cbet_flop_good_draw Set user_cc_flop_cbet_had_good_draw
+When f$cc_flop_cbet_router && f$cc_cbet_flop_weak_draw Set user_cc_flop_cbet_had_weak_draw
+When f$cc_flop_cbet_router && f$cc_backdoor_sd Set user_cc_flop_cbet_had_bdsd
+When f$cc_flop_cbet_router && f$cc_backdoor_fd Set user_cc_flop_cbet_had_bdfd
+When f$cc_flop_cbet_router && f$cc_cbet_flop_quality_air Set user_cc_flop_cbet_had_quality_air
+When f$cc_flop_cbet_router && f$cc_cbet_flop_pure_air Set user_cc_flop_cbet_had_pure_air
+
+// FLOP strategic texture parent snapshot. Exact flop cards remain available too,
+// but these IsFlop-only P parents would otherwise disappear on turn evaluation.
+When f$cc_flop_cbet_router && f$cc_flop_pressure_id = 1 Set user_cc_flop_cbet_texture_static_high
+When f$cc_flop_cbet_router && f$cc_flop_pressure_id = 2 Set user_cc_flop_cbet_texture_dynamic_high
+When f$cc_flop_cbet_router && f$cc_flop_pressure_id = 3 Set user_cc_flop_cbet_texture_static_lowmid
+When f$cc_flop_cbet_router && f$cc_flop_pressure_id = 4 Set user_cc_flop_cbet_texture_dynamic_lowmid
+When f$cc_flop_cbet_router && f$cc_flop_pressure_id = 5 Set user_cc_flop_cbet_texture_paired
+When f$cc_flop_cbet_router && f$cc_flop_2bw Set user_cc_flop_cbet_flop_2bw
+When f$cc_flop_cbet_router && f$cc_flop_straight_possible Set user_cc_flop_cbet_flop_straight_possible
+When f$cc_flop_cbet_router && f$cc_flop_twotone Set user_cc_flop_cbet_flop_twotone
+When f$cc_flop_cbet_router && f$cc_flop_monotone Set user_cc_flop_cbet_flop_monotone
+
 When f$cc_flop_cbet_router Return true Force
 When Others Return false Force
+
+// Purpose: count mutually-exclusive primary made/no-made flop class snapshots.
+// Source/Provenance: P integrity check over A/T hand-class snapshot.
+##f$cc_hist_flop_cbet_primary_class_marker_count##
+(user_cc_flop_cbet_had_2pplus * 1) +
+(user_cc_flop_cbet_had_overpair * 1) +
+(user_cc_flop_cbet_had_top_pair * 1) +
+(user_cc_flop_cbet_had_below_top_pair * 1) +
+(user_cc_flop_cbet_had_no_made * 1)
+
+// Purpose: count mutually-exclusive stored flop pressure-parent markers.
+// Source/Provenance: P integrity check over Gate01 flop texture parents.
+##f$cc_hist_flop_cbet_texture_marker_count##
+(user_cc_flop_cbet_texture_static_high * 1) +
+(user_cc_flop_cbet_texture_dynamic_high * 1) +
+(user_cc_flop_cbet_texture_static_lowmid * 1) +
+(user_cc_flop_cbet_texture_dynamic_lowmid * 1) +
+(user_cc_flop_cbet_texture_paired * 1)
+
+// Purpose: validate the strategic FLOP snapshot once the street has closed.
+// Source/Provenance: P engineering invariant; source hand class is carried only
+// to distinguish histories, never to override current turn hand evaluation.
+##f$cc_hist_flop_cbet_snapshot_consistent##
+When !f$cc_hist_flop_closed Return false Force
+When !user_cc_flop_cbet_plan_bet_seen Return true Force
+When f$cc_hist_flop_cbet_primary_class_marker_count != 1 Return false Force
+When f$cc_hist_flop_cbet_texture_marker_count != 1 Return false Force
+When user_cc_flop_cbet_had_top_pair && ((user_cc_flop_cbet_tp_kicker_below_t * 1) + (user_cc_flop_cbet_tp_kicker_tplus * 1)) != 1 Return false Force
+When user_cc_flop_cbet_had_top_pair && ((user_cc_flop_cbet_tp_kicker_below_j * 1) + (user_cc_flop_cbet_tp_kicker_jplus * 1)) != 1 Return false Force
+When Others Return true Force
 
 // -----------------------------------------------------------------------------
 // FH.02 — CLOSED-STREET OpenHoldem action-history primitives
@@ -300,6 +371,7 @@ didalliround2 = 0
 ##f$cc_hist_flop_cbet_runtime_mismatch##
 When !f$cc_hist_flop_closed Return false Force
 When !f$cc_hist_flop_cbet_plan_markers_consistent Return true Force
+When !f$cc_hist_flop_cbet_snapshot_consistent Return true Force
 When f$cc_hist_flop_planned_bet_but_checked Return true Force
 When f$cc_hist_flop_cbet_executed_without_plan_capture Return true Force
 When f$cc_hist_flop_unexpected_allin_promotion Return true Force
