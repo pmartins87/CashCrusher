@@ -1,15 +1,9 @@
 #!/usr/bin/env python3
 """Deterministic Gate01N tests for flop final-action provenance.
 
-These tests are intentionally split into two layers:
-
-1. a truth-table model of the OpenHoldem history signals consumed by
-   CashCrusher_Flop_ActionHistory.txt; and
-2. source-contract assertions that protect the exact OpenPPL symbols and the
-   history-aware CBet entrypoint from accidental removal.
-
-This does NOT replace an OpenHoldem replay/parser fixture. It catches routing
-logic regressions before that runtime gate exists.
+These tests cover the closed-street truth table plus source-contract assertions
+for the pre-action CBet plan/hand/texture snapshot. They do not replace an
+OpenHoldem replay/parser fixture.
 """
 
 from __future__ import annotations
@@ -45,25 +39,11 @@ def direct_allin_cbet(h: H) -> bool:
 
 
 def checkthrough(h: H) -> bool:
-    return (
-        h.opportunity
-        and h.checks > 0
-        and h.calls == 0
-        and h.raises == 0
-        and h.betsizes == 0
-        and h.allins == 0
-    )
+    return h.opportunity and h.checks > 0 and h.calls == 0 and h.raises == 0 and h.betsizes == 0 and h.allins == 0
 
 
 def checked_then_called(h: H) -> bool:
-    return (
-        h.opportunity
-        and h.checks > 0
-        and h.calls > 0
-        and h.raises == 0
-        and h.betsizes == 0
-        and h.allins == 0
-    )
+    return h.opportunity and h.checks > 0 and h.calls > 0 and h.raises == 0 and h.betsizes == 0 and h.allins == 0
 
 
 def checked_then_aggressed(h: H) -> bool:
@@ -71,15 +51,7 @@ def checked_then_aggressed(h: H) -> bool:
 
 
 def standard_turn_cbet_parent(h: H) -> bool:
-    return (
-        h.opportunity
-        and h.checks == 0
-        and h.calls == 0
-        and h.raises == 0
-        and h.betsizes == 1
-        and h.allins == 0
-        and h.final_aggressor_hero
-    )
+    return h.opportunity and h.checks == 0 and h.calls == 0 and h.raises == 0 and h.betsizes == 1 and h.allins == 0 and h.final_aggressor_hero
 
 
 def delayed_cbet_parent(h: H) -> bool:
@@ -91,9 +63,7 @@ def cbet_then_called_raise(h: H) -> bool:
 
 
 def cbet_then_reaggressed(h: H) -> bool:
-    return initial_cbet(h) and (
-        h.betsizes >= 2 or h.raises > 0 or (h.betsizes > 0 and h.allins > 0)
-    )
+    return initial_cbet(h) and (h.betsizes >= 2 or h.raises > 0 or (h.betsizes > 0 and h.allins > 0))
 
 
 def unexpected_allin_promotion(h: H) -> bool:
@@ -105,123 +75,81 @@ def expected_allin_not_executed(h: H) -> bool:
 
 
 def run_truth_table() -> None:
-    # Standard CBet -> Villain call -> Turn CBet parent.
     h = H(planned_bet=True, size_recorded=True, betsizes=1, final_aggressor_hero=True)
-    assert initial_cbet(h)
-    assert standard_turn_cbet_parent(h)
-    assert not delayed_cbet_parent(h)
+    assert initial_cbet(h) and standard_turn_cbet_parent(h) and not delayed_cbet_parent(h)
 
-    # Hero had CBet opportunity, checked, everybody checked -> Delayed CBet.
     h = H(checks=1)
-    assert checkthrough(h)
-    assert delayed_cbet_parent(h)
-    assert not standard_turn_cbet_parent(h)
+    assert checkthrough(h) and delayed_cbet_parent(h) and not standard_turn_cbet_parent(h)
 
-    # Check-call is defense history, never delayed CBet.
     h = H(checks=1, calls=1, final_aggressor_hero=False)
-    assert checked_then_called(h)
-    assert not delayed_cbet_parent(h)
-    assert not standard_turn_cbet_parent(h)
+    assert checked_then_called(h) and not delayed_cbet_parent(h) and not standard_turn_cbet_parent(h)
 
-    # Check-raise is a raised-flop line, never an initial CBet.
     h = H(checks=1, betsizes=1, final_aggressor_hero=True)
-    assert checked_then_aggressed(h)
-    assert not initial_cbet(h)
-    assert not delayed_cbet_parent(h)
+    assert checked_then_aggressed(h) and not initial_cbet(h) and not delayed_cbet_parent(h)
 
-    # CBet -> Villain raise -> Hero call. Villain owns turn initiative.
     h = H(planned_bet=True, size_recorded=True, betsizes=1, calls=1, final_aggressor_hero=False)
-    assert initial_cbet(h)
-    assert cbet_then_called_raise(h)
-    assert not standard_turn_cbet_parent(h)
+    assert initial_cbet(h) and cbet_then_called_raise(h) and not standard_turn_cbet_parent(h)
 
-    # CBet -> Villain raise -> Hero re-raises. Raised-flop continuation family.
     h = H(planned_bet=True, size_recorded=True, betsizes=2, final_aggressor_hero=True)
-    assert initial_cbet(h)
-    assert cbet_then_reaggressed(h)
-    assert not standard_turn_cbet_parent(h)
+    assert initial_cbet(h) and cbet_then_reaggressed(h) and not standard_turn_cbet_parent(h)
 
-    # Natural/mechanical BetMax was intended and executed.
-    h = H(
-        planned_bet=True,
-        size_recorded=True,
-        expected_allin=True,
-        allins=1,
-        final_aggressor_hero=True,
-    )
-    assert direct_allin_cbet(h)
-    assert not unexpected_allin_promotion(h)
-    assert not standard_turn_cbet_parent(h)  # Hero has no ordinary turn barrel.
+    h = H(planned_bet=True, size_recorded=True, expected_allin=True, allins=1, final_aggressor_hero=True)
+    assert direct_allin_cbet(h) and not unexpected_allin_promotion(h) and not standard_turn_cbet_parent(h)
 
-    # Planned 50/75/etc was silently promoted by some global callback.
-    h = H(
-        planned_bet=True,
-        size_recorded=True,
-        expected_allin=False,
-        allins=1,
-        final_aggressor_hero=True,
-    )
-    assert direct_allin_cbet(h)
-    assert unexpected_allin_promotion(h)
+    h = H(planned_bet=True, size_recorded=True, expected_allin=False, allins=1, final_aggressor_hero=True)
+    assert direct_allin_cbet(h) and unexpected_allin_promotion(h)
 
-    # Gate01K expected BetMax but execution remained a normal betsize.
-    h = H(
-        planned_bet=True,
-        size_recorded=True,
-        expected_allin=True,
-        betsizes=1,
-        final_aggressor_hero=True,
-    )
-    assert initial_cbet(h)
-    assert expected_allin_not_executed(h)
+    h = H(planned_bet=True, size_recorded=True, expected_allin=True, betsizes=1, final_aggressor_hero=True)
+    assert initial_cbet(h) and expected_allin_not_executed(h)
 
-    # A stale strategy plan must not redefine what actually happened.
     h = H(planned_bet=True, size_recorded=True, checks=1)
-    assert delayed_cbet_parent(h)
-    assert not initial_cbet(h)
+    assert delayed_cbet_parent(h) and not initial_cbet(h)
 
-    # No CBet opportunity means no CBet/delayed-CBet parent even if Hero made a bet
-    # from another node (float/donk/probe etc.).
     h = H(opportunity=False, betsizes=1, final_aggressor_hero=True)
-    assert not initial_cbet(h)
-    assert not standard_turn_cbet_parent(h)
-    assert not delayed_cbet_parent(h)
+    assert not initial_cbet(h) and not standard_turn_cbet_parent(h) and not delayed_cbet_parent(h)
 
 
 def run_source_contract() -> None:
     history = HISTORY_FILE.read_text(encoding="utf-8")
     execution = EXEC_FILE.read_text(encoding="utf-8")
 
-    required_history_symbols = (
-        "didchecround2",
-        "didcallround2",
-        "didraisround2",
-        "didbetsizeround2",
-        "didalliround2",
-        "lastraised2",
-        "userchair",
-    )
-    for symbol in required_history_symbols:
+    for symbol in ("didchecround2", "didcallround2", "didraisround2", "didbetsizeround2", "didalliround2", "lastraised2", "userchair"):
         assert symbol in history, f"missing OpenHoldem history symbol: {symbol}"
 
-    required_functions = (
+    for name in (
         "##f$cc_flop_cbet_action_with_history##",
+        "##f$cc_hist_flop_cbet_primary_class_marker_count##",
+        "##f$cc_hist_flop_cbet_snapshot_consistent##",
         "##f$cc_hist_flop_initial_cbet_executed##",
         "##f$cc_hist_flop_skipped_cbet_checkthrough##",
         "##f$cc_hist_turn_standard_cbet_parent##",
         "##f$cc_hist_turn_delayed_cbet_parent##",
         "##f$cc_hist_flop_unexpected_allin_promotion##",
-    )
-    for name in required_functions:
+    ):
         assert name in history, f"missing Gate01N function: {name}"
 
-    # The history-aware action wrapper must store opportunity but never claim that
-    # an action executed before OpenHoldem's history confirms it.
     assert "Set user_cc_flop_cbet_opportunity_seen" in history
     assert "Set user_cc_flop_cbet_executed" not in history
 
-    # The size execution owner records the plan and expected mechanical BetMax.
-    required_plan_markers = (
+    # Current Turn source needs these FLOP facts after IsFlop becomes false.
+    required_snapshot_markers = (
+        "Set user_cc_flop_cbet_had_2pplus",
+        "Set user_cc_flop_cbet_had_overpair",
+        "Set user_cc_flop_cbet_had_top_pair",
+        "Set user_cc_flop_cbet_had_below_top_pair",
+        "Set user_cc_flop_cbet_had_no_made",
+        "Set user_cc_flop_cbet_tp_kicker_below_t",
+        "Set user_cc_flop_cbet_tp_kicker_jplus",
+        "Set user_cc_flop_cbet_had_bdsd",
+        "Set user_cc_flop_cbet_had_bdfd",
+        "Set user_cc_flop_cbet_texture_static_high",
+        "Set user_cc_flop_cbet_texture_dynamic_lowmid",
+        "Set user_cc_flop_cbet_texture_paired",
+    )
+    for marker in required_snapshot_markers:
+        assert marker in history, f"missing flop snapshot marker: {marker}"
+
+    for marker in (
         "Set user_cc_flop_cbet_plan_bet_seen",
         "Set user_cc_flop_cbet_plan_size_recorded",
         "Set user_cc_flop_cbet_plan_size_33",
@@ -229,12 +157,9 @@ def run_source_contract() -> None:
         "Set user_cc_flop_cbet_plan_size_75",
         "Set user_cc_flop_cbet_plan_size_100",
         "Set user_cc_flop_cbet_plan_expected_allin",
-    )
-    for marker in required_plan_markers:
+    ):
         assert marker in execution, f"missing CBet plan marker: {marker}"
 
-    # Direct CBet execution remains the only place where local mechanical BetMax
-    # is selected. No historical 50/55/60 threshold is smuggled into Gate01N.
     assert "When f$cc_cbet_natural_allin_equivalent Return BetMax Force" in execution
     assert "Return BetMax" not in history
 
@@ -242,4 +167,4 @@ def run_source_contract() -> None:
 if __name__ == "__main__":
     run_truth_table()
     run_source_contract()
-    print("PASS: Gate01N flop action-history truth table and source contract")
+    print("PASS: Gate01N flop action-history + strategic snapshot contract")
