@@ -15,7 +15,7 @@ Working branch: `gate-00-context-engine`
 - Source-derived and professional-theory rules remain explicitly distinguishable.
 - Unknown/unsupported strategic context fails closed.
 - OpenPPL strategy code uses flat complete `WHEN` rules; indentation is never logical scope.
-- Every `f$cc_*` function must now have nearby Source/Provenance documentation; CI treats absence as a hard error.
+- Every `f$cc_*` function now requires nearby Source/Provenance documentation in CI.
 
 ## Stack-depth migration rule
 
@@ -30,7 +30,22 @@ For every stack-sensitive inherited rule:
 
 This applies to TP+/draw commitment lines, `f$Raise_Committed`, `f$hand_StackOffDraws`, `f$allin_on_betsize_balance_ratio`, `BetMax` and related mechanisms.
 
-`CashCrusher_SPR_Commitment.txt` computes geometry only. It does not impose a global commitment policy.
+## Multiway stack correction
+
+The initial Gate00 generic multiway SPR used the shortest live opponent as a coarse descriptor. That remains useful for detecting short-player/sidepot geometry, but it is no longer allowed to stand in for the whole multiway effective depth.
+
+CashCrusher now preserves both:
+
+- **shallowest effective** = `min(Hero, shortest live opponent)`;
+- **deepest effective** = `min(Hero, biggest live opponent)`.
+
+The second is also the mechanical analogue of DeepCrusher `f$EffectiveStack_BKP`, because the source helper uses the biggest active opponent.
+
+Multiway CBet one-pair low-SPR exceptions now use the deepest-effective SPR. Therefore a short third player cannot make a still-deep decision against another live opponent inherit short-stack aggression.
+
+`CashCrusher_Multiway_StackContext.txt` now requires coherent shallow/deep bounds before a reviewed multiway context is considered valid.
+
+The linter rejects generic `f$cc_spr_round_start`/bucket helpers inside `CashCrusher_Flop_CBet_Multiway_*` strategy modules.
 
 ## Gate 00 — mechanical context foundation
 
@@ -42,10 +57,9 @@ Complete in design/code; OpenHoldem parser/runtime validation still pending:
 - pot family / Hero role / absolute and relative position;
 - exact flop-entry count and live-opponent masks;
 - ISO, 3BP and squeeze survivor provenance;
-- raw effective-stack and SPR geometry;
+- HU effective stack plus multiway shallowest/deepest effective envelopes;
+- actor-specific SPR versus `raischair` for future defense nodes;
 - true-multiway composition framework.
-
-The core `CashCrusher_Context.txt` retrofit is complete: each custom context function now has local Purpose/Source/Provenance comments. The linter was promoted accordingly from warning to global hard error.
 
 ## Gate 01 — Flop CBet implementation
 
@@ -66,7 +80,7 @@ Implemented HU and multiway.
 
 HU preserves original limper vs post-raise coldcaller and IP/OOP.
 
-True three-way preserves two limpers, limper+coldcaller and two post-raise coldcallers. 4/5/6-way preserves all-limper / mixed / all-postraise-coldcaller composition and exact field size.
+True three-way preserves two original limpers / mixed / two post-raise coldcallers. 4/5/6-way preserves all-limper / mixed / all-postraise-coldcaller composition and exact field size.
 
 ### 3BP and squeeze
 
@@ -76,69 +90,75 @@ HU distinguishes original opener, pre-3bet coldcaller surviving squeeze, and pos
 
 ### Ordinary multiway SRP
 
-Implemented true three-way FIRST/MIDDLE/LAST with exact caller composition and exact 4/5/6-way parents.
-
-The true-threeway BTN-last source ancestry is A/P because the audited DeepCrusher branch is itself a human-reviewed CrusherTBP gap fill rather than a dedicated Starting Strategy tree. FIRST/MIDDLE and four-way+ are P-heavy and explicitly labelled.
+Implemented true-threeway FIRST/MIDDLE/LAST and exact 4/5/6-way parents. All existing multiway SRP/ISO/3BP/squeeze CBet SPR exceptions have now been reaudited against deepest-effective geometry.
 
 ### 4BP
 
-Implemented clean HU families after conservative chronology reconstruction:
+Clean HU 4BP families are implemented for true-HU opener4 and reduced-HU opener4/cold4 versus supported original raiser survivors. Multiway 4BP, reversed/backraise/limp-reraise chronology and 5bet+ remain fail-closed.
 
-- true-HU standard opener4: SB/Button 4bettor IP vs BB 3bettor-call;
-- reduced-HU opener4 vs 3bettor-call, IP/OOP;
-- reduced-HU cold4 vs original opener-call, IP/OOP;
-- reduced-HU cold4 vs original 3bettor-call, IP/OOP.
+## CBet sizing and all-in execution
 
-Still fail-closed:
+Strategic size IDs remain:
 
-- non-raiser HU survivor in 4BP because exact call stage is not proven;
-- reversed/limp-reraise/backraise chronology;
-- multiway 4BP action policy;
-- 5bet+.
+- `1` ~33%;
+- `2` 50%;
+- `3` 75%;
+- `4` pot;
+- `0` check/uncovered.
 
-Normal 100bb 4BP can reach low SPR and may legitimately support aggressive one-pair/draw lines. The exact later commitment decision remains a separate node review.
+Native adapter:
 
-## CBet size runtime and stack geometry
+- `BetThirdPot`;
+- `BetHalfPot`;
+- `BetThreeFourthPot`;
+- `BetPot`.
 
-Strategic IDs remain `1` ~33%, `2` 50%, `3` 75%, `4` pot, `0` check/uncovered.
+DeepCrusher contains distinct stack-sensitive mechanisms rather than one universal threshold:
 
-`CashCrusher_Flop_CBet_Betsize.txt` maps them to native OpenPPL `BetThirdPot`, `BetHalfPot`, `BetThreeFourthPot` and `BetPot` actions.
+- explicit flop/turn/river sizing promotion near 60% of Hero `StackSize`;
+- `f$allin_on_betsize_balance_ratio`, including a special ~50% effective-stack trigger plus a Hero-balance fallback;
+- `f$Raise_Committed`, which can promote an already-approved flop/turn call around separate ~55% geometry.
 
-A deeper source audit found that DeepCrusher had **overlapping, not identical**, stack-sensitive mechanisms:
+CashCrusher keeps these as separate audit subjects.
 
-- explicit betsize routers commonly promoted requested sizes around **60% of Hero StackSize** to `BetMax`;
-- `f$allin_on_betsize_balance_ratio` had a special **~50% effective-stack** trigger and a `.50` Hero-balance fallback through OpenHoldem's all-in adjustment;
-- `f$Raise_Committed` separately used approximately **55%** call-to-shove logic in flop/turn defense.
+### Implemented now: mechanically equivalent BetMax only
 
-These are now deliberately separated instead of being described as one generic commitment rule.
+`CashCrusher_Flop_CBet_AllinEquivalence.txt` adds a local execution adapter that can return `BetMax` only when:
 
-`CashCrusher_Flop_CBet_StackGeometry.txt` exposes requested bet/stack ratios, exact HU effective-stack ratio, projected HU SPR after a full call and historical 50/60% diagnostic flags. It returns no all-in action and does not change the global callback.
+1. the reviewed requested CBet already reaches/exceeds Hero's available stack; or
+2. the requested CBet reaches the **deepest/all-live effective relationship**, so every live opponent is already covered by the requested amount.
 
-## Static quality state
+A bet that reaches only a short multiway opponent while a deeper opponent remains is recorded as sidepot divergence and is **not** promoted.
 
-Latest completed global-provenance lint passed. Hard checks include:
+This is deliberately narrower than the historical 50/55/60% rules. Strategic near-all-in promotion remains pending.
 
-- unresolved/duplicate `f$cc_*`;
-- executable legacy `f$game_*` dependencies;
-- open-ended/nested-looking `WHEN` scope;
-- missing nearby Source/Provenance comment for **any** `f$cc_*` function.
+## Deterministic quality checks
 
-Stack-sensitive DeepCrusher mechanisms remain review warnings/targets, not global prohibitions.
+GitHub Actions now runs:
+
+1. the static OpenPPL strategy linter; and
+2. `tools/test_multiway_stack_geometry.py`.
+
+The deterministic test checks equal stacks, short+deep fields, Hero-capped effective stacks, multiway raised-pot asymmetry, false shallowest-based 50%-effective triggers, sidepot divergence, all-live effective reach and the fact that a mere 60%-of-Hero-stack bet is **not mechanically equivalent** to all-in.
+
+A previous CI run after these additions passed; current-head CI must still be checked after the latest context-validation/doc commits before this checkpoint is called green.
 
 ## Release blockers
 
 No table-ready claim before:
 
 1. Gate00 OpenHoldem parser/runtime context validation;
-2. deterministic CBet policy fixtures/replays;
+2. deterministic OpenPPL/OpenHoldem CBet policy fixtures/replays;
 3. whole-bot `f$BestBetsize` ownership integration;
-4. context-aware stack-sensitive size/commitment policy audit;
+4. strategic near-all-in promotion audit and later global callback composition;
 5. skipped-CBet X/C/X/R and turn follow-through coverage;
 6. final regression and unknown-state fail-closed audit.
 
 ## Current development direction
 
-Immediate work:
+Next work:
 
-- use the new stack-geometry descriptors to audit size-to-all-in conversion **per CBet family**, beginning with clean HU SRP/3BP/4BP rather than imposing one threshold globally;
-- then build deterministic Gate00/Gate01 runtime fixtures and wire the native CBet size adapter into the whole-bot sizing owner.
+- verify current-head CI after dual-bound context validation;
+- finish Gate 01K.3C by auditing strategic CBet near-all-in promotion separately for SRP/ISO/3BP/4BP and HU/multiway rather than applying one source threshold everywhere;
+- keep `f$Raise_Committed` outside CBet sizing and revisit it with the defensive nodes it actually owns;
+- then move into deterministic OpenHoldem/OpenPPL runtime fixtures before calling Flop CBet release-certified.
