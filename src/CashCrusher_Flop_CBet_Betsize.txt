@@ -1,0 +1,60 @@
+// ============================================================================
+// CashCrusher_Flop_CBet_Betsize.txt
+// Gate 01K — native OpenPPL adapter for reviewed flop-CBet size IDs
+// ============================================================================
+// Purpose:
+//   Translate the strategic size ID selected by CashCrusher_Flop_CBet.txt into
+//   a native OpenPPL pot-fraction action. This file does NOT decide CBet strategy
+//   and does NOT decide stack commitment.
+//
+// Runtime facts verified from OpenHoldem source:
+//   * BetThirdPot / BetHalfPot / BetThreeFourthPot / BetPot are native actions;
+//   * betpot/f$betsize can later be affected by f$allin_on_betsize_balance_ratio;
+//   * that global callback is intentionally outside this local adapter audit.
+//
+// Source/Provenance:
+//   T = native OpenPPL action semantics from project OpenHoldem source.
+//   A = normalized CashCrusher 33/50/75/100 sizing palette.
+//
+// Safety:
+//   unknown/check context -> 0. No automatic BetMax is added or prohibited here.
+// ============================================================================
+
+// Purpose: confirm that a positive CBet has a valid native size family.
+// Source/Provenance: P/A engineering guard over reviewed action/size routers.
+##f$cc_flop_cbet_native_size_ready##
+When !f$cc_flop_cbet_router Return false Force
+When !f$cc_flop_cbet_size_consistent Return false Force
+When f$cc_flop_cbet_size_id >= 1 && f$cc_flop_cbet_size_id <= 4 Return true Force
+When Others Return false Force
+
+// Purpose: translate strategic size ID into native OpenPPL betpot action.
+// Context: only after a positive reviewed flop CBet action.
+// Source: OpenHoldem/OpenPPL native BetThird/Half/ThreeFourth/Pot actions.
+// Provenance: T runtime adapter + A normalized CashCrusher size palette.
+// Safety/Limits: does not own any stack-sensitive all-in promotion; the final
+// formula's global callback or an exact node-owned future decision may still
+// affect execution after its own audit.
+##f$cc_flop_cbet_native_betsize##
+When !f$cc_flop_cbet_native_size_ready Return 0 Force
+When f$cc_flop_cbet_size_id = 1 Return BetThirdPot Force
+When f$cc_flop_cbet_size_id = 2 Return BetHalfPot Force
+When f$cc_flop_cbet_size_id = 3 Return BetThreeFourthPot Force
+When f$cc_flop_cbet_size_id = 4 Return BetPot Force
+When Others Return 0 Force
+
+// Purpose: explicit static contract tying each current strategic ID to one and
+// only one native size action.
+// Source/Provenance: P engineering invariant over T action constants.
+##f$cc_flop_cbet_native_mapping_valid##
+When !f$cc_flop_cbet_router Return f$cc_flop_cbet_native_betsize = 0 Force
+When f$cc_flop_cbet_size_id = 1 Return f$cc_flop_cbet_native_betsize = BetThirdPot Force
+When f$cc_flop_cbet_size_id = 2 Return f$cc_flop_cbet_native_betsize = BetHalfPot Force
+When f$cc_flop_cbet_size_id = 3 Return f$cc_flop_cbet_native_betsize = BetThreeFourthPot Force
+When f$cc_flop_cbet_size_id = 4 Return f$cc_flop_cbet_native_betsize = BetPot Force
+When Others Return false Force
+
+// ============================================================================
+// End Gate 01K native size adapter.
+// Whole-bot f$BestBetsize integration remains a later runtime composition step.
+// ============================================================================
