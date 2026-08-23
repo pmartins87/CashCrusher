@@ -1,0 +1,165 @@
+// ============================================================================
+// CashCrusher_Flop_CBet_Multiway_ISO.txt
+// Gate 01E.3 — TRUE THREE-WAY isolation-raised PFA flop CBet
+// ============================================================================
+// Source boundary:
+//   DeepCrusher gives A-level HU ISO/limped initiative and multiway principles,
+//   but no clean deep-stack isolator-vs-two-opponents CBet tree.  Frequencies are
+//   therefore P-heavy and explicitly split by survivor provenance.
+//
+// Survivor parents:
+//   TWO_LIMPERS | LIMPER+COLD_CALLER | TWO_POSTRAISE_COLD_CALLERS.
+//
+// Stack-depth note:
+//   first-flop action only. Commitment helpers are reviewed later in exact nodes;
+//   they are neither copied automatically nor globally disabled.
+//
+// OpenPPL safety: flat complete WHENs; unknown survivor composition fails closed.
+// Size IDs: 1 ~33% | 2 ~50% | 3 ~75% | 0 check
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// ISO3.01 — Hero LAST
+// -----------------------------------------------------------------------------
+
+// Purpose: choose ISO CBet/check when Hero acts LAST after two checks.
+// Source/Provenance: A multiway/ISO concepts + P exact three-way cash policy.
+// Decision logic: widest pressure versus two limpers; mixed composition tighter;
+// two-coldcaller family most selective; robust value/premium draws remain active;
+// air requires best backdoors on favorable static high board and weak composition.
+##f$cc_cbet_mw_iso_true3_last_action##
+When !f$cc_mw_iso_true3_last_context Return false Force
+When !f$cc_mw_iso_true3_context_consistent Return false Force
+When f$cc_cbet_flop_very_strong_value Return true Force
+When f$cc_cbet_flop_overpair && f$cc_flop_dynamic_lowmid_parent && f$cc_mw_iso_true3_two_coldcallers && f$cc_cbet_high_spr Return false Force
+When f$cc_cbet_flop_overpair Return true Force
+When f$cc_cbet_flop_strong_top_pair && f$cc_flop_dynamic_lowmid_parent && f$cc_mw_iso_true3_two_coldcallers && f$cc_cbet_high_spr Return false Force
+When f$cc_cbet_flop_strong_top_pair Return true Force
+When f$cc_cbet_flop_medium_top_pair && f$cc_pair_plus_draw Return true Force
+When f$cc_cbet_flop_medium_top_pair && f$cc_flop_static_high_parent && f$cc_mw_iso_true3_two_limpers Return true Force
+When f$cc_cbet_flop_medium_top_pair && f$cc_flop_static_high_parent && f$cc_mw_iso_true3_limper_plus_coldcaller && f$cc_spr_round_start < 4 Return true Force
+When f$cc_cbet_flop_medium_top_pair Return false Force
+When f$cc_cbet_flop_weak_top_pair Return false Force
+When f$cc_hand_second_pair_or_pocket && f$cc_pair_plus_draw && f$cc_mw_iso_true3_two_limpers Return true Force
+When f$cc_cbet_flop_showdown_pair Return false Force
+When f$cc_cbet_flop_premium_draw Return true Force
+When f$cc_cbet_flop_good_draw && (f$cc_flop_static_high_parent || f$cc_flop_paired_parent) && !f$cc_mw_iso_true3_two_coldcallers Return true Force
+When f$cc_cbet_flop_good_draw && f$cc_flop_dynamic_high_parent && f$cc_mw_iso_true3_two_limpers Return true Force
+When f$cc_cbet_flop_good_draw && f$cc_flop_dynamic_lowmid_parent && f$cc_mw_iso_true3_two_limpers && f$cc_two_overcards Return true Force
+When f$cc_real_frontdoor_draw Return false Force
+When f$cc_cbet_flop_air_best_backdoors && f$cc_flop_static_high_parent && f$cc_mw_iso_true3_two_limpers Return true Force
+When f$cc_cbet_flop_air_best_backdoors && f$cc_flop_paired_parent && f$cc_mw_iso_true3_two_limpers && f$cc_spr_round_start < 4 Return true Force
+When Others Return false Force
+
+// Purpose: size positive LAST true3 ISO CBet.
+// Source/Provenance: A texture-sensitive source sizing + P cash ISO normalization.
+##f$cc_cbet_mw_iso_true3_last_size_id##
+When !f$cc_cbet_mw_iso_true3_last_action Return 0 Force
+When f$cc_flop_dynamic_lowmid_parent && (f$cc_cbet_flop_very_strong_value || f$cc_cbet_flop_premium_draw) Return 3 Force
+When f$cc_flop_dynamic_lowmid_parent Return 2 Force
+When f$cc_flop_dynamic_high_parent && (f$cc_cbet_flop_very_strong_value || f$cc_cbet_flop_overpair || f$cc_cbet_flop_premium_draw) Return 2 Force
+When f$cc_flop_dynamic_high_parent Return 1 Force
+When f$cc_flop_static_lowmid_parent && (f$cc_cbet_flop_very_strong_value || f$cc_cbet_flop_overpair) Return 2 Force
+When f$cc_flop_static_high_parent || f$cc_flop_paired_parent Return 1 Force
+When Others Return 2 Force
+
+// -----------------------------------------------------------------------------
+// ISO3.02 — Hero MIDDLE
+// -----------------------------------------------------------------------------
+
+// Purpose: choose ISO CBet/check from MIDDLE with one opponent behind.
+// Source/Provenance: P-heavy; A source supplies only position/multiway constraints.
+// Decision logic: strong value remains active; medium one-pair and draws check
+// more; two-coldcaller composition tightens further; no air baseline.
+##f$cc_cbet_mw_iso_true3_middle_action##
+When !f$cc_mw_iso_true3_middle_context Return false Force
+When !f$cc_mw_iso_true3_context_consistent Return false Force
+When f$cc_cbet_flop_very_strong_value Return true Force
+When f$cc_cbet_flop_overpair && f$cc_flop_dynamic_lowmid_parent Return false Force
+When f$cc_cbet_flop_overpair && (f$cc_flop_static_high_parent || f$cc_flop_static_lowmid_parent || f$cc_flop_paired_parent) Return true Force
+When f$cc_cbet_flop_overpair && f$cc_flop_dynamic_high_parent && f$cc_mw_iso_true3_two_limpers Return true Force
+When f$cc_cbet_flop_overpair Return false Force
+When f$cc_cbet_flop_strong_top_pair && f$cc_pair_plus_draw Return true Force
+When f$cc_cbet_flop_strong_top_pair && f$cc_flop_static_high_parent && !f$cc_mw_iso_true3_two_coldcallers Return true Force
+When f$cc_cbet_flop_strong_top_pair && f$cc_flop_paired_parent && f$cc_mw_iso_true3_two_limpers Return true Force
+When f$cc_cbet_flop_strong_top_pair Return false Force
+When f$cc_cbet_flop_medium_top_pair Return false Force
+When f$cc_cbet_flop_weak_top_pair Return false Force
+When f$cc_cbet_flop_showdown_pair Return false Force
+When f$cc_cbet_flop_premium_draw && (f$cc_flop_static_high_parent || f$cc_flop_paired_parent) && !f$cc_mw_iso_true3_two_coldcallers Return true Force
+When f$cc_cbet_flop_premium_draw && f$cc_flop_dynamic_high_parent && f$cc_mw_iso_true3_two_limpers Return true Force
+When f$cc_real_frontdoor_draw Return false Force
+When Others Return false Force
+
+// Purpose: size positive MIDDLE true3 ISO CBet.
+// Source/Provenance: P-heavy 33/50/75 baseline.
+##f$cc_cbet_mw_iso_true3_middle_size_id##
+When !f$cc_cbet_mw_iso_true3_middle_action Return 0 Force
+When f$cc_flop_dynamic_lowmid_parent && f$cc_cbet_flop_very_strong_value Return 3 Force
+When f$cc_flop_dynamic_high_parent && (f$cc_cbet_flop_very_strong_value || f$cc_cbet_flop_overpair || f$cc_cbet_flop_premium_draw) Return 2 Force
+When f$cc_flop_dynamic_high_parent Return 1 Force
+When f$cc_flop_static_lowmid_parent && (f$cc_cbet_flop_very_strong_value || f$cc_cbet_flop_overpair) Return 2 Force
+When f$cc_flop_static_high_parent || f$cc_flop_paired_parent Return 1 Force
+When Others Return 2 Force
+
+// -----------------------------------------------------------------------------
+// ISO3.03 — Hero FIRST
+// -----------------------------------------------------------------------------
+
+// Purpose: choose ISO CBet/check when Hero acts FIRST into two opponents.
+// Source/Provenance: P-heavy conservative multiway ISO baseline.
+// Decision logic: value dense; overpair/strong TP mainly static structures;
+// premium draws only favorable parents/compositions; no pure-air CBet baseline.
+##f$cc_cbet_mw_iso_true3_first_action##
+When !f$cc_mw_iso_true3_first_context Return false Force
+When !f$cc_mw_iso_true3_context_consistent Return false Force
+When f$cc_cbet_flop_very_strong_value Return true Force
+When f$cc_cbet_flop_overpair && (f$cc_flop_static_high_parent || f$cc_flop_static_lowmid_parent || f$cc_flop_paired_parent) Return true Force
+When f$cc_cbet_flop_overpair Return false Force
+When f$cc_cbet_flop_strong_top_pair && f$cc_pair_plus_draw Return true Force
+When f$cc_cbet_flop_strong_top_pair && f$cc_flop_static_high_parent && f$cc_mw_iso_true3_two_limpers Return true Force
+When f$cc_cbet_flop_strong_top_pair && f$cc_flop_paired_parent && f$cc_mw_iso_true3_two_limpers && f$cc_spr_round_start < 4 Return true Force
+When f$cc_cbet_flop_strong_top_pair Return false Force
+When f$cc_cbet_flop_medium_top_pair Return false Force
+When f$cc_cbet_flop_weak_top_pair Return false Force
+When f$cc_cbet_flop_showdown_pair Return false Force
+When f$cc_cbet_flop_premium_draw && f$cc_flop_paired_parent && !f$cc_mw_iso_true3_two_coldcallers Return true Force
+When f$cc_cbet_flop_premium_draw && f$cc_flop_static_high_parent && f$cc_mw_iso_true3_two_limpers Return true Force
+When f$cc_real_frontdoor_draw Return false Force
+When Others Return false Force
+
+// Purpose: size positive FIRST true3 ISO CBet.
+// Source/Provenance: P-heavy static-small / robust-dynamic-larger baseline.
+##f$cc_cbet_mw_iso_true3_first_size_id##
+When !f$cc_cbet_mw_iso_true3_first_action Return 0 Force
+When f$cc_flop_dynamic_lowmid_parent && f$cc_cbet_flop_very_strong_value Return 3 Force
+When f$cc_flop_dynamic_high_parent && (f$cc_cbet_flop_very_strong_value || f$cc_cbet_flop_overpair) Return 2 Force
+When f$cc_flop_static_lowmid_parent && f$cc_cbet_flop_very_strong_value Return 2 Force
+When f$cc_flop_static_high_parent || f$cc_flop_static_lowmid_parent || f$cc_flop_paired_parent Return 1 Force
+When Others Return 2 Force
+
+// -----------------------------------------------------------------------------
+// ISO3.04 — Dispatchers
+// -----------------------------------------------------------------------------
+
+// Purpose: route true3 ISO CBet action by exact relative position.
+// Source/Provenance: A/P topology dispatcher; unresolved composition checks.
+##f$cc_cbet_mw_iso_true3_action##
+When !f$cc_mw_iso_true3_context_consistent Return false Force
+When f$cc_mw_iso_true3_first_context Return f$cc_cbet_mw_iso_true3_first_action Force
+When f$cc_mw_iso_true3_middle_context Return f$cc_cbet_mw_iso_true3_middle_action Force
+When f$cc_mw_iso_true3_last_context Return f$cc_cbet_mw_iso_true3_last_action Force
+When Others Return false Force
+
+// Purpose: paired true3 ISO size router.
+// Source/Provenance: A/P safety dispatcher; uncovered/check -> 0.
+##f$cc_cbet_mw_iso_true3_size_id##
+When !f$cc_mw_iso_true3_context_consistent Return 0 Force
+When f$cc_mw_iso_true3_first_context Return f$cc_cbet_mw_iso_true3_first_size_id Force
+When f$cc_mw_iso_true3_middle_context Return f$cc_cbet_mw_iso_true3_middle_size_id Force
+When f$cc_mw_iso_true3_last_context Return f$cc_cbet_mw_iso_true3_last_size_id Force
+When Others Return 0 Force
+
+// ============================================================================
+// End Gate 01E.3 true-threeway ISO baseline.
+// ============================================================================
