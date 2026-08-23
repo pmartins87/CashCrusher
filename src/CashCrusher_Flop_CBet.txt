@@ -1,0 +1,189 @@
+// ============================================================================
+// CashCrusher_Flop_CBet.txt
+// Gate 01 — six-max flop CBet routing contract
+// ============================================================================
+// This file separates poker families BEFORE strategy is allowed to fire.
+// It intentionally fails closed for child strategies not yet implemented.
+//
+// CashCrusher terminology:
+//   CBet = Hero was final preflop aggressor in a raised pot and is checked to.
+//   A bet in an unraised/limped pot is NOT routed here.
+//
+// Pot family separation:
+//   ordinary SRP | ISO | ordinary 3BP | squeeze | 4BP | 5BP+
+//
+// Provenance:
+//   Routing architecture = T/A from DeepCrusher + Gate00 context engine.
+//   No final six-max betting frequency is encoded in this file yet.
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// 01.01 — Gate ownership
+// -----------------------------------------------------------------------------
+
+##f$cc_flop_cbet_opportunity##
+When !IsFlop Return false Force
+When !f$cc_context_valid Return false Force
+When AmountToCall > 0 Return false Force
+When f$cc_pf_role_id <= 0 Return false Force
+// Final preflop aggressor roles that may own a CBet.
+When f$cc_pf_role_pfa Return true Force
+When f$cc_pf_role_3bettor Return true Force
+When f$cc_pf_role_4bettor Return true Force
+When Others Return false Force
+
+##f$cc_flop_cbet_router##
+When !f$cc_flop_cbet_opportunity Return false Force
+
+// One-raise pot: ordinary SRP versus proven ISO.
+When f$cc_pot_family_id = 2 && f$cc_pf_role_pfa && f$cc_pf_iso_proven && f$cc_hu && f$cc_hu_ip Return f$cc_flop_cbet_hu_iso_pfa_ip Force
+When f$cc_pot_family_id = 2 && f$cc_pf_role_pfa && f$cc_pf_iso_proven && f$cc_hu && f$cc_hu_oop Return f$cc_flop_cbet_hu_iso_pfa_oop Force
+When f$cc_pot_family_id = 2 && f$cc_pf_role_pfa && f$cc_pf_iso_proven && f$cc_multiway Return f$cc_flop_cbet_mw_iso_pfa Force
+
+When f$cc_pot_family_id = 2 && f$cc_pf_role_pfa && !f$cc_pf_iso_proven && f$cc_hu && f$cc_hu_ip Return f$cc_flop_cbet_hu_srp_pfa_ip Force
+When f$cc_pot_family_id = 2 && f$cc_pf_role_pfa && !f$cc_pf_iso_proven && f$cc_hu && f$cc_hu_oop Return f$cc_flop_cbet_hu_srp_pfa_oop Force
+When f$cc_pot_family_id = 2 && f$cc_pf_role_pfa && !f$cc_pf_iso_proven && f$cc_multiway Return f$cc_flop_cbet_mw_srp_pfa Force
+
+// Two-raise pot: proven squeeze versus proven plain 3BP. Unknown chronology
+// never falls into the plain 3BP strategy by approximation.
+When f$cc_pot_family_id = 3 && f$cc_pf_role_3bettor && f$cc_pf_squeeze_proven && f$cc_hu && f$cc_hu_ip Return f$cc_flop_cbet_hu_squeeze_3bettor_ip Force
+When f$cc_pot_family_id = 3 && f$cc_pf_role_3bettor && f$cc_pf_squeeze_proven && f$cc_hu && f$cc_hu_oop Return f$cc_flop_cbet_hu_squeeze_3bettor_oop Force
+When f$cc_pot_family_id = 3 && f$cc_pf_role_3bettor && f$cc_pf_squeeze_proven && f$cc_multiway Return f$cc_flop_cbet_mw_squeeze_3bettor Force
+
+When f$cc_pot_family_id = 3 && f$cc_pf_role_3bettor && f$cc_pf_3bet_plain_proven && f$cc_hu && f$cc_hu_ip Return f$cc_flop_cbet_hu_3bp_3bettor_ip Force
+When f$cc_pot_family_id = 3 && f$cc_pf_role_3bettor && f$cc_pf_3bet_plain_proven && f$cc_hu && f$cc_hu_oop Return f$cc_flop_cbet_hu_3bp_3bettor_oop Force
+When f$cc_pot_family_id = 3 && f$cc_pf_role_3bettor && f$cc_pf_3bet_plain_proven && f$cc_multiway Return f$cc_flop_cbet_mw_3bp_3bettor Force
+
+// Three-raise pot: mechanical family exists, strategy is deliberately isolated.
+When f$cc_pot_family_id = 4 && f$cc_pf_role_4bettor && f$cc_hu && f$cc_hu_ip Return f$cc_flop_cbet_hu_4bp_4bettor_ip Force
+When f$cc_pot_family_id = 4 && f$cc_pf_role_4bettor && f$cc_hu && f$cc_hu_oop Return f$cc_flop_cbet_hu_4bp_4bettor_oop Force
+When f$cc_pot_family_id = 4 && f$cc_pf_role_4bettor && f$cc_multiway Return f$cc_flop_cbet_mw_4bp_4bettor Force
+
+When Others Return false Force
+
+// -----------------------------------------------------------------------------
+// 01.02 — Legacy ancestry metadata for HU ordinary SRP PFA
+// IDs are documentation/logging helpers only. They do not select a strategy by
+// themselves.
+//
+// Ancestor IDs:
+//   1 HUSB corroborating source
+//   3 3wBTNvSB
+//   4 3wBTNvBB
+//   6 3wSBvBTN positional skeleton
+//   7 3wSBvBB
+//   0 no safe parent
+// -----------------------------------------------------------------------------
+
+##f$cc_flop_cbet_hu_srp_legacy_ancestor_id##
+When f$cc_pot_family_id != 2 Return 0 Force
+When !f$cc_pf_role_pfa Return 0 Force
+When f$cc_pf_iso_proven Return 0 Force
+
+// Direct descendants.
+When f$cc_hu_matchup_id = 46 Return 4 Force // BTN vs BB -> 3wBTNvBB
+When f$cc_hu_matchup_id = 45 Return 3 Force // BTN vs SB -> 3wBTNvSB
+When f$cc_hu_matchup_id = 56 Return 7 Force // SB  vs BB -> 3wSBvBB
+
+// Earlier openers versus blinds: same positional skeleton, different ranges.
+When f$cc_hu_matchup_id = 16 Return 4 Force
+When f$cc_hu_matchup_id = 26 Return 4 Force
+When f$cc_hu_matchup_id = 36 Return 4 Force
+When f$cc_hu_matchup_id = 15 Return 3 Force
+When f$cc_hu_matchup_id = 25 Return 3 Force
+When f$cc_hu_matchup_id = 35 Return 3 Force
+
+// PFA OOP versus later-position cold caller: positional skeleton only.
+When f$cc_hu_matchup_id = 12 Return 6 Force
+When f$cc_hu_matchup_id = 13 Return 6 Force
+When f$cc_hu_matchup_id = 14 Return 6 Force
+When f$cc_hu_matchup_id = 23 Return 6 Force
+When f$cc_hu_matchup_id = 24 Return 6 Force
+When f$cc_hu_matchup_id = 34 Return 6 Force
+
+When Others Return 0 Force
+
+##f$cc_flop_cbet_hu_srp_parent_confidence_id##
+// 3 = direct high-confidence ancestry; 2 = strong structural ancestry;
+// 1 = positional skeleton only; 0 = none/invalid.
+When f$cc_hu_matchup_id = 46 Return 3 Force
+When f$cc_hu_matchup_id = 45 Return 3 Force
+When f$cc_hu_matchup_id = 56 Return 3 Force
+When f$cc_hu_matchup_id = 16 Return 2 Force
+When f$cc_hu_matchup_id = 26 Return 2 Force
+When f$cc_hu_matchup_id = 36 Return 2 Force
+When f$cc_hu_matchup_id = 15 Return 2 Force
+When f$cc_hu_matchup_id = 25 Return 2 Force
+When f$cc_hu_matchup_id = 35 Return 2 Force
+When f$cc_hu_matchup_id = 12 Return 1 Force
+When f$cc_hu_matchup_id = 13 Return 1 Force
+When f$cc_hu_matchup_id = 14 Return 1 Force
+When f$cc_hu_matchup_id = 23 Return 1 Force
+When f$cc_hu_matchup_id = 24 Return 1 Force
+When f$cc_hu_matchup_id = 34 Return 1 Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// 01.03 — Child strategy functions
+// -----------------------------------------------------------------------------
+// These stubs are deliberately explicit. A future implementation replaces the
+// body of ONE family at a time. Until then the bot checks rather than allowing a
+// different pot family to leak through.
+
+##f$cc_flop_cbet_hu_srp_pfa_ip##
+false
+
+##f$cc_flop_cbet_hu_srp_pfa_oop##
+false
+
+##f$cc_flop_cbet_hu_iso_pfa_ip##
+false
+
+##f$cc_flop_cbet_hu_iso_pfa_oop##
+false
+
+##f$cc_flop_cbet_mw_srp_pfa##
+false
+
+##f$cc_flop_cbet_mw_iso_pfa##
+false
+
+##f$cc_flop_cbet_hu_3bp_3bettor_ip##
+false
+
+##f$cc_flop_cbet_hu_3bp_3bettor_oop##
+false
+
+##f$cc_flop_cbet_mw_3bp_3bettor##
+false
+
+##f$cc_flop_cbet_hu_squeeze_3bettor_ip##
+false
+
+##f$cc_flop_cbet_hu_squeeze_3bettor_oop##
+false
+
+##f$cc_flop_cbet_mw_squeeze_3bettor##
+false
+
+##f$cc_flop_cbet_hu_4bp_4bettor_ip##
+false
+
+##f$cc_flop_cbet_hu_4bp_4bettor_oop##
+false
+
+##f$cc_flop_cbet_mw_4bp_4bettor##
+false
+
+// -----------------------------------------------------------------------------
+// 01.04 — Coverage marker
+// -----------------------------------------------------------------------------
+// Gate01 strategy coverage remains false until at least one child strategy is
+// reviewed and implemented. Do not confuse a valid context with a covered one.
+
+##f$cc_flop_cbet_strategy_covered##
+false
+
+// ============================================================================
+// End Gate 01 routing contract.
+// ============================================================================
