@@ -1,0 +1,274 @@
+// ============================================================================
+// CashCrusher_Turn_CBet_SRP_Multiway.txt
+// Gate 02E — ordinary-SRP Turn CBet while 3+ players remain
+// ============================================================================
+// Scope:
+//   Hero was ordinary-SRP PFA, actually executed a standard flop CBet and is
+//   checked to / first to act on turn while at least TWO opponents remain live.
+//
+// Source hierarchy:
+//   A/P — exact true3 BTN-v-SB+BB LAST shape uses the mature CrusherTBP
+//         `3wBTNv2p` Turn-CBet gap-fill as nearest donor.
+//   P   — other true3 FIRST/MIDDLE/LAST and every 4way+ origin/current field.
+//   A   — mature DeepCrusher multiway philosophy corroborates value-heavy
+//         fail-closed behavior where no exact source branch exists.
+//
+// Critical cash adaptations:
+//   * current hand strength overrides stale flop class;
+//   * prior multiway flop call selects continuing ranges;
+//   * 4way+ origins/current fields tighten one-pair and semibluff barrels;
+//   * deepest-effective SPR controls any field-wide low-SPR relaxation;
+//   * TP/OP bet decisions never imply stack-off permission.
+//
+// OpenPPL safety:
+//   flat complete WHENs only; no generic tail; no BetMax in this node.
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// MWT.00 — Common turn pressure descriptors
+// -----------------------------------------------------------------------------
+
+// Purpose: completion/four-card turn where medium made value becomes more fragile.
+// Source: DeepCrusher `turn_Completed` / `turn_SuperCompleted` and four-card
+// completion caution throughout later-street logic.
+// Provenance: A/P generalized multiway runout parent.
+##f$cc_turn_mw_srp_dangerous_runout##
+f$cc_turn_new_completion || f$cc_turn_four_card_straight_or_flush || f$cc_turn_super_completed
+
+// Purpose: clean turn for multiway one-pair value consideration.
+// Source/Provenance: A/P complement of explicit dangerous runout family.
+##f$cc_turn_mw_srp_clean_turn##
+!f$cc_turn_mw_srp_dangerous_runout
+
+// Purpose: favorable A/K pressure overcard without new public completion.
+// Source: source v2p permits selected OC/gutshot pressure; exact six-max A/K
+// selector is P and remains context-restricted below.
+// Provenance: A concept + P six-max selector.
+##f$cc_turn_mw_srp_high_pressure_turn##
+f$cc_turn_mw_srp_clean_turn &&
+f$cc_turn_overcard_to_flop &&
+!f$cc_turn_pairs_flop_rank &&
+(f$cc_turn_is_ace || f$cc_turn_is_king)
+
+// -----------------------------------------------------------------------------
+// MWT.01 — Exact source-adjacent true3 BTN vs SB+BB, still threeway, Hero LAST
+// -----------------------------------------------------------------------------
+
+// Purpose: second-barrel policy for the closest surviving legacy multiway source
+// shape: BTN PFA, SB+BB both reached flop and both remain on turn, Hero LAST.
+// Source: DeepCrusher explicitly retains CrusherTBP `3wBTNv2p` turn evidence:
+// TP+, selected 2nd pair/pocket pair, FD/SD, mOC/gutshot pressure.
+// Provenance: A/P because that legacy branch itself is a Starting-Strategy gap.
+// Cash adaptation: source breadth is narrowed on dangerous/deep one-pair runouts;
+// weak draws do not inherit a blanket barrel; air is restricted to quality-plan
+// A/K pressure. No action here owns a response versus a future turn raise.
+##f$cc_turn_mw_srp_btn_blinds_last_action##
+When !f$cc_turn_mw_srp_btn_both_blinds_source_shape Return false Force
+When !f$cc_turn_mw_srp_context_consistent Return false Force
+When f$cc_hand_trips_or_better Return true Force
+When HaveTwoPair && f$cc_turn_four_card_straight_or_flush && !f$cc_turn_mw_srp_all_effective_spr_below_4 Return false Force
+When HaveTwoPair Return true Force
+When f$cc_turn_cbet_overpair && f$cc_turn_mw_srp_dangerous_runout && !f$cc_turn_mw_srp_all_effective_spr_below_4 Return false Force
+When f$cc_turn_cbet_overpair Return true Force
+When f$cc_turn_cbet_strong_top_pair && f$cc_turn_mw_srp_dangerous_runout Return false Force
+When f$cc_turn_cbet_strong_top_pair Return true Force
+When f$cc_turn_cbet_medium_top_pair && f$cc_turn_mw_srp_clean_turn && !f$cc_turn_mw_srp_strong_selection Return true Force
+When f$cc_turn_cbet_medium_top_pair && f$cc_pair_plus_draw && !f$cc_turn_super_completed Return true Force
+When f$cc_turn_cbet_medium_top_pair Return false Force
+When f$cc_turn_cbet_weak_top_pair Return false Force
+When f$cc_turn_cbet_second_pair && f$cc_turn_mw_srp_clean_turn && !f$cc_turn_mw_srp_strong_selection && !ispair && f$cc_number_better_kickers <= 3 Return true Force
+When f$cc_turn_cbet_second_pair && f$cc_turn_mw_srp_clean_turn && !f$cc_turn_mw_srp_strong_selection && ispair && IndividualOvercardsOnBoard = 1 Return true Force
+When f$cc_turn_cbet_second_pair Return false Force
+When f$cc_turn_cbet_third_or_worse_pair Return false Force
+When f$cc_hand_no_made && f$cc_turn_cbet_premium_draw && !f$cc_turn_super_completed Return true Force
+When f$cc_hand_no_made && f$cc_turn_cbet_good_draw && f$cc_turn_mw_srp_clean_turn && !f$cc_turn_mw_srp_strong_selection Return true Force
+When f$cc_hand_no_made && f$cc_real_frontdoor_draw Return false Force
+When f$cc_turn_cbet_air && user_cc_flop_cbet_had_quality_air && f$cc_hist_flop_cbet_plan_size_id = 1 && f$cc_turn_mw_srp_high_pressure_turn Return true Force
+When Others Return false Force
+
+// Purpose: size source-adjacent true3 BTN-v-both-blinds second barrels.
+// Source: v2p donor gives action evidence but not a trustworthy single exact
+// deep-cash size map for the one-street state.
+// Provenance: A/P cash normalization: 33 thinner pair, 50 merged value, 75 robust
+// value/premium equity. No pot/overbet/jam baseline.
+##f$cc_turn_mw_srp_btn_blinds_last_size_id##
+When !f$cc_turn_mw_srp_btn_blinds_last_action Return 0 Force
+When f$cc_hand_trips_or_better Return f$cc_turn_size_75_id Force
+When HaveTwoPair && f$cc_turn_mw_srp_dangerous_runout Return f$cc_turn_size_50_id Force
+When HaveTwoPair Return f$cc_turn_size_75_id Force
+When f$cc_turn_cbet_overpair Return f$cc_turn_size_50_id Force
+When f$cc_turn_cbet_strong_top_pair Return f$cc_turn_size_50_id Force
+When f$cc_turn_cbet_medium_top_pair Return f$cc_turn_size_33_id Force
+When f$cc_turn_cbet_second_pair Return f$cc_turn_size_33_id Force
+When f$cc_hand_no_made && f$cc_turn_cbet_premium_draw Return f$cc_turn_size_75_id Force
+When f$cc_hand_no_made && f$cc_turn_cbet_good_draw Return f$cc_turn_size_50_id Force
+When f$cc_turn_cbet_air Return f$cc_turn_size_75_id Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// MWT.02 — Other true3 origin/still3 shapes
+// -----------------------------------------------------------------------------
+
+// Purpose: P-heavy policy for true3/still3 configurations without a direct
+// initiative Turn-CBet source range (including FIRST/MIDDLE and non-BTN origins).
+// Source: legacy 3wSBv2p/3wBBv2p give A relative-position shells only.
+// Provenance: P-heavy professional-theory fill.
+// Decision logic: LAST may value/semibluff widest; MIDDLE tightens; FIRST is
+// value-dense. Current nonblind composition and deepest SPR further constrain TP/OP.
+// Safety: no pure-air default and no one-pair stackoff implication.
+##f$cc_turn_mw_srp_true3_other_action##
+When !f$cc_turn_mw_srp_true3_other_shape Return false Force
+When !f$cc_turn_mw_srp_context_consistent Return false Force
+When f$cc_hand_trips_or_better Return true Force
+When HaveTwoPair && f$cc_turn_four_card_straight_or_flush && !f$cc_turn_mw_srp_all_effective_spr_below_4 Return false Force
+When HaveTwoPair Return true Force
+When f$cc_turn_cbet_overpair && f$cc_turn_mw_srp_last && f$cc_turn_mw_srp_clean_turn Return true Force
+When f$cc_turn_cbet_overpair && f$cc_turn_mw_srp_middle && f$cc_turn_mw_srp_clean_turn && f$cc_turn_mw_srp_live_nonblind_count = 0 && f$cc_turn_mw_srp_all_effective_spr_below_6 Return true Force
+When f$cc_turn_cbet_overpair && f$cc_turn_mw_srp_first && f$cc_turn_mw_srp_clean_turn && f$cc_turn_mw_srp_live_nonblind_count = 0 && f$cc_turn_mw_srp_all_effective_spr_below_4 Return true Force
+When f$cc_turn_cbet_overpair Return false Force
+When f$cc_turn_cbet_strong_top_pair && f$cc_turn_mw_srp_last && f$cc_turn_mw_srp_clean_turn && !f$cc_turn_mw_srp_strong_selection Return true Force
+When f$cc_turn_cbet_strong_top_pair && f$cc_turn_mw_srp_middle && f$cc_pair_plus_draw && !f$cc_turn_super_completed Return true Force
+When f$cc_turn_cbet_strong_top_pair && f$cc_turn_mw_srp_first && f$cc_pair_plus_draw && f$cc_turn_mw_srp_all_effective_spr_below_4 && !f$cc_turn_super_completed Return true Force
+When f$cc_turn_cbet_top_pair Return false Force
+When f$cc_turn_cbet_second_pair Return false Force
+When f$cc_turn_cbet_third_or_worse_pair Return false Force
+When f$cc_hand_no_made && f$cc_turn_cbet_premium_draw && f$cc_turn_mw_srp_last && !f$cc_turn_super_completed Return true Force
+When f$cc_hand_no_made && f$cc_turn_cbet_premium_draw && f$cc_turn_mw_srp_middle && f$cc_turn_mw_srp_clean_turn && !f$cc_turn_mw_srp_strong_selection Return true Force
+When f$cc_hand_no_made && f$cc_turn_cbet_premium_draw && f$cc_turn_mw_srp_first && f$cc_turn_mw_srp_clean_turn && f$cc_turn_mw_srp_live_nonblind_count = 0 && f$cc_turn_mw_srp_all_effective_spr_below_4 Return true Force
+When f$cc_hand_no_made && f$cc_turn_cbet_good_draw && f$cc_turn_mw_srp_last && f$cc_turn_mw_srp_high_pressure_turn && !f$cc_turn_mw_srp_strong_selection Return true Force
+When f$cc_hand_no_made && f$cc_real_frontdoor_draw Return false Force
+When f$cc_turn_cbet_air Return false Force
+When Others Return false Force
+
+// Purpose: size P-heavy other-true3 second barrels.
+// Source/Provenance: P with A multiway sizing philosophy; 50 merged, 75 robust.
+// Safety: no 100/jam without a separate exact-node audit.
+##f$cc_turn_mw_srp_true3_other_size_id##
+When !f$cc_turn_mw_srp_true3_other_action Return 0 Force
+When f$cc_hand_trips_or_better Return f$cc_turn_size_75_id Force
+When HaveTwoPair && f$cc_turn_mw_srp_dangerous_runout Return f$cc_turn_size_50_id Force
+When HaveTwoPair Return f$cc_turn_size_75_id Force
+When f$cc_turn_cbet_overpair Return f$cc_turn_size_50_id Force
+When f$cc_turn_cbet_strong_top_pair Return f$cc_turn_size_50_id Force
+When f$cc_hand_no_made && f$cc_turn_cbet_premium_draw Return f$cc_turn_size_75_id Force
+When f$cc_hand_no_made && f$cc_turn_cbet_good_draw Return f$cc_turn_size_50_id Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// MWT.03 — 4way+ flop origin reduced to exactly three on turn
+// -----------------------------------------------------------------------------
+
+// Purpose: P-heavy policy when at least four entered flop, Hero CBet multiway,
+// one-or-more players folded, but two opponents still survive to turn.
+// Source: no literal Crusher range. DeepCrusher's conservative multiway fallback
+// corroborates a value-heavy default where exact source ends.
+// Provenance: P-heavy professional-theory fill.
+// Decision logic: flop call + survival from a larger field is strongly selected;
+// trips+ remain value, two-pair is runout-sensitive, OP/TP require LAST/clean and
+// depth/composition support; only premium draws enter semibluff baseline.
+// Safety: pure air and weak/good draws are checks in first deterministic version.
+##f$cc_turn_mw_srp_flop4plus_now3_action##
+When !f$cc_turn_mw_srp_flop4plus_now3 Return false Force
+When !f$cc_turn_mw_srp_context_consistent Return false Force
+When f$cc_hand_trips_or_better Return true Force
+When HaveTwoPair && f$cc_turn_mw_srp_dangerous_runout && !f$cc_turn_mw_srp_all_effective_spr_below_3 Return false Force
+When HaveTwoPair Return true Force
+When f$cc_turn_cbet_overpair && f$cc_turn_mw_srp_last && f$cc_turn_mw_srp_clean_turn && f$cc_turn_mw_srp_live_nonblind_count <= 1 && f$cc_turn_mw_srp_all_effective_spr_below_6 Return true Force
+When f$cc_turn_cbet_overpair && f$cc_turn_mw_srp_middle && f$cc_turn_mw_srp_clean_turn && f$cc_turn_mw_srp_live_nonblind_count = 0 && f$cc_turn_mw_srp_all_effective_spr_below_4 Return true Force
+When f$cc_turn_cbet_overpair Return false Force
+When f$cc_turn_cbet_strong_top_pair && f$cc_turn_mw_srp_last && f$cc_turn_mw_srp_clean_turn && f$cc_turn_mw_srp_live_nonblind_count = 0 && f$cc_turn_mw_srp_all_effective_spr_below_4 Return true Force
+When f$cc_turn_cbet_top_pair Return false Force
+When f$cc_turn_cbet_second_pair Return false Force
+When f$cc_turn_cbet_third_or_worse_pair Return false Force
+When f$cc_hand_no_made && f$cc_turn_cbet_premium_draw && f$cc_turn_mw_srp_last && f$cc_turn_mw_srp_clean_turn && !f$cc_turn_mw_srp_strong_selection Return true Force
+When f$cc_hand_no_made && f$cc_turn_cbet_premium_draw && f$cc_turn_mw_srp_last && f$cc_turn_mw_srp_high_pressure_turn && f$cc_turn_mw_srp_all_effective_spr_below_4 Return true Force
+When f$cc_hand_no_made && f$cc_real_frontdoor_draw Return false Force
+When f$cc_turn_cbet_air Return false Force
+When Others Return false Force
+
+// Purpose: size 4way+-origin/current3 barrels.
+// Source/Provenance: P value-heavy 50/75 map; no pot/jam baseline.
+##f$cc_turn_mw_srp_flop4plus_now3_size_id##
+When !f$cc_turn_mw_srp_flop4plus_now3_action Return 0 Force
+When f$cc_hand_trips_or_better Return f$cc_turn_size_75_id Force
+When HaveTwoPair && f$cc_turn_mw_srp_dangerous_runout Return f$cc_turn_size_50_id Force
+When HaveTwoPair Return f$cc_turn_size_75_id Force
+When f$cc_turn_cbet_overpair Return f$cc_turn_size_50_id Force
+When f$cc_turn_cbet_strong_top_pair Return f$cc_turn_size_50_id Force
+When f$cc_hand_no_made && f$cc_turn_cbet_premium_draw Return f$cc_turn_size_75_id Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// MWT.04 — Four or more players still live on turn
+// -----------------------------------------------------------------------------
+
+// Purpose: most conservative ordinary-SRP Turn-CBet family: 4+ players still
+// live after Hero's flop CBet.
+// Source: no Spin/Crusher source state; mature multiway fallback supports a
+// value-heavy philosophy but is not a direct action transplant.
+// Provenance: P-heavy professional-theory fill.
+// Decision logic: trips+ primary value; exact two pair only on clean/shorter
+// deepest-effective geometry; OP/TP only in unusually favorable LAST all-blind
+// low-SPR conditions; no no-made semibluff baseline with 3+ opponents.
+// Safety: deepest-effective, not shallowest, defines field-wide low-SPR checks.
+##f$cc_turn_mw_srp_current4plus_action##
+When !f$cc_turn_mw_srp_current4plus Return false Force
+When !f$cc_turn_mw_srp_context_consistent Return false Force
+When f$cc_hand_trips_or_better && !f$cc_turn_super_completed Return true Force
+When f$cc_hand_trips_or_better && f$cc_turn_super_completed && f$cc_turn_mw_srp_all_effective_spr_below_3 Return true Force
+When HaveTwoPair && f$cc_turn_mw_srp_clean_turn && f$cc_turn_mw_srp_all_effective_spr_below_4 Return true Force
+When HaveTwoPair Return false Force
+When f$cc_turn_cbet_overpair && f$cc_turn_mw_srp_last && f$cc_turn_mw_srp_live_nonblind_count = 0 && f$cc_turn_mw_srp_clean_turn && f$cc_turn_mw_srp_all_effective_spr_below_3 Return true Force
+When f$cc_turn_cbet_overpair Return false Force
+When f$cc_turn_cbet_strong_top_pair && f$cc_turn_mw_srp_last && f$cc_turn_mw_srp_live_nonblind_count = 0 && f$cc_turn_mw_srp_clean_turn && f$cc_turn_mw_srp_all_effective_spr_below_3 Return true Force
+When f$cc_turn_cbet_top_pair Return false Force
+When f$cc_turn_cbet_second_pair Return false Force
+When f$cc_turn_cbet_third_or_worse_pair Return false Force
+When f$cc_real_frontdoor_draw Return false Force
+When f$cc_turn_cbet_air Return false Force
+When Others Return false Force
+
+// Purpose: size current-4plus value-heavy turn barrels.
+// Source/Provenance: P; 50 on one-pair/fragile value, 75 on robust made value.
+// Safety: no no-made sizing because no no-made action is currently authorized.
+##f$cc_turn_mw_srp_current4plus_size_id##
+When !f$cc_turn_mw_srp_current4plus_action Return 0 Force
+When f$cc_hand_trips_or_better Return f$cc_turn_size_75_id Force
+When HaveTwoPair Return f$cc_turn_size_50_id Force
+When f$cc_turn_cbet_overpair Return f$cc_turn_size_50_id Force
+When f$cc_turn_cbet_strong_top_pair Return f$cc_turn_size_50_id Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// MWT.05 — Dispatch / coverage
+// -----------------------------------------------------------------------------
+
+// Purpose: exact ordinary-SRP multiway Turn-CBet action dispatcher.
+// Source/Provenance: A/P origin/current-count router; no HU fallback.
+##f$cc_turn_mw_srp_action##
+When f$cc_turn_mw_srp_btn_both_blinds_source_shape Return f$cc_turn_mw_srp_btn_blinds_last_action Force
+When f$cc_turn_mw_srp_true3_other_shape Return f$cc_turn_mw_srp_true3_other_action Force
+When f$cc_turn_mw_srp_flop4plus_now3 Return f$cc_turn_mw_srp_flop4plus_now3_action Force
+When f$cc_turn_mw_srp_current4plus Return f$cc_turn_mw_srp_current4plus_action Force
+When Others Return false Force
+
+// Purpose: paired size dispatcher for ordinary-SRP multiway Turn CBet.
+// Source/Provenance: A/P safety router; uncovered/check -> 0.
+##f$cc_turn_mw_srp_size_id##
+When f$cc_turn_mw_srp_btn_both_blinds_source_shape Return f$cc_turn_mw_srp_btn_blinds_last_size_id Force
+When f$cc_turn_mw_srp_true3_other_shape Return f$cc_turn_mw_srp_true3_other_size_id Force
+When f$cc_turn_mw_srp_flop4plus_now3 Return f$cc_turn_mw_srp_flop4plus_now3_size_id Force
+When f$cc_turn_mw_srp_current4plus Return f$cc_turn_mw_srp_current4plus_size_id Force
+When Others Return 0 Force
+
+// Purpose: coverage flag for Gate02E ordinary-SRP multiway turn policy.
+// Source/Provenance: P engineering metadata over explicit implemented families.
+##f$cc_turn_mw_srp_covered##
+f$cc_turn_mw_srp_btn_both_blinds_source_shape ||
+f$cc_turn_mw_srp_true3_other_shape ||
+f$cc_turn_mw_srp_flop4plus_now3 ||
+f$cc_turn_mw_srp_current4plus
+
+// ============================================================================
+// End Gate 02E strategy.
+// ============================================================================
