@@ -22,13 +22,15 @@
 //   A — uses the reviewed CashCrusher requested CBet and exact HU/deepest-MW
 //       effective geometry.
 //   X/PENDING — DeepCrusher's strategic ~50/~55/~60 promotion thresholds are NOT
-//       authorized here.  They remain separate node/context audits.
+//       authorized here. Gate 01K.3C keeps them as source diagnostics/candidates
+//       and requires any true strategic jam to be owned by an exact strategy node.
 //
 // Safety:
 //   * short-only sidepot reach is NOT enough in multiway;
 //   * no TP+/draw/hand-class condition appears here because this is execution
 //     equivalence after strategy has already chosen the CBet and size;
-//   * invalid geometry falls back to the ordinary native requested size.
+//   * invalid geometry falls back to the ordinary native requested size;
+//   * `f$Raise_Committed` is outside this module and remains defense-owned.
 // ============================================================================
 
 // Purpose: requested CBet equals/exceeds Hero's available street-start stack.
@@ -55,6 +57,7 @@ When Others Return false Force
 ##f$cc_cbet_requested_reaches_all_live_effective_mw##
 When !f$cc_multiway Return false Force
 When !f$cc_cbet_stackgeom_clean Return false Force
+When !f$cc_mw_stack_geometry_valid Return false Force
 When f$cc_cbet_requested_mw_deepest_effective_ratio < 0 Return false Force
 When f$cc_cbet_requested_mw_deepest_effective_ratio >= 1.00 Return true Force
 When Others Return false Force
@@ -77,10 +80,10 @@ When f$cc_cbet_requested_reaches_all_live_effective Return true Force
 When Others Return false Force
 
 // Purpose: final local CBet execution size after purely mechanical all-in
-// equivalence, while leaving strategic promotion unimplemented.
+// equivalence, while leaving strategic promotion to explicit future node policy.
 // Source: T native OpenPPL BetMax + existing native betpot adapter.
 // Provenance: T/A.
-// Safety: this function does not implement the historical 50/55/60% rules.
+// Safety: this function deliberately does not implement historical 50/55/60% rules.
 ##f$cc_flop_cbet_execution_betsize##
 When !f$cc_flop_cbet_native_size_ready Return 0 Force
 When f$cc_cbet_natural_allin_equivalent Return BetMax Force
@@ -91,10 +94,10 @@ When Others Return f$cc_flop_cbet_native_betsize Force
 // Source/Provenance: P engineering invariant over T dual-bound geometry.
 ##f$cc_cbet_sidepot_divergence_not_promoted##
 When !f$cc_cbet_mw_sidepot_divergence_candidate Return true Force
-When f$cc_cbet_natural_allin_equivalent && !f$cc_cbet_requested_reaches_hero_stack Return false Force
+When f$cc_cbet_natural_allin_equivalent Return false Force
 When Others Return true Force
 
 // ============================================================================
 // End Gate 01K.3B.
-// Strategic near-all-in promotion remains a separate audit.
+// Strategic near-all-in promotion remains exact-node owned after Gate 01K.3C.
 // ============================================================================
