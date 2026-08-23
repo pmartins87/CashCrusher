@@ -1,0 +1,122 @@
+// ============================================================================
+// CashCrusher_Multiway_SRP_Context.txt
+// Gate 01J.1 context — true three-way ordinary-SRP PFA flop families
+// ============================================================================
+// Purpose:
+//   Preserve exact three-way SRP origin plus a coarse two-caller composition
+//   parent before any multiway CBet strategy fires.
+//
+// Caller composition IDs:
+//   1 = BOTH_BLINDS       (SB + BB)
+//   2 = ONE_BLIND_ONE_NONBLIND
+//   3 = TWO_NONBLINDS
+//   0 = invalid / not exact true-threeway ordinary SRP
+//
+// Source/Provenance:
+//   T/A = exact live masks, flop-entry count, PFA role and relative position.
+//   P   = caller-composition parent grouping for six-max cash. Exact opponent
+//         mask remains canonical and is never replaced by this coarse ID.
+// ============================================================================
+
+// Purpose: prove exact true-threeway ordinary-SRP flop CBet context.
+// Context: exactly 3 entered flop and 3 remain; Hero PFA; one ordinary raise;
+// no bet before Hero's flop action; valid cash SPR geometry.
+// Source/Provenance: A mechanical generalization of legacy true-3way shells.
+// Safety: excludes ISO, 3BP/squeeze, 4-way-origin and later-reduced pots.
+##f$cc_mw_srp_true3_pfa_context##
+f$cc_threeway &&
+f$cc_flop_entry_count = 3 &&
+f$cc_multiway_context_valid &&
+f$cc_pot_family_id = 2 &&
+f$cc_pf_role_pfa &&
+f$cc_pf_one_raise_ordinary_srp &&
+f$cc_flop_cbet_opportunity &&
+f$cc_spr_valid
+
+// Purpose: count current live blind opponents (SB and/or BB) in exact true3 SRP.
+// Source/Provenance: T/A canonical live-mask bit arithmetic.
+// Safety: outside true3 ordinary SRP returns 0 rather than implying composition.
+##f$cc_mw_srp_true3_live_blind_count##
+When !f$cc_mw_srp_true3_pfa_context Return 0 Force
+When Others Return BitCount(f$cc_opp_live_mask BitAnd 48) Force
+
+// Purpose: count current live nonblind opponents (UTG/HJ/CO/BTN) in true3 SRP.
+// Source/Provenance: T/A canonical mask arithmetic; bits 1+2+4+8 = 15.
+##f$cc_mw_srp_true3_live_nonblind_count##
+When !f$cc_mw_srp_true3_pfa_context Return 0 Force
+When Others Return BitCount(f$cc_opp_live_mask BitAnd 15) Force
+
+// Purpose: stable caller-composition ID for exact true3 ordinary SRP.
+// Source/Provenance: P range-parent abstraction built on T exact masks.
+// Safety: requires exactly two live opponents; otherwise 0.
+##f$cc_mw_srp_true3_caller_comp_id##
+When !f$cc_mw_srp_true3_pfa_context Return 0 Force
+When f$cc_mw_srp_true3_live_blind_count = 2 && f$cc_mw_srp_true3_live_nonblind_count = 0 Return 1 Force
+When f$cc_mw_srp_true3_live_blind_count = 1 && f$cc_mw_srp_true3_live_nonblind_count = 1 Return 2 Force
+When f$cc_mw_srp_true3_live_blind_count = 0 && f$cc_mw_srp_true3_live_nonblind_count = 2 Return 3 Force
+When Others Return 0 Force
+
+// Purpose: both opponents are SB+BB, the closest range-composition analogue to
+// the legacy `3wBTNv2p` shell when Hero is BTN/LAST.
+// Source/Provenance: A direct mechanical shape; strategy frequencies still A/P.
+##f$cc_mw_srp_true3_both_blinds##
+f$cc_mw_srp_true3_caller_comp_id = 1
+
+// Purpose: one blind defender plus one nonblind cold caller.
+// Source/Provenance: P six-max mixed-range parent.
+##f$cc_mw_srp_true3_one_blind_one_nonblind##
+f$cc_mw_srp_true3_caller_comp_id = 2
+
+// Purpose: two nonblind cold callers, generally the most selected/condensed
+// broad composition parent in this Gate.
+// Source/Provenance: P six-max range parent; exact seats stay available.
+##f$cc_mw_srp_true3_two_nonblinds##
+f$cc_mw_srp_true3_caller_comp_id = 3
+
+// Purpose: exact true3 ordinary-SRP PFA acting FIRST.
+// Source: legacy `3wSBv2p` supplies positional shell but no initiative-CBet tree.
+// Provenance: A position architecture; action policy is P-heavy.
+##f$cc_mw_srp_true3_pfa_first_context##
+f$cc_mw_srp_true3_pfa_context && f$cc_multiway_rel_first
+
+// Purpose: exact true3 ordinary-SRP PFA acting MIDDLE.
+// Source: legacy `3wBBv2p` positional shell; no dedicated source CBet branch.
+// Provenance: A position architecture; action policy is P-heavy.
+##f$cc_mw_srp_true3_pfa_middle_context##
+f$cc_mw_srp_true3_pfa_context && f$cc_multiway_rel_middle
+
+// Purpose: exact true3 ordinary-SRP PFA acting LAST after both opponents check.
+// Source: `3wBTNv2p` is a mature human-reviewed TBP gap-fill donor.
+// Provenance: A/P; it is not a dedicated Starting Strategy transplant.
+##f$cc_mw_srp_true3_pfa_last_context##
+f$cc_mw_srp_true3_pfa_context && f$cc_multiway_rel_last
+
+// Purpose: early PFA band (UTG/HJ) for high-card range-advantage refinement.
+// Source/Provenance: P six-max range-topology modifier; exact position retained.
+##f$cc_mw_srp_true3_pfa_early##
+f$cc_mw_srp_true3_pfa_context && (f$cc_hero_pos_id = 1 || f$cc_hero_pos_id = 2)
+
+// Purpose: late nonblind PFA band (CO/BTN).
+// Source/Provenance: P six-max range-topology modifier.
+##f$cc_mw_srp_true3_pfa_late##
+f$cc_mw_srp_true3_pfa_context && (f$cc_hero_pos_id = 3 || f$cc_hero_pos_id = 4)
+
+// Purpose: compact exact-range audit key retaining Hero pos and full opponent mask.
+// Format: HMMQ where H=Hero pos, MM=live-opponent mask, Q=relative position.
+// Source/Provenance: P engineering metadata over T exact mechanical inputs.
+// Safety: never used alone as a solved strategy lookup.
+##f$cc_mw_srp_true3_range_key##
+When !f$cc_mw_srp_true3_pfa_context Return 0 Force
+When Others Return ((f$cc_hero_pos_id * 1000) + (f$cc_opp_live_mask * 10) + f$cc_relpos_id) Force
+
+// Purpose: internal composition consistency guard.
+// Source/Provenance: P safety invariant over exact three-player topology.
+##f$cc_mw_srp_true3_context_consistent##
+When !f$cc_mw_srp_true3_pfa_context Return false Force
+When f$cc_mw_srp_true3_caller_comp_id <= 0 Return false Force
+When (f$cc_mw_srp_true3_live_blind_count + f$cc_mw_srp_true3_live_nonblind_count) != 2 Return false Force
+When Others Return true Force
+
+// ============================================================================
+// End true-threeway ordinary-SRP context.
+// ============================================================================
