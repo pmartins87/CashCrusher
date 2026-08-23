@@ -1,0 +1,247 @@
+// ============================================================================
+// CashCrusher_Flop_CBet_SRP_IP.txt
+// Gate 01B — first strategic implementation: HU ordinary-SRP PFA IP
+// ============================================================================
+// Covered families:
+//   1) TRUE HU deal: SB/Button open-raises, BB calls (HUSB ancestry).
+//   2) 3-6h deal reduced HU: PFA IP versus BB.
+//   3) 3-6h deal reduced HU: PFA IP versus SB.
+//
+// Not covered here:
+//   ISO, 3BP, squeeze, 4BP, OOP PFA, multiway, or HU-origin=3 later streets.
+//
+// Strategic method:
+//   * source rules constrain the baseline;
+//   * shallow stack-off conversions are rejected;
+//   * professional deep-stack theory fills frequency gaps by selecting combos
+//     through value tier, draw quality, backdoors, absolute matchup, board
+//     pressure and raw SPR;
+//   * deterministic combo selection approximates mixed strategy without random
+//     numbers. This is a professional baseline, NOT claimed as exact solver GTO.
+//
+// Size IDs:
+//   1 small ~33% | 2 medium ~50% | 3 large ~75% | 0 check
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// IP.00 — Common context guards
+// -----------------------------------------------------------------------------
+
+##f$cc_cbet_srp_ip_true_hu_context##
+f$cc_srp_true_hu_sb_pfa_ip_vs_bb &&
+f$cc_flop_cbet_opportunity &&
+f$cc_spr_valid
+
+##f$cc_cbet_srp_ip_vs_bb_context##
+f$cc_srp_pfa_ip_vs_bb &&
+f$cc_flop_cbet_opportunity &&
+f$cc_spr_valid
+
+##f$cc_cbet_srp_ip_vs_sb_context##
+f$cc_srp_pfa_ip_vs_sb &&
+f$cc_flop_cbet_opportunity &&
+f$cc_spr_valid
+
+##f$cc_cbet_srp_ip_vs_bb_late_open##
+f$cc_cbet_srp_ip_vs_bb_context && (f$cc_hero_pos_id = 3 || f$cc_hero_pos_id = 4)
+
+##f$cc_cbet_srp_ip_vs_bb_early_open##
+f$cc_cbet_srp_ip_vs_bb_context && (f$cc_hero_pos_id = 1 || f$cc_hero_pos_id = 2)
+
+##f$cc_cbet_srp_ip_vs_sb_late_open##
+f$cc_cbet_srp_ip_vs_sb_context && (f$cc_hero_pos_id = 3 || f$cc_hero_pos_id = 4)
+
+##f$cc_cbet_srp_ip_vs_sb_early_open##
+f$cc_cbet_srp_ip_vs_sb_context && (f$cc_hero_pos_id = 1 || f$cc_hero_pos_id = 2)
+
+// -----------------------------------------------------------------------------
+// IP.01 — TRUE HU SB/Button PFA IP vs BB
+// -----------------------------------------------------------------------------
+// Source anchor (A/T-like ancestry): audited HUSB bets TP+, MP/BP and all real
+// frontdoor draws broadly, while straight-possible air checks. Deep cash keeps
+// the high-frequency IP spirit but removes shallow <=16/20BB exceptions and the
+// literal "bet almost all residual air" tail.
+
+##f$cc_cbet_srp_ip_true_hu_action##
+When !f$cc_cbet_srp_ip_true_hu_context Return false Force
+
+// Robust value.
+When f$cc_cbet_flop_very_strong_value Return true Force
+When f$cc_cbet_flop_overpair Return true Force
+When f$cc_cbet_flop_strong_top_pair Return true Force
+
+// Medium TP still value-bets often IP, but dynamic low/mid at high SPR becomes
+// a protected check rather than an automatic multi-street pot builder.
+When f$cc_cbet_flop_medium_top_pair && f$cc_flop_dynamic_lowmid_parent && f$cc_cbet_high_spr Return false Force
+When f$cc_cbet_flop_medium_top_pair Return true Force
+
+// Weak TP preserves source value pressure on static boards while creating a
+// real deep-stack check-back range.
+When f$cc_cbet_flop_weak_top_pair && f$cc_cbet_board_small_bet_parent Return true Force
+When f$cc_cbet_flop_weak_top_pair && f$cc_flop_static_lowmid_parent && !f$cc_cbet_very_high_spr Return true Force
+When f$cc_cbet_flop_weak_top_pair Return false Force
+
+// Showdown pairs: source bet them very broadly; professional deep-stack IP play
+// retains selective protection bets but checks much more at high SPR/dynamic boards.
+When f$cc_hand_second_pair_or_pocket && f$cc_cbet_board_small_bet_parent && !f$cc_cbet_very_high_spr Return true Force
+When f$cc_hand_second_pair_or_pocket && f$cc_pair_plus_draw Return true Force
+When f$cc_cbet_flop_showdown_pair Return false Force
+
+// Frontdoor draws. Premium draws retain aggression; weaker draws realize equity
+// IP and are not forced into the pot on the most dynamic low boards.
+When f$cc_cbet_flop_premium_draw Return true Force
+When f$cc_cbet_flop_good_draw && !f$cc_flop_dynamic_lowmid_parent Return true Force
+When f$cc_cbet_flop_good_draw && f$cc_flop_dynamic_lowmid_parent && f$cc_one_or_more_overcards Return true Force
+When f$cc_cbet_flop_weak_draw && f$cc_cbet_board_small_bet_parent Return true Force
+When f$cc_real_frontdoor_draw Return false Force
+
+// Air. HUSB's explicit straight-possible-air check survives as a strong A rule.
+When f$cc_air_no_frontdoor && f$cc_flop_straight_possible Return false Force
+When f$cc_cbet_flop_quality_air && (f$cc_flop_static_high_parent || f$cc_flop_paired_parent) Return true Force
+When f$cc_cbet_flop_quality_air && f$cc_flop_static_lowmid_parent && f$cc_two_overcards Return true Force
+When f$cc_cbet_flop_quality_air && f$cc_flop_dynamic_high_parent && f$cc_cbet_flop_air_best_backdoors Return true Force
+When Others Return false Force
+
+##f$cc_cbet_srp_ip_true_hu_size_id##
+When !f$cc_cbet_srp_ip_true_hu_action Return 0 Force
+
+// Polar value/draw region on caller-favouring dynamic low boards.
+When f$cc_flop_dynamic_lowmid_parent && (f$cc_cbet_flop_very_strong_value || f$cc_cbet_flop_premium_draw) Return 3 Force
+When f$cc_flop_dynamic_lowmid_parent Return 2 Force
+
+// Dynamic high boards use medium sizing for value/equity; selected air remains
+// medium rather than inheriting a short-stack 40/50/75 ladder.
+When f$cc_flop_dynamic_high_parent Return 2 Force
+
+// Static low/mid: stronger value/draws use medium, protection/bluffs small.
+When f$cc_flop_static_lowmid_parent && (f$cc_cbet_flop_very_strong_value || f$cc_cbet_flop_overpair || f$cc_cbet_flop_premium_draw) Return 2 Force
+When f$cc_flop_static_lowmid_parent Return 1 Force
+
+// Static high and paired boards: high-frequency small-bet parent.
+When f$cc_cbet_board_small_bet_parent Return 1 Force
+When Others Return 2 Force
+
+// -----------------------------------------------------------------------------
+// IP.02 — 3-6h PFA IP versus BB
+// -----------------------------------------------------------------------------
+// 3wBTNvBB is the direct BTN-v-BB source parent; earlier opens use the same
+// geometry but retain their stronger/narrower absolute range. Deep cash removes
+// the source's literal blanket no-made CBet and uses combo quality on boards
+// where BB owns substantial low/mid two-pair/straight density.
+
+##f$cc_cbet_srp_ip_vs_bb_action##
+When !f$cc_cbet_srp_ip_vs_bb_context Return false Force
+
+// Robust value.
+When f$cc_cbet_flop_very_strong_value Return true Force
+When f$cc_cbet_flop_overpair Return true Force
+When f$cc_cbet_flop_strong_top_pair Return true Force
+
+// Medium TP remains a value bet on most boards; high-SPR dynamic-low is checked.
+When f$cc_cbet_flop_medium_top_pair && f$cc_flop_dynamic_lowmid_parent && f$cc_cbet_high_spr Return false Force
+When f$cc_cbet_flop_medium_top_pair Return true Force
+
+// Weak TP: source sometimes checks very-dry TPWK. Keep that concept as a deep
+// static/high check at very high SPR, otherwise use small value/protection bets.
+When f$cc_cbet_flop_weak_top_pair && f$cc_flop_static_high_parent && f$cc_cbet_very_high_spr Return false Force
+When f$cc_cbet_flop_weak_top_pair && (f$cc_flop_static_high_parent || f$cc_flop_paired_parent) Return true Force
+When f$cc_cbet_flop_weak_top_pair && f$cc_flop_static_lowmid_parent && !f$cc_cbet_high_spr Return true Force
+When f$cc_cbet_flop_weak_top_pair Return false Force
+
+// Second pair is a deliberate mixed/selection region. Late openers can pressure
+// static boards wider; earlier ranges check marginal SDV more often.
+When f$cc_hand_second_pair_or_pocket && f$cc_pair_plus_draw Return true Force
+When f$cc_hand_second_pair_or_pocket && f$cc_cbet_board_small_bet_parent && f$cc_cbet_srp_ip_vs_bb_late_open && !f$cc_cbet_very_high_spr Return true Force
+When f$cc_hand_second_pair_or_pocket && f$cc_flop_static_lowmid_parent && f$cc_cbet_srp_ip_vs_bb_late_open && !f$cc_cbet_high_spr Return true Force
+When f$cc_cbet_flop_showdown_pair Return false Force
+
+// Draws.
+When f$cc_cbet_flop_premium_draw Return true Force
+When f$cc_cbet_flop_good_draw && !f$cc_flop_dynamic_lowmid_parent Return true Force
+When f$cc_cbet_flop_good_draw && f$cc_flop_dynamic_lowmid_parent && (f$cc_two_overcards || f$cc_real_nut_fd) Return true Force
+When f$cc_cbet_flop_weak_draw && f$cc_cbet_board_small_bet_parent && f$cc_cbet_srp_ip_vs_bb_late_open Return true Force
+When f$cc_real_frontdoor_draw Return false Force
+
+// Air: wide small-bet pressure on static high/paired boards, but use backdoors
+// as the deterministic selector. Late-position ranges are allowed an extra
+// static-low bluff region because BTN/CO versus BB is the closest source parent.
+When f$cc_cbet_flop_quality_air && (f$cc_flop_static_high_parent || f$cc_flop_paired_parent) Return true Force
+When f$cc_cbet_flop_quality_air && f$cc_flop_static_lowmid_parent && f$cc_cbet_srp_ip_vs_bb_late_open && f$cc_two_overcards Return true Force
+When f$cc_cbet_flop_air_best_backdoors && f$cc_flop_dynamic_high_parent && f$cc_cbet_srp_ip_vs_bb_late_open Return true Force
+When Others Return false Force
+
+##f$cc_cbet_srp_ip_vs_bb_size_id##
+When !f$cc_cbet_srp_ip_vs_bb_action Return 0 Force
+When f$cc_flop_dynamic_lowmid_parent && (f$cc_cbet_flop_very_strong_value || f$cc_cbet_flop_premium_draw) Return 3 Force
+When f$cc_flop_dynamic_lowmid_parent Return 2 Force
+When f$cc_flop_dynamic_high_parent Return 2 Force
+When f$cc_flop_static_lowmid_parent && (f$cc_cbet_flop_very_strong_value || f$cc_cbet_flop_overpair || f$cc_cbet_flop_premium_draw) Return 2 Force
+When f$cc_flop_static_lowmid_parent Return 1 Force
+When f$cc_cbet_board_small_bet_parent Return 1 Force
+When Others Return 2 Force
+
+// -----------------------------------------------------------------------------
+// IP.03 — 3-6h PFA IP versus SB cold caller
+// -----------------------------------------------------------------------------
+// 3wBTNvSB is the direct source parent. Its core lesson survives: the SB
+// continuing range is stronger/less trash-heavy than BB, so marginal pairs and
+// no-made hands should not inherit BTN-v-BB blanket pressure. In modern cash the
+// exact SB flat range is site/rake dependent; this baseline therefore stays
+// deliberately more selective and avoids pretending an exact solver frequency.
+
+##f$cc_cbet_srp_ip_vs_sb_action##
+When !f$cc_cbet_srp_ip_vs_sb_context Return false Force
+
+When f$cc_cbet_flop_very_strong_value Return true Force
+When f$cc_cbet_flop_overpair Return true Force
+When f$cc_cbet_flop_strong_top_pair Return true Force
+
+When f$cc_cbet_flop_medium_top_pair && f$cc_flop_dynamic_lowmid_parent && f$cc_cbet_high_spr Return false Force
+When f$cc_cbet_flop_medium_top_pair Return true Force
+
+When f$cc_cbet_flop_weak_top_pair && f$cc_cbet_board_small_bet_parent && !f$cc_cbet_very_high_spr Return true Force
+When f$cc_cbet_flop_weak_top_pair Return false Force
+
+// Marginal pairs mostly protect the check-back range versus the stronger SB
+// continue range. Pair+draw can still bet for value/equity.
+When f$cc_cbet_flop_showdown_pair && f$cc_pair_plus_draw Return true Force
+When f$cc_cbet_flop_showdown_pair Return false Force
+
+When f$cc_cbet_flop_premium_draw Return true Force
+When f$cc_cbet_flop_good_draw && (f$cc_flop_static_high_parent || f$cc_flop_dynamic_high_parent || f$cc_flop_paired_parent) Return true Force
+When f$cc_cbet_flop_good_draw && f$cc_flop_static_lowmid_parent && f$cc_one_or_more_overcards Return true Force
+When f$cc_real_frontdoor_draw Return false Force
+
+// Air requires both a favourable pressure parent and combo quality. Against SB
+// there is no additional blanket late-position low-board bluff tail.
+When f$cc_cbet_flop_quality_air && f$cc_flop_static_high_parent Return true Force
+When f$cc_cbet_flop_air_best_backdoors && f$cc_flop_paired_parent Return true Force
+When f$cc_cbet_flop_air_best_backdoors && f$cc_flop_dynamic_high_parent && f$cc_cbet_srp_ip_vs_sb_late_open Return true Force
+When Others Return false Force
+
+##f$cc_cbet_srp_ip_vs_sb_size_id##
+When !f$cc_cbet_srp_ip_vs_sb_action Return 0 Force
+When f$cc_flop_dynamic_lowmid_parent && (f$cc_cbet_flop_very_strong_value || f$cc_cbet_flop_premium_draw) Return 3 Force
+When f$cc_flop_dynamic_lowmid_parent Return 2 Force
+When f$cc_flop_dynamic_high_parent Return 2 Force
+When f$cc_flop_static_lowmid_parent Return 2 Force
+When f$cc_cbet_board_small_bet_parent Return 1 Force
+When Others Return 2 Force
+
+// -----------------------------------------------------------------------------
+// IP.04 — Reduced-HU dispatcher for ordinary SRP PFA IP
+// -----------------------------------------------------------------------------
+
+##f$cc_cbet_srp_ip_reduced_action##
+When f$cc_cbet_srp_ip_vs_bb_context Return f$cc_cbet_srp_ip_vs_bb_action Force
+When f$cc_cbet_srp_ip_vs_sb_context Return f$cc_cbet_srp_ip_vs_sb_action Force
+When Others Return false Force
+
+##f$cc_cbet_srp_ip_reduced_size_id##
+When f$cc_cbet_srp_ip_vs_bb_context Return f$cc_cbet_srp_ip_vs_bb_size_id Force
+When f$cc_cbet_srp_ip_vs_sb_context Return f$cc_cbet_srp_ip_vs_sb_size_id Force
+When Others Return 0 Force
+
+// ============================================================================
+// End first SRP IP CBet strategic implementation.
+// ============================================================================
