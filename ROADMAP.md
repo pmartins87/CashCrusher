@@ -70,7 +70,8 @@ Gate 00 design/code is frozen enough for strategy work, but it is not release-ce
 - [ ] **01K.2** — integrate the local CBet execution adapter into eventual whole-bot `f$BestBetsize` without stealing sizing ownership from other postflop nodes.
 - [x] **01K.3A** — source-audit DeepCrusher 50/55/60 commitment mechanisms and implement dual-bound HU/multiway diagnostic geometry.
 - [x] **01K.3B** — implement only mechanically forced/equivalent CBet `BetMax`: requested size reaches Hero balance or reaches the deepest/all-live effective relationship. Shortest-only sidepot reach is explicitly not promoted.
-- [ ] **01K.3C** — decide strategic near-all-in promotion (historical ~50% effective / ~60% Hero-stack) per exact CBet pot/range/board/hand/SPR node; no global transplant.
+- [x] **01K.3C** — audit historical ~50% effective / ~60% Hero-stack CBet promotion. Result: preserve as diagnostics/candidates, not one generic cash action; explicit strategic jams must be owned by exact SRP/ISO/3BP/4BP nodes.
+- [ ] **01K.3C-4BP** — audit whether any clean 4BP flop families deserve an explicit node-owned jam size; do not infer it merely from old threshold geometry.
 - [ ] **01K.3D** — revisit `f$Raise_Committed` separately in defensive flop/turn call/raise ownership; it must not be smuggled into CBet sizing.
 - [ ] **01K.4** — compose final global `f$allin_on_betsize_balance_ratio` only after all postflop sizing owners that it can affect have been audited.
 - [x] **01L** — static dependency/flat-WHEN/global-provenance/multiway-SPR lint PASS on reviewed implementation.
