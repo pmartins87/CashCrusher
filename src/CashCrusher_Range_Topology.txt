@@ -1,0 +1,92 @@
+// ============================================================================
+// CashCrusher_Range_Topology.txt
+// Six-max HU SRP range-topology parents
+// ============================================================================
+// Exact matchup IDs remain canonical. Parent groups only reduce duplication;
+// they never authorize copying one absolute-position range into another.
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// R.01 — Ordinary one-raise PFA families
+// -----------------------------------------------------------------------------
+
+##f$cc_srp_pfa_ip_vs_bb##
+f$cc_pot_family_id = 2 && f$cc_pf_role_pfa && !f$cc_pf_iso_proven && f$cc_hu_ip &&
+(f$cc_hu_matchup_id = 16 || f$cc_hu_matchup_id = 26 || f$cc_hu_matchup_id = 36 || f$cc_hu_matchup_id = 46)
+
+##f$cc_srp_pfa_ip_vs_sb##
+f$cc_pot_family_id = 2 && f$cc_pf_role_pfa && !f$cc_pf_iso_proven && f$cc_hu_ip &&
+(f$cc_hu_matchup_id = 15 || f$cc_hu_matchup_id = 25 || f$cc_hu_matchup_id = 35 || f$cc_hu_matchup_id = 45)
+
+##f$cc_srp_pfa_oop_vs_lp_coldcaller##
+f$cc_pot_family_id = 2 && f$cc_pf_role_pfa && !f$cc_pf_iso_proven && f$cc_hu_oop &&
+(f$cc_hu_matchup_id = 12 || f$cc_hu_matchup_id = 13 || f$cc_hu_matchup_id = 14 ||
+ f$cc_hu_matchup_id = 23 || f$cc_hu_matchup_id = 24 || f$cc_hu_matchup_id = 34)
+
+##f$cc_srp_sb_pfa_oop_vs_bb##
+f$cc_pot_family_id = 2 && f$cc_pf_role_pfa && !f$cc_pf_iso_proven && f$cc_hu_matchup_id = 56
+
+// -----------------------------------------------------------------------------
+// R.02 — Opener bands (descriptors only)
+// -----------------------------------------------------------------------------
+
+##f$cc_pfa_ep_band##
+f$cc_hero_pos_id = 1 || f$cc_hero_pos_id = 2
+
+##f$cc_pfa_lp_band##
+f$cc_hero_pos_id = 3 || f$cc_hero_pos_id = 4
+
+##f$cc_pfa_blind_band##
+f$cc_hero_pos_id = 5 || f$cc_hero_pos_id = 6
+
+// -----------------------------------------------------------------------------
+// R.03 — Direct versus adapted legacy ancestry
+// -----------------------------------------------------------------------------
+
+##f$cc_srp_direct_btn_vs_bb##
+f$cc_hu_matchup_id = 46
+
+##f$cc_srp_direct_btn_vs_sb##
+f$cc_hu_matchup_id = 45
+
+##f$cc_srp_direct_sb_vs_bb##
+f$cc_hu_matchup_id = 56
+
+##f$cc_srp_earlier_opener_vs_bb##
+f$cc_hu_matchup_id = 16 || f$cc_hu_matchup_id = 26 || f$cc_hu_matchup_id = 36
+
+##f$cc_srp_earlier_opener_vs_sb##
+f$cc_hu_matchup_id = 15 || f$cc_hu_matchup_id = 25 || f$cc_hu_matchup_id = 35
+
+##f$cc_srp_new_oop_coldcaller_family##
+f$cc_srp_pfa_oop_vs_lp_coldcaller
+
+// -----------------------------------------------------------------------------
+// R.04 — Parent IDs for logs and child policy routing
+// 1 PFA IP vs BB
+// 2 PFA IP vs SB
+// 3 PFA OOP vs later-position cold caller
+// 4 SB PFA OOP vs BB
+// -----------------------------------------------------------------------------
+
+##f$cc_srp_pfa_parent_id##
+When f$cc_srp_pfa_ip_vs_bb Return 1 Force
+When f$cc_srp_pfa_ip_vs_sb Return 2 Force
+When f$cc_srp_pfa_oop_vs_lp_coldcaller Return 3 Force
+When f$cc_srp_sb_pfa_oop_vs_bb Return 4 Force
+When Others Return 0 Force
+
+// Exact-matchup adjustment requirement:
+//   direct Spin descendant still requires deep-stack adaptation (A);
+//   structurally grouped earlier-position matchups require additional P range
+//   work; OOP cold-call family is primarily P.
+##f$cc_srp_matchup_adjustment_id##
+// 1 = A direct descendant; 2 = A/P structural; 3 = P-heavy new family
+When f$cc_srp_direct_btn_vs_bb || f$cc_srp_direct_btn_vs_sb || f$cc_srp_direct_sb_vs_bb Return 1 Force
+When f$cc_srp_earlier_opener_vs_bb || f$cc_srp_earlier_opener_vs_sb Return 2 Force
+When f$cc_srp_new_oop_coldcaller_family Return 3 Force
+When Others Return 0 Force
+
+// ============================================================================
+// End range-topology module.
+// ============================================================================
