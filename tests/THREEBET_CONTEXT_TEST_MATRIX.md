@@ -45,10 +45,10 @@ Case 6 must never become a normal strategy merely because a generic `3bettor && 
 
 ## Post-3bet cold caller survives
 
-| # | Preflop line | Hero | Original opener | Survivor | Expected subtype | Coverage |
-|---:|---|---|---|---|---|---|
-| 8 | UTG raise → BTN 3bet → BB coldcall → UTG fold | BTN | UTG | BB | plain 3BP | **not covered** |
-| 9 | HJ raise → CO 3bet → BTN coldcall → HJ fold | CO | HJ | BTN | plain 3BP | **not covered** |
+| # | Preflop line | Hero | Original opener | Survivor | Expected subtype | Rel | Coverage |
+|---:|---|---|---|---|---|---|---|
+| 8 | UTG raise → BTN 3bet → BB coldcall → UTG fold | BTN | UTG | BB | plain 3BP, survivor type 3 | IP | **covered** |
+| 9 | HJ raise → CO 3bet → BTN coldcall → HJ fold | CO | HJ | BTN | plain 3BP, survivor type 3 | OOP | **covered** |
 
 Acceptance:
 
@@ -56,9 +56,28 @@ Acceptance:
 - `f$cc_hu_3bp_villain_is_post3bet_coldcaller = true`;
 - `f$cc_hu_3bp_villain_is_opener = false`;
 - `f$cc_hu_3bp_survivor_type_id = 3`;
-- generic plain-opener CBet child must return false / size 0.
+- `f$cc_hu_3bp_survivor_consistent = true`;
+- **generic opener-only action context remains false**;
+- `f$cc_cbet_plain3bp_postcoldcaller_ip_context` or `_oop_context` owns the family;
+- top-level plain-3BP child uses the survivor-aware dispatcher rather than the opener-only child.
 
-This is a mandatory anti-leak test.
+Mandatory anti-leak rule:
+
+> A post-3bet cold caller may now have a reviewed CBet baseline, but it must never be reclassified as the original opener-call range.
+
+## Commitment anti-leak for all covered 3BP cases
+
+A positive CBet action is intentionally **not** a stack-off decision.
+
+For every covered case 1-9:
+
+- `f$cc_flop_cbet_router = true` may mean only "bet this flop";
+- `f$cc_flop_cbet_size_id > 0` may choose only the reviewed flop size family;
+- no current flop-CBet module may contain `BetMax`;
+- no current strategy may call `f$Raise_Committed`;
+- TP/overpair CBet branches must not imply call-vs-XR, 3bet-vs-XR or future-street commitment.
+
+Those responses require separate exact-node tests when defense is implemented.
 
 ## Squeeze — original opener survives
 
