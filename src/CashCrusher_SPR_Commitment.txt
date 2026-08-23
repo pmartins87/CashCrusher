@@ -1,14 +1,26 @@
 // ============================================================================
 // CashCrusher_SPR_Commitment.txt
-// Gate 00D — deep-stack SPR geometry and commitment safety contract
+// Gate 00D — deep-stack SPR geometry for 2-6 handed cash
 // ============================================================================
-// Core decision:
-//   CashCrusher rejects the inherited Spin-wide rule that converts a large
-//   planned bet/raise into all-in merely because it consumes ~half the stack.
-//   Jams must be owned by an explicit reviewed strategic node.
+// Corrected migration rule:
+//   DeepCrusher was built around short-stack Spin geometry, so inherited
+//   commitment helpers and TP+/draw stack-off rules cannot be copied blindly to
+//   a cash game that normally starts around 100bb.  That does NOT mean those
+//   helpers are globally invalid, must be zeroed, or must be prohibited.
+//
+//   The correct rule is contextual review: retain/adapt/reject each inherited
+//   commitment rule only after checking the actual pot family, effective stack,
+//   SPR, board/runout, range topology and action size where it is used.
+//
+// Important rollback:
+//   This module intentionally does NOT override
+//   `f$allin_on_betsize_balance_ratio`.  Its eventual CashCrusher definition is
+//   deferred to the sizing/commitment audit instead of being forced to 0.00.
+//   Likewise, legacy `f$Raise_Committed` / `f$hand_StackOffDraws` are neither
+//   imported here nor globally banned here; any future use must be audited in
+//   the exact strategic node.
 //
 // Provenance:
-//   X = inherited global short-stack auto-commit behavior.
 //   T/A = runtime stack/current-bet/pot facts used to reconstruct street-start
 //         effective stacks without current-action contamination.
 //   P = SPR buckets are engineering bins for routing/audit, NOT universal GTO
@@ -16,25 +28,7 @@
 // ============================================================================
 
 // -----------------------------------------------------------------------------
-// 00D.01 — Disable inherited global betsize -> all-in conversion
-// -----------------------------------------------------------------------------
-
-// Purpose: reserved OpenHoldem callback that normally permits automatic all-in
-// conversion near a balance ratio.
-// Source: inherited DeepCrusher callback used ~50% commitment logic.
-// Provenance: X for CashCrusher baseline; 0.00 explicitly disables it.
-// Safety: an explicit future jam must come from reviewed action/size policy.
-##f$allin_on_betsize_balance_ratio##
-0.00
-
-// Purpose: machine-readable invariant for tests/audits confirming global
-// auto-commit is intentionally disabled.
-// Source/Provenance: P engineering safety contract.
-##f$cc_global_auto_commit_disabled##
-true
-
-// -----------------------------------------------------------------------------
-// 00D.02 — Street-start stack reconstruction
+// 00D.01 — Street-start stack reconstruction
 // Current street bets are added back to balance so the value stays stable while
 // a betting round is in progress.
 // -----------------------------------------------------------------------------
@@ -114,7 +108,7 @@ When f$cc_hero_stack_round_start_bb <= f$cc_hu_villain_stack_round_start_bb Retu
 When Others Return f$cc_hu_villain_stack_round_start_bb Force
 
 // -----------------------------------------------------------------------------
-// 00D.03 — Multiway shallowest-live effective stack
+// 00D.02 — Multiway shallowest-live effective stack
 // IMPORTANT: this is only a COARSE context descriptor. A decision versus one
 // specific bettor/raiser must use actor-specific effective stack instead.
 // -----------------------------------------------------------------------------
@@ -144,7 +138,7 @@ When f$cc_hero_stack_round_start_bb <= f$cc_min_live_opp_stack_round_start_bb Re
 When Others Return f$cc_min_live_opp_stack_round_start_bb Force
 
 // -----------------------------------------------------------------------------
-// 00D.04 — Pot and SPR at beginning of current street
+// 00D.03 — Pot and SPR at beginning of current street
 // OpenHoldem `potcommon` excludes players' CURRENT-street bets, which is why it
 // remains the stable denominator even while a bet is in front of Hero.
 // -----------------------------------------------------------------------------
@@ -188,7 +182,7 @@ When f$cc_effective_stack_vs_raischair_round_start_bb < 0 Return -1 Force
 When Others Return (f$cc_effective_stack_vs_raischair_round_start_bb / f$cc_round_start_pot_bb) Force
 
 // -----------------------------------------------------------------------------
-// 00D.05 — Engineering SPR buckets
+// 00D.04 — Engineering SPR buckets
 // -----------------------------------------------------------------------------
 
 // Purpose: coarse SPR routing/audit ID: <1, 1-2, 2-4, 4-6, 6-10, 10-15, 15+.
@@ -246,5 +240,5 @@ f$cc_spr_round_start >= 0
 
 // ============================================================================
 // End Gate 00D.
-// No function in this file authorizes a strategic jam.
+// Commitment/all-in behavior is intentionally deferred to node-specific audit.
 // ============================================================================
