@@ -100,26 +100,35 @@ No uncovered pot family may inherit an ordinary-SRP child as fallback.
 - [x] **02C.1** — true-HU BB-PFA-OOP after SB limp -> BB raise -> call, ordinary HUBB-CBet subset.
 - [x] **02C.2** — reduced-HU SB-PFA-OOP vs BB source-safe subset; preserve source turn-check/XR architecture instead of generic TP+ barrel.
 
-### Ordinary SRP — six-max gaps still to fill
+### Ordinary SRP — six-max expansion
 
-- [ ] **02D.1** — UTG/HJ/CO PFA IP vs SB/BB P-heavy range adaptation; do not inherit BTN frequencies literally.
-- [ ] **02D.2** — UTG/HJ/CO PFA OOP vs later nonblind cold caller P-heavy adaptation.
-- [ ] **02D.3** — ordinary SRP that began flop multiway and became HU only by turn; survivor/range-origin policy.
-- [ ] **02D.4** — current multiway ordinary-SRP Turn CBet, exact flop-origin/current-player composition.
+- [x] **02D.1** — UTG/HJ/CO PFA IP vs SB/BB P-heavy range adaptation; BTN frequencies are not inherited literally.
+- [x] **02D.2** — UTG/HJ/CO PFA OOP vs later nonblind cold caller P-heavy adaptation.
+- [x] **02D.3** — ordinary SRP that began flop multiway and became HU only by turn; exact survivor/range-origin policy.
+- [x] **02E** — current multiway ordinary-SRP Turn CBet, preserving flop-origin/current-player composition and deepest-effective SPR.
 
 ### Other pot families
 
-- [ ] **02E** — ISO Turn CBet by surviving limper/coldcaller provenance.
-- [ ] **02F** — plain 3BP Turn CBet by opener/coldcaller survivor provenance.
-- [ ] **02G** — squeeze Turn CBet, separate from plain 3BP.
-- [ ] **02H** — clean supported 4BP Turn CBet; low SPR reviewed without generic TP+ jam.
-- [ ] **02I** — multiway 3BP/squeeze and other supported multiway raised-pot turn families.
+- [x] **02F** — ISO Turn CBet by surviving original-limper vs post-raise-coldcaller provenance, HU and multiway.
+- [x] **02G** — plain 3BP Turn CBet by opener/coldcaller survivor provenance, HU and multiway.
+- [x] **02H** — squeeze Turn CBet kept separate from plain 3BP; opener/pre3bet/post3bet survivor origins retained.
+- [x] **02I** — clean supported HU 4BP Turn CBet; natural low SPR retained without generic TP+ stackoff.
+- [ ] **02I.2** — multiway 4BP Turn CBet remains blocked by the unsupported multiway-4BP flop family.
+- [ ] **02I.3** — reversed/backraise/limp-reraise 4BP and 5bet+ only after stronger chronology/source evidence.
 
-### Turn execution / validation
+### Turn execution / sizing / validation
 
-- [ ] **02J.1** — Turn size-ID runtime adapter without stealing global `f$BestBetsize` ownership.
-- [ ] **02J.2** — Turn stack-sensitive sizing / explicit-jam audit per exact family.
+- [x] **02J.0** — static Turn-CBet strategic coverage/exclusivity audit; residual unsupported states remain diagnostic/fail-closed.
+- [x] **02J.1** — exact Turn runtime size adapter: 25/33/40/50/62.5/75/100 using verified native/OpenPPL percentage actions.
+- [x] **02J.2A** — stack-sensitive Turn execution geometry with Hero/HU/multiway shallowest+deepest ratios and historical 50/60 diagnostics.
+- [x] **02J.2B** — local natural/mechanical `BetMax` only when requested size already reaches Hero stack or every live effective relationship; shortest-only sidepot reach is not promoted.
+- [x] **02J.2C** — source audit of historical Turn `TurnMax`/`TurnShove` and ~50/55/60 promotion. Result: no generic near-all-in cash rule; any future strategic shove must be exact-node owned.
+- [x] **02J.T** — deterministic static Turn coverage + runtime sizing/all-in-equivalence tests run in CI.
+- [ ] **02K** — compose Turn execution adapter into eventual whole-bot `f$BestBetsize` without stealing sizing from Float/Donk/Probe/Delayed/defense nodes.
+- [ ] **02N** — closed round-3 executed-action provenance for River routing: planned Turn CBet vs actual check/bet/all-in/raised-history, plus mismatch diagnostics.
 - [ ] **02V** — deterministic OpenPPL/OpenHoldem Turn-CBet fixtures/replays PASS.
+
+Gate 02 strategic Turn-CBet coverage is frozen enough to start its action-history bridge. It is not release-certified until 02K/02N/02V and the global sizing callbacks are composed safely.
 
 ## Gate 03+ — post-flop attack order after Turn CBet
 
