@@ -154,10 +154,12 @@ f$cc_threeway && f$cc_flop_entry_count = 3 && f$cc_multiway_rel_middle
 f$cc_flop_entry_count >= 4
 
 // Purpose: final mechanical validity contract for current multiway context.
-// Source/Provenance: P engineering guard over Gate00 mechanical checks.
-// Safety: exact live-mask consistency and exact context ID are mandatory.
+// Source/Provenance: P engineering guard over Gate00 mechanics plus the Gate00D.2
+// dual-bound stack envelope.
+// Safety: exact live mask, exact context ID and coherent shallow/deep stack bounds
+// are mandatory before reviewed multiway strategy may act.
 ##f$cc_multiway_context_valid##
-f$cc_context_valid && f$cc_multiway && f$cc_live_mask_consistent && f$cc_multiway_exact_context_id > 0
+f$cc_context_valid && f$cc_multiway && f$cc_live_mask_consistent && f$cc_multiway_exact_context_id > 0 && f$cc_mw_stack_geometry_valid && f$cc_mw_spr_bounds_valid
 
 // ============================================================================
 // End Gate 00E/00F.
