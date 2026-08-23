@@ -16,7 +16,8 @@
 //   * P-heavy UTG/HJ/CO PFA-OOP vs later nonblind cold caller;
 //   * ordinary-SRP flop-multiway -> turn-HU, preserving exact flop survivor origin;
 //   * ordinary-SRP turn still multiway, preserving flop origin/current composition;
-//   * ISO HU/multiway, preserving original-limper vs post-raise-coldcaller origin.
+//   * ISO HU/multiway, preserving original-limper vs post-raise-coldcaller origin;
+//   * plain 3BP HU/multiway, preserving opener-call vs post-3bet-coldcaller origin.
 //
 // Everything else remains explicitly fail-closed until its own source/adaptation
 // audit. This is deliberate: Turn CBet must not inherit an HUSB/BTN frequency just
@@ -47,12 +48,14 @@ f$cc_pf_role_pfa &&
 f$cc_pf_iso_proven
 
 // Purpose: plain 3BP Turn-CBet context for final 3bettor.
-// Source/Provenance: A/T role/subtype gate; deep-cash policy P-heavy and pending.
+// Source: no dedicated deep-stack source 3BP second-barrel tree exists.
+// Provenance: A/T topology gate; exact actions are P-heavy Gate02G policy.
 ##f$cc_turn_cbet_plain3bp_context##
 f$cc_turn_cbet_opportunity &&
 f$cc_pot_family_id = 3 &&
 f$cc_pf_role_3bettor &&
-f$cc_pf_3bet_plain_proven
+f$cc_pf_3bet_plain_proven &&
+!f$cc_pf_squeeze_proven
 
 // Purpose: squeeze-pot Turn-CBet context.
 // Source/Provenance: A/T exact subtype; kept separate from plain 3BP.
@@ -115,6 +118,7 @@ f$cc_hu_oop &&
 ##f$cc_turn_cbet_family_id##
 When !f$cc_turn_cbet_opportunity Return 0 Force
 When f$cc_turn_iso_covered Return 9 Force
+When f$cc_turn_plain3bp_covered Return 10 Force
 When f$cc_turn_srp_postmw_hu_covered Return 7 Force
 When f$cc_turn_mw_srp_covered Return 8 Force
 When f$cc_turn_srp_ip_source_anchored_covered Return 1 Force
@@ -123,7 +127,6 @@ When f$cc_turn_srp_ip_epmpco_vs_bb_context || f$cc_turn_srp_ip_epmpco_vs_sb_cont
 When f$cc_turn_srp_oop_vs_nonblind_coldcaller_context Return 4 Force
 When f$cc_turn_cbet_srp_ip_uncovered_range_context Return 5 Force
 When f$cc_turn_cbet_srp_oop_uncovered_context Return 6 Force
-When f$cc_turn_cbet_plain3bp_context Return 10 Force
 When f$cc_turn_cbet_squeeze_context Return 11 Force
 When f$cc_turn_cbet_4bp_context Return 12 Force
 When Others Return 0 Force
@@ -135,6 +138,7 @@ When Others Return 0 Force
 ##f$cc_turn_cbet_router##
 When !f$cc_turn_cbet_opportunity Return false Force
 When f$cc_turn_iso_covered Return f$cc_turn_iso_action Force
+When f$cc_turn_plain3bp_covered Return f$cc_turn_plain3bp_action Force
 When f$cc_turn_srp_postmw_hu_covered Return f$cc_turn_srp_postmw_hu_action Force
 When f$cc_turn_mw_srp_covered Return f$cc_turn_mw_srp_action Force
 When f$cc_turn_srp_ip_source_anchored_covered Return f$cc_turn_srp_ip_source_anchored_action Force
@@ -148,6 +152,7 @@ When Others Return false Force
 ##f$cc_turn_cbet_size_id##
 When !f$cc_turn_cbet_opportunity Return 0 Force
 When f$cc_turn_iso_covered Return f$cc_turn_iso_size_id Force
+When f$cc_turn_plain3bp_covered Return f$cc_turn_plain3bp_size_id Force
 When f$cc_turn_srp_postmw_hu_covered Return f$cc_turn_srp_postmw_hu_size_id Force
 When f$cc_turn_mw_srp_covered Return f$cc_turn_mw_srp_size_id Force
 When f$cc_turn_srp_ip_source_anchored_covered Return f$cc_turn_srp_ip_source_anchored_size_id Force
@@ -159,6 +164,7 @@ When Others Return 0 Force
 // Source/Provenance: P engineering coverage contract.
 ##f$cc_turn_cbet_strategy_covered##
 f$cc_turn_iso_covered ||
+f$cc_turn_plain3bp_covered ||
 f$cc_turn_srp_postmw_hu_covered ||
 f$cc_turn_mw_srp_covered ||
 f$cc_turn_srp_ip_source_anchored_covered ||
