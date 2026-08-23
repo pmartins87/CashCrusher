@@ -14,12 +14,13 @@ Gate 00 design/code is frozen enough for strategy work, but it is not release-ce
 
 ## Gate 01 — Flop CBet
 
-### Source/audit and safety
+### Source/audit, documentation and safety
 
 - [x] **01A** — source audit and portable CBet combo/texture primitives.
 - [x] **01A.2** — handedness-aware source audit v2; true HU HUSB/HUBB ancestry corrected.
 - [x] **01A.3** — binding OpenPPL flat-WHEN/provenance coding contract.
 - [x] **01A.4** — deep-stack commitment decoupling: TP+/overpair no longer imply stack-off; `f$Raise_Committed`, `StackOffDraws` and global auto-jam are quarantined.
+- [ ] **01A.5** — retrofit per-function Purpose/Source/Provenance/Safety comments into remaining supporting context helpers, beginning with `CashCrusher_Context.txt`; only then promote supporting-function provenance warnings to hard CI errors.
 
 ### Ordinary one-raise HU families
 
@@ -56,7 +57,7 @@ Gate 00 design/code is frozen enough for strategy work, but it is not release-ce
 ### Execution/validation
 
 - [ ] **01K** — map CBet size IDs (~33/~50/~75) into final OpenPPL betsize runtime.
-- [ ] **01L** — static dependency/safety lint PASS on current review head.
+- [x] **01L** — static dependency/safety lint PASS on current review head (`run 82`), with supporting-context provenance warnings still tracked by 01A.5.
 - [ ] **01M** — deterministic CBet policy fixtures/replays PASS.
 - [ ] **01N** — ensure skipped-CBet branches have complete X/C/X/R/turn follow-through before release.
 
