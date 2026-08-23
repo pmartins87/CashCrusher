@@ -1,0 +1,294 @@
+// ============================================================================
+// CashCrusher_Flop_CBet_4BP.txt
+// Gate 01I.1 — clean HU four-bet-pot flop CBet
+// ============================================================================
+// Implemented clean families:
+//   1) TRUE HU: SB/Button opener4 IP vs BB 3bettor-call.
+//   2) Reduced HU: opener4 vs 3bettor-call, IP/OOP.
+//   3) Reduced HU: cold4 vs original opener-call, IP/OOP.
+//   4) Reduced HU: cold4 vs original 3bettor-call, IP/OOP.
+//
+// Not implemented:
+//   * non-raiser survivor in 4BP;
+//   * limp-reraise/reversed/backraise chronology;
+//   * multiway 4BP;
+//   * 5bet+;
+//   * response to flop raise / later stack-off.
+//
+// Source boundary:
+//   DeepCrusher has no dedicated deep-stack 4BP CBet tree. Initiative, hand,
+//   board and IP/OOP architecture is A; exact cash 4BP frequencies are P.
+//
+// Stack-depth principle:
+//   Starting 100bb does not imply high SPR after a 4bet. Low SPR may make some
+//   aggressive source ideas valid again, but this CBet node does not pre-decide
+//   later commitment. No commitment helper is globally enabled or disabled here.
+//
+// OpenPPL safety: flat complete WHENs; exact clean subtype/survivor required.
+// Size IDs: 1 ~33% | 2 ~50% | 3 ~75% | 0 check
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// 4C.00 — Exact context guards
+// -----------------------------------------------------------------------------
+
+// Purpose: true-HU ordinary opener4 CBet opportunity.
+// Context: SB/Button open -> BB 3bet -> SB/Button 4bet -> BB call; Hero IP.
+// Source/Provenance: A HU positional ancestry + P 4BP range policy.
+##f$cc_cbet_true_hu_4bp_opener4_ip_context##
+f$cc_flop_cbet_opportunity &&
+f$cc_true_hu_4bp_opener4_ip_vs_threebettor &&
+f$cc_spr_valid
+
+// Purpose: reduced-HU opener4 versus its 3bettor caller, Hero IP.
+// Source/Provenance: P exact six-max range family over A context mechanics.
+##f$cc_cbet_4bp_opener4_vs_threebettor_ip_context##
+f$cc_flop_cbet_opportunity &&
+f$cc_reduced_hu_4bp_opener4_vs_threebettor &&
+f$cc_hu_ip &&
+f$cc_spr_valid
+
+// Purpose: reduced-HU opener4 versus its 3bettor caller, Hero OOP.
+// Source/Provenance: P exact six-max range family over A context mechanics.
+##f$cc_cbet_4bp_opener4_vs_threebettor_oop_context##
+f$cc_flop_cbet_opportunity &&
+f$cc_reduced_hu_4bp_opener4_vs_threebettor &&
+f$cc_hu_oop &&
+f$cc_spr_valid
+
+// Purpose: reduced-HU cold4 versus original opener caller, Hero IP.
+// Source/Provenance: P strong/condensed opener-continuation family.
+##f$cc_cbet_4bp_cold4_vs_opener_ip_context##
+f$cc_flop_cbet_opportunity &&
+f$cc_reduced_hu_4bp_cold4_vs_opener &&
+f$cc_hu_ip &&
+f$cc_spr_valid
+
+// Purpose: reduced-HU cold4 versus original opener caller, Hero OOP.
+// Source/Provenance: P strong/condensed opener-continuation family.
+##f$cc_cbet_4bp_cold4_vs_opener_oop_context##
+f$cc_flop_cbet_opportunity &&
+f$cc_reduced_hu_4bp_cold4_vs_opener &&
+f$cc_hu_oop &&
+f$cc_spr_valid
+
+// Purpose: reduced-HU cold4 versus original 3bettor caller, Hero IP.
+// Source/Provenance: P 3bettor-continuation family.
+##f$cc_cbet_4bp_cold4_vs_threebettor_ip_context##
+f$cc_flop_cbet_opportunity &&
+f$cc_reduced_hu_4bp_cold4_vs_threebettor &&
+f$cc_hu_ip &&
+f$cc_spr_valid
+
+// Purpose: reduced-HU cold4 versus original 3bettor caller, Hero OOP.
+// Source/Provenance: P 3bettor-continuation family.
+##f$cc_cbet_4bp_cold4_vs_threebettor_oop_context##
+f$cc_flop_cbet_opportunity &&
+f$cc_reduced_hu_4bp_cold4_vs_threebettor &&
+f$cc_hu_oop &&
+f$cc_spr_valid
+
+// Purpose: late-position/wider 3bettor descriptor for opener4-v-3bettor policy.
+// Source/Provenance: P six-max range modifier; exact positions remain canonical.
+##f$cc_cbet_4bp_vs_late_threebettor##
+(f$cc_cbet_4bp_opener4_vs_threebettor_ip_context || f$cc_cbet_4bp_opener4_vs_threebettor_oop_context) &&
+(f$cc_hu_villain_pos_id = 4 || f$cc_hu_villain_pos_id = 5 || f$cc_hu_villain_pos_id = 6)
+
+// Purpose: early/middle original opener descriptor for cold4-v-opener policy.
+// Source/Provenance: P six-max range modifier.
+##f$cc_cbet_4bp_vs_early_opener##
+(f$cc_cbet_4bp_cold4_vs_opener_ip_context || f$cc_cbet_4bp_cold4_vs_opener_oop_context) &&
+(f$cc_hu_villain_pos_id = 1 || f$cc_hu_villain_pos_id = 2)
+
+// -----------------------------------------------------------------------------
+// 4C.01 — TRUE HU opener4 IP vs BB 3bettor-call
+// -----------------------------------------------------------------------------
+
+// Purpose: choose flop CBet/check in clean true-HU 4BP with Hero SB/Button IP.
+// Source: HUSB contributes IP/texture/hand architecture only; no dedicated 4BP
+// frequency exists in DeepCrusher.
+// Provenance: A architecture + P compressed-range/low-SPR 4BP theory.
+// Decision logic: broad small pressure on static high/paired; robust one-pair
+// remains valuable; low connected boards check more; premium draws stay active;
+// selected quality air is limited to favorable static parents.
+// Safety/Limits: betting TP/overpair here is a flop value decision, not an
+// automatic permission to call a future shove or stack off.
+##f$cc_cbet_true_hu_4bp_opener4_ip_action##
+When !f$cc_cbet_true_hu_4bp_opener4_ip_context Return false Force
+When f$cc_cbet_flop_very_strong_value Return true Force
+When f$cc_cbet_flop_overpair Return true Force
+When f$cc_cbet_flop_strong_top_pair Return true Force
+When f$cc_cbet_flop_medium_top_pair && (f$cc_flop_static_high_parent || f$cc_flop_paired_parent) Return true Force
+When f$cc_cbet_flop_medium_top_pair && f$cc_flop_dynamic_high_parent && f$cc_spr_round_start < 3 Return true Force
+When f$cc_cbet_flop_medium_top_pair Return false Force
+When f$cc_cbet_flop_weak_top_pair && f$cc_flop_static_high_parent && f$cc_spr_round_start < 2 Return true Force
+When f$cc_cbet_flop_weak_top_pair Return false Force
+When f$cc_hand_second_pair_or_pocket && f$cc_pair_plus_draw Return true Force
+When f$cc_hand_second_pair_or_pocket && f$cc_cbet_board_small_bet_parent && f$cc_spr_round_start < 2 Return true Force
+When f$cc_cbet_flop_showdown_pair Return false Force
+When f$cc_cbet_flop_premium_draw Return true Force
+When f$cc_cbet_flop_good_draw && !f$cc_flop_dynamic_lowmid_parent Return true Force
+When f$cc_cbet_flop_good_draw && f$cc_flop_dynamic_lowmid_parent && f$cc_two_overcards && f$cc_spr_round_start < 3 Return true Force
+When f$cc_real_frontdoor_draw Return false Force
+When f$cc_cbet_flop_quality_air && (f$cc_flop_static_high_parent || f$cc_flop_paired_parent) Return true Force
+When f$cc_cbet_flop_air_best_backdoors && f$cc_flop_dynamic_high_parent && f$cc_spr_round_start < 3 Return true Force
+When Others Return false Force
+
+// Purpose: size positive true-HU 4BP CBet.
+// Source/Provenance: P 4BP sizing constrained by A dry-small/dynamic-larger idea.
+// Decision logic: static/paired mostly 33; dynamic robust region 50; 75 is not a
+// default because the pot is already large and final stack conversion is Gate01K.
+##f$cc_cbet_true_hu_4bp_opener4_ip_size_id##
+When !f$cc_cbet_true_hu_4bp_opener4_ip_action Return 0 Force
+When f$cc_flop_dynamic_lowmid_parent && (f$cc_cbet_flop_very_strong_value || f$cc_cbet_flop_premium_draw) Return 2 Force
+When f$cc_flop_dynamic_lowmid_parent Return 1 Force
+When f$cc_flop_dynamic_high_parent && (f$cc_cbet_flop_very_strong_value || f$cc_cbet_flop_overpair || f$cc_cbet_flop_premium_draw) Return 2 Force
+When f$cc_flop_dynamic_high_parent Return 1 Force
+When f$cc_flop_static_lowmid_parent && f$cc_cbet_flop_very_strong_value Return 2 Force
+When f$cc_flop_static_high_parent || f$cc_flop_static_lowmid_parent || f$cc_flop_paired_parent Return 1 Force
+When Others Return 1 Force
+
+// -----------------------------------------------------------------------------
+// 4C.02 — Reduced HU opener4 vs 3bettor-call
+// -----------------------------------------------------------------------------
+
+// Purpose: choose CBet/check when original opener 4bet and 3bettor called.
+// Context: reduced-HU clean first-orbit 4BP, IP or OOP retained explicitly.
+// Source: no dedicated source tree. DeepCrusher contributes A hand/texture/IP-OOP
+// architecture; exact range pressure is P.
+// Professional fill: static high/paired boards favor small pressure; OOP protects
+// checks more; low/mid connected structures check medium one-pair and air more;
+// late 3bettor ranges permit somewhat broader static pressure than tight 3betters.
+// Safety: no future stack-off is implied by a positive flop CBet.
+##f$cc_cbet_4bp_opener4_vs_threebettor_action##
+When !(f$cc_cbet_4bp_opener4_vs_threebettor_ip_context || f$cc_cbet_4bp_opener4_vs_threebettor_oop_context) Return false Force
+When f$cc_cbet_flop_very_strong_value Return true Force
+When f$cc_cbet_flop_overpair && f$cc_flop_dynamic_lowmid_parent && f$cc_hu_oop && f$cc_spr_round_start >= 3 Return false Force
+When f$cc_cbet_flop_overpair Return true Force
+When f$cc_cbet_flop_strong_top_pair && f$cc_flop_dynamic_lowmid_parent && f$cc_hu_oop && f$cc_spr_round_start >= 2 Return false Force
+When f$cc_cbet_flop_strong_top_pair Return true Force
+When f$cc_cbet_flop_medium_top_pair && f$cc_hu_ip && (f$cc_flop_static_high_parent || f$cc_flop_paired_parent) Return true Force
+When f$cc_cbet_flop_medium_top_pair && f$cc_hu_oop && f$cc_flop_static_high_parent && f$cc_spr_round_start < 2 Return true Force
+When f$cc_cbet_flop_medium_top_pair Return false Force
+When f$cc_cbet_flop_weak_top_pair Return false Force
+When f$cc_hand_second_pair_or_pocket && f$cc_pair_plus_draw && f$cc_hu_ip Return true Force
+When f$cc_cbet_flop_showdown_pair Return false Force
+When f$cc_cbet_flop_premium_draw Return true Force
+When f$cc_cbet_flop_good_draw && f$cc_hu_ip && !f$cc_flop_dynamic_lowmid_parent Return true Force
+When f$cc_cbet_flop_good_draw && f$cc_hu_oop && f$cc_cbet_board_small_bet_parent Return true Force
+When f$cc_real_frontdoor_draw Return false Force
+When f$cc_hu_ip && f$cc_cbet_flop_quality_air && (f$cc_flop_static_high_parent || f$cc_flop_paired_parent) && f$cc_cbet_4bp_vs_late_threebettor Return true Force
+When f$cc_hu_ip && f$cc_cbet_flop_air_best_backdoors && f$cc_flop_static_high_parent Return true Force
+When Others Return false Force
+
+// Purpose: size positive opener4-v-3bettor CBet.
+// Source/Provenance: P 4BP palette; A texture-sensitive sizing ancestry.
+##f$cc_cbet_4bp_opener4_vs_threebettor_size_id##
+When !f$cc_cbet_4bp_opener4_vs_threebettor_action Return 0 Force
+When f$cc_flop_dynamic_lowmid_parent && (f$cc_cbet_flop_very_strong_value || f$cc_cbet_flop_premium_draw) Return 2 Force
+When f$cc_flop_dynamic_lowmid_parent Return 1 Force
+When f$cc_flop_dynamic_high_parent && (f$cc_cbet_flop_very_strong_value || f$cc_cbet_flop_overpair || f$cc_cbet_flop_premium_draw) Return 2 Force
+When f$cc_flop_dynamic_high_parent Return 1 Force
+When f$cc_flop_static_lowmid_parent && f$cc_cbet_flop_very_strong_value Return 2 Force
+When f$cc_flop_static_high_parent || f$cc_flop_static_lowmid_parent || f$cc_flop_paired_parent Return 1 Force
+When Others Return 1 Force
+
+// -----------------------------------------------------------------------------
+// 4C.03 — Reduced HU cold4 vs ORIGINAL OPENER
+// -----------------------------------------------------------------------------
+
+// Purpose: choose CBet/check after Hero cold4bet and original opener called.
+// Source: no DeepCrusher equivalent range family.
+// Provenance: P-heavy explicit six-max gap, constrained by A board/hand concepts.
+// Professional fill: opener's cold4 continue is treated strong/condensed; no
+// pure-air baseline; one-pair value focuses on robust/static regions; premium
+// equity remains active, especially IP.
+// Safety: exact opener survivor and clean cold4 chronology are mandatory.
+##f$cc_cbet_4bp_cold4_vs_opener_action##
+When !(f$cc_cbet_4bp_cold4_vs_opener_ip_context || f$cc_cbet_4bp_cold4_vs_opener_oop_context) Return false Force
+When f$cc_cbet_flop_very_strong_value Return true Force
+When f$cc_cbet_flop_overpair && f$cc_flop_dynamic_lowmid_parent && f$cc_spr_round_start >= 2 Return false Force
+When f$cc_cbet_flop_overpair Return true Force
+When f$cc_cbet_flop_strong_top_pair && (f$cc_flop_static_high_parent || f$cc_flop_paired_parent) Return true Force
+When f$cc_cbet_flop_strong_top_pair && f$cc_pair_plus_draw Return true Force
+When f$cc_cbet_flop_strong_top_pair && f$cc_hu_ip && f$cc_flop_dynamic_high_parent && !f$cc_cbet_4bp_vs_early_opener Return true Force
+When f$cc_cbet_flop_strong_top_pair Return false Force
+When f$cc_cbet_flop_medium_top_pair Return false Force
+When f$cc_cbet_flop_weak_top_pair Return false Force
+When f$cc_cbet_flop_showdown_pair Return false Force
+When f$cc_cbet_flop_premium_draw && f$cc_hu_ip Return true Force
+When f$cc_cbet_flop_premium_draw && f$cc_hu_oop && (f$cc_flop_static_high_parent || f$cc_flop_paired_parent || f$cc_flop_dynamic_high_parent) Return true Force
+When f$cc_real_frontdoor_draw Return false Force
+When Others Return false Force
+
+// Purpose: size positive cold4-v-opener CBet.
+// Source/Provenance: P strong-range 4BP sizing; mostly 33 with 50 on robust dynamic.
+##f$cc_cbet_4bp_cold4_vs_opener_size_id##
+When !f$cc_cbet_4bp_cold4_vs_opener_action Return 0 Force
+When f$cc_flop_dynamic_lowmid_parent && f$cc_cbet_flop_very_strong_value Return 2 Force
+When f$cc_flop_dynamic_high_parent && (f$cc_cbet_flop_very_strong_value || f$cc_cbet_flop_overpair || f$cc_cbet_flop_premium_draw) Return 2 Force
+When f$cc_flop_static_lowmid_parent && f$cc_cbet_flop_very_strong_value Return 2 Force
+When f$cc_flop_static_high_parent || f$cc_flop_static_lowmid_parent || f$cc_flop_paired_parent Return 1 Force
+When Others Return 1 Force
+
+// -----------------------------------------------------------------------------
+// 4C.04 — Reduced HU cold4 vs ORIGINAL 3BETTOR
+// -----------------------------------------------------------------------------
+
+// Purpose: choose CBet/check after Hero cold4bet and original 3bettor called.
+// Source/Provenance: P-heavy; no dedicated Crusher range tree.
+// Professional fill: still strong continuing range, but late 3bet construction can
+// be wider than opener-cold4 continuation, allowing selected IP static-high air.
+// Safety: never merged with opener survivor merely because both called a 4bet.
+##f$cc_cbet_4bp_cold4_vs_threebettor_action##
+When !(f$cc_cbet_4bp_cold4_vs_threebettor_ip_context || f$cc_cbet_4bp_cold4_vs_threebettor_oop_context) Return false Force
+When f$cc_cbet_flop_very_strong_value Return true Force
+When f$cc_cbet_flop_overpair Return true Force
+When f$cc_cbet_flop_strong_top_pair && f$cc_flop_dynamic_lowmid_parent && f$cc_hu_oop && f$cc_spr_round_start >= 2 Return false Force
+When f$cc_cbet_flop_strong_top_pair Return true Force
+When f$cc_cbet_flop_medium_top_pair && f$cc_hu_ip && (f$cc_flop_static_high_parent || f$cc_flop_paired_parent) && f$cc_spr_round_start < 3 Return true Force
+When f$cc_cbet_flop_medium_top_pair Return false Force
+When f$cc_cbet_flop_weak_top_pair Return false Force
+When f$cc_hand_second_pair_or_pocket && f$cc_pair_plus_draw && f$cc_hu_ip Return true Force
+When f$cc_cbet_flop_showdown_pair Return false Force
+When f$cc_cbet_flop_premium_draw Return true Force
+When f$cc_cbet_flop_good_draw && f$cc_hu_ip && !f$cc_flop_dynamic_lowmid_parent Return true Force
+When f$cc_real_frontdoor_draw Return false Force
+When f$cc_hu_ip && f$cc_cbet_flop_air_best_backdoors && f$cc_flop_static_high_parent Return true Force
+When f$cc_hu_ip && f$cc_cbet_flop_quality_air && f$cc_flop_paired_parent && f$cc_spr_round_start < 3 Return true Force
+When Others Return false Force
+
+// Purpose: size positive cold4-v-3bettor CBet.
+// Source/Provenance: P 4BP sizing with A texture-sensitive ancestry.
+##f$cc_cbet_4bp_cold4_vs_threebettor_size_id##
+When !f$cc_cbet_4bp_cold4_vs_threebettor_action Return 0 Force
+When f$cc_flop_dynamic_lowmid_parent && (f$cc_cbet_flop_very_strong_value || f$cc_cbet_flop_premium_draw) Return 2 Force
+When f$cc_flop_dynamic_high_parent && (f$cc_cbet_flop_very_strong_value || f$cc_cbet_flop_overpair || f$cc_cbet_flop_premium_draw) Return 2 Force
+When f$cc_flop_dynamic_high_parent Return 1 Force
+When f$cc_flop_static_lowmid_parent && f$cc_cbet_flop_very_strong_value Return 2 Force
+When f$cc_flop_static_high_parent || f$cc_flop_static_lowmid_parent || f$cc_flop_paired_parent Return 1 Force
+When Others Return 1 Force
+
+// -----------------------------------------------------------------------------
+// 4C.05 — Reduced-HU dispatchers
+// -----------------------------------------------------------------------------
+
+// Purpose: route clean reduced-HU 4BP action by exact raiser-survivor family.
+// Source/Provenance: P/A safety dispatcher; othercaller/unknown chronology checks.
+##f$cc_cbet_4bp_reduced_hu_action##
+When f$cc_reduced_hu_4bp_opener4_vs_threebettor Return f$cc_cbet_4bp_opener4_vs_threebettor_action Force
+When f$cc_reduced_hu_4bp_cold4_vs_opener Return f$cc_cbet_4bp_cold4_vs_opener_action Force
+When f$cc_reduced_hu_4bp_cold4_vs_threebettor Return f$cc_cbet_4bp_cold4_vs_threebettor_action Force
+When Others Return false Force
+
+// Purpose: paired size router for clean reduced-HU 4BP families.
+// Source/Provenance: P/A safety dispatcher; unsupported/check -> 0.
+##f$cc_cbet_4bp_reduced_hu_size_id##
+When f$cc_reduced_hu_4bp_opener4_vs_threebettor Return f$cc_cbet_4bp_opener4_vs_threebettor_size_id Force
+When f$cc_reduced_hu_4bp_cold4_vs_opener Return f$cc_cbet_4bp_cold4_vs_opener_size_id Force
+When f$cc_reduced_hu_4bp_cold4_vs_threebettor Return f$cc_cbet_4bp_cold4_vs_threebettor_size_id Force
+When Others Return 0 Force
+
+// ============================================================================
+// End Gate 01I.1 clean HU 4BP baseline.
+// ============================================================================
