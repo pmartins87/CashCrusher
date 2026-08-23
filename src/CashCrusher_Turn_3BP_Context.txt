@@ -1,0 +1,88 @@
+// ============================================================================
+// CashCrusher_Turn_3BP_Context.txt
+// Gate 02G.0 — plain 3-bet-pot Turn-CBet provenance
+// ============================================================================
+// Purpose: preserve opener-call vs post-3bet-coldcaller origin on turn, including
+// flop-multiway -> turn-HU transitions and current multiway composition.
+// Source/Provenance: T/A persisted 3BP masks + Gate01N history; P cross-street
+// selection metadata. Squeeze is explicitly excluded.
+// ============================================================================
+
+// Purpose: generic plain-3BP Turn-CBet context after actual standard flop CBet.
+// Source/Provenance: A/T exact pot-role/history gate.
+##f$cc_turn_plain3bp_context##
+f$cc_turn_cbet_plain3bp_context && f$cc_pf_3bet_plain_proven && !f$cc_pf_squeeze_proven
+
+// Purpose: HU plain-3BP versus original opener-call.
+// Source/Provenance: T/A exact survivor identity; works for current HU origin 1/2/3.
+##f$cc_turn_plain3bp_hu_vs_opener##
+f$cc_turn_plain3bp_context && f$cc_hu && f$cc_hu_3bp_villain_is_opener && f$cc_hu_3bp_survivor_consistent
+
+// Purpose: HU plain-3BP versus post-3bet cold caller.
+// Source/Provenance: T/A exact survivor identity; separate selected range family.
+##f$cc_turn_plain3bp_hu_vs_coldcaller##
+f$cc_turn_plain3bp_context && f$cc_hu && f$cc_hu_3bp_villain_is_post3bet_coldcaller && f$cc_hu_3bp_survivor_consistent
+
+// Purpose: HU plain-3BP began flop multiway and reduced only after flop CBet.
+// Source/Provenance: T/A HU-origin selection modifier.
+##f$cc_turn_plain3bp_hu_postmw_origin##
+f$cc_turn_plain3bp_context && f$cc_hu_origin_postflop_reduced
+
+// Purpose: selected-range modifier for HU plain3BP after large flop size,
+// post-multiway origin, or post-3bet coldcaller survivor.
+// Source/Provenance: P professional-theory descriptor.
+##f$cc_turn_plain3bp_hu_strong_selection##
+f$cc_turn_plain3bp_context && f$cc_hu && (f$cc_turn_plain3bp_hu_postmw_origin || f$cc_hist_flop_cbet_plan_size_id >= 3 || f$cc_turn_plain3bp_hu_vs_coldcaller)
+
+// Purpose: validate HU plain3BP survivor classification.
+// Source/Provenance: P fail-closed invariant over T exact origins.
+##f$cc_turn_plain3bp_hu_context_consistent##
+When !f$cc_turn_plain3bp_context Return false Force
+When !f$cc_hu Return false Force
+When (f$cc_turn_plain3bp_hu_vs_opener + f$cc_turn_plain3bp_hu_vs_coldcaller) != 1 Return false Force
+When f$cc_turn_plain3bp_hu_postmw_origin && f$cc_flop_entry_count < 3 Return false Force
+When Others Return true Force
+
+// Purpose: current live original-opener count in multiway plain3BP.
+// Source/Provenance: T exact live opener mask.
+##f$cc_turn_plain3bp_mw_live_opener_count##
+When !f$cc_turn_plain3bp_context || !f$cc_multiway Return 0 Force
+When Others Return BitCount(f$cc_mw_3bp_live_opener_mask) Force
+
+// Purpose: current live post-3bet-coldcaller count in multiway plain3BP.
+// Source/Provenance: T exact live coldcaller mask.
+##f$cc_turn_plain3bp_mw_live_coldcaller_count##
+When !f$cc_turn_plain3bp_context || !f$cc_multiway Return 0 Force
+When Others Return BitCount(f$cc_mw_3bp_live_post3bet_coldcaller_mask) Force
+
+// Purpose: multiway plain3BP composition ID: 1 opener+caller(s), 2 only coldcaller(s),
+// 3 opener only plus another unclassified is invalid and therefore never returned.
+// Source/Provenance: P metadata over T exact masks.
+##f$cc_turn_plain3bp_mw_comp_id##
+When !f$cc_turn_plain3bp_context || !f$cc_multiway Return 0 Force
+When f$cc_turn_plain3bp_mw_live_opener_count = 1 && (f$cc_turn_plain3bp_mw_live_opener_count + f$cc_turn_plain3bp_mw_live_coldcaller_count) = (nplayersplaying - 1) Return 1 Force
+When f$cc_turn_plain3bp_mw_live_opener_count = 0 && f$cc_turn_plain3bp_mw_live_coldcaller_count = (nplayersplaying - 1) Return 2 Force
+When Others Return 0 Force
+
+// Purpose: validated current multiway plain3BP with coherent exact composition/SPR.
+// Source/Provenance: T/P fail-closed contract.
+##f$cc_turn_plain3bp_mw_context_consistent##
+When !f$cc_turn_plain3bp_context || !f$cc_multiway Return false Force
+When !f$cc_mw_spr_bounds_valid Return false Force
+When f$cc_turn_plain3bp_mw_comp_id <= 0 Return false Force
+When (f$cc_turn_plain3bp_mw_live_opener_count + f$cc_turn_plain3bp_mw_live_coldcaller_count) != (nplayersplaying - 1) Return false Force
+When Others Return true Force
+
+// Purpose: all live multiway plain3BP effective relationships have SPR <4.
+// Source/Provenance: T/P deepest-effective geometry fact only.
+##f$cc_turn_plain3bp_mw_all_effective_spr_below_4##
+f$cc_turn_plain3bp_mw_context_consistent && f$cc_mw_spr_deepest_round_start >= 0 && f$cc_mw_spr_deepest_round_start < 4
+
+// Purpose: all live multiway plain3BP effective relationships have SPR <3.
+// Source/Provenance: T/P geometry fact only.
+##f$cc_turn_plain3bp_mw_all_effective_spr_below_3##
+f$cc_turn_plain3bp_mw_context_consistent && f$cc_mw_spr_deepest_round_start >= 0 && f$cc_mw_spr_deepest_round_start < 3
+
+// ============================================================================
+// End Gate 02G.0.
+// ============================================================================
