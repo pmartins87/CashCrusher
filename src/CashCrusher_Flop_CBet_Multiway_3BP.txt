@@ -13,7 +13,9 @@
 // Stack-depth note:
 //   this file decides only first-flop CBet/check + size. Low-SPR predicates may
 //   legitimately influence that choice, but do not globally enable/disable any
-//   later commitment helper.
+//   later commitment helper. A low-SPR exception is allowed only when the
+//   DEEPEST effective opponent relation is below the threshold; a short third
+//   player cannot collapse a still-deep 3BP decision into short-stack policy.
 //
 // OpenPPL safety: flat complete WHENs; unclassified range composition fails closed.
 // Size IDs: 1 ~33% | 2 ~50% | 3 ~75% | 0 check
@@ -34,16 +36,16 @@
 When !f$cc_mw_plain3bp_exact3_context Return false Force
 When !f$cc_mw_3bp_context_consistent Return false Force
 When f$cc_cbet_flop_very_strong_value Return true Force
-When f$cc_cbet_flop_overpair && f$cc_flop_dynamic_lowmid_parent && f$cc_spr_round_start >= 3 Return false Force
+When f$cc_cbet_flop_overpair && f$cc_flop_dynamic_lowmid_parent && !f$cc_mw_all_effective_spr_below_3 Return false Force
 When f$cc_cbet_flop_overpair && (f$cc_flop_static_high_parent || f$cc_flop_static_lowmid_parent || f$cc_flop_paired_parent) Return true Force
 When f$cc_cbet_flop_overpair && f$cc_flop_dynamic_high_parent && !f$cc_mw_3bp_all_live_are_coldcallers Return true Force
-When f$cc_cbet_flop_overpair && f$cc_flop_dynamic_lowmid_parent && f$cc_mw_3bp_last_context && f$cc_spr_round_start < 3 Return true Force
+When f$cc_cbet_flop_overpair && f$cc_flop_dynamic_lowmid_parent && f$cc_mw_3bp_last_context && f$cc_mw_all_effective_spr_below_3 Return true Force
 When f$cc_cbet_flop_overpair Return false Force
 When f$cc_cbet_flop_strong_top_pair && f$cc_pair_plus_draw Return true Force
 When f$cc_cbet_flop_strong_top_pair && (f$cc_flop_static_high_parent || f$cc_flop_paired_parent) Return true Force
-When f$cc_cbet_flop_strong_top_pair && f$cc_flop_dynamic_lowmid_parent && f$cc_mw_3bp_last_context && f$cc_spr_round_start < 3 Return true Force
+When f$cc_cbet_flop_strong_top_pair && f$cc_flop_dynamic_lowmid_parent && f$cc_mw_3bp_last_context && f$cc_mw_all_effective_spr_below_3 Return true Force
 When f$cc_cbet_flop_strong_top_pair Return false Force
-When f$cc_cbet_flop_medium_top_pair && f$cc_flop_static_high_parent && f$cc_mw_3bp_last_context && f$cc_mw_3bp_has_live_opener && f$cc_spr_round_start < 4 Return true Force
+When f$cc_cbet_flop_medium_top_pair && f$cc_flop_static_high_parent && f$cc_mw_3bp_last_context && f$cc_mw_3bp_has_live_opener && f$cc_mw_all_effective_spr_below_4 Return true Force
 When f$cc_cbet_flop_medium_top_pair Return false Force
 When f$cc_cbet_flop_weak_top_pair Return false Force
 When f$cc_cbet_flop_showdown_pair Return false Force
@@ -74,15 +76,16 @@ When Others Return 2 Force
 // Source/Provenance: P-heavy. Squeeze continuing ranges are treated as at least
 // as selected as plain-3BP continuation; no air baseline is imported.
 // Decision logic: strong value/static one-pair; premium equity selective;
-// low/mid dynamic marginal made hands check unless SPR is already very low.
+// low/mid dynamic marginal made hands check unless every live effective relation
+// is already very shallow.
 ##f$cc_cbet_mw_squeeze_exact3_action##
 When !f$cc_mw_squeeze_exact3_context Return false Force
 When !f$cc_mw_3bp_context_consistent Return false Force
 When f$cc_cbet_flop_very_strong_value Return true Force
-When f$cc_cbet_flop_overpair && f$cc_flop_dynamic_lowmid_parent && f$cc_spr_round_start >= 3 Return false Force
+When f$cc_cbet_flop_overpair && f$cc_flop_dynamic_lowmid_parent && !f$cc_mw_all_effective_spr_below_3 Return false Force
 When f$cc_cbet_flop_overpair && (f$cc_flop_static_high_parent || f$cc_flop_static_lowmid_parent || f$cc_flop_paired_parent) Return true Force
 When f$cc_cbet_flop_overpair && f$cc_flop_dynamic_high_parent && f$cc_mw_3bp_has_live_opener Return true Force
-When f$cc_cbet_flop_overpair && f$cc_flop_dynamic_lowmid_parent && f$cc_mw_3bp_last_context && f$cc_spr_round_start < 3 Return true Force
+When f$cc_cbet_flop_overpair && f$cc_flop_dynamic_lowmid_parent && f$cc_mw_3bp_last_context && f$cc_mw_all_effective_spr_below_3 Return true Force
 When f$cc_cbet_flop_overpair Return false Force
 When f$cc_cbet_flop_strong_top_pair && f$cc_pair_plus_draw Return true Force
 When f$cc_cbet_flop_strong_top_pair && f$cc_flop_static_high_parent Return true Force
@@ -123,8 +126,8 @@ When f$cc_mw_3bp_exact4_context && f$cc_cbet_flop_overpair && (f$cc_flop_static_
 When f$cc_mw_3bp_exact4_context && f$cc_cbet_flop_strong_top_pair && f$cc_flop_static_high_parent && !f$cc_mw_3bp_all_live_are_coldcallers Return true Force
 When f$cc_mw_3bp_exact4_context && f$cc_cbet_flop_premium_draw && f$cc_mw_3bp_last_context && (f$cc_flop_static_high_parent || f$cc_flop_paired_parent) Return true Force
 When f$cc_mw_3bp_exact5_context && f$cc_cbet_flop_overpair && f$cc_flop_static_high_parent && f$cc_mw_3bp_has_live_opener Return true Force
-When f$cc_mw_3bp_exact5_context && f$cc_cbet_flop_overpair && f$cc_flop_static_lowmid_parent && f$cc_spr_round_start < 3 Return true Force
-When f$cc_mw_3bp_exact6_context && f$cc_cbet_flop_overpair && f$cc_flop_static_high_parent && f$cc_spr_round_start < 2 Return true Force
+When f$cc_mw_3bp_exact5_context && f$cc_cbet_flop_overpair && f$cc_flop_static_lowmid_parent && f$cc_mw_all_effective_spr_below_3 Return true Force
+When f$cc_mw_3bp_exact6_context && f$cc_cbet_flop_overpair && f$cc_flop_static_high_parent && f$cc_mw_all_effective_spr_below_2 Return true Force
 When f$cc_real_frontdoor_draw Return false Force
 When Others Return false Force
 
@@ -151,10 +154,10 @@ When !f$cc_mw_squeeze_4plus_context Return false Force
 When !f$cc_mw_3bp_context_consistent Return false Force
 When f$cc_cbet_flop_very_strong_value Return true Force
 When f$cc_mw_3bp_exact4_context && f$cc_cbet_flop_overpair && (f$cc_flop_static_high_parent || f$cc_flop_static_lowmid_parent || f$cc_flop_paired_parent) && !f$cc_mw_3bp_all_live_are_coldcallers Return true Force
-When f$cc_mw_3bp_exact4_context && f$cc_cbet_flop_strong_top_pair && f$cc_flop_static_high_parent && f$cc_mw_3bp_has_live_opener && f$cc_spr_round_start < 4 Return true Force
+When f$cc_mw_3bp_exact4_context && f$cc_cbet_flop_strong_top_pair && f$cc_flop_static_high_parent && f$cc_mw_3bp_has_live_opener && f$cc_mw_all_effective_spr_below_4 Return true Force
 When f$cc_mw_3bp_exact4_context && f$cc_cbet_flop_premium_draw && f$cc_mw_3bp_last_context && f$cc_mw_3bp_has_live_opener && f$cc_flop_static_high_parent Return true Force
-When f$cc_mw_3bp_exact5_context && f$cc_cbet_flop_overpair && f$cc_flop_static_high_parent && f$cc_mw_3bp_has_live_opener && f$cc_spr_round_start < 3 Return true Force
-When f$cc_mw_3bp_exact6_context && f$cc_cbet_flop_overpair && f$cc_flop_static_high_parent && f$cc_spr_round_start < 2 Return true Force
+When f$cc_mw_3bp_exact5_context && f$cc_cbet_flop_overpair && f$cc_flop_static_high_parent && f$cc_mw_3bp_has_live_opener && f$cc_mw_all_effective_spr_below_3 Return true Force
+When f$cc_mw_3bp_exact6_context && f$cc_cbet_flop_overpair && f$cc_flop_static_high_parent && f$cc_mw_all_effective_spr_below_2 Return true Force
 When f$cc_real_frontdoor_draw Return false Force
 When Others Return false Force
 
