@@ -89,6 +89,9 @@ f$cc_turn_overcard_to_flop &&
 // -----------------------------------------------------------------------------
 
 // Purpose: P-heavy Turn CBet baseline for UTG/HJ/CO opener IP versus BB.
+// Source: no literal DeepCrusher range branch exists for these six-max matchups;
+// DeepCrusher supplies only current-strength/runout/second-barrel architecture.
+// Provenance: P-heavy professional-theory fill constrained by A source principles.
 // Professional fill: BB is the widest blind continue family. Robust value keeps
 // betting; one-pair checks increase on completion/four-card runouts; high-equity
 // no-made draws can barrel; pure air is limited to A/K pressure turns from a
@@ -117,8 +120,8 @@ When f$cc_turn_cbet_air && user_cc_flop_cbet_had_quality_air && f$cc_turn_srp_ga
 When Others Return false Force
 
 // Purpose: size P-heavy IP-v-BB second barrel.
-// Provenance: P; 50 for merged/static pressure, 75 for robust/dynamic value and
-// premium semibluffs. No source-exact frequency claim.
+// Source/Provenance: P; 50 for merged/static pressure, 75 for robust/dynamic
+// value and premium semibluffs. No source-exact frequency claim.
 ##f$cc_turn_srp_ip_epmpco_vs_bb_size_id##
 When !f$cc_turn_srp_ip_epmpco_vs_bb_action Return 0 Force
 When f$cc_hand_trips_or_better && f$cc_turn_srp_gap_dangerous_runout Return f$cc_turn_size_75_id Force
@@ -139,9 +142,13 @@ When Others Return 0 Force
 // -----------------------------------------------------------------------------
 
 // Purpose: P-heavy Turn CBet baseline versus SB cold caller.
+// Source: no literal DeepCrusher branch covers UTG/HJ/CO-open versus SB-flat on
+// turn; only the source's second-barrel architecture transfers structurally.
+// Provenance: P-heavy professional-theory fill, explicitly not BTN-v-SB copy.
 // Professional fill: SB flat/continue is more selected/condensed than BB, so
 // medium one-pair, marginal draws and pure-air tails tighten. Robust value and
 // premium equity remain active.
+// Safety: betting one pair here is only a turn action, never stack-off authority.
 ##f$cc_turn_srp_ip_epmpco_vs_sb_action##
 When !f$cc_turn_srp_ip_epmpco_vs_sb_context Return false Force
 When f$cc_hand_trips_or_better Return true Force
@@ -161,7 +168,7 @@ When f$cc_turn_cbet_air Return false Force
 When Others Return false Force
 
 // Purpose: size P-heavy IP-v-SB second barrel.
-// Provenance: P conservative 50/75 map against selected continuation range.
+// Source/Provenance: P conservative 50/75 map against selected continuation range.
 ##f$cc_turn_srp_ip_epmpco_vs_sb_size_id##
 When !f$cc_turn_srp_ip_epmpco_vs_sb_action Return 0 Force
 When f$cc_hand_trips_or_better Return f$cc_turn_size_75_id Force
@@ -179,6 +186,7 @@ When Others Return 0 Force
 
 // Purpose: P-heavy Turn CBet baseline for opener OOP versus later nonblind flat.
 // Source: no direct source range. DeepCrusher contributes OOP/check-range concept.
+// Provenance: P-heavy professional-theory fill constrained by A source structure.
 // Professional fill: caller realizes equity IP and arrived after flop call, so
 // medium made value and most semibluffs check more than IP-v-blind; robust value
 // still bets, and strongest draws may barrel on high pressure/static runouts.
@@ -204,7 +212,7 @@ When f$cc_turn_cbet_air Return false Force
 When Others Return false Force
 
 // Purpose: size OOP-v-nonblind P-heavy second barrel.
-// Provenance: P; mostly 50 merged/static, 75 robust value.
+// Source/Provenance: P; mostly 50 merged/static, 75 robust value.
 ##f$cc_turn_srp_oop_vs_nonblind_coldcaller_size_id##
 When !f$cc_turn_srp_oop_vs_nonblind_coldcaller_action Return 0 Force
 When f$cc_hand_trips_or_better Return f$cc_turn_size_75_id Force
