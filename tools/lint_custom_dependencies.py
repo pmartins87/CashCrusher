@@ -3,30 +3,33 @@
 
 The linter encodes project-level OpenPPL safety rules carried from the audited
 DeepCrusher work. CashCrusher deliberately uses a stricter coding subset than
-OpenPPL technically permits so visual indentation or shallow-stack inheritance
-cannot silently change strategy.
+OpenPPL technically permits so visual indentation cannot silently change logic.
 
 Hard checks
 ===========
 - unresolved ``f$cc_*`` references across ``src/*.txt``;
 - duplicate ``##f$cc_*##`` definitions;
-- legacy ``f$game_*`` dependencies in executable CashCrusher code;
-- reintroduction of ``f$hand_StackOffDraws``;
-- reintroduction of legacy ``f$Raise_Committed`` call-to-shove promotion;
-- any executable ``BetMax`` without a local ``ALLIN_OWNER_REVIEWED`` marker;
-- any ``BetMax`` in current flop-CBet modules (Gate01 owns bet-size families,
-  never an implicit flop jam);
-- nonzero/rewritten ``f$allin_on_betsize_balance_ratio`` callback;
+- legacy ``f$game_*`` dependencies in executable CashCrusher strategy code;
 - **open-ended WHEN conditions**. Every WHEN must own an explicit action before
   the next WHEN/function boundary; indentation never creates scope;
 - missing nearby Source/Provenance comment in reviewed strategic modules whose
   filename begins ``CashCrusher_Flop_CBet``.
 
-Warnings
-========
-- function headers without nearby provenance comment in mechanical/supporting
-  modules still undergoing retrofit;
-- custom definitions not referenced by other executable lines yet.
+Review warnings — NOT prohibitions
+==================================
+DeepCrusher was short-stack Spin strategy.  The following constructs are useful
+but deserve explicit cash-stack review whenever imported:
+- ``f$Raise_Committed``;
+- ``f$hand_StackOffDraws``;
+- ``f$allin_on_betsize_balance_ratio``;
+- executable ``BetMax`` / ``Allin``.
+
+The linter only WARNS about those constructs.  It does not force them to zero,
+disable them, or declare them invalid.  Their correctness depends on the exact
+pot family, effective stack/SPR, ranges, board and action size.
+
+Warnings also include supporting functions still lacking local provenance and
+custom definitions not referenced by other executable lines yet.
 
 Native OpenHoldem/OpenPPL symbols are outside dependency resolution by design.
 """
@@ -46,9 +49,8 @@ REF_RE = re.compile(r"\bf\$cc_[A-Za-z0-9_]+\b")
 LEGACY_GAME_RE = re.compile(r"\bf\$game_[A-Za-z0-9_]+\b")
 STACKOFF_RE = re.compile(r"\bf\$hand_StackOffDraws\b")
 RAISE_COMMITTED_RE = re.compile(r"\bf\$Raise_Committed\b")
-BETMAX_RE = re.compile(r"\bBetMax\b")
+BETMAX_RE = re.compile(r"\b(?:BetMax|Allin)\b", re.IGNORECASE)
 WHEN_RE = re.compile(r"\bWhen\b", re.IGNORECASE)
-ALLIN_OWNER_RE = re.compile(r"\bALLIN_OWNER_REVIEWED\b", re.IGNORECASE)
 
 ACTION_RE = re.compile(
     r"\b(?:Return|Set|Check|Call|Fold|RaiseTo|RaiseBy|Raise|BetMax|Bet|Allin|"
@@ -145,14 +147,6 @@ def nearby_provenance(lines: list[str], header_lineno: int) -> bool:
     return bool(PROVENANCE_RE.search(neighborhood))
 
 
-def function_has_allin_owner(lines: list[str], header_lineno: int, body: list[tuple[int, str]]) -> bool:
-    """Require an explicit review marker near any function that returns BetMax."""
-    start = max(0, header_lineno - 14)
-    comments_before = "\n".join(lines[start : header_lineno - 1])
-    body_text = "\n".join(raw for _lineno, raw in body)
-    return bool(ALLIN_OWNER_RE.search(comments_before + "\n" + body_text))
-
-
 def main() -> int:
     files = sorted(SRC.glob("*.txt"))
     if not files:
@@ -162,11 +156,9 @@ def main() -> int:
     definitions: dict[str, list[tuple[Path, int]]] = defaultdict(list)
     references: dict[str, list[tuple[Path, int]]] = defaultdict(list)
     legacy_game_hits: list[tuple[Path, int, str]] = []
-    stackoff_hits: list[tuple[Path, int, str]] = []
-    raise_committed_hits: list[tuple[Path, int, str]] = []
-    unowned_betmax_hits: list[tuple[Path, int, str]] = []
-    cbet_betmax_hits: list[tuple[Path, int, str]] = []
-    auto_commit_callback_hits: list[tuple[Path, int, str]] = []
+    shortstack_review_hits: list[tuple[Path, int, str]] = []
+    allin_review_hits: list[tuple[Path, int, str]] = []
+    callback_defs: list[tuple[Path, int]] = []
     open_when_hits: list[tuple[Path, int, str, str]] = []
     provenance_errors: list[tuple[Path, int, str]] = []
     provenance_warnings: list[tuple[Path, int, str]] = []
@@ -177,18 +169,9 @@ def main() -> int:
         blocks = list(function_blocks(lines))
         open_when_hits.extend(open_ended_when_hits(path, lines))
 
-        for func_name, header_lineno, body in blocks:
-            executable_body = "\n".join(executable_part(raw) for _ln, raw in body)
-
-            if BETMAX_RE.search(executable_body) and not function_has_allin_owner(lines, header_lineno, body):
-                unowned_betmax_hits.append((path, header_lineno, func_name))
-
+        for func_name, header_lineno, _body in blocks:
             if func_name == "f$allin_on_betsize_balance_ratio":
-                compact = " ".join(
-                    executable_part(raw).strip() for _ln, raw in body if executable_part(raw).strip()
-                )
-                if compact not in {"0", "0.0", "0.00", "0.000"}:
-                    auto_commit_callback_hits.append((path, header_lineno, compact))
+                callback_defs.append((path, header_lineno))
 
         for lineno, line in enumerate(lines, 1):
             stripped = line.strip()
@@ -207,12 +190,10 @@ def main() -> int:
 
             if LEGACY_GAME_RE.search(code):
                 legacy_game_hits.append((path, lineno, code.strip()))
-            if STACKOFF_RE.search(code):
-                stackoff_hits.append((path, lineno, code.strip()))
-            if RAISE_COMMITTED_RE.search(code):
-                raise_committed_hits.append((path, lineno, code.strip()))
-            if path.name.startswith("CashCrusher_Flop_CBet") and BETMAX_RE.search(code):
-                cbet_betmax_hits.append((path, lineno, code.strip()))
+            if STACKOFF_RE.search(code) or RAISE_COMMITTED_RE.search(code):
+                shortstack_review_hits.append((path, lineno, code.strip()))
+            if BETMAX_RE.search(code):
+                allin_review_hits.append((path, lineno, code.strip()))
 
     duplicate_defs = {k: v for k, v in definitions.items() if len(v) > 1}
     unresolved = {k: v for k, v in references.items() if k not in definitions}
@@ -242,31 +223,6 @@ def main() -> int:
         for path, lineno, code in legacy_game_hits:
             print(f"  {path.relative_to(ROOT)}:{lineno}: {code}")
 
-    if stackoff_hits:
-        print("\nERROR: inherited StackOffDraws shortcut reintroduced:")
-        for path, lineno, code in stackoff_hits:
-            print(f"  {path.relative_to(ROOT)}:{lineno}: {code}")
-
-    if raise_committed_hits:
-        print("\nERROR: inherited f$Raise_Committed call-to-shove promotion reintroduced:")
-        for path, lineno, code in raise_committed_hits:
-            print(f"  {path.relative_to(ROOT)}:{lineno}: {code}")
-
-    if unowned_betmax_hits:
-        print("\nERROR: BetMax function lacks ALLIN_OWNER_REVIEWED marker:")
-        for path, lineno, func_name in unowned_betmax_hits:
-            print(f"  {path.relative_to(ROOT)}:{lineno}: {func_name}")
-
-    if cbet_betmax_hits:
-        print("\nERROR: BetMax found inside current flop-CBet strategy module:")
-        for path, lineno, code in cbet_betmax_hits:
-            print(f"  {path.relative_to(ROOT)}:{lineno}: {code}")
-
-    if auto_commit_callback_hits:
-        print("\nERROR: global allin_on_betsize_balance_ratio must remain disabled:")
-        for path, lineno, body in auto_commit_callback_hits:
-            print(f"  {path.relative_to(ROOT)}:{lineno}: {body}")
-
     if open_when_hits:
         print("\nERROR: open-ended WHEN found (flat complete rules are mandatory):")
         for path, lineno, func_name, span in open_when_hits:
@@ -276,6 +232,21 @@ def main() -> int:
         print("\nERROR: reviewed strategy function lacks nearby Source/Provenance comment:")
         for path, lineno, name in provenance_errors:
             print(f"  {path.relative_to(ROOT)}:{lineno}: {name}")
+
+    if shortstack_review_hits:
+        print("\nWARNING: inherited short-stack helper used; cash-context review required:")
+        for path, lineno, code in shortstack_review_hits:
+            print(f"  {path.relative_to(ROOT)}:{lineno}: {code}")
+
+    if callback_defs:
+        print("\nWARNING: allin_on_betsize_balance_ratio is defined; verify its threshold against CashCrusher stack geometry:")
+        for path, lineno in callback_defs:
+            print(f"  {path.relative_to(ROOT)}:{lineno}")
+
+    if allin_review_hits:
+        print("\nWARNING: explicit all-in action found; verify exact pot/range/SPR ownership:")
+        for path, lineno, code in allin_review_hits:
+            print(f"  {path.relative_to(ROOT)}:{lineno}: {code}")
 
     if provenance_warnings:
         print("\nWARNING: supporting function lacks nearby Source/Provenance comment:")
@@ -291,18 +262,13 @@ def main() -> int:
         duplicate_defs
         or unresolved
         or legacy_game_hits
-        or stackoff_hits
-        or raise_committed_hits
-        or unowned_betmax_hits
-        or cbet_betmax_hits
-        or auto_commit_callback_hits
         or open_when_hits
         or provenance_errors
     )
     if hard_error:
         return 1
 
-    print("\nPASS: dependency, flat-WHEN, explicit-allin, provenance and safety checks passed")
+    print("\nPASS: dependency, flat-WHEN, provenance and safety checks passed")
     return 0
 
 
