@@ -71,29 +71,68 @@ Gate 00 design/code is frozen enough for strategy work, but it is not release-ce
 - [x] **01K.3A** — source-audit DeepCrusher 50/55/60 commitment mechanisms and implement dual-bound HU/multiway diagnostic geometry.
 - [x] **01K.3B** — implement only mechanically forced/equivalent CBet `BetMax`: requested size reaches Hero balance or reaches the deepest/all-live effective relationship. Shortest-only sidepot reach is explicitly not promoted.
 - [x] **01K.3C** — audit historical ~50% effective / ~60% Hero-stack CBet promotion. Result: preserve as diagnostics/candidates, not one generic cash action; explicit strategic jams must be owned by exact SRP/ISO/3BP/4BP nodes.
-- [ ] **01K.3C-4BP** — audit whether any clean 4BP flop families deserve an explicit node-owned jam size; do not infer it merely from old threshold geometry.
+- [x] **01K.3C-4BP** — audit clean 4BP flop explicit-jam question. Result: no generic extra jam branch from historical threshold alone; future exact node-owned jam remains possible when supported.
 - [ ] **01K.3D** — revisit `f$Raise_Committed` separately in defensive flop/turn call/raise ownership; it must not be smuggled into CBet sizing.
 - [ ] **01K.4** — compose final global `f$allin_on_betsize_balance_ratio` only after all postflop sizing owners that it can affect have been audited.
 - [x] **01L** — static dependency/flat-WHEN/global-provenance/multiway-SPR lint PASS on reviewed implementation.
 - [x] **01L.2** — deterministic mathematical multiway stack/all-in-equivalence contract tests run in CI.
 - [ ] **01M** — deterministic OpenPPL/OpenHoldem CBet policy fixtures/replays PASS.
-- [ ] **01N** — ensure skipped-CBet branches have complete X/C/X/R/turn follow-through before release.
+- [x] **01N.1** — executed flop final-action provenance: CBet vs check-through vs check-call/XR vs CBet-raised histories; plan-v-execution all-in diagnostics.
+- [x] **01N.2** — snapshot flop CBet hand/kicker/backdoor/texture provenance needed by Turn source without treating pre-action plan as executed action.
+- [ ] **01N.V** — wire history-aware CBet entrypoint into whole-bot `f$flop` and certify markers with OpenHoldem replay/parser fixtures.
 
 No uncovered pot family may inherit an ordinary-SRP child as fallback.
 
-## Gate 02+ — post-flop attack order after Flop CBet
+## Gate 02 — Turn CBet
 
-1. Turn CBet
-2. River CBet
-3. Flop Float Bet
-4. Turn Float Bet
-5. River Float Bet
-6. Flop Donk Bet
-7. Turn Donk Bet
-8. River Donk Bet
-9. Turn Probe
-10. River Probe
-11. Delayed CBet / delayed-noaction families
+### Foundation / source boundary
+
+- [x] **02A.1** — source-first audit of DeepCrusher + Starting Strategy Turn CBet; separate standard CBet from X/R, CBet-call-raise, donk, probe and delayed histories.
+- [x] **02A.2** — portable turn runout descriptors (`completed`, `super-completed`, new straight/flush completion, OC/mOC, undercard, glued OC, pairing).
+- [x] **02A.3** — current-turn hand/draw tiers plus carried-flop provenance and Turn size-ID palette.
+- [x] **02A.4** — top-level Turn CBet router consumes `f$cc_hist_turn_standard_cbet_parent`; history mismatch fails closed.
+
+### Ordinary SRP — source-anchored HU descendants
+
+- [x] **02B.1** — true-HU HUSB SB/Button-PFA-IP second-barrel baseline.
+- [x] **02B.2** — reduced-HU BTN-PFA-IP vs BB source baseline.
+- [x] **02B.3** — reduced-HU BTN-PFA-IP vs SB source baseline.
+- [x] **02C.1** — true-HU BB-PFA-OOP after SB limp -> BB raise -> call, ordinary HUBB-CBet subset.
+- [x] **02C.2** — reduced-HU SB-PFA-OOP vs BB source-safe subset; preserve source turn-check/XR architecture instead of generic TP+ barrel.
+
+### Ordinary SRP — six-max gaps still to fill
+
+- [ ] **02D.1** — UTG/HJ/CO PFA IP vs SB/BB P-heavy range adaptation; do not inherit BTN frequencies literally.
+- [ ] **02D.2** — UTG/HJ/CO PFA OOP vs later nonblind cold caller P-heavy adaptation.
+- [ ] **02D.3** — ordinary SRP that began flop multiway and became HU only by turn; survivor/range-origin policy.
+- [ ] **02D.4** — current multiway ordinary-SRP Turn CBet, exact flop-origin/current-player composition.
+
+### Other pot families
+
+- [ ] **02E** — ISO Turn CBet by surviving limper/coldcaller provenance.
+- [ ] **02F** — plain 3BP Turn CBet by opener/coldcaller survivor provenance.
+- [ ] **02G** — squeeze Turn CBet, separate from plain 3BP.
+- [ ] **02H** — clean supported 4BP Turn CBet; low SPR reviewed without generic TP+ jam.
+- [ ] **02I** — multiway 3BP/squeeze and other supported multiway raised-pot turn families.
+
+### Turn execution / validation
+
+- [ ] **02J.1** — Turn size-ID runtime adapter without stealing global `f$BestBetsize` ownership.
+- [ ] **02J.2** — Turn stack-sensitive sizing / explicit-jam audit per exact family.
+- [ ] **02V** — deterministic OpenPPL/OpenHoldem Turn-CBet fixtures/replays PASS.
+
+## Gate 03+ — post-flop attack order after Turn CBet
+
+1. River CBet
+2. Flop Float Bet
+3. Turn Float Bet
+4. River Float Bet
+5. Flop Donk Bet
+6. Turn Donk Bet
+7. River Donk Bet
+8. Turn Probe
+9. River Probe
+10. Delayed CBet / delayed-noaction families
 
 Every node is reviewed source-first, then adapted with T/A/P/X provenance and the same deal-size/HU-origin/flop-origin context contract.
 
