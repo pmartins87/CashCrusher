@@ -27,3 +27,5 @@ jobs:
         run: python tools/test_turn_multiway_srp.py
       - name: Test isolation-pot Turn CBet contract
         run: python tools/test_turn_iso.py
+      - name: Test plain 3bet-pot Turn CBet contract
+        run: python tools/test_turn_plain3bp.py
