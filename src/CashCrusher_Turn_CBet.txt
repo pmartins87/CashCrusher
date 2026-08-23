@@ -1,0 +1,138 @@
+// ============================================================================
+// CashCrusher_Turn_CBet.txt
+// Gate 02 — six-max cash Turn CBet routing contract
+// ============================================================================
+// Purpose:
+//   Route an ACTUAL flop-CBet continuation to the exact turn pot/range/history
+//   family. Same current handedness never erases flop origin or preflop topology.
+//
+// Current implemented strategic children:
+//   * true-HU ordinary SRP PFA IP (HUSB parent);
+//   * reduced-HU BTN-v-BB ordinary SRP PFA IP;
+//   * reduced-HU BTN-v-SB ordinary SRP PFA IP.
+//
+// Everything else remains explicitly fail-closed until its own source/adaptation
+// audit. This is deliberate: Turn CBet must not inherit an HUSB/BTN frequency just
+// because Hero is currently heads-up and still has initiative.
+//
+// Source/Provenance:
+//   A = DeepCrusher top-level scenario/initiative routing architecture.
+//   T = Gate01N actual flop history.
+//   P = six-max exact family decomposition and fail-closed coverage contract.
+// ============================================================================
+
+// Purpose: ordinary one-raise SRP Turn-CBet context, excluding ISO.
+// Source/Provenance: A/T pot-role/history gate; action remains child-specific.
+##f$cc_turn_cbet_ordinary_srp_context##
+f$cc_turn_cbet_opportunity &&
+f$cc_pot_family_id = 2 &&
+f$cc_pf_role_pfa &&
+f$cc_pf_one_raise_ordinary_srp
+
+// Purpose: ISO Turn-CBet context after a real flop ISO CBet.
+// Source/Provenance: A/T family gate; current policy still pending.
+##f$cc_turn_cbet_iso_context##
+f$cc_turn_cbet_opportunity &&
+f$cc_pot_family_id = 2 &&
+f$cc_pf_role_pfa &&
+f$cc_pf_iso_proven
+
+// Purpose: plain 3BP Turn-CBet context for final 3bettor.
+// Source/Provenance: A/T role/subtype gate; deep-cash policy P-heavy and pending.
+##f$cc_turn_cbet_plain3bp_context##
+f$cc_turn_cbet_opportunity &&
+f$cc_pot_family_id = 3 &&
+f$cc_pf_role_3bettor &&
+f$cc_pf_3bet_plain_proven
+
+// Purpose: squeeze-pot Turn-CBet context.
+// Source/Provenance: A/T exact subtype; kept separate from plain 3BP.
+##f$cc_turn_cbet_squeeze_context##
+f$cc_turn_cbet_opportunity &&
+f$cc_pot_family_id = 3 &&
+f$cc_pf_role_3bettor &&
+f$cc_pf_squeeze_proven
+
+// Purpose: clean supported 4BP Turn-CBet context for Hero 4bettor.
+// Source/Provenance: A/P topology gate; strategy pending exact 4BP audit.
+##f$cc_turn_cbet_4bp_context##
+f$cc_turn_cbet_opportunity &&
+f$cc_pot_family_id = 4 &&
+f$cc_pf_role_4bettor
+
+// Purpose: flag ordinary SRP that began flop multiway but is HU now on turn.
+// Source: Gate00 HU-origin contract.
+// Provenance: P mandatory range-origin separator.
+// Safety: never allowed to inherit a flop-HU source child.
+##f$cc_turn_cbet_srp_postflop_reduced_hu_context##
+f$cc_turn_cbet_ordinary_srp_context &&
+f$cc_hu_origin_postflop_reduced
+
+// Purpose: ordinary SRP current multiway Turn-CBet context.
+// Source/Provenance: A/P multiway family gate; strategy pending.
+##f$cc_turn_cbet_srp_multiway_context##
+f$cc_turn_cbet_ordinary_srp_context && f$cc_multiway
+
+// Purpose: ordinary SRP preflop-reduced HU IP contexts not yet covered by the
+// three direct source-anchored children (principally UTG/HJ/CO-v-blind).
+// Source/Provenance: P explicit gap flag; prevents accidental BTN fallback.
+##f$cc_turn_cbet_srp_ip_uncovered_range_context##
+f$cc_turn_cbet_ordinary_srp_context &&
+f$cc_hu_origin_preflop_reduced &&
+f$cc_hu_ip &&
+!f$cc_turn_srp_ip_source_anchored_covered
+
+// Purpose: ordinary SRP PFA-OOP context requiring its own 3wSB-v-BB / P-heavy
+// adaptation rather than an IP barrel tree.
+// Source/Provenance: A/P explicit gap flag.
+##f$cc_turn_cbet_srp_oop_uncovered_context##
+f$cc_turn_cbet_ordinary_srp_context && f$cc_hu && f$cc_hu_oop
+
+// Purpose: compact current Turn-CBet family ID for logs/coverage.
+// IDs: 1 source-anchored SRP IP; 2 other SRP IP; 3 SRP OOP; 4 postflop-reduced
+// SRP HU; 5 SRP multiway; 6 ISO; 7 plain3BP; 8 squeeze; 9 4BP; 0 unknown.
+// Source/Provenance: P engineering metadata; ID never selects strategy alone.
+##f$cc_turn_cbet_family_id##
+When !f$cc_turn_cbet_opportunity Return 0 Force
+When f$cc_turn_srp_ip_source_anchored_covered Return 1 Force
+When f$cc_turn_cbet_srp_postflop_reduced_hu_context Return 4 Force
+When f$cc_turn_cbet_srp_multiway_context Return 5 Force
+When f$cc_turn_cbet_srp_ip_uncovered_range_context Return 2 Force
+When f$cc_turn_cbet_srp_oop_uncovered_context Return 3 Force
+When f$cc_turn_cbet_iso_context Return 6 Force
+When f$cc_turn_cbet_plain3bp_context Return 7 Force
+When f$cc_turn_cbet_squeeze_context Return 8 Force
+When f$cc_turn_cbet_4bp_context Return 9 Force
+When Others Return 0 Force
+
+// Purpose: top-level Turn CBet action router.
+// Source/Provenance: A/P exact-family router.
+// Safety: only audited children may return true; no generic tail.
+##f$cc_turn_cbet_router##
+When !f$cc_turn_cbet_opportunity Return false Force
+When f$cc_turn_srp_ip_source_anchored_covered Return f$cc_turn_srp_ip_source_anchored_action Force
+When Others Return false Force
+
+// Purpose: paired strategic size-ID router.
+// Source/Provenance: A/P exact-family sizing ownership.
+// Safety: uncovered/check state -> 0.
+##f$cc_turn_cbet_size_id##
+When !f$cc_turn_cbet_opportunity Return 0 Force
+When f$cc_turn_srp_ip_source_anchored_covered Return f$cc_turn_srp_ip_source_anchored_size_id Force
+When Others Return 0 Force
+
+// Purpose: report whether current Turn-CBet family has an implemented baseline.
+// Source/Provenance: P engineering coverage contract.
+##f$cc_turn_cbet_strategy_covered##
+f$cc_turn_srp_ip_source_anchored_covered
+
+// Purpose: action/size integrity invariant.
+// Source/Provenance: P safety contract.
+##f$cc_turn_cbet_size_consistent##
+When !f$cc_turn_cbet_router Return f$cc_turn_cbet_size_id = 0 Force
+When f$cc_turn_cbet_router Return f$cc_turn_cbet_size_id > 0 Force
+When Others Return false Force
+
+// ============================================================================
+// End current Turn CBet router. Uncovered families intentionally fail closed.
+// ============================================================================
