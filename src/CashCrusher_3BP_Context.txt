@@ -1,0 +1,247 @@
+// ============================================================================
+// CashCrusher_3BP_Context.txt
+// Gate 01F.0 — 3-bet-pot survivor/range provenance
+// ============================================================================
+// Purpose:
+//   A two-raise pot is not a single opponent range.  Before any 3BP CBet policy
+//   fires, preserve whether the surviving Villain is:
+//     1) the ORIGINAL OPENER who called the 3bet;
+//     2) a PRE-3BET COLD CALLER who called the open before a squeeze and survived;
+//     3) a POST-3BET COLD CALLER who had not yet acted and cold-called the 3bet.
+//
+// Example A — plain 3BP / opener survivor:
+//   HJ raise -> BTN 3bet -> HJ call.
+//
+// Example B — squeeze / pre-3bet coldcaller survivor:
+//   UTG raise -> HJ call -> BTN squeeze -> UTG fold -> HJ call.
+//
+// Example C — nominal plain 3BP but post-3bet coldcaller survives:
+//   UTG raise -> BTN 3bet -> BB coldcall -> UTG fold.
+//   BTN is NOT facing the original opener on the flop.
+//
+// Source/Provenance:
+//   T/A = persisted `raisbits1`/`callbits1`, exact positions and current live mask.
+//   P   = six-max range-provenance decomposition. DeepCrusher has no equivalent
+//         complete 3BP survivor taxonomy, so this is an explicit architecture fill.
+//
+// Safety:
+//   Only supported first-orbit 3bet order (`first raiser pos < final 3bettor pos`)
+//   is classified. Limp-reraise/reversed chronology remains subtype-unknown.
+//   Unknown or contradictory HU survivor type fails closed.
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// 3BP.01 — Raiser bit helpers
+// -----------------------------------------------------------------------------
+
+// Purpose: canonical bit corresponding to the proven original opener in a 3BP.
+// Source/Provenance: A mapping from Gate00 first-raiser position ID.
+// Safety: unresolved first raiser -> 0.
+##f$cc_pf_3bet_first_raiser_bit##
+When f$cc_pf_3bet_first_raiser_pos_id = 1 Return 1 Force
+When f$cc_pf_3bet_first_raiser_pos_id = 2 Return 2 Force
+When f$cc_pf_3bet_first_raiser_pos_id = 3 Return 4 Force
+When f$cc_pf_3bet_first_raiser_pos_id = 4 Return 8 Force
+When f$cc_pf_3bet_first_raiser_pos_id = 5 Return 16 Force
+When f$cc_pf_3bet_first_raiser_pos_id = 6 Return 32 Force
+When Others Return 0 Force
+
+// Purpose: canonical bit corresponding to the proven final 3bettor.
+// Source/Provenance: A mapping from Gate00 final-raiser position ID.
+// Safety: unresolved final 3bettor -> 0.
+##f$cc_pf_3bet_final_raiser_bit##
+When f$cc_pf_3bet_final_raiser_pos_id = 1 Return 1 Force
+When f$cc_pf_3bet_final_raiser_pos_id = 2 Return 2 Force
+When f$cc_pf_3bet_final_raiser_pos_id = 3 Return 4 Force
+When f$cc_pf_3bet_final_raiser_pos_id = 4 Return 8 Force
+When f$cc_pf_3bet_final_raiser_pos_id = 5 Return 16 Force
+When f$cc_pf_3bet_final_raiser_pos_id = 6 Return 32 Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// 3BP.02 — Which callers existed around the 3bet?
+// -----------------------------------------------------------------------------
+
+// Purpose: exact mask of callers who acted after the opener but before the final
+// 3bettor.  Their presence proves a squeeze topology.
+// Source: persisted callbits1 + proven first/final raiser order.
+// Provenance: A mechanical expansion of Gate00 squeeze boolean into an exact mask.
+// Safety: unsupported/reversed chronology -> 0.
+##f$cc_pf_pre3bet_coldcaller_mask##
+When !f$cc_pf_3bet_order_supported Return 0 Force
+When f$cc_pf_3bet_first_raiser_pos_id = 1 && f$cc_pf_3bet_final_raiser_pos_id = 3 Return (f$cc_pf_call_hj * 2) Force
+When f$cc_pf_3bet_first_raiser_pos_id = 1 && f$cc_pf_3bet_final_raiser_pos_id = 4 Return ((f$cc_pf_call_hj * 2) + (f$cc_pf_call_co * 4)) Force
+When f$cc_pf_3bet_first_raiser_pos_id = 1 && f$cc_pf_3bet_final_raiser_pos_id = 5 Return ((f$cc_pf_call_hj * 2) + (f$cc_pf_call_co * 4) + (f$cc_pf_call_btn * 8)) Force
+When f$cc_pf_3bet_first_raiser_pos_id = 1 && f$cc_pf_3bet_final_raiser_pos_id = 6 Return ((f$cc_pf_call_hj * 2) + (f$cc_pf_call_co * 4) + (f$cc_pf_call_btn * 8) + (f$cc_pf_call_sb * 16)) Force
+When f$cc_pf_3bet_first_raiser_pos_id = 2 && f$cc_pf_3bet_final_raiser_pos_id = 4 Return (f$cc_pf_call_co * 4) Force
+When f$cc_pf_3bet_first_raiser_pos_id = 2 && f$cc_pf_3bet_final_raiser_pos_id = 5 Return ((f$cc_pf_call_co * 4) + (f$cc_pf_call_btn * 8)) Force
+When f$cc_pf_3bet_first_raiser_pos_id = 2 && f$cc_pf_3bet_final_raiser_pos_id = 6 Return ((f$cc_pf_call_co * 4) + (f$cc_pf_call_btn * 8) + (f$cc_pf_call_sb * 16)) Force
+When f$cc_pf_3bet_first_raiser_pos_id = 3 && f$cc_pf_3bet_final_raiser_pos_id = 5 Return (f$cc_pf_call_btn * 8) Force
+When f$cc_pf_3bet_first_raiser_pos_id = 3 && f$cc_pf_3bet_final_raiser_pos_id = 6 Return ((f$cc_pf_call_btn * 8) + (f$cc_pf_call_sb * 16)) Force
+When f$cc_pf_3bet_first_raiser_pos_id = 4 && f$cc_pf_3bet_final_raiser_pos_id = 6 Return (f$cc_pf_call_sb * 16) Force
+When Others Return 0 Force
+
+// Purpose: exact mask of players positioned after the final 3bettor who called
+// preflop and can therefore represent post-3bet cold calls.
+// Source: persisted callbits1 and canonical first-orbit order.
+// Provenance: P/A six-max range-provenance reconstruction.
+// Safety: this does not include the opener's later call; opener is classified
+// separately by first-raiser identity.
+##f$cc_pf_post3bet_coldcaller_mask##
+When !f$cc_pf_3bet_order_supported Return 0 Force
+When f$cc_pf_3bet_final_raiser_pos_id = 2 Return ((f$cc_pf_call_co * 4) + (f$cc_pf_call_btn * 8) + (f$cc_pf_call_sb * 16) + (f$cc_pf_call_bb * 32)) Force
+When f$cc_pf_3bet_final_raiser_pos_id = 3 Return ((f$cc_pf_call_btn * 8) + (f$cc_pf_call_sb * 16) + (f$cc_pf_call_bb * 32)) Force
+When f$cc_pf_3bet_final_raiser_pos_id = 4 Return ((f$cc_pf_call_sb * 16) + (f$cc_pf_call_bb * 32)) Force
+When f$cc_pf_3bet_final_raiser_pos_id = 5 Return (f$cc_pf_call_bb * 32) Force
+When f$cc_pf_3bet_final_raiser_pos_id = 6 Return 0 Force
+When Others Return 0 Force
+
+// Purpose: prove that the original opener recorded a call after having raised,
+// which is the expected continuation signature when opener reaches flop versus
+// the 3bettor.
+// Source/Provenance: A mapping of first-raiser position to persisted call bit.
+// Safety: does not attempt to infer exact sizing or whether a caller was all-in.
+##f$cc_pf_3bet_opener_has_callbit##
+When !f$cc_pf_3bet_order_supported Return false Force
+When f$cc_pf_3bet_first_raiser_pos_id = 1 Return f$cc_pf_call_utg Force
+When f$cc_pf_3bet_first_raiser_pos_id = 2 Return f$cc_pf_call_hj Force
+When f$cc_pf_3bet_first_raiser_pos_id = 3 Return f$cc_pf_call_co Force
+When f$cc_pf_3bet_first_raiser_pos_id = 4 Return f$cc_pf_call_btn Force
+When f$cc_pf_3bet_first_raiser_pos_id = 5 Return f$cc_pf_call_sb Force
+When f$cc_pf_3bet_first_raiser_pos_id = 6 Return f$cc_pf_call_bb Force
+When Others Return false Force
+
+// -----------------------------------------------------------------------------
+// 3BP.03 — Current HU survivor type when HERO is final 3bettor
+// -----------------------------------------------------------------------------
+
+// Purpose: prove sole current Villain is the original opener who continued.
+// Context: Hero final 3bettor, HU now, supported 3bet chronology.
+// Source/Provenance: A exact position identity + persisted opener call evidence.
+##f$cc_hu_3bp_villain_is_opener##
+f$cc_hu &&
+f$cc_pf_role_3bettor &&
+f$cc_pf_3bet_order_supported &&
+f$cc_pf_3bet_opener_has_callbit &&
+f$cc_hu_villain_pos_bit = f$cc_pf_3bet_first_raiser_bit
+
+// Purpose: prove sole Villain cold-called the open before Hero squeezed and then
+// survived the squeeze to the flop.
+// Source/Provenance: P range-provenance class built from A exact call mask.
+// Safety: only meaningful in squeeze topology.
+##f$cc_hu_3bp_villain_is_pre3bet_coldcaller##
+f$cc_hu &&
+f$cc_pf_role_3bettor &&
+f$cc_pf_squeeze_proven &&
+f$cc_hu_villain_pos_bit > 0 &&
+((f$cc_pf_pre3bet_coldcaller_mask BitAnd f$cc_hu_villain_pos_bit) > 0)
+
+// Purpose: prove sole Villain cold-called the 3bet from a seat after final 3bettor.
+// Source/Provenance: P range-provenance class built from A persisted call mask.
+##f$cc_hu_3bp_villain_is_post3bet_coldcaller##
+f$cc_hu &&
+f$cc_pf_role_3bettor &&
+f$cc_pf_3bet_order_supported &&
+f$cc_hu_villain_pos_bit > 0 &&
+((f$cc_pf_post3bet_coldcaller_mask BitAnd f$cc_hu_villain_pos_bit) > 0)
+
+// Purpose: stable HU 3BP Villain-origin ID.
+// IDs: 1 opener-call | 2 pre-3bet coldcaller/squeeze caller |
+//      3 post-3bet coldcaller | 0 unknown.
+// Source/Provenance: P engineering contract.
+##f$cc_hu_3bp_survivor_type_id##
+When f$cc_hu_3bp_villain_is_opener Return 1 Force
+When f$cc_hu_3bp_villain_is_pre3bet_coldcaller Return 2 Force
+When f$cc_hu_3bp_villain_is_post3bet_coldcaller Return 3 Force
+When Others Return 0 Force
+
+// Purpose: guard against overlap or unresolved range provenance before policy.
+// Source/Provenance: P fail-closed safety invariant.
+// Safety: exactly one survivor type must be true whenever Hero-3bettor 3BP CBet
+// policy is asked to run.
+##f$cc_hu_3bp_survivor_consistent##
+When !f$cc_hu Return true Force
+When !f$cc_pf_role_3bettor Return true Force
+When f$cc_pot_family_id != 3 Return true Force
+When (f$cc_hu_3bp_villain_is_opener + f$cc_hu_3bp_villain_is_pre3bet_coldcaller + f$cc_hu_3bp_villain_is_post3bet_coldcaller) != 1 Return false Force
+When Others Return true Force
+
+// -----------------------------------------------------------------------------
+// 3BP.04 — Plain / squeeze HU descendants for later strategy
+// -----------------------------------------------------------------------------
+
+// Purpose: plain 3BP where Hero 3betted and original opener is sole flop caller.
+// Source/Provenance: P/A exact range topology; strongest standard 3BP baseline.
+##f$cc_hu_plain3bp_vs_opener##
+f$cc_pf_3bet_plain_proven && f$cc_hu_3bp_villain_is_opener && f$cc_hu_3bp_survivor_consistent
+
+// Purpose: plain 3BP where a post-3bet cold caller, not opener, is sole Villain.
+// Source/Provenance: P new six-max range family; must not inherit opener-call policy.
+##f$cc_hu_plain3bp_vs_post3bet_coldcaller##
+f$cc_pf_3bet_plain_proven && f$cc_hu_3bp_villain_is_post3bet_coldcaller && f$cc_hu_3bp_survivor_consistent
+
+// Purpose: squeeze pot where original opener called and is sole flop Villain.
+// Source/Provenance: P squeeze-specific range family.
+##f$cc_hu_squeeze_vs_opener##
+f$cc_pf_squeeze_proven && f$cc_hu_3bp_villain_is_opener && f$cc_hu_3bp_survivor_consistent
+
+// Purpose: squeeze pot where the pre-3bet cold caller continued and is sole Villain.
+// Source/Provenance: P squeeze-caller family; usually stronger/condensed after
+// facing the squeeze than its initial flat-to-open range.
+##f$cc_hu_squeeze_vs_pre3bet_coldcaller##
+f$cc_pf_squeeze_proven && f$cc_hu_3bp_villain_is_pre3bet_coldcaller && f$cc_hu_3bp_survivor_consistent
+
+// Purpose: squeeze pot where a player after the 3bettor cold-called and survives.
+// Source/Provenance: P distinct post-3bet cold-call family.
+##f$cc_hu_squeeze_vs_post3bet_coldcaller##
+f$cc_pf_squeeze_proven && f$cc_hu_3bp_villain_is_post3bet_coldcaller && f$cc_hu_3bp_survivor_consistent
+
+// -----------------------------------------------------------------------------
+// 3BP.05 — True-HU topology invariant
+// -----------------------------------------------------------------------------
+
+// Purpose: supported ordinary true-HU 3BP where SB/Button opened, BB 3bet,
+// SB/Button called; therefore Hero 3bettor is BB and OOP postflop.
+// Source: HU action order; HUBB is legacy positional ancestry.
+// Provenance: T/A topology fact, strategy still A/P.
+##f$cc_true_hu_plain3bp_bb_3bettor_oop##
+f$cc_true_hu &&
+f$cc_hu_plain3bp_vs_opener &&
+f$cc_hero_pos_id = 6 &&
+f$cc_hu_villain_pos_id = 5 &&
+f$cc_hu_oop
+
+// Purpose: detect an impossible/unsupported "ordinary true-HU plain 3bettor IP"
+// state. A SB/Button limp-reraise would have reversed chronology and is NOT plain.
+// Source/Provenance: T/A HU order invariant used for validation.
+##f$cc_true_hu_plain3bp_3bettor_ip_invalid##
+f$cc_true_hu && f$cc_pf_role_3bettor && f$cc_pf_3bet_plain_proven && f$cc_hu_ip
+
+// -----------------------------------------------------------------------------
+// 3BP.06 — Multiway live-origin masks for future policy
+// -----------------------------------------------------------------------------
+
+// Purpose: current live original opener bit if opener remains in a multiway 3BP.
+// Source/Provenance: A exact live-mask intersection.
+##f$cc_mw_3bp_live_opener_mask##
+When !f$cc_multiway Return 0 Force
+When f$cc_pot_family_id != 3 Return 0 Force
+When Others Return (f$cc_opp_live_mask BitAnd f$cc_pf_3bet_first_raiser_bit) Force
+
+// Purpose: live pre-3bet cold callers who survived a squeeze to current street.
+// Source/Provenance: P/A exact composition for future squeeze policy.
+##f$cc_mw_3bp_live_pre3bet_coldcaller_mask##
+When !f$cc_multiway Return 0 Force
+When f$cc_pot_family_id != 3 Return 0 Force
+When Others Return (f$cc_opp_live_mask BitAnd f$cc_pf_pre3bet_coldcaller_mask) Force
+
+// Purpose: live post-3bet cold callers in current multiway 3BP.
+// Source/Provenance: P/A exact composition; kept separate from opener/squeeze callers.
+##f$cc_mw_3bp_live_post3bet_coldcaller_mask##
+When !f$cc_multiway Return 0 Force
+When f$cc_pot_family_id != 3 Return 0 Force
+When Others Return (f$cc_opp_live_mask BitAnd f$cc_pf_post3bet_coldcaller_mask) Force
+
+// ============================================================================
+// End Gate 01F.0 3BP survivor provenance.
+// ============================================================================
