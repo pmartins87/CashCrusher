@@ -1,0 +1,42 @@
+// ============================================================================
+// CashCrusher_Multiway_StackContext.txt
+// Gate 00D.2 — validation contract for dual-bound multiway stack geometry
+// ============================================================================
+// Purpose:
+//   Make multiway strategic context fail closed when live stack geometry cannot
+//   support both shallowest and deepest effective relationships.
+//
+// Source/Provenance:
+//   T/A = exact live masks, Hero/opponent street-start stacks and common pot.
+//   P   = requirement that reviewed multiway strategy sees a coherent dual bound.
+//
+// Safety:
+//   This validates geometry only. It does not decide whether shallowest, deepest
+//   or actor-specific effective stack owns any particular action.
+// ============================================================================
+
+// Purpose: validate complete multiway stack-depth envelope for strategic use.
+// Source/Provenance: T/A arithmetic invariants over the dual-bound geometry.
+##f$cc_mw_stack_geometry_valid##
+When !f$cc_multiway Return false Force
+When !f$cc_mw_live_opp_stacks_valid Return false Force
+When f$cc_hero_stack_round_start_bb < 0 Return false Force
+When f$cc_round_start_pot_bb <= 0 Return false Force
+When f$cc_mw_shallowest_effective_stack_round_start_bb < 0 Return false Force
+When f$cc_mw_deepest_effective_stack_round_start_bb < 0 Return false Force
+When f$cc_mw_shallowest_effective_stack_round_start_bb > f$cc_mw_deepest_effective_stack_round_start_bb Return false Force
+When f$cc_mw_deepest_effective_stack_round_start_bb > f$cc_hero_stack_round_start_bb Return false Force
+When Others Return true Force
+
+// Purpose: confirm both explicit multiway SPR bounds are usable and ordered.
+// Source/Provenance: T/P validation; no strategy threshold is encoded.
+##f$cc_mw_spr_bounds_valid##
+When !f$cc_mw_stack_geometry_valid Return false Force
+When f$cc_mw_spr_shallowest_round_start < 0 Return false Force
+When f$cc_mw_spr_deepest_round_start < 0 Return false Force
+When f$cc_mw_spr_shallowest_round_start > f$cc_mw_spr_deepest_round_start Return false Force
+When Others Return true Force
+
+// ============================================================================
+// End multiway stack-context validation.
+// ============================================================================
