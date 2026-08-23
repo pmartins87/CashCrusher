@@ -143,14 +143,14 @@ f$cc_flop_dynamic_lowmid_parent
 // -----------------------------------------------------------------------------
 // C.07 — High-SPR marginal-value caution
 // -----------------------------------------------------------------------------
-// DeepCrusher's <=16/20BB rules are not transplanted. Raw SPR is used here only
-// to avoid turning weak one-pair hands into automatic deep-pot builders.
+// DeepCrusher's <=16/20BB rules are not transplanted. Round-start raw SPR is
+// used only to avoid turning weak one-pair hands into automatic deep-pot builders.
 
 ##f$cc_cbet_high_spr##
-f$cc_spr_raw >= 6
+f$cc_spr_round_start >= 6
 
 ##f$cc_cbet_very_high_spr##
-f$cc_spr_raw >= 10
+f$cc_spr_round_start >= 10
 
 // ============================================================================
 // End common CBet strategic descriptors.
