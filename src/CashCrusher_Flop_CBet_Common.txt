@@ -1,0 +1,157 @@
+// ============================================================================
+// CashCrusher_Flop_CBet_Common.txt
+// Gate 01A — flop CBet strategic combo/size descriptors
+// ============================================================================
+// These functions are NOT generic hand-strength truth. They are deterministic
+// selection tools used to approximate professional mixed CBet strategies with
+// meaningful combo properties instead of arbitrary always-bet/always-check.
+//
+// Provenance:
+//   A — inherits DeepCrusher distinctions between made hands, draw quality,
+//       backdoors and board dynamism.
+//   P — deep-stack deterministic combo selection and sizing families.
+//
+// No function in this file identifies a pot family. Context must be proven by
+// the caller before consuming these descriptors.
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// C.01 — Hole-card high-card / blocker descriptors
+// -----------------------------------------------------------------------------
+
+##f$cc_hole_has_ace##
+RankOfFirstHoleCard = ace || RankOfSecondHoleCard = ace
+
+##f$cc_hole_has_king##
+RankOfFirstHoleCard = king || RankOfSecondHoleCard = king
+
+##f$cc_hole_has_queen##
+RankOfFirstHoleCard = queen || RankOfSecondHoleCard = queen
+
+##f$cc_hole_has_jack##
+RankOfFirstHoleCard = jack || RankOfSecondHoleCard = jack
+
+##f$cc_hole_broadway_count##
+((RankOfFirstHoleCard >= ten) ? 1 : 0) + ((RankOfSecondHoleCard >= ten) ? 1 : 0)
+
+##f$cc_hole_two_broadways##
+f$cc_hole_broadway_count = 2
+
+// -----------------------------------------------------------------------------
+// C.02 — Made-hand CBet tiers
+// -----------------------------------------------------------------------------
+
+##f$cc_cbet_flop_very_strong_value##
+f$cc_hand_two_pair_or_better
+
+##f$cc_cbet_flop_overpair##
+HaveOverPair && !f$cc_hand_two_pair_or_better
+
+##f$cc_cbet_flop_strong_top_pair##
+f$cc_hand_just_top_pair && f$cc_number_better_kickers <= 2
+
+##f$cc_cbet_flop_medium_top_pair##
+f$cc_hand_just_top_pair && f$cc_number_better_kickers > 2 && f$cc_number_better_kickers <= 4
+
+##f$cc_cbet_flop_weak_top_pair##
+f$cc_hand_just_top_pair && f$cc_number_better_kickers > 4
+
+##f$cc_cbet_flop_top_pair_plus##
+f$cc_hand_top_pair_or_better
+
+##f$cc_cbet_flop_showdown_pair##
+f$cc_hand_middle_or_bottom_pair && !f$cc_hand_top_pair_or_better
+
+// -----------------------------------------------------------------------------
+// C.03 — Draw tiers for deep-stack betting selection
+// -----------------------------------------------------------------------------
+// The old Spin label "StackOffDraws" is intentionally not reproduced.
+
+##f$cc_cbet_flop_premium_draw##
+f$cc_real_combo_draw ||
+f$cc_real_nut_fd ||
+(f$cc_real_oesd && f$cc_two_overcards) ||
+(f$cc_real_fd && f$cc_two_overcards)
+
+##f$cc_cbet_flop_good_draw##
+!f$cc_cbet_flop_premium_draw &&
+(f$cc_real_fd || f$cc_real_oesd || (f$cc_real_gutshot && f$cc_two_overcards))
+
+##f$cc_cbet_flop_weak_draw##
+!f$cc_cbet_flop_premium_draw && !f$cc_cbet_flop_good_draw && f$cc_real_frontdoor_draw
+
+// -----------------------------------------------------------------------------
+// C.04 — Air-combo quality
+// -----------------------------------------------------------------------------
+// A deterministic hardcoded strategy needs a principled subset of air for the
+// betting range. Backdoors/high cards are used as selectors; this is not a claim
+// that every listed combo is a solver-preferred bluff in every exact matchup.
+
+##f$cc_cbet_flop_air_best_backdoors##
+f$cc_air_no_frontdoor && f$cc_combo_backdoors
+
+##f$cc_cbet_flop_air_highcard_backdoor##
+f$cc_air_no_frontdoor &&
+(f$cc_backdoor_fd || f$cc_backdoor_sd) &&
+(f$cc_hole_two_broadways || f$cc_hole_has_ace || f$cc_hole_has_king)
+
+##f$cc_cbet_flop_air_two_oc_backdoor##
+f$cc_air_no_frontdoor && f$cc_two_overcards && (f$cc_backdoor_fd || f$cc_backdoor_sd)
+
+##f$cc_cbet_flop_quality_air##
+f$cc_cbet_flop_air_best_backdoors || f$cc_cbet_flop_air_highcard_backdoor || f$cc_cbet_flop_air_two_oc_backdoor
+
+##f$cc_cbet_flop_pure_air##
+f$cc_air_no_frontdoor && !f$cc_cbet_flop_quality_air
+
+// -----------------------------------------------------------------------------
+// C.05 — Board-pressure convenience tiers
+// -----------------------------------------------------------------------------
+
+##f$cc_cbet_board_small_bet_parent##
+f$cc_flop_static_high_parent || f$cc_flop_paired_parent
+
+##f$cc_cbet_board_medium_parent##
+f$cc_flop_dynamic_high_parent || f$cc_flop_static_lowmid_parent
+
+##f$cc_cbet_board_polar_parent##
+f$cc_flop_dynamic_lowmid_parent
+
+// -----------------------------------------------------------------------------
+// C.06 — Sizing family IDs
+// -----------------------------------------------------------------------------
+// IDs are strategic intentions only. The OpenPPL betsize/action mapping is a
+// separate runtime layer.
+//   1 = SMALL_33
+//   2 = MEDIUM_50
+//   3 = LARGE_75
+//   4 = POT_100 (reserved; no SRP baseline currently uses it)
+//   0 = CHECK / no CBet size
+
+##f$cc_cbet_size_small_id##
+1
+
+##f$cc_cbet_size_medium_id##
+2
+
+##f$cc_cbet_size_large_id##
+3
+
+##f$cc_cbet_size_pot_id##
+4
+
+// -----------------------------------------------------------------------------
+// C.07 — High-SPR marginal-value caution
+// -----------------------------------------------------------------------------
+// DeepCrusher's <=16/20BB rules are not transplanted. Raw SPR is used here only
+// to avoid turning weak one-pair hands into automatic deep-pot builders.
+
+##f$cc_cbet_high_spr##
+f$cc_spr_raw >= 6
+
+##f$cc_cbet_very_high_spr##
+f$cc_spr_raw >= 10
+
+// ============================================================================
+// End common CBet strategic descriptors.
+// ============================================================================
