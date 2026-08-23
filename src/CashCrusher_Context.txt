@@ -1,25 +1,51 @@
 // ============================================================================
 // CashCrusher_Context.txt
-// Gate 00C — mechanical six-max post-flop context engine
+// Gate 00C/00F — dynamic 2-to-6-handed post-flop context engine
 // ============================================================================
 // Scope:
-//   * classify a NORMAL six-handed deal after the flop;
+//   * support a six-max cash table when 2, 3, 4, 5 or 6 players are dealt in;
+//   * preserve a stable six-max-equivalent positional taxonomy;
+//   * distinguish TRUE HU DEALS from hands that merely become HU after folds;
+//   * preserve how many players actually reached the flop;
 //   * preserve exact absolute positions and live-opponent mask;
 //   * classify HU / multiway and relative post-flop position;
 //   * classify preflop pot family from OpenPPL historical raise count;
 //   * classify Hero's preflop role from stable historical actions;
-//   * prove ISO / squeeze subtypes only when aggregate history is sufficient;
-//   * provide raw SPR geometry for later strategic nodes.
+//   * prove ISO / HU limp-raise / squeeze subtypes only when history supports it;
+//   * fail closed on contradictory mechanical states.
 //
-// IMPORTANT:
-//   This file contains routing/context logic, not poker policy.
-//   Unknown or contradictory states return 0 / false. Future action routers MUST
-//   fail closed when f$cc_context_valid is false.
+// IMPORTANT STRATEGIC DISTINCTION:
+//   f$cc_hu only means TWO PLAYERS ARE CURRENTLY PLAYING.
+//   It does NOT say how the hand began.
 //
-// Position IDs (stable contract):
-//   1 UTG | 2 HJ/MP3 | 3 CO | 4 BTN | 5 SB | 6 BB
+//   f$cc_hu_origin_id = 1  TRUE_HU_DEAL
+//       Exactly two players were dealt into the hand. HU button/SB rules apply.
+//       This is the natural descendant of legacy HUSB/HUBB knowledge.
+//
+//   f$cc_hu_origin_id = 2  PREFLOP_REDUCED_TO_HU
+//       3-6 players were dealt, but only two reached the flop after preflop folds.
+//       Absolute 6-max-equivalent positions and ranges remain relevant.
+//
+//   f$cc_hu_origin_id = 3  POSTFLOP_REDUCED_TO_HU
+//       3+ players reached the flop and later action reduced the hand to HU.
+//       Future streets MUST retain multiway provenance; ordinary HU policy must
+//       not silently take over.
+//
+// Stable position IDs:
+//   1 UTG | 2 HJ | 3 CO | 4 BTN | 5 SB | 6 BB
+//
+// Canonical position mapping by dealt-player count:
+//   6h: UTG HJ CO BTN SB BB
+//   5h:     HJ CO BTN SB BB
+//   4h:        CO BTN SB BB
+//   3h:           BTN SB BB
+//   2h:               SB BB   (SB is also BTN/dealer by HU rules)
+//
 // Live-position mask bits:
 //   UTG=1 | HJ=2 | CO=4 | BTN=8 | SB=16 | BB=32
+// In a true HU deal the dealer/SB is represented ONLY by SB bit 16, never
+// double-counted as BTN bit 8.
+//
 // Pot-family IDs:
 //   1 UNRAISED | 2 ONE_RAISE | 3 THREE_BET | 4 FOUR_BET | 5 FIVE_BET_PLUS
 // Hero-role IDs:
@@ -37,51 +63,117 @@
 // ============================================================================
 
 // -----------------------------------------------------------------------------
-// 00C.01 — Strict six-max mechanical envelope
+// 00F.01 — Dynamic table/deal handedness
 // -----------------------------------------------------------------------------
 
-##f$cc_sixmax_deal##
-nplayersdealt = 6
+##f$cc_deal_size##
+When nplayersdealt >= 2 && nplayersdealt <= 6 Return nplayersdealt Force
+When Others Return 0 Force
+
+##f$cc_supported_deal##
+f$cc_deal_size >= 2 && f$cc_deal_size <= 6
+
+##f$cc_table_seated_count##
+// OpponentsAtTable is backed by nopponentsseated in OpenPPL.
+When OpponentsAtTable < 1 Return 0 Force
+When Others Return (OpponentsAtTable + 1) Force
+
+##f$cc_table_count_consistent##
+When f$cc_table_seated_count < 2 Return false Force
+When f$cc_table_seated_count > 6 Return false Force
+When f$cc_deal_size <= 0 Return false Force
+When f$cc_table_seated_count < f$cc_deal_size Return false Force
+When Others Return true Force
+
+##f$cc_physical_table_hu##
+f$cc_table_seated_count = 2
+
+##f$cc_deal_hu##
+f$cc_deal_size = 2
+
+##f$cc_true_hu##
+// Strategic HU-deal flag. Two players were actually dealt into the hand.
+f$cc_deal_hu
+
+##f$cc_true_hu_full_table##
+f$cc_true_hu && f$cc_physical_table_hu
+
+##f$cc_true_hu_with_waiters##
+// Same HU deal/rules, but one or more extra seats are still shown as seated.
+f$cc_true_hu && f$cc_table_seated_count > 2
+
+##f$cc_sixhanded_deal##
+f$cc_deal_size = 6
+
+##f$cc_fivehanded_deal##
+f$cc_deal_size = 5
+
+##f$cc_fourhanded_deal##
+f$cc_deal_size = 4
+
+##f$cc_threehanded_deal##
+f$cc_deal_size = 3
+
+##f$cc_twohanded_deal##
+f$cc_deal_size = 2
+
+##f$cc_dealt_bits_consistent##
+When !f$cc_supported_deal Return false Force
+When BitCount(playersdealtbits) != f$cc_deal_size Return false Force
+When Others Return true Force
+
+// -----------------------------------------------------------------------------
+// 00F.02 — Conditional chair-map validity
+// -----------------------------------------------------------------------------
 
 ##f$cc_chair_map_in_range##
-When userchair < 0 Return false Force
-When utgchair < 0 Return false Force
-When mp3chair < 0 Return false Force
-When cutoffchair < 0 Return false Force
-When dealerchair < 0 Return false Force
-When smallblindchair < 0 Return false Force
-When bigblindchair < 0 Return false Force
-When userchair >= 10 Return false Force
-When utgchair >= 10 Return false Force
-When mp3chair >= 10 Return false Force
-When cutoffchair >= 10 Return false Force
-When dealerchair >= 10 Return false Force
-When smallblindchair >= 10 Return false Force
-When bigblindchair >= 10 Return false Force
+When !f$cc_supported_deal Return false Force
+When userchair < 0 || userchair >= 10 Return false Force
+When dealerchair < 0 || dealerchair >= 10 Return false Force
+When smallblindchair < 0 || smallblindchair >= 10 Return false Force
+When bigblindchair < 0 || bigblindchair >= 10 Return false Force
+When f$cc_deal_size >= 4 && (cutoffchair < 0 || cutoffchair >= 10) Return false Force
+When f$cc_deal_size >= 5 && (mp3chair < 0 || mp3chair >= 10) Return false Force
+When f$cc_deal_size = 6 && (utgchair < 0 || utgchair >= 10) Return false Force
 When Others Return true Force
 
 ##f$cc_chair_map_distinct##
-(utgchair != mp3chair) &&
-(utgchair != cutoffchair) &&
-(utgchair != dealerchair) &&
-(utgchair != smallblindchair) &&
-(utgchair != bigblindchair) &&
-(mp3chair != cutoffchair) &&
-(mp3chair != dealerchair) &&
-(mp3chair != smallblindchair) &&
-(mp3chair != bigblindchair) &&
-(cutoffchair != dealerchair) &&
-(cutoffchair != smallblindchair) &&
-(cutoffchair != bigblindchair) &&
-(dealerchair != smallblindchair) &&
-(dealerchair != bigblindchair) &&
-(smallblindchair != bigblindchair)
+// True HU is the deliberate exception: dealerchair == smallblindchair.
+When f$cc_deal_size = 2 && dealerchair = smallblindchair && smallblindchair != bigblindchair Return true Force
+
+When f$cc_deal_size = 3 &&
+     dealerchair != smallblindchair && dealerchair != bigblindchair && smallblindchair != bigblindchair
+Return true Force
+
+When f$cc_deal_size = 4 &&
+     cutoffchair != dealerchair && cutoffchair != smallblindchair && cutoffchair != bigblindchair &&
+     dealerchair != smallblindchair && dealerchair != bigblindchair && smallblindchair != bigblindchair
+Return true Force
+
+When f$cc_deal_size = 5 &&
+     mp3chair != cutoffchair && mp3chair != dealerchair && mp3chair != smallblindchair && mp3chair != bigblindchair &&
+     cutoffchair != dealerchair && cutoffchair != smallblindchair && cutoffchair != bigblindchair &&
+     dealerchair != smallblindchair && dealerchair != bigblindchair && smallblindchair != bigblindchair
+Return true Force
+
+When f$cc_deal_size = 6 &&
+     utgchair != mp3chair && utgchair != cutoffchair && utgchair != dealerchair && utgchair != smallblindchair && utgchair != bigblindchair &&
+     mp3chair != cutoffchair && mp3chair != dealerchair && mp3chair != smallblindchair && mp3chair != bigblindchair &&
+     cutoffchair != dealerchair && cutoffchair != smallblindchair && cutoffchair != bigblindchair &&
+     dealerchair != smallblindchair && dealerchair != bigblindchair && smallblindchair != bigblindchair
+Return true Force
+
+When Others Return false Force
+
+// -----------------------------------------------------------------------------
+// 00F.03 — Canonical six-max-equivalent absolute positions
+// -----------------------------------------------------------------------------
 
 ##f$cc_hero_pos_id##
-When userchair = utgchair Return 1 Force
-When userchair = mp3chair Return 2 Force
-When userchair = cutoffchair Return 3 Force
-When userchair = dealerchair Return 4 Force
+When f$cc_deal_size = 6 && userchair = utgchair Return 1 Force
+When f$cc_deal_size >= 5 && userchair = mp3chair Return 2 Force
+When f$cc_deal_size >= 4 && userchair = cutoffchair Return 3 Force
+When f$cc_deal_size >= 3 && userchair = dealerchair Return 4 Force
 When userchair = smallblindchair Return 5 Force
 When userchair = bigblindchair Return 6 Force
 When Others Return 0 Force
@@ -91,9 +183,12 @@ When userchair < 0 Return false Force
 When Others Return (((playersplayingbits >> userchair) BitAnd 1) = 1) Force
 
 ##f$cc_player_count_valid##
-(nplayersplaying >= 2) && (nplayersplaying <= 6) && (nopponentsplaying = (nplayersplaying - 1))
+(nplayersplaying >= 2) &&
+(nplayersplaying <= f$cc_deal_size) &&
+(nopponentsplaying = (nplayersplaying - 1))
 
 ##f$cc_hu##
+// CURRENT-LIVE HU only. Always inspect f$cc_hu_origin_id before strategy.
 nplayersplaying = 2 && nopponentsplaying = 1
 
 ##f$cc_threeway##
@@ -117,23 +212,79 @@ When f$cc_sixway Return 6 Force
 When Others Return 0 Force
 
 // -----------------------------------------------------------------------------
-// 00C.02 — Live-position map
+// 00F.04 — Who actually reached the flop?
 // -----------------------------------------------------------------------------
+// playersdealtbits persists the hand-start deal. foldbits1 is the persisted
+// preflop fold mask. Clearing those bits gives the exact preflop survivors.
+// This is critical on turn/river: a 3-way flop that later becomes HU must not
+// be rewritten into an ordinary HU hand.
+
+##f$cc_preflop_fold_bits_valid##
+When ((foldbits1 BitAnd playersdealtbits) != foldbits1) Return false Force
+When Others Return true Force
+
+##f$cc_flop_entry_bits##
+playersdealtbits - (playersdealtbits BitAnd foldbits1)
+
+##f$cc_flop_entry_count##
+When IsPreflop Return 0 Force
+When Others Return BitCount(f$cc_flop_entry_bits) Force
+
+##f$cc_flop_entry_valid##
+When IsPreflop Return false Force
+When f$cc_flop_entry_count < 2 Return false Force
+When f$cc_flop_entry_count > f$cc_deal_size Return false Force
+When nplayersplaying > f$cc_flop_entry_count Return false Force
+When Others Return true Force
+
+##f$cc_reached_flop_hu##
+f$cc_flop_entry_count = 2
+
+##f$cc_reached_flop_multiway##
+f$cc_flop_entry_count >= 3
+
+##f$cc_preflop_reduced_hu##
+f$cc_hu && f$cc_deal_size >= 3 && f$cc_reached_flop_hu
+
+##f$cc_postflop_reduced_to_hu##
+f$cc_hu && f$cc_reached_flop_multiway
+
+##f$cc_hu_origin_id##
+When !f$cc_hu Return 0 Force
+When f$cc_true_hu Return 1 Force
+When f$cc_preflop_reduced_hu Return 2 Force
+When f$cc_postflop_reduced_to_hu Return 3 Force
+When Others Return 0 Force
+
+##f$cc_hu_origin_true##
+f$cc_hu_origin_id = 1
+
+##f$cc_hu_origin_preflop_reduced##
+f$cc_hu_origin_id = 2
+
+##f$cc_hu_origin_postflop_reduced##
+f$cc_hu_origin_id = 3
+
+// -----------------------------------------------------------------------------
+// 00F.05 — Live-position map
+// -----------------------------------------------------------------------------
+// Position aliases that do not exist at the current handedness are ignored.
+// This prevents true-HU dealer/SB from being double-counted as BTN + SB.
 
 ##f$cc_opp_live_utg##
-When utgchair < 0 Return false Force
+When f$cc_deal_size != 6 Return false Force
 When Others Return (((opponentsplayingbits >> utgchair) BitAnd 1) = 1) Force
 
 ##f$cc_opp_live_hj##
-When mp3chair < 0 Return false Force
+When f$cc_deal_size < 5 Return false Force
 When Others Return (((opponentsplayingbits >> mp3chair) BitAnd 1) = 1) Force
 
 ##f$cc_opp_live_co##
-When cutoffchair < 0 Return false Force
+When f$cc_deal_size < 4 Return false Force
 When Others Return (((opponentsplayingbits >> cutoffchair) BitAnd 1) = 1) Force
 
 ##f$cc_opp_live_btn##
-When dealerchair < 0 Return false Force
+When f$cc_deal_size < 3 Return false Force
 When Others Return (((opponentsplayingbits >> dealerchair) BitAnd 1) = 1) Force
 
 ##f$cc_opp_live_sb##
@@ -154,10 +305,10 @@ When Others Return (((opponentsplayingbits >> bigblindchair) BitAnd 1) = 1) Forc
 
 ##f$cc_hu_villain_pos_id##
 When !f$cc_hu Return 0 Force
-When headsupchair = utgchair Return 1 Force
-When headsupchair = mp3chair Return 2 Force
-When headsupchair = cutoffchair Return 3 Force
-When headsupchair = dealerchair Return 4 Force
+When f$cc_deal_size = 6 && headsupchair = utgchair Return 1 Force
+When f$cc_deal_size >= 5 && headsupchair = mp3chair Return 2 Force
+When f$cc_deal_size >= 4 && headsupchair = cutoffchair Return 3 Force
+When f$cc_deal_size >= 3 && headsupchair = dealerchair Return 4 Force
 When headsupchair = smallblindchair Return 5 Force
 When headsupchair = bigblindchair Return 6 Force
 When Others Return 0 Force
@@ -170,7 +321,7 @@ When f$cc_hero_pos_id = f$cc_hu_villain_pos_id Return 0 Force
 When Others Return (f$cc_hero_pos_id * 10 + f$cc_hu_villain_pos_id) Force
 
 // -----------------------------------------------------------------------------
-// 00C.03 — Relative post-flop position
+// 00C.06 — Relative post-flop position
 // -----------------------------------------------------------------------------
 
 ##f$cc_relpos_id##
@@ -192,9 +343,7 @@ When f$cc_hu_ip Return true Force
 When Others Return false Force
 
 // -----------------------------------------------------------------------------
-// 00C.04 — Stable preflop raise/call history projected onto six-max positions
-// OpenHoldem keeps raisbits1/callbits1 as historical preflop bitmasks after the
-// street. NumberOfRaisesBeforeFlop is OpenPPL's persisted raise count.
+// 00C.07 — Stable preflop raise/call history projected onto canonical positions
 // -----------------------------------------------------------------------------
 
 ##f$cc_pf_raise_count##
@@ -203,19 +352,19 @@ When NumberOfRaisesBeforeFlop < 0 Return 0 Force
 When Others Return NumberOfRaisesBeforeFlop Force
 
 ##f$cc_pf_raise_utg##
-When utgchair < 0 Return false Force
+When f$cc_deal_size != 6 Return false Force
 When Others Return (((raisbits1 >> utgchair) BitAnd 1) = 1) Force
 
 ##f$cc_pf_raise_hj##
-When mp3chair < 0 Return false Force
+When f$cc_deal_size < 5 Return false Force
 When Others Return (((raisbits1 >> mp3chair) BitAnd 1) = 1) Force
 
 ##f$cc_pf_raise_co##
-When cutoffchair < 0 Return false Force
+When f$cc_deal_size < 4 Return false Force
 When Others Return (((raisbits1 >> cutoffchair) BitAnd 1) = 1) Force
 
 ##f$cc_pf_raise_btn##
-When dealerchair < 0 Return false Force
+When f$cc_deal_size < 3 Return false Force
 When Others Return (((raisbits1 >> dealerchair) BitAnd 1) = 1) Force
 
 ##f$cc_pf_raise_sb##
@@ -227,19 +376,19 @@ When bigblindchair < 0 Return false Force
 When Others Return (((raisbits1 >> bigblindchair) BitAnd 1) = 1) Force
 
 ##f$cc_pf_call_utg##
-When utgchair < 0 Return false Force
+When f$cc_deal_size != 6 Return false Force
 When Others Return (((callbits1 >> utgchair) BitAnd 1) = 1) Force
 
 ##f$cc_pf_call_hj##
-When mp3chair < 0 Return false Force
+When f$cc_deal_size < 5 Return false Force
 When Others Return (((callbits1 >> mp3chair) BitAnd 1) = 1) Force
 
 ##f$cc_pf_call_co##
-When cutoffchair < 0 Return false Force
+When f$cc_deal_size < 4 Return false Force
 When Others Return (((callbits1 >> cutoffchair) BitAnd 1) = 1) Force
 
 ##f$cc_pf_call_btn##
-When dealerchair < 0 Return false Force
+When f$cc_deal_size < 3 Return false Force
 When Others Return (((callbits1 >> dealerchair) BitAnd 1) = 1) Force
 
 ##f$cc_pf_call_sb##
@@ -274,7 +423,7 @@ When f$cc_pf_raise_bb Return 6 Force
 When Others Return 0 Force
 
 // -----------------------------------------------------------------------------
-// 00C.05 — Pot family and conservative subtype proofs
+// 00C/00F.08 — Pot family and conservative subtype proofs
 // -----------------------------------------------------------------------------
 
 ##f$cc_pot_family_id##
@@ -285,9 +434,21 @@ When f$cc_pf_raise_count = 3 Return 4 Force
 When f$cc_pf_raise_count >= 4 Return 5 Force
 When Others Return 0 Force
 
+##f$cc_pf_hu_limp_raise_proven##
+// True HU special case: SB/Button limps, BB raises. This is NOT an isolation
+// raise; there is no third player to isolate. Keep it as its own post-flop
+// range topology.
+When !f$cc_true_hu Return false Force
+When f$cc_pf_raise_count != 1 Return false Force
+When f$cc_pf_unique_raiser_count != 1 Return false Force
+When f$cc_pf_single_raiser_pos_id != 6 Return false Force
+When f$cc_pf_call_sb Return true Force
+When Others Return false Force
+
 ##f$cc_pf_iso_proven##
-// One raise only. A call-bit from a position that acted before the sole raiser
-// proves that at least one voluntary limper existed before the raise.
+// One raise only. An earlier call proves a voluntary limper before the raise.
+// True HU is explicitly excluded and uses f$cc_pf_hu_limp_raise_proven.
+When f$cc_true_hu Return false Force
 When f$cc_pf_raise_count != 1 Return false Force
 When f$cc_pf_unique_raiser_count != 1 Return false Force
 When f$cc_pf_single_raiser_pos_id = 1 Return false Force
@@ -297,6 +458,9 @@ When f$cc_pf_single_raiser_pos_id = 4 && (f$cc_pf_call_utg || f$cc_pf_call_hj ||
 When f$cc_pf_single_raiser_pos_id = 5 && (f$cc_pf_call_utg || f$cc_pf_call_hj || f$cc_pf_call_co || f$cc_pf_call_btn) Return true Force
 When f$cc_pf_single_raiser_pos_id = 6 && (f$cc_pf_call_utg || f$cc_pf_call_hj || f$cc_pf_call_co || f$cc_pf_call_btn || f$cc_pf_call_sb) Return true Force
 When Others Return false Force
+
+##f$cc_pf_one_raise_ordinary_srp##
+f$cc_pf_raise_count = 1 && !f$cc_pf_iso_proven && !f$cc_pf_hu_limp_raise_proven
 
 ##f$cc_pf_other_raiser_pos_id##
 // Defined only for a two-raise pot where Hero is one of exactly two unique raisers.
@@ -313,7 +477,7 @@ When Others Return 0 Force
 
 ##f$cc_pf_3bet_first_raiser_pos_id##
 // Proven only when Hero is one of the two raisers and Hero's LAST preflop action
-// tells us whether Hero was the final aggressor or the opener who called.
+// tells us whether Hero was final aggressor or opener who called.
 When f$cc_pf_raise_count != 2 Return 0 Force
 When f$cc_pf_other_raiser_pos_id <= 0 Return 0 Force
 When (BotsLastPreflopAction = Raise || BotsLastPreflopAction = RaiseMax) Return f$cc_pf_other_raiser_pos_id Force
@@ -328,9 +492,8 @@ When BotsLastPreflopAction = Call && f$cc_pf_hero_ever_raised Return f$cc_pf_oth
 When Others Return 0 Force
 
 ##f$cc_pf_3bet_order_supported##
-// Standard open -> later-position 3bet has increasing first-orbit position IDs.
-// A reversed order is compatible with limp-reraise / wrapped action and is not
-// silently rewritten into a normal 3bet topology.
+// Normal first-orbit open -> later-position 3bet uses increasing canonical IDs.
+// Reversed order may be a limp-reraise or wrapped action and is kept unknown.
 When f$cc_pf_3bet_first_raiser_pos_id <= 0 Return false Force
 When f$cc_pf_3bet_final_raiser_pos_id <= 0 Return false Force
 When f$cc_pf_3bet_first_raiser_pos_id < f$cc_pf_3bet_final_raiser_pos_id Return true Force
@@ -351,10 +514,11 @@ When f$cc_pf_3bet_first_raiser_pos_id = 4 && f$cc_pf_3bet_final_raiser_pos_id = 
 When Others Return false Force
 
 ##f$cc_pf_squeeze_proven##
-// Conservative: only proven when Hero was one of the two raisers, the open/3bet
-// order is reconstructable, and at least one distinct position cold-called
-// between the opener and final 3bettor.
-f$cc_pf_raise_count = 2 && f$cc_pf_3bet_order_supported && f$cc_pf_call_between_3bet_raisers
+// Impossible in a true HU deal by construction.
+!f$cc_true_hu &&
+f$cc_pf_raise_count = 2 &&
+f$cc_pf_3bet_order_supported &&
+f$cc_pf_call_between_3bet_raisers
 
 ##f$cc_pf_3bet_plain_proven##
 f$cc_pf_raise_count = 2 && f$cc_pf_3bet_order_supported && !f$cc_pf_call_between_3bet_raisers
@@ -363,7 +527,7 @@ f$cc_pf_raise_count = 2 && f$cc_pf_3bet_order_supported && !f$cc_pf_call_between
 f$cc_pf_raise_count = 2 && !f$cc_pf_3bet_order_supported
 
 // -----------------------------------------------------------------------------
-// 00C.06 — Hero preflop role
+// 00C.09 — Hero preflop role
 // -----------------------------------------------------------------------------
 
 ##f$cc_pf_role_id##
@@ -410,14 +574,14 @@ f$cc_pf_role_id = 8
 f$cc_pf_role_id = 9
 
 // -----------------------------------------------------------------------------
-// 00C.07 — Mechanical consistency checks
+// 00C/00F.10 — Mechanical consistency checks
 // -----------------------------------------------------------------------------
 
 ##f$cc_pf_history_consistent##
 When f$cc_pf_raise_count = 0 && f$cc_pf_unique_raiser_count != 0 Return false Force
 When f$cc_pf_raise_count = 1 && f$cc_pf_unique_raiser_count != 1 Return false Force
 // In 2+ raise pots the same player may raise more than once, so unique raisers
-// need not equal raise count. We only reject impossible zero-raiser histories.
+// need not equal raise count. Reject only impossible zero-raiser history here.
 When f$cc_pf_raise_count >= 2 && f$cc_pf_unique_raiser_count <= 0 Return false Force
 When Others Return true Force
 
@@ -430,24 +594,34 @@ When f$cc_pf_raise_count = 3 && (f$cc_pf_role_id = 6 || f$cc_pf_role_id = 7) Ret
 When f$cc_pf_raise_count >= 4 Return true Force
 When Others Return false Force
 
+##f$cc_live_mask_consistent##
+When BitCount(f$cc_opp_live_mask) != nopponentsplaying Return false Force
+When Others Return true Force
+
 ##f$cc_context_valid##
 When IsPreflop Return false Force
-When !f$cc_sixmax_deal Return false Force
+When !f$cc_supported_deal Return false Force
+When !f$cc_table_count_consistent Return false Force
+When !f$cc_dealt_bits_consistent Return false Force
 When !f$cc_chair_map_in_range Return false Force
 When !f$cc_chair_map_distinct Return false Force
 When f$cc_hero_pos_id <= 0 Return false Force
 When !f$cc_hero_playing Return false Force
 When !f$cc_player_count_valid Return false Force
+When !f$cc_preflop_fold_bits_valid Return false Force
+When !f$cc_flop_entry_valid Return false Force
 When bblind <= 0 Return false Force
 When potcommon <= 0 Return false Force
 When f$cc_relpos_id <= 0 Return false Force
 When !f$cc_hu_relpos_valid Return false Force
 When f$cc_hu && f$cc_hu_villain_pos_id <= 0 Return false Force
+When f$cc_hu && f$cc_hu_origin_id <= 0 Return false Force
+When !f$cc_live_mask_consistent Return false Force
 When !f$cc_pf_history_consistent Return false Force
 When f$cc_pf_raise_count <= 3 && !f$cc_role_consistent Return false Force
 When Others Return true Force
 
 // ============================================================================
-// End Gate 00C context engine.
-// Strategic policy is intentionally absent.
+// End dynamic context engine.
+// Strategic policy is intentionally separated from mechanical classification.
 // ============================================================================
