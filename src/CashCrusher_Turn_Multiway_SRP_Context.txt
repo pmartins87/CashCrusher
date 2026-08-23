@@ -1,0 +1,157 @@
+// ============================================================================
+// CashCrusher_Turn_Multiway_SRP_Context.txt
+// Gate 02E.0 — ordinary-SRP Turn CBet while 3+ players remain
+// ============================================================================
+// Purpose:
+//   Preserve both FLOP origin and CURRENT turn composition after an actual Hero
+//   flop CBet. A turn that is still 3-way after a 4-way flop is not the same
+//   range state as a hand that began the flop 3-way and stayed 3-way.
+//
+// Source/Provenance:
+//   T = Gate00 flop-entry/current-live masks, current player count, relative
+//       position, Gate01N actual CBet history and corrected multiway stack bounds.
+//   A = DeepCrusher true-multiway position/history architecture.
+//   P = six-max current/flop-origin composition and selection metadata.
+//
+// Safety:
+//   * deepest-effective SPR is preserved separately from shallowest sidepot SPR;
+//   * this file contains no betting policy;
+//   * ordinary SRP only — ISO/3BP/squeeze/4BP cannot enter;
+//   * current live opponents must remain a subset of original flop opponents.
+// ============================================================================
+
+// Purpose: canonical ordinary-SRP Turn-CBet context with at least two live opponents.
+// Source/Provenance: A/T exact family gate using actual flop-CBet provenance.
+##f$cc_turn_mw_srp_context##
+f$cc_turn_cbet_ordinary_srp_context &&
+f$cc_multiway &&
+f$cc_flop_entry_opp_mask_consistent &&
+f$cc_mw_spr_bounds_valid
+
+// Purpose: number of current live turn opponents.
+// Source/Provenance: T `nplayersplaying - 1`; valid only inside exact MW SRP context.
+##f$cc_turn_mw_srp_live_opp_count##
+When !f$cc_turn_mw_srp_context Return 0 Force
+When Others Return (nplayersplaying - 1) Force
+
+// Purpose: count current blind opponents (SB/BB) on turn.
+// Source/Provenance: T/A canonical live-mask bits 16+32.
+##f$cc_turn_mw_srp_live_blind_count##
+When !f$cc_turn_mw_srp_context Return 0 Force
+When Others Return BitCount(f$cc_opp_live_mask BitAnd 48) Force
+
+// Purpose: count current nonblind opponents (UTG/HJ/CO/BTN) on turn.
+// Source/Provenance: T/A canonical live-mask bits 1+2+4+8.
+##f$cc_turn_mw_srp_live_nonblind_count##
+When !f$cc_turn_mw_srp_context Return 0 Force
+When Others Return BitCount(f$cc_opp_live_mask BitAnd 15) Force
+
+// Purpose: number of flop opponents who have folded since the flop began while
+// the hand nevertheless remains multiway on turn.
+// Source/Provenance: T set/count difference after exact mask consistency.
+##f$cc_turn_mw_srp_folded_since_flop_count##
+When !f$cc_turn_mw_srp_context Return 0 Force
+When Others Return (BitCount(f$cc_flop_entry_opp_mask) - BitCount(f$cc_opp_live_mask)) Force
+
+// Purpose: exact true-threeway origin that remains exactly threeway on turn.
+// Source: closest domain of the mature legacy `3w* v2p` shells.
+// Provenance: A/T topology descriptor.
+##f$cc_turn_mw_srp_true3_still3##
+f$cc_turn_mw_srp_context &&
+f$cc_flop_entry_count = 3 &&
+nplayersplaying = 3 &&
+f$cc_turn_mw_srp_folded_since_flop_count = 0
+
+// Purpose: strongest source-adjacent Turn-CBet shape: BTN PFA vs SB+BB entered
+// flop, both called/stayed through flop, Hero is LAST again on turn.
+// Source: mature DeepCrusher/CrusherTBP `3wBTNv2p` Turn-CBet gap-fill branch.
+// Provenance: A/P donor shape, not a dedicated Starting Strategy transplant.
+##f$cc_turn_mw_srp_btn_both_blinds_source_shape##
+f$cc_turn_mw_srp_true3_still3 &&
+f$cc_hero_pos_id = 4 &&
+f$cc_flop_entry_opp_mask = 48 &&
+f$cc_opp_live_mask = 48 &&
+f$cc_multiway_rel_last
+
+// Purpose: true-threeway origin/still-threeway but not exact BTN+both-blinds donor.
+// Source: 3wSBv2p/3wBBv2p provide relative-position shells only.
+// Provenance: P-heavy family with A positional ancestry.
+##f$cc_turn_mw_srp_true3_other_shape##
+f$cc_turn_mw_srp_true3_still3 && !f$cc_turn_mw_srp_btn_both_blinds_source_shape
+
+// Purpose: flop began four-way-or-more but current turn has exactly three players.
+// Source: no literal DeepCrusher family.
+// Provenance: P-heavy selected-range family; one or more opponents already folded.
+##f$cc_turn_mw_srp_flop4plus_now3##
+f$cc_turn_mw_srp_context &&
+f$cc_flop_entry_count >= 4 &&
+nplayersplaying = 3
+
+// Purpose: four or more players remain active on turn.
+// Source: no Spin source state exists.
+// Provenance: P-heavy explicit six-max family.
+##f$cc_turn_mw_srp_current4plus##
+f$cc_turn_mw_srp_context && nplayersplaying >= 4
+
+// Purpose: current Hero is FIRST among live turn players.
+// Source/Provenance: T/A relative-position descriptor.
+##f$cc_turn_mw_srp_first##
+f$cc_turn_mw_srp_context && f$cc_multiway_rel_first
+
+// Purpose: current Hero is MIDDLE among live turn players.
+// Source/Provenance: T/A relative-position descriptor.
+##f$cc_turn_mw_srp_middle##
+f$cc_turn_mw_srp_context && f$cc_multiway_rel_middle
+
+// Purpose: current Hero is LAST after every live opponent checks turn.
+// Source/Provenance: T/A relative-position descriptor.
+##f$cc_turn_mw_srp_last##
+f$cc_turn_mw_srp_context && f$cc_multiway_rel_last
+
+// Purpose: strongest multiway range-selection flag for turn policy.
+// Inputs: 4way+ flop origin, large 75/pot flop CBet, or at least two current
+// nonblind callers. Each makes the current continuation field more selected than
+// the closest BTN-v-both-blinds source donor.
+// Source/Provenance: P professional-theory modifier over T exact provenance.
+##f$cc_turn_mw_srp_strong_selection##
+f$cc_turn_mw_srp_context &&
+(f$cc_flop_entry_count >= 4 || f$cc_hist_flop_cbet_plan_size_id >= 3 || f$cc_turn_mw_srp_live_nonblind_count >= 2)
+
+// Purpose: deepest-effective turn SPR below 6; ALL live effective relationships
+// are therefore below 6 because deepest is the maximum relation.
+// Source/Provenance: T corrected multiway stack envelope + P engineering boundary.
+// Safety: geometry fact only; no automatic commitment/stackoff meaning.
+##f$cc_turn_mw_srp_all_effective_spr_below_6##
+f$cc_turn_mw_srp_context && f$cc_mw_spr_deepest_round_start >= 0 && f$cc_mw_spr_deepest_round_start < 6
+
+// Purpose: deepest-effective turn SPR below 4.
+// Source/Provenance: T/P geometry descriptor, never automatic stackoff.
+##f$cc_turn_mw_srp_all_effective_spr_below_4##
+f$cc_turn_mw_srp_context && f$cc_mw_spr_deepest_round_start >= 0 && f$cc_mw_spr_deepest_round_start < 4
+
+// Purpose: deepest-effective turn SPR below 3.
+// Source/Provenance: T/P geometry descriptor, never automatic stackoff.
+##f$cc_turn_mw_srp_all_effective_spr_below_3##
+f$cc_turn_mw_srp_context && f$cc_mw_spr_deepest_round_start >= 0 && f$cc_mw_spr_deepest_round_start < 3
+
+// Purpose: exact context key for audit/logging.
+// Format: H F C MM Q S where H=Hero pos, F=flop entrants, C=current players,
+// MM=current opponent mask, Q=current relative pos, S=flop CBet size ID.
+// Source/Provenance: P engineering key over T/A exact inputs; not solved strategy.
+##f$cc_turn_mw_srp_exact_context_key##
+When !f$cc_turn_mw_srp_context Return 0 Force
+When Others Return ((f$cc_hero_pos_id * 100000000) + (f$cc_flop_entry_count * 10000000) + (nplayersplaying * 1000000) + (f$cc_opp_live_mask * 1000) + (f$cc_relpos_id * 10) + f$cc_hist_flop_cbet_plan_size_id) Force
+
+// Purpose: final internal consistency contract for ordinary-SRP MW turn CBet.
+// Source/Provenance: P safety invariant.
+##f$cc_turn_mw_srp_context_consistent##
+When !f$cc_turn_mw_srp_context Return false Force
+When f$cc_turn_mw_srp_live_opp_count < 2 Return false Force
+When BitCount(f$cc_opp_live_mask) != f$cc_turn_mw_srp_live_opp_count Return false Force
+When f$cc_turn_mw_srp_folded_since_flop_count < 0 Return false Force
+When f$cc_turn_mw_srp_exact_context_key <= 0 Return false Force
+When Others Return true Force
+
+// ============================================================================
+// End Gate 02E.0 context.
+// ============================================================================
