@@ -23,6 +23,15 @@ def block(text: str, name: str) -> str:
     return tail if nxt < 0 else tail[:nxt]
 
 
+def first_executable_line(text: str) -> str:
+    """Return first non-empty, non-comment line from a function body."""
+    for raw in text.splitlines():
+        line = raw.strip()
+        if line and not line.startswith("//"):
+            return line
+    return ""
+
+
 def all_turn_strategy_files() -> list[Path]:
     names = [
         "CashCrusher_Turn_CBet_SRP_IP.txt",
@@ -106,7 +115,7 @@ def main() -> None:
         "f$cc_turn_size_100_id": "7",
     }
     for name, value in expected.items():
-        body = block(COMMON, name).strip()
+        body = first_executable_line(block(COMMON, name))
         assert body == value, f"unexpected size-ID definition {name}: {body!r}"
 
     # Strategy files may only return the seven canonical Turn size helpers (or 0).
