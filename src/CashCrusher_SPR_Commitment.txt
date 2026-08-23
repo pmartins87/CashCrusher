@@ -20,11 +20,24 @@
 //   imported here nor globally banned here; any future use must be audited in
 //   the exact strategic node.
 //
+// Multiway clarification (Gate 00D.2):
+//   `f$cc_spr_round_start` predates the dual-bound multiway audit.  It remains
+//   exact in HU and remains useful as a SHALLOWEST-live coarse descriptor in
+//   multiway for compatibility/diagnostics.  It is NOT the canonical strategic
+//   SPR for a multiway one-pair/commitment decision.  Multiway strategy must use
+//   explicit helpers from CashCrusher_Multiway_StackGeometry.txt:
+//     * f$cc_mw_spr_shallowest_round_start
+//     * f$cc_mw_spr_deepest_round_start
+//     * actor-specific geometry where one opponent owns the decision.
+//   DeepCrusher f$EffectiveStack_BKP itself uses the biggest active opponent,
+//   which corresponds to the deepest effective relationship after capping by Hero.
+//
 // Provenance:
 //   T/A = runtime stack/current-bet/pot facts used to reconstruct street-start
 //         effective stacks without current-action contamination.
 //   P = SPR buckets are engineering bins for routing/audit, NOT universal GTO
-//       thresholds. Raw SPR remains canonical whenever exact strategy needs it.
+//       thresholds. Exact strategy uses the appropriate HU/deepest/shallowest/
+//       actor-specific raw geometry rather than assuming one universal SPR.
 // ============================================================================
 
 // -----------------------------------------------------------------------------
@@ -108,15 +121,16 @@ When f$cc_hero_stack_round_start_bb <= f$cc_hu_villain_stack_round_start_bb Retu
 When Others Return f$cc_hu_villain_stack_round_start_bb Force
 
 // -----------------------------------------------------------------------------
-// 00D.02 — Multiway shallowest-live effective stack
-// IMPORTANT: this is only a COARSE context descriptor. A decision versus one
-// specific bettor/raiser must use actor-specific effective stack instead.
+// 00D.02 — Legacy/coarse multiway shallowest-live effective stack
+// IMPORTANT: this is only a COARSE context descriptor retained for compatibility.
+// Exact multiway strategy uses CashCrusher_Multiway_StackGeometry dual bounds.
+// A decision versus one specific bettor/raiser uses actor-specific effective stack.
 // -----------------------------------------------------------------------------
 
 // Purpose: find shortest street-start stack among currently live opponents.
 // Source/Provenance: A mechanical comparison over exact live-position flags.
-// Safety: used only for coarse multiway SPR; it must not price a decision versus
-// a different deep actor.
+// Safety: used only for coarse multiway diagnostics; it must not price a decision
+// versus a different deep actor or justify a whole-field low-SPR exception.
 ##f$cc_min_live_opp_stack_round_start_bb##
 When f$cc_opp_live_utg && (!f$cc_opp_live_hj || f$cc_stack_utg_round_start_bb <= f$cc_stack_hj_round_start_bb) && (!f$cc_opp_live_co || f$cc_stack_utg_round_start_bb <= f$cc_stack_co_round_start_bb) && (!f$cc_opp_live_btn || f$cc_stack_utg_round_start_bb <= f$cc_stack_btn_round_start_bb) && (!f$cc_opp_live_sb || f$cc_stack_utg_round_start_bb <= f$cc_stack_sb_round_start_bb) && (!f$cc_opp_live_bb || f$cc_stack_utg_round_start_bb <= f$cc_stack_bb_round_start_bb) Return f$cc_stack_utg_round_start_bb Force
 When f$cc_opp_live_hj && (!f$cc_opp_live_utg || f$cc_stack_hj_round_start_bb <= f$cc_stack_utg_round_start_bb) && (!f$cc_opp_live_co || f$cc_stack_hj_round_start_bb <= f$cc_stack_co_round_start_bb) && (!f$cc_opp_live_btn || f$cc_stack_hj_round_start_bb <= f$cc_stack_btn_round_start_bb) && (!f$cc_opp_live_sb || f$cc_stack_hj_round_start_bb <= f$cc_stack_sb_round_start_bb) && (!f$cc_opp_live_bb || f$cc_stack_hj_round_start_bb <= f$cc_stack_bb_round_start_bb) Return f$cc_stack_hj_round_start_bb Force
@@ -128,8 +142,8 @@ When Others Return -1 Force
 
 // Purpose: coarse effective stack versus the shallowest live opponent in
 // multiway, or the exact HU effective stack when only two remain.
-// Source/Provenance: A/P context geometry helper.
-// Safety: actor-specific defense nodes must not substitute this for bettor SPR.
+// Source/Provenance: A/P compatibility geometry helper.
+// Safety: exact multiway strategic policy must use explicit dual-bound/actor stack.
 ##f$cc_multiway_min_effective_stack_round_start_bb##
 When f$cc_hu Return f$cc_hu_effective_stack_round_start_bb Force
 When f$cc_min_live_opp_stack_round_start_bb < 0 Return -1 Force
@@ -150,11 +164,12 @@ When bblind <= 0 Return -1 Force
 When potcommon <= 0 Return -1 Force
 When Others Return (potcommon / bblind) Force
 
-// Purpose: canonical raw SPR at current street start.
-// HU uses exact Hero-v-Villain effective stack; multiway uses shallowest-live
-// coarse effective stack only as a broad geometry descriptor.
-// Source/Provenance: standard poker SPR formula, P/A implementation.
-// Safety: raw value preferred to buckets in exact strategy logic.
+// Purpose: raw SPR compatibility descriptor at current street start.
+// HU: exact Hero-v-Villain effective SPR.
+// Multiway: SHALLOWEST-live coarse SPR retained for old/context diagnostics only.
+// Source/Provenance: standard SPR arithmetic, A/P compatibility implementation.
+// Safety: multiway strategic code must NOT treat this as a universal SPR; use
+// explicit shallowest/deepest/actor-specific helpers instead.
 ##f$cc_spr_round_start##
 When f$cc_round_start_pot_bb <= 0 Return -1 Force
 When f$cc_hu && f$cc_hu_effective_stack_round_start_bb >= 0 Return (f$cc_hu_effective_stack_round_start_bb / f$cc_round_start_pot_bb) Force
@@ -175,7 +190,7 @@ When Others Return ((balance_raischair + currentbet_raischair) / bblind) Force
 
 // Purpose: raw SPR specifically versus current bettor/raiser.
 // Source/Provenance: P/A actor-specific SPR geometry.
-// Safety: should be preferred by future defense/raise nodes over coarse multiway SPR.
+// Safety: preferred by defense/raise nodes over any coarse multiway SPR.
 ##f$cc_spr_vs_raischair_round_start##
 When f$cc_round_start_pot_bb <= 0 Return -1 Force
 When f$cc_effective_stack_vs_raischair_round_start_bb < 0 Return -1 Force
@@ -185,9 +200,12 @@ When Others Return (f$cc_effective_stack_vs_raischair_round_start_bb / f$cc_roun
 // 00D.04 — Engineering SPR buckets
 // -----------------------------------------------------------------------------
 
-// Purpose: coarse SPR routing/audit ID: <1, 1-2, 2-4, 4-6, 6-10, 10-15, 15+.
+// Purpose: coarse compatibility SPR routing/audit ID: <1, 1-2, 2-4, 4-6,
+// 6-10, 10-15, 15+.
 // Source: no literal Spin threshold is retained.
 // Provenance: P engineering bins only, explicitly not solver/GTO boundaries.
+// Safety: in multiway these bucket the shallowest coarse descriptor and therefore
+// are forbidden in reviewed multiway CBet strategy code.
 ##f$cc_spr_bucket_id##
 When f$cc_spr_round_start < 0 Return 0 Force
 When f$cc_spr_round_start < 1 Return 1 Force
@@ -233,12 +251,15 @@ f$cc_spr_bucket_id = 6
 ##f$cc_spr_15plus##
 f$cc_spr_bucket_id = 7
 
-// Purpose: raw SPR validity predicate used by strategic context guards.
-// Source/Provenance: P/A safety alias; negative means unusable geometry.
+// Purpose: raw SPR validity predicate used by generic/HU context guards.
+// Source/Provenance: P/A compatibility safety alias; negative means unusable.
+// Safety: multiway strategy that needs depth must additionally validate/use the
+// explicit dual-bound geometry rather than infer strategy from this boolean.
 ##f$cc_spr_valid##
 f$cc_spr_round_start >= 0
 
 // ============================================================================
 // End Gate 00D.
 // Commitment/all-in behavior is intentionally deferred to node-specific audit.
+// Explicit multiway dual-bound geometry lives in CashCrusher_Multiway_StackGeometry.
 // ============================================================================
