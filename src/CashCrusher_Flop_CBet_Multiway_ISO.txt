@@ -12,7 +12,9 @@
 //
 // Stack-depth note:
 //   first-flop action only. Commitment helpers are reviewed later in exact nodes;
-//   they are neither copied automatically nor globally disabled.
+//   they are neither copied automatically nor globally disabled. Multiway low-SPR
+//   one-pair/bluff relaxations require the deepest effective opponent relation to
+//   satisfy the threshold, not merely the shortest live stack.
 //
 // OpenPPL safety: flat complete WHENs; unknown survivor composition fails closed.
 // Size IDs: 1 ~33% | 2 ~50% | 3 ~75% | 0 check
@@ -31,13 +33,13 @@
 When !f$cc_mw_iso_true3_last_context Return false Force
 When !f$cc_mw_iso_true3_context_consistent Return false Force
 When f$cc_cbet_flop_very_strong_value Return true Force
-When f$cc_cbet_flop_overpair && f$cc_flop_dynamic_lowmid_parent && f$cc_mw_iso_true3_two_coldcallers && f$cc_cbet_high_spr Return false Force
+When f$cc_cbet_flop_overpair && f$cc_flop_dynamic_lowmid_parent && f$cc_mw_iso_true3_two_coldcallers && f$cc_mw_cbet_high_spr Return false Force
 When f$cc_cbet_flop_overpair Return true Force
-When f$cc_cbet_flop_strong_top_pair && f$cc_flop_dynamic_lowmid_parent && f$cc_mw_iso_true3_two_coldcallers && f$cc_cbet_high_spr Return false Force
+When f$cc_cbet_flop_strong_top_pair && f$cc_flop_dynamic_lowmid_parent && f$cc_mw_iso_true3_two_coldcallers && f$cc_mw_cbet_high_spr Return false Force
 When f$cc_cbet_flop_strong_top_pair Return true Force
 When f$cc_cbet_flop_medium_top_pair && f$cc_pair_plus_draw Return true Force
 When f$cc_cbet_flop_medium_top_pair && f$cc_flop_static_high_parent && f$cc_mw_iso_true3_two_limpers Return true Force
-When f$cc_cbet_flop_medium_top_pair && f$cc_flop_static_high_parent && f$cc_mw_iso_true3_limper_plus_coldcaller && f$cc_spr_round_start < 4 Return true Force
+When f$cc_cbet_flop_medium_top_pair && f$cc_flop_static_high_parent && f$cc_mw_iso_true3_limper_plus_coldcaller && f$cc_mw_all_effective_spr_below_4 Return true Force
 When f$cc_cbet_flop_medium_top_pair Return false Force
 When f$cc_cbet_flop_weak_top_pair Return false Force
 When f$cc_hand_second_pair_or_pocket && f$cc_pair_plus_draw && f$cc_mw_iso_true3_two_limpers Return true Force
@@ -48,7 +50,7 @@ When f$cc_cbet_flop_good_draw && f$cc_flop_dynamic_high_parent && f$cc_mw_iso_tr
 When f$cc_cbet_flop_good_draw && f$cc_flop_dynamic_lowmid_parent && f$cc_mw_iso_true3_two_limpers && f$cc_two_overcards Return true Force
 When f$cc_real_frontdoor_draw Return false Force
 When f$cc_cbet_flop_air_best_backdoors && f$cc_flop_static_high_parent && f$cc_mw_iso_true3_two_limpers Return true Force
-When f$cc_cbet_flop_air_best_backdoors && f$cc_flop_paired_parent && f$cc_mw_iso_true3_two_limpers && f$cc_spr_round_start < 4 Return true Force
+When f$cc_cbet_flop_air_best_backdoors && f$cc_flop_paired_parent && f$cc_mw_iso_true3_two_limpers && f$cc_mw_all_effective_spr_below_4 Return true Force
 When Others Return false Force
 
 // Purpose: size positive LAST true3 ISO CBet.
@@ -118,7 +120,7 @@ When f$cc_cbet_flop_overpair && (f$cc_flop_static_high_parent || f$cc_flop_stati
 When f$cc_cbet_flop_overpair Return false Force
 When f$cc_cbet_flop_strong_top_pair && f$cc_pair_plus_draw Return true Force
 When f$cc_cbet_flop_strong_top_pair && f$cc_flop_static_high_parent && f$cc_mw_iso_true3_two_limpers Return true Force
-When f$cc_cbet_flop_strong_top_pair && f$cc_flop_paired_parent && f$cc_mw_iso_true3_two_limpers && f$cc_spr_round_start < 4 Return true Force
+When f$cc_cbet_flop_strong_top_pair && f$cc_flop_paired_parent && f$cc_mw_iso_true3_two_limpers && f$cc_mw_all_effective_spr_below_4 Return true Force
 When f$cc_cbet_flop_strong_top_pair Return false Force
 When f$cc_cbet_flop_medium_top_pair Return false Force
 When f$cc_cbet_flop_weak_top_pair Return false Force
