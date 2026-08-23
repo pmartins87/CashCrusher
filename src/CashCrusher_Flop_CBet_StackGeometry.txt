@@ -1,0 +1,201 @@
+// ============================================================================
+// CashCrusher_Flop_CBet_StackGeometry.txt
+// Gate 01K.3 — mechanical review geometry for stack-sensitive CBet sizing
+// ============================================================================
+// Purpose:
+//   Expose the geometry that historically drove several DeepCrusher all-in
+//   conversions WITHOUT deciding that CashCrusher should or should not convert.
+//
+// Source facts:
+//   * DeepCrusher explicit betsize routers often promoted a planned flop size to
+//     BetMax near 60% of Hero StackSize.
+//   * DeepCrusher f$allin_on_betsize_balance_ratio used an effective-stack ~50%
+//     trigger plus OpenHoldem's balance-ratio adjustment.
+//   * OpenHoldem BetsizeForBetpot() uses current bet + call + factor*(pot+call).
+//
+// Provenance:
+//   T = OpenHoldem/OpenPPL pot, stack and native-betpot semantics.
+//   A = exact historical DeepCrusher threshold diagnostics.
+//   P = engineering review classes / projected post-call geometry.
+//
+// Safety:
+//   NO function in this module returns BetMax or changes the global callback.
+//   A historical threshold becoming true is diagnostic evidence, not strategy.
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// SG.01 — Clean initial flop-CBet geometry
+// -----------------------------------------------------------------------------
+
+// Purpose: prove the native betpot simplification factor*street-start-pot is valid.
+// Context: initial flop CBet after checks; no call and no current-street chips in front.
+// Source/Provenance: T OpenHoldem `AmountToCall`, `currentbet`, `potplayer` semantics.
+// Safety: if scrape/state contradicts clean first-bet geometry, review metrics fail closed.
+##f$cc_cbet_stackgeom_clean##
+f$cc_flop_cbet_router &&
+AmountToCall = 0 &&
+currentbet = 0 &&
+potplayer = 0 &&
+f$cc_round_start_pot_bb > 0 &&
+f$cc_hero_stack_round_start_bb > 0
+
+// Purpose: convert current CBet size ID to requested fraction of pot.
+// Source: current CashCrusher native size palette.
+// Provenance: A deterministic adapter: 1=.333, 2=.50, 3=.75, 4=1.00.
+##f$cc_cbet_requested_pot_fraction##
+When !f$cc_cbet_stackgeom_clean Return 0 Force
+When f$cc_flop_cbet_size_id = 1 Return 0.333 Force
+When f$cc_flop_cbet_size_id = 2 Return 0.50 Force
+When f$cc_flop_cbet_size_id = 3 Return 0.75 Force
+When f$cc_flop_cbet_size_id = 4 Return 1.00 Force
+When Others Return 0 Force
+
+// Purpose: requested initial flop bet contribution in big blinds.
+// Source: OpenHoldem betpot formula simplifies to factor*pot when call/currentbet=0.
+// Provenance: T runtime arithmetic over CashCrusher requested fraction.
+##f$cc_cbet_requested_bet_bb##
+When f$cc_cbet_requested_pot_fraction <= 0 Return 0 Force
+When Others Return (f$cc_cbet_requested_pot_fraction * f$cc_round_start_pot_bb) Force
+
+// Purpose: Hero BB remaining immediately after making the requested bet, before response.
+// Source/Provenance: T stack arithmetic; negative result means requested bet exceeds balance.
+##f$cc_cbet_hero_residual_after_bet_bb##
+When !f$cc_cbet_stackgeom_clean Return -1 Force
+When f$cc_cbet_requested_bet_bb <= 0 Return -1 Force
+When Others Return (f$cc_hero_stack_round_start_bb - f$cc_cbet_requested_bet_bb) Force
+
+// -----------------------------------------------------------------------------
+// SG.02 — Hero-balance ratios: exact OpenHoldem all-in-adjustment geometry
+// -----------------------------------------------------------------------------
+
+// Purpose: requested CBet as fraction of Hero's total available current action stack.
+// Source: OpenHoldem ChangeBetsizeToAllin compares raise-to against currentbet+balance.
+// Provenance: T. Clean CBet currentbet=0, so street-start Hero stack is exact denominator.
+##f$cc_cbet_requested_hero_balance_ratio##
+When !f$cc_cbet_stackgeom_clean Return -1 Force
+When f$cc_hero_stack_round_start_bb <= 0 Return -1 Force
+When Others Return (f$cc_cbet_requested_bet_bb / f$cc_hero_stack_round_start_bb) Force
+
+// Purpose: diagnostic: would a 0.50 Hero-balance threshold be crossed?
+// Source: DeepCrusher callback's .50 fallback combined with OpenHoldem adjustment.
+// Provenance: A historical-threshold diagnostic only; NOT a CashCrusher shove rule.
+##f$cc_cbet_hist_hero_balance_50_trigger##
+f$cc_cbet_requested_hero_balance_ratio >= 0.50
+
+// Purpose: diagnostic: would DeepCrusher explicit ~60%-of-StackSize sizing promotion fire?
+// Source: repeated `requested >= .60*StackSize -> BetMax` in DeepCrusher flop sizing.
+// Provenance: A historical-threshold diagnostic only.
+##f$cc_cbet_hist_hero_stack_60_trigger##
+f$cc_cbet_requested_hero_balance_ratio >= 0.60
+
+// Purpose: classify requested bet / Hero stack for audit reports.
+// IDs: 1 <33%; 2 33-<50; 3 50-<60; 4 60-<75; 5 75-<100; 6 >=100%.
+// Source/Provenance: P engineering bins; deliberately not optimal-strategy thresholds.
+##f$cc_cbet_hero_balance_ratio_class_id##
+When f$cc_cbet_requested_hero_balance_ratio < 0 Return 0 Force
+When f$cc_cbet_requested_hero_balance_ratio < 0.33 Return 1 Force
+When f$cc_cbet_requested_hero_balance_ratio < 0.50 Return 2 Force
+When f$cc_cbet_requested_hero_balance_ratio < 0.60 Return 3 Force
+When f$cc_cbet_requested_hero_balance_ratio < 0.75 Return 4 Force
+When f$cc_cbet_requested_hero_balance_ratio < 1.00 Return 5 Force
+When Others Return 6 Force
+
+// -----------------------------------------------------------------------------
+// SG.03 — Exact HU effective-stack geometry
+// -----------------------------------------------------------------------------
+
+// Purpose: requested CBet as fraction of exact HU effective stack at street start.
+// Source/Provenance: T/A exact HU effective stack from SPR module + T requested size.
+##f$cc_cbet_requested_hu_effective_ratio##
+When !f$cc_cbet_stackgeom_clean Return -1 Force
+When !f$cc_hu Return -1 Force
+When f$cc_hu_effective_stack_round_start_bb <= 0 Return -1 Force
+When Others Return (f$cc_cbet_requested_bet_bb / f$cc_hu_effective_stack_round_start_bb) Force
+
+// Purpose: diagnostic for DeepCrusher callback's approximately half-effective-stack trigger.
+// Source: DeepCrusher f$allin_on_betsize_balance_ratio special branches.
+// Provenance: A historical source diagnostic, not an automatic CashCrusher action.
+##f$cc_cbet_hist_effective_50_trigger##
+f$cc_cbet_requested_hu_effective_ratio >= 0.50
+
+// Purpose: identify requested HU size that equals/exceeds the shortest effective stack.
+// Source/Provenance: T effective-stack arithmetic; useful for natural all-in/clipping review.
+##f$cc_cbet_hu_requested_reaches_effective_stack##
+f$cc_cbet_requested_hu_effective_ratio >= 1.00
+
+// Purpose: exact HU effective stack left after requested bet if both players can cover it.
+// Source/Provenance: T arithmetic over exact HU effective stack.
+// Safety: returns -1 when requested bet already reaches/exceeds effective stack.
+##f$cc_cbet_hu_effective_residual_after_bet_bb##
+When f$cc_cbet_requested_hu_effective_ratio < 0 Return -1 Force
+When f$cc_cbet_requested_hu_effective_ratio >= 1 Return -1 Force
+When Others Return (f$cc_hu_effective_stack_round_start_bb - f$cc_cbet_requested_bet_bb) Force
+
+// Purpose: project next-street HU SPR if Villain fully calls the requested CBet.
+// Formula: (effective stack - B) / (start pot + 2B).
+// Source: standard poker pot/stack arithmetic.
+// Provenance: P/T geometry projection, not a claim that Villain will call.
+// Safety: invalid when requested bet reaches effective stack or denominator is bad.
+##f$cc_cbet_hu_projected_spr_after_call##
+When f$cc_cbet_hu_effective_residual_after_bet_bb < 0 Return -1 Force
+When (f$cc_round_start_pot_bb + 2*f$cc_cbet_requested_bet_bb) <= 0 Return -1 Force
+When Others Return (f$cc_cbet_hu_effective_residual_after_bet_bb / (f$cc_round_start_pot_bb + 2*f$cc_cbet_requested_bet_bb)) Force
+
+// Purpose: audit class for projected HU next-street geometry after a full call.
+// IDs: 1 <0.5; 2 0.5-<1; 3 1-<2; 4 2-<4; 5 >=4; 0 invalid.
+// Source/Provenance: P engineering review bins; not commitment commands.
+##f$cc_cbet_hu_projected_spr_class_id##
+When f$cc_cbet_hu_projected_spr_after_call < 0 Return 0 Force
+When f$cc_cbet_hu_projected_spr_after_call < 0.50 Return 1 Force
+When f$cc_cbet_hu_projected_spr_after_call < 1.00 Return 2 Force
+When f$cc_cbet_hu_projected_spr_after_call < 2.00 Return 3 Force
+When f$cc_cbet_hu_projected_spr_after_call < 4.00 Return 4 Force
+When Others Return 5 Force
+
+// -----------------------------------------------------------------------------
+// SG.04 — Multiway coarse effective-stack review geometry
+// -----------------------------------------------------------------------------
+
+// Purpose: requested bet / shallowest-live effective stack in current multiway pot.
+// Source: multiway minimum-effective helper from SPR module.
+// Provenance: A/P coarse review descriptor; NOT actor-specific strategy.
+// Safety: shortest player may be all-in/sidepot-limited; exact other stacks remain relevant.
+##f$cc_cbet_requested_mw_min_effective_ratio##
+When !f$cc_cbet_stackgeom_clean Return -1 Force
+When f$cc_hu Return -1 Force
+When f$cc_multiway_min_effective_stack_round_start_bb <= 0 Return -1 Force
+When Others Return (f$cc_cbet_requested_bet_bb / f$cc_multiway_min_effective_stack_round_start_bb) Force
+
+// Purpose: flag that requested CBet reaches/exceeds at least the shallowest live effective stack.
+// Source/Provenance: T/A coarse multiway geometry only; sidepot policy is separate.
+##f$cc_cbet_mw_reaches_shallowest_effective_stack##
+f$cc_cbet_requested_mw_min_effective_ratio >= 1.00
+
+// -----------------------------------------------------------------------------
+// SG.05 — Review metadata; deliberately no action
+// -----------------------------------------------------------------------------
+
+// Purpose: say this CBet deserves explicit stack-sensitive review because at least
+// one historical/geometry threshold is materially engaged.
+// Source: DeepCrusher 50/60% historical triggers + natural effective-stack reach.
+// Provenance: A/P review flag only; true does NOT mean BetMax.
+##f$cc_cbet_stack_sensitive_review_required##
+When !f$cc_cbet_stackgeom_clean Return false Force
+When f$cc_cbet_hist_hero_balance_50_trigger Return true Force
+When f$cc_hu && f$cc_cbet_hist_effective_50_trigger Return true Force
+When f$cc_hu && f$cc_cbet_hu_requested_reaches_effective_stack Return true Force
+When !f$cc_hu && f$cc_cbet_mw_reaches_shallowest_effective_stack Return true Force
+When Others Return false Force
+
+// Purpose: compact diagnostic bitfield-like ID for source-threshold comparison.
+// Values add: 1 Hero>=50%, 2 Hero>=60%, 4 HU effective>=50%, 8 reaches HU
+// effective, 16 reaches multiway shallowest effective.
+// Source/Provenance: P engineering logging key over A historical/T geometry flags.
+##f$cc_cbet_stack_review_flags_id##
+When !f$cc_cbet_stackgeom_clean Return 0 Force
+When Others Return ((f$cc_cbet_hist_hero_balance_50_trigger * 1) + (f$cc_cbet_hist_hero_stack_60_trigger * 2) + ((f$cc_hu && f$cc_cbet_hist_effective_50_trigger) * 4) + ((f$cc_hu && f$cc_cbet_hu_requested_reaches_effective_stack) * 8) + ((!f$cc_hu && f$cc_cbet_mw_reaches_shallowest_effective_stack) * 16)) Force
+
+// ============================================================================
+// End Gate 01K.3 mechanical stack-sensitive review geometry.
+// No all-in/commitment policy is encoded here.
+// ============================================================================
