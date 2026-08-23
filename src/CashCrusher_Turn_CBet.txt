@@ -11,7 +11,9 @@
 //   * reduced-HU BTN-v-BB ordinary SRP PFA IP;
 //   * reduced-HU BTN-v-SB ordinary SRP PFA IP;
 //   * true-HU BB-PFA-OOP after SB limp -> BB raise -> call (HUBB parent);
-//   * reduced-HU SB-PFA-OOP vs BB source-safe second-barrel subset.
+//   * reduced-HU SB-PFA-OOP vs BB source-safe second-barrel subset;
+//   * P-heavy UTG/HJ/CO PFA-IP vs SB/BB six-max range gaps;
+//   * P-heavy UTG/HJ/CO PFA-OOP vs later nonblind cold caller.
 //
 // Everything else remains explicitly fail-closed until its own source/adaptation
 // audit. This is deliberate: Turn CBet must not inherit an HUSB/BTN frequency just
@@ -75,41 +77,46 @@ f$cc_hu_origin_postflop_reduced
 ##f$cc_turn_cbet_srp_multiway_context##
 f$cc_turn_cbet_ordinary_srp_context && f$cc_multiway
 
-// Purpose: ordinary SRP preflop-reduced HU IP contexts not yet covered by the
-// direct source-anchored children (principally UTG/HJ/CO-v-blind).
-// Source/Provenance: P explicit gap flag; prevents accidental BTN fallback.
+// Purpose: ordinary SRP preflop-reduced HU IP contexts still not covered by
+// either direct source descendants OR explicit P-heavy six-max range fills.
+// Source/Provenance: P explicit residual-gap flag; prevents accidental fallback.
 ##f$cc_turn_cbet_srp_ip_uncovered_range_context##
 f$cc_turn_cbet_ordinary_srp_context &&
 f$cc_hu_origin_preflop_reduced &&
 f$cc_hu_ip &&
-!f$cc_turn_srp_ip_source_anchored_covered
+!f$cc_turn_srp_ip_source_anchored_covered &&
+!f$cc_turn_srp_6max_gap_covered
 
-// Purpose: ordinary SRP HU OOP contexts not yet owned by source-anchored OOP
-// children, principally opener-versus-later-nonblind coldcaller.
-// Source/Provenance: A/P explicit gap flag.
+// Purpose: ordinary SRP HU OOP contexts still not owned by source descendants or
+// explicit six-max P-heavy coldcaller fill.
+// Source/Provenance: A/P residual-gap flag.
 ##f$cc_turn_cbet_srp_oop_uncovered_context##
 f$cc_turn_cbet_ordinary_srp_context &&
 f$cc_hu &&
 f$cc_hu_oop &&
-!f$cc_turn_srp_oop_source_anchored_covered
+!f$cc_turn_srp_oop_source_anchored_covered &&
+!f$cc_turn_srp_6max_gap_covered
 
 // Purpose: compact current Turn-CBet family ID for logs/coverage.
-// IDs: 1 source SRP IP; 2 other SRP IP; 3 source SRP OOP; 4 other SRP OOP;
-// 5 postflop-reduced SRP HU; 6 SRP multiway; 7 ISO; 8 plain3BP; 9 squeeze;
-// 10 4BP; 0 unknown.
+// IDs: 1 source SRP IP; 2 P-heavy SRP IP gap; 3 source SRP OOP;
+// 4 P-heavy SRP OOP gap; 5 residual SRP IP; 6 residual SRP OOP;
+// 7 postflop-reduced SRP HU; 8 SRP multiway; 9 ISO; 10 plain3BP;
+// 11 squeeze; 12 4BP; 0 unknown.
 // Source/Provenance: P engineering metadata; ID never selects strategy alone.
 ##f$cc_turn_cbet_family_id##
 When !f$cc_turn_cbet_opportunity Return 0 Force
 When f$cc_turn_srp_ip_source_anchored_covered Return 1 Force
 When f$cc_turn_srp_oop_source_anchored_covered Return 3 Force
-When f$cc_turn_cbet_srp_postflop_reduced_hu_context Return 5 Force
-When f$cc_turn_cbet_srp_multiway_context Return 6 Force
-When f$cc_turn_cbet_srp_ip_uncovered_range_context Return 2 Force
-When f$cc_turn_cbet_srp_oop_uncovered_context Return 4 Force
-When f$cc_turn_cbet_iso_context Return 7 Force
-When f$cc_turn_cbet_plain3bp_context Return 8 Force
-When f$cc_turn_cbet_squeeze_context Return 9 Force
-When f$cc_turn_cbet_4bp_context Return 10 Force
+When f$cc_turn_srp_ip_epmpco_vs_bb_context || f$cc_turn_srp_ip_epmpco_vs_sb_context Return 2 Force
+When f$cc_turn_srp_oop_vs_nonblind_coldcaller_context Return 4 Force
+When f$cc_turn_cbet_srp_postflop_reduced_hu_context Return 7 Force
+When f$cc_turn_cbet_srp_multiway_context Return 8 Force
+When f$cc_turn_cbet_srp_ip_uncovered_range_context Return 5 Force
+When f$cc_turn_cbet_srp_oop_uncovered_context Return 6 Force
+When f$cc_turn_cbet_iso_context Return 9 Force
+When f$cc_turn_cbet_plain3bp_context Return 10 Force
+When f$cc_turn_cbet_squeeze_context Return 11 Force
+When f$cc_turn_cbet_4bp_context Return 12 Force
 When Others Return 0 Force
 
 // Purpose: top-level Turn CBet action router.
@@ -119,6 +126,7 @@ When Others Return 0 Force
 When !f$cc_turn_cbet_opportunity Return false Force
 When f$cc_turn_srp_ip_source_anchored_covered Return f$cc_turn_srp_ip_source_anchored_action Force
 When f$cc_turn_srp_oop_source_anchored_covered Return f$cc_turn_srp_oop_source_anchored_action Force
+When f$cc_turn_srp_6max_gap_covered Return f$cc_turn_srp_6max_gap_action Force
 When Others Return false Force
 
 // Purpose: paired strategic size-ID router.
@@ -128,12 +136,15 @@ When Others Return false Force
 When !f$cc_turn_cbet_opportunity Return 0 Force
 When f$cc_turn_srp_ip_source_anchored_covered Return f$cc_turn_srp_ip_source_anchored_size_id Force
 When f$cc_turn_srp_oop_source_anchored_covered Return f$cc_turn_srp_oop_source_anchored_size_id Force
+When f$cc_turn_srp_6max_gap_covered Return f$cc_turn_srp_6max_gap_size_id Force
 When Others Return 0 Force
 
 // Purpose: report whether current Turn-CBet family has an implemented baseline.
 // Source/Provenance: P engineering coverage contract.
 ##f$cc_turn_cbet_strategy_covered##
-f$cc_turn_srp_ip_source_anchored_covered || f$cc_turn_srp_oop_source_anchored_covered
+f$cc_turn_srp_ip_source_anchored_covered ||
+f$cc_turn_srp_oop_source_anchored_covered ||
+f$cc_turn_srp_6max_gap_covered
 
 // Purpose: action/size integrity invariant.
 // Source/Provenance: P safety contract.
