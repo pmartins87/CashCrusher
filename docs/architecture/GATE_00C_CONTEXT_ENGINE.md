@@ -1,46 +1,65 @@
-# Gate 00C — Six-max OpenPPL context engine
+# Gate 00C — Dynamic six-max OpenPPL context engine
 
 Status: **IMPLEMENTED AS MECHANICAL FOUNDATION; parser/runtime validation still pending**.
 
+Gate 00F subsequently strengthened this gate by adding explicit handedness and HU-origin provenance. The current implementation in `src/CashCrusher_Context.txt` is the authoritative version.
+
 ## Objective
 
-CashCrusher must know *what game state it is in* before any imported DeepCrusher rule can fire. A strategically good CBet executed in the wrong pot family or against the wrong positional range is still a bad decision.
+CashCrusher must know *what game state it is in* before any imported DeepCrusher rule can fire. A strategically good CBet executed in the wrong pot family, wrong handedness, or wrong HU origin is still a bad decision.
 
 The canonical decision context remains:
 
 `Players × PotType × PreflopRole × PostflopPosition × Matchup/Ranges × SPR × Board × History`
 
-Gate 00C implements the mechanical axes that can be reconstructed safely from OpenHoldem/OpenPPL. It deliberately does **not** implement poker policy.
+Gate 00C implements mechanical axes that can be reconstructed safely from OpenHoldem/OpenPPL. It deliberately does **not** implement poker policy.
 
 ## Source-derived mechanical facts
 
 The implementation is grounded in OpenHoldem/OpenPPL behavior rather than invented state assumptions:
 
-- `playersplayingbits`, `opponentsplayingbits`, `nplayersplaying` and `nopponentsplaying` identify players who still hold cards post-flop.
-- six-max position chairs are available through `utgchair`, `mp3chair`, `cutoffchair`, `dealerchair`, `smallblindchair`, `bigblindchair`;
+- `playersplayingbits`, `opponentsplayingbits`, `nplayersplaying` and `nopponentsplaying` identify players who still hold cards post-flop;
+- `playersdealtbits` and `nplayersdealt` preserve the hand-start deal size;
+- `foldbits1` preserves preflop folds and therefore lets CashCrusher reconstruct who actually reached the flop;
+- position chairs are available through `utgchair`, `mp3chair`, `cutoffchair`, `dealerchair`, `smallblindchair`, `bigblindchair`;
 - OpenPPL `Position` gives `First`, `Middle`, `Last` relative to players still in the hand;
 - `raisbits1` and `callbits1` retain stable historical preflop action bitmasks after the preflop round;
-- `NumberOfRaisesBeforeFlop` is a persisted OpenPPL raise **count** and is therefore preferable to trying to use `nbetsround_preflop` as a raise counter;
-- `BotsLastPreflopAction` is persisted by the OpenPPL history layer and distinguishes Hero's final preflop Raise / RaiseMax / Call / Check.
+- `NumberOfRaisesBeforeFlop` is a persisted OpenPPL raise **count** and is preferable to trying to repurpose a current-round bet counter;
+- `BotsLastPreflopAction` is persisted by the OpenPPL history layer and distinguishes Hero's final preflop Raise / RaiseMax / Call / Check;
+- in true heads-up play the dealer is also the small blind, so a 2h chair map must deliberately allow `dealerchair == smallblindchair`.
 
-The old Crusher classification (`HUSB`, `HUBB`, `3wBTNvBB`, etc.) used positional shells plus separate initiative/history routers. CashCrusher keeps that useful separation but expands it to all six positions instead of assigning a new strategy directly from a legacy label.
+The old Crusher classification (`HUSB`, `HUBB`, `3wBTNvBB`, etc.) used positional shells plus separate initiative/history routers. CashCrusher keeps that useful separation but expands it to dynamic six-max cash contexts.
 
-## Strict v0.1 six-max envelope
+## Six-max cash does not mean six players must be present
 
-Gate 00C intentionally starts with **normal six-handed deals only**:
+The first Gate 00C draft incorrectly required `nplayersdealt = 6`. That assumption was removed.
 
-- `nplayersdealt = 6`;
-- all six canonical position chairs must exist;
-- all six position chairs must be distinct;
-- Hero must map to exactly one of UTG/HJ/CO/BTN/SB/BB;
-- Hero must still be playing;
-- 2–6 players may remain post-flop.
+A six-max cash table naturally changes handedness as players leave, sit out, or wait. CashCrusher therefore supports deals with **2 through 6 players**.
 
-A five-handed table, missing-small-blind positional anomaly, straddle topology or malformed chair map is not silently remapped. It fails the mechanical context gate. Short-handed cash support can be added later with its own explicit position contract.
+Canonical six-max-equivalent positions are:
 
-## Stable IDs
+| Dealt | Canonical positions |
+|---:|---|
+| 6 | UTG, HJ, CO, BTN, SB, BB |
+| 5 | HJ, CO, BTN, SB, BB |
+| 4 | CO, BTN, SB, BB |
+| 3 | BTN, SB, BB |
+| 2 | SB/Button, BB |
 
-### Absolute position
+The canonical position ID does not erase handedness. `f$cc_deal_size` remains a separate context dimension because, for example, a BTN-v-BB range in 3h can differ materially from BTN-v-BB in 6h even though both use matchup ID `46`.
+
+## Physical occupancy versus players dealt
+
+CashCrusher separates:
+
+- physical/seated table count;
+- number actually dealt into the hand.
+
+A hand can be strategically true HU (`nplayersdealt=2`) even if a third seat is still shown as seated/waiting. Conversely, a six-handed deal can become current-live HU only because four players folded. These cases must never share policy merely because `nplayersplaying=2`.
+
+The detailed HU-origin contract is in `GATE_00F_HANDEDNESS_AND_HU_ORIGIN.md`.
+
+## Stable absolute-position IDs
 
 | ID | Position |
 |---:|---|
@@ -51,7 +70,9 @@ A five-handed table, missing-small-blind positional anomaly, straddle topology o
 | 5 | SB |
 | 6 | BB |
 
-### Live opponent mask
+At 2h the dealer/SB is canonicalized as **SB=5**, not BTN=4. This prevents the same physical chair from being counted twice and preserves the key strategic fact that the HU small blind is also the Button and therefore IP postflop.
+
+## Live opponent mask
 
 | Bit value | Position |
 |---:|---|
@@ -62,9 +83,9 @@ A five-handed table, missing-small-blind positional anomaly, straddle topology o
 | 16 | SB |
 | 32 | BB |
 
-The mask retains exact multiway composition without building a separate function for every possible trio/quartet.
+The mask retains exact multiway composition without building a separate function for every possible trio/quartet. Position aliases absent at a shorter handedness are disabled.
 
-### Relative post-flop position
+## Relative postflop position
 
 | ID | Meaning |
 |---:|---|
@@ -72,7 +93,7 @@ The mask retains exact multiway composition without building a separate function
 | 2 | Middle |
 | 3 | Last |
 
-In HU only First and Last are legal. `Middle` in a two-player hand is treated as contradictory context.
+Current-live HU permits only First or Last. `Middle` in a two-player current state is contradictory context.
 
 ## Pot families
 
@@ -86,7 +107,7 @@ The family is classified from `NumberOfRaisesBeforeFlop`:
 | 4 | 3 | 4-bet pot |
 | 5 | 4+ | 5-bet+ / currently unsupported strategically |
 
-ISO and squeeze are **subtypes**, not separate fundamental pot families. This prevents the tree from losing the fact that an ISO is still a one-raise pot and a squeeze is still a 3-bet pot.
+ISO, true-HU limp-raised and squeeze are **subtypes**, not new fundamental pot-family numbers.
 
 ## Hero preflop role
 
@@ -104,42 +125,39 @@ The role combines raise count, Hero's historical raise bit and `BotsLastPreflopA
 | 8 | unraised caller / limper |
 | 9 | BB checked an unraised pot |
 
-This is intentionally more precise than a single `f$Init_Hero` flag. Initiative remains useful on later streets, but the preflop role must not be destroyed because it determines the ranges entering the flop.
+This is intentionally more precise than a single initiative flag. Initiative remains useful on later streets, but the preflop role determines the range that entered the flop.
 
-## Proven ISO detection
+## Proven ISO versus true-HU limp-raise
 
-For a one-raise pot there is exactly one historical raiser. In normal six-max first-orbit order:
-
-`UTG → HJ → CO → BTN → SB → BB`
-
-A call bit at a position that acted **before** the sole raiser proves a voluntary limp existed before the raise. This is sufficient to mark `f$cc_pf_iso_proven`.
+For a non-HU one-raise pot, a call bit at a position that acted **before** the sole raiser proves a voluntary limper existed before the raise. That is sufficient for `f$cc_pf_iso_proven`.
 
 Examples:
 
-- UTG limps, HJ raises → ISO proven;
-- CO limps, BTN raises → ISO proven;
-- BTN raises, BB calls → not ISO;
-- UTG raises, BTN calls → not ISO.
+- UTG limps, HJ raises -> ISO proven;
+- CO limps, BTN raises -> ISO proven;
+- BTN raises, BB calls -> ordinary SRP;
+- UTG raises, BTN calls -> ordinary SRP.
+
+True HU is different:
+
+`SB/Button limp -> BB raise -> SB call`
+
+has no third player to isolate. CashCrusher therefore marks `f$cc_pf_hu_limp_raise_proven` and explicitly keeps `f$cc_pf_iso_proven=false`.
 
 ## Conservative squeeze detection
 
-Aggregate action bitmasks do not preserve every chronological detail. CashCrusher therefore refuses to manufacture certainty.
+Aggregate action bitmasks do not preserve every chronological detail. CashCrusher refuses to manufacture certainty.
 
 A squeeze is marked **proven** only when:
 
 1. exactly two raises occurred;
 2. Hero was one of exactly two unique raisers;
-3. Hero's final action tells us whether Hero was opener or final 3bettor;
-4. the reconstructed first raiser acts earlier than the final 3bettor in normal first-orbit order;
-5. at least one call bit exists strictly between them.
+3. Hero's final action tells whether Hero was opener or final 3bettor;
+4. reconstructed first raiser acts earlier than final 3bettor in supported first-orbit order;
+5. at least one call bit exists strictly between them;
+6. the hand is not a true-HU deal.
 
-This safely identifies lines such as:
-
-`UTG raise → HJ call → BTN 3bet`.
-
-A reversed-order history compatible with limp-reraise is labelled subtype-unknown rather than rewritten into a normal 3-bet pot.
-
-When Hero was never a raiser in a two-raise pot, the aggregate history may be insufficient to prove who squeezed whom. The mechanical pot remains 3BP, while the subtype stays unknown unless later evidence can prove it.
+A reversed-order history compatible with limp-reraise remains subtype-unknown rather than being rewritten as an ordinary 3BP.
 
 ## Mechanical validity versus strategic coverage
 
@@ -149,13 +167,15 @@ When Hero was never a raiser in a two-raise pot, the aggregate history may be in
 
 It does **not** mean a strategy has been written for that state.
 
-Future attack/defense nodes require a separate coverage check. For example, Gate 00C can classify a 4-bet pot correctly even while Gate 01 has no 4-bet-pot flop CBet policy yet. In that situation the policy layer must fail closed.
+Current validity checks include supported 2-6h deal size, dealt-bit consistency, conditional chair-map integrity, Hero still playing, flop-entry reconstruction, current player count, live-mask consistency, blind/pot sanity, relative position, HU origin, preflop history and Hero-role consistency.
+
+Future attack/defense nodes require separate coverage. A mechanically valid 4BP can remain strategically uncovered and fail closed.
 
 ## Provenance
 
 - Mechanical reconstruction from OpenHoldem/OpenPPL: **T/A** from runtime capabilities.
-- Exact six-max context decomposition: **A** architecture.
-- Strict fail-closed treatment of unresolved chronology: **P** engineering safety principle.
+- Dynamic 2-6h six-max-equivalent decomposition: **A** architecture.
+- HU-origin preservation and fail-closed unresolved chronology: **P** engineering safety.
 - No professional poker frequencies are introduced in Gate 00C.
 
 ## File
