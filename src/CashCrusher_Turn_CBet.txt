@@ -15,7 +15,8 @@
 //   * P-heavy UTG/HJ/CO PFA-IP vs SB/BB six-max range gaps;
 //   * P-heavy UTG/HJ/CO PFA-OOP vs later nonblind cold caller;
 //   * ordinary-SRP flop-multiway -> turn-HU, preserving exact flop survivor origin;
-//   * ordinary-SRP turn still multiway, preserving flop origin/current composition.
+//   * ordinary-SRP turn still multiway, preserving flop origin/current composition;
+//   * ISO HU/multiway, preserving original-limper vs post-raise-coldcaller origin.
 //
 // Everything else remains explicitly fail-closed until its own source/adaptation
 // audit. This is deliberate: Turn CBet must not inherit an HUSB/BTN frequency just
@@ -36,7 +37,9 @@ f$cc_pf_role_pfa &&
 f$cc_pf_one_raise_ordinary_srp
 
 // Purpose: ISO Turn-CBet context after a real flop ISO CBet.
-// Source/Provenance: A/T family gate; current policy still pending.
+// Source: legacy `Init_GotRaised_Or_Isolated` does not provide a dedicated ISO
+// second-barrel tree; Gate02F rebuilds this family explicitly.
+// Provenance: A/T topology gate; exact action is P-heavy Gate02F policy.
 ##f$cc_turn_cbet_iso_context##
 f$cc_turn_cbet_opportunity &&
 f$cc_pot_family_id = 2 &&
@@ -111,6 +114,7 @@ f$cc_hu_oop &&
 // Source/Provenance: P engineering metadata; ID never selects strategy alone.
 ##f$cc_turn_cbet_family_id##
 When !f$cc_turn_cbet_opportunity Return 0 Force
+When f$cc_turn_iso_covered Return 9 Force
 When f$cc_turn_srp_postmw_hu_covered Return 7 Force
 When f$cc_turn_mw_srp_covered Return 8 Force
 When f$cc_turn_srp_ip_source_anchored_covered Return 1 Force
@@ -119,7 +123,6 @@ When f$cc_turn_srp_ip_epmpco_vs_bb_context || f$cc_turn_srp_ip_epmpco_vs_sb_cont
 When f$cc_turn_srp_oop_vs_nonblind_coldcaller_context Return 4 Force
 When f$cc_turn_cbet_srp_ip_uncovered_range_context Return 5 Force
 When f$cc_turn_cbet_srp_oop_uncovered_context Return 6 Force
-When f$cc_turn_cbet_iso_context Return 9 Force
 When f$cc_turn_cbet_plain3bp_context Return 10 Force
 When f$cc_turn_cbet_squeeze_context Return 11 Force
 When f$cc_turn_cbet_4bp_context Return 12 Force
@@ -127,10 +130,11 @@ When Others Return 0 Force
 
 // Purpose: top-level Turn CBet action router.
 // Source/Provenance: A/P exact-family router.
-// Safety: post-multiway HU and current-multiway families route before HU donors,
-// so current state cannot erase flop origin. No generic tail.
+// Safety: exact pot families and multiway-origin families route before ordinary
+// HU donors. Only audited children may return true; no generic tail.
 ##f$cc_turn_cbet_router##
 When !f$cc_turn_cbet_opportunity Return false Force
+When f$cc_turn_iso_covered Return f$cc_turn_iso_action Force
 When f$cc_turn_srp_postmw_hu_covered Return f$cc_turn_srp_postmw_hu_action Force
 When f$cc_turn_mw_srp_covered Return f$cc_turn_mw_srp_action Force
 When f$cc_turn_srp_ip_source_anchored_covered Return f$cc_turn_srp_ip_source_anchored_action Force
@@ -140,9 +144,10 @@ When Others Return false Force
 
 // Purpose: paired strategic size-ID router.
 // Source/Provenance: A/P exact-family sizing ownership.
-// Safety: same origin-preserving precedence as action router; uncovered/check -> 0.
+// Safety: same exact-family precedence as action router; uncovered/check -> 0.
 ##f$cc_turn_cbet_size_id##
 When !f$cc_turn_cbet_opportunity Return 0 Force
+When f$cc_turn_iso_covered Return f$cc_turn_iso_size_id Force
 When f$cc_turn_srp_postmw_hu_covered Return f$cc_turn_srp_postmw_hu_size_id Force
 When f$cc_turn_mw_srp_covered Return f$cc_turn_mw_srp_size_id Force
 When f$cc_turn_srp_ip_source_anchored_covered Return f$cc_turn_srp_ip_source_anchored_size_id Force
@@ -153,6 +158,7 @@ When Others Return 0 Force
 // Purpose: report whether current Turn-CBet family has an implemented baseline.
 // Source/Provenance: P engineering coverage contract.
 ##f$cc_turn_cbet_strategy_covered##
+f$cc_turn_iso_covered ||
 f$cc_turn_srp_postmw_hu_covered ||
 f$cc_turn_mw_srp_covered ||
 f$cc_turn_srp_ip_source_anchored_covered ||
