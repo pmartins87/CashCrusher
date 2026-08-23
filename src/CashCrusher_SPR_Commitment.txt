@@ -1,0 +1,181 @@
+// ============================================================================
+// CashCrusher_SPR_Commitment.txt
+// Gate 00D — deep-stack SPR geometry and commitment safety contract
+// ============================================================================
+// Provenance:
+//   X: inherited Spin rule that globally converts a bet/raise to all-in once
+//      the sizing consumes roughly half the effective stack.
+//   P: CashCrusher SPR buckets below are engineering buckets for routing and
+//      auditing. They are NOT claimed as universal GTO thresholds.
+//
+// Core rule:
+//   No global helper may turn a profitable call into a raise/jam or turn an
+//   ordinary deep-stack bet into a jam merely because it is "large" relative
+//   to the remaining stack. Jams must be owned by explicit strategic nodes.
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// 00D.01 — Disable inherited OpenHoldem global betsize -> all-in conversion
+// -----------------------------------------------------------------------------
+
+##f$allin_on_betsize_balance_ratio##
+0.00
+
+##f$cc_global_auto_commit_disabled##
+true
+
+// -----------------------------------------------------------------------------
+// 00D.02 — Street-start stack reconstruction
+// Current street bets are added back to balance, so the value remains stable
+// while the current betting round is in progress.
+// -----------------------------------------------------------------------------
+
+##f$cc_hero_stack_round_start_bb##
+When bblind <= 0 Return -1 Force
+When (balance + currentbet) < 0 Return -1 Force
+When Others Return ((balance + currentbet) / bblind) Force
+
+##f$cc_stack_utg_round_start_bb##
+When bblind <= 0 Return -1 Force
+When utgchair < 0 Return -1 Force
+When Others Return ((balance_utgchair + currentbet_utgchair) / bblind) Force
+
+##f$cc_stack_hj_round_start_bb##
+When bblind <= 0 Return -1 Force
+When mp3chair < 0 Return -1 Force
+When Others Return ((balance_mp3chair + currentbet_mp3chair) / bblind) Force
+
+##f$cc_stack_co_round_start_bb##
+When bblind <= 0 Return -1 Force
+When cutoffchair < 0 Return -1 Force
+When Others Return ((balance_cutoffchair + currentbet_cutoffchair) / bblind) Force
+
+##f$cc_stack_btn_round_start_bb##
+When bblind <= 0 Return -1 Force
+When dealerchair < 0 Return -1 Force
+When Others Return ((balance_dealerchair + currentbet_dealerchair) / bblind) Force
+
+##f$cc_stack_sb_round_start_bb##
+When bblind <= 0 Return -1 Force
+When smallblindchair < 0 Return -1 Force
+When Others Return ((balance_smallblindchair + currentbet_smallblindchair) / bblind) Force
+
+##f$cc_stack_bb_round_start_bb##
+When bblind <= 0 Return -1 Force
+When bigblindchair < 0 Return -1 Force
+When Others Return ((balance_bigblindchair + currentbet_bigblindchair) / bblind) Force
+
+##f$cc_hu_villain_stack_round_start_bb##
+When !f$cc_hu Return -1 Force
+When f$cc_hu_villain_pos_id = 1 Return f$cc_stack_utg_round_start_bb Force
+When f$cc_hu_villain_pos_id = 2 Return f$cc_stack_hj_round_start_bb Force
+When f$cc_hu_villain_pos_id = 3 Return f$cc_stack_co_round_start_bb Force
+When f$cc_hu_villain_pos_id = 4 Return f$cc_stack_btn_round_start_bb Force
+When f$cc_hu_villain_pos_id = 5 Return f$cc_stack_sb_round_start_bb Force
+When f$cc_hu_villain_pos_id = 6 Return f$cc_stack_bb_round_start_bb Force
+When Others Return -1 Force
+
+##f$cc_hu_effective_stack_round_start_bb##
+When !f$cc_hu Return -1 Force
+When f$cc_hero_stack_round_start_bb < 0 Return -1 Force
+When f$cc_hu_villain_stack_round_start_bb < 0 Return -1 Force
+When f$cc_hero_stack_round_start_bb <= f$cc_hu_villain_stack_round_start_bb Return f$cc_hero_stack_round_start_bb Force
+When Others Return f$cc_hu_villain_stack_round_start_bb Force
+
+// -----------------------------------------------------------------------------
+// 00D.03 — Multiway shallowest-live effective stack
+// This is a COARSE geometry descriptor only. A later defense/raise node facing
+// one specific bettor must use actor-specific effective stack instead.
+// -----------------------------------------------------------------------------
+
+##f$cc_min_live_opp_stack_round_start_bb##
+When f$cc_opp_live_utg && (!f$cc_opp_live_hj || f$cc_stack_utg_round_start_bb <= f$cc_stack_hj_round_start_bb) && (!f$cc_opp_live_co || f$cc_stack_utg_round_start_bb <= f$cc_stack_co_round_start_bb) && (!f$cc_opp_live_btn || f$cc_stack_utg_round_start_bb <= f$cc_stack_btn_round_start_bb) && (!f$cc_opp_live_sb || f$cc_stack_utg_round_start_bb <= f$cc_stack_sb_round_start_bb) && (!f$cc_opp_live_bb || f$cc_stack_utg_round_start_bb <= f$cc_stack_bb_round_start_bb) Return f$cc_stack_utg_round_start_bb Force
+When f$cc_opp_live_hj && (!f$cc_opp_live_utg || f$cc_stack_hj_round_start_bb <= f$cc_stack_utg_round_start_bb) && (!f$cc_opp_live_co || f$cc_stack_hj_round_start_bb <= f$cc_stack_co_round_start_bb) && (!f$cc_opp_live_btn || f$cc_stack_hj_round_start_bb <= f$cc_stack_btn_round_start_bb) && (!f$cc_opp_live_sb || f$cc_stack_hj_round_start_bb <= f$cc_stack_sb_round_start_bb) && (!f$cc_opp_live_bb || f$cc_stack_hj_round_start_bb <= f$cc_stack_bb_round_start_bb) Return f$cc_stack_hj_round_start_bb Force
+When f$cc_opp_live_co && (!f$cc_opp_live_utg || f$cc_stack_co_round_start_bb <= f$cc_stack_utg_round_start_bb) && (!f$cc_opp_live_hj || f$cc_stack_co_round_start_bb <= f$cc_stack_hj_round_start_bb) && (!f$cc_opp_live_btn || f$cc_stack_co_round_start_bb <= f$cc_stack_btn_round_start_bb) && (!f$cc_opp_live_sb || f$cc_stack_co_round_start_bb <= f$cc_stack_sb_round_start_bb) && (!f$cc_opp_live_bb || f$cc_stack_co_round_start_bb <= f$cc_stack_bb_round_start_bb) Return f$cc_stack_co_round_start_bb Force
+When f$cc_opp_live_btn && (!f$cc_opp_live_utg || f$cc_stack_btn_round_start_bb <= f$cc_stack_utg_round_start_bb) && (!f$cc_opp_live_hj || f$cc_stack_btn_round_start_bb <= f$cc_stack_hj_round_start_bb) && (!f$cc_opp_live_co || f$cc_stack_btn_round_start_bb <= f$cc_stack_co_round_start_bb) && (!f$cc_opp_live_sb || f$cc_stack_btn_round_start_bb <= f$cc_stack_sb_round_start_bb) && (!f$cc_opp_live_bb || f$cc_stack_btn_round_start_bb <= f$cc_stack_bb_round_start_bb) Return f$cc_stack_btn_round_start_bb Force
+When f$cc_opp_live_sb && (!f$cc_opp_live_utg || f$cc_stack_sb_round_start_bb <= f$cc_stack_utg_round_start_bb) && (!f$cc_opp_live_hj || f$cc_stack_sb_round_start_bb <= f$cc_stack_hj_round_start_bb) && (!f$cc_opp_live_co || f$cc_stack_sb_round_start_bb <= f$cc_stack_co_round_start_bb) && (!f$cc_opp_live_btn || f$cc_stack_sb_round_start_bb <= f$cc_stack_btn_round_start_bb) && (!f$cc_opp_live_bb || f$cc_stack_sb_round_start_bb <= f$cc_stack_bb_round_start_bb) Return f$cc_stack_sb_round_start_bb Force
+When f$cc_opp_live_bb && (!f$cc_opp_live_utg || f$cc_stack_bb_round_start_bb <= f$cc_stack_utg_round_start_bb) && (!f$cc_opp_live_hj || f$cc_stack_bb_round_start_bb <= f$cc_stack_hj_round_start_bb) && (!f$cc_opp_live_co || f$cc_stack_bb_round_start_bb <= f$cc_stack_co_round_start_bb) && (!f$cc_opp_live_btn || f$cc_stack_bb_round_start_bb <= f$cc_stack_btn_round_start_bb) && (!f$cc_opp_live_sb || f$cc_stack_bb_round_start_bb <= f$cc_stack_sb_round_start_bb) Return f$cc_stack_bb_round_start_bb Force
+When Others Return -1 Force
+
+##f$cc_multiway_min_effective_stack_round_start_bb##
+When f$cc_hu Return f$cc_hu_effective_stack_round_start_bb Force
+When f$cc_min_live_opp_stack_round_start_bb < 0 Return -1 Force
+When f$cc_hero_stack_round_start_bb < 0 Return -1 Force
+When f$cc_hero_stack_round_start_bb <= f$cc_min_live_opp_stack_round_start_bb Return f$cc_hero_stack_round_start_bb Force
+When Others Return f$cc_min_live_opp_stack_round_start_bb Force
+
+// -----------------------------------------------------------------------------
+// 00D.04 — Pot at beginning of current street
+// OpenHoldem's potcommon excludes players' CURRENT street bets. Therefore it
+// remains the appropriate denominator while a bet is sitting in front of Hero.
+// -----------------------------------------------------------------------------
+
+##f$cc_round_start_pot_bb##
+When bblind <= 0 Return -1 Force
+When potcommon <= 0 Return -1 Force
+When Others Return (potcommon / bblind) Force
+
+##f$cc_spr_round_start##
+When f$cc_round_start_pot_bb <= 0 Return -1 Force
+When f$cc_hu && f$cc_hu_effective_stack_round_start_bb >= 0 Return (f$cc_hu_effective_stack_round_start_bb / f$cc_round_start_pot_bb) Force
+When !f$cc_hu && f$cc_multiway_min_effective_stack_round_start_bb >= 0 Return (f$cc_multiway_min_effective_stack_round_start_bb / f$cc_round_start_pot_bb) Force
+When Others Return -1 Force
+
+// Actor-specific effective stack when facing the current raiser/bettor.
+##f$cc_effective_stack_vs_raischair_round_start_bb##
+When bblind <= 0 Return -1 Force
+When raischair < 0 Return -1 Force
+When raischair = userchair Return -1 Force
+When (balance_raischair + currentbet_raischair) < 0 Return -1 Force
+When (balance + currentbet) <= (balance_raischair + currentbet_raischair) Return ((balance + currentbet) / bblind) Force
+When Others Return ((balance_raischair + currentbet_raischair) / bblind) Force
+
+##f$cc_spr_vs_raischair_round_start##
+When f$cc_round_start_pot_bb <= 0 Return -1 Force
+When f$cc_effective_stack_vs_raischair_round_start_bb < 0 Return -1 Force
+When Others Return (f$cc_effective_stack_vs_raischair_round_start_bb / f$cc_round_start_pot_bb) Force
+
+// -----------------------------------------------------------------------------
+// 00D.05 — Engineering SPR buckets (P provenance)
+// Raw SPR remains available and is preferred for exact node logic.
+// -----------------------------------------------------------------------------
+
+##f$cc_spr_bucket_id##
+When f$cc_spr_round_start < 0 Return 0 Force
+When f$cc_spr_round_start < 1 Return 1 Force
+When f$cc_spr_round_start < 2 Return 2 Force
+When f$cc_spr_round_start < 4 Return 3 Force
+When f$cc_spr_round_start < 6 Return 4 Force
+When f$cc_spr_round_start < 10 Return 5 Force
+When f$cc_spr_round_start < 15 Return 6 Force
+When Others Return 7 Force
+
+##f$cc_spr_sub1##
+f$cc_spr_bucket_id = 1
+
+##f$cc_spr_1_to_2##
+f$cc_spr_bucket_id = 2
+
+##f$cc_spr_2_to_4##
+f$cc_spr_bucket_id = 3
+
+##f$cc_spr_4_to_6##
+f$cc_spr_bucket_id = 4
+
+##f$cc_spr_6_to_10##
+f$cc_spr_bucket_id = 5
+
+##f$cc_spr_10_to_15##
+f$cc_spr_bucket_id = 6
+
+##f$cc_spr_15plus##
+f$cc_spr_bucket_id = 7
+
+##f$cc_spr_valid##
+f$cc_spr_round_start >= 0
+
+// ============================================================================
+// End Gate 00D.
+// No function in this file authorizes a strategic jam. That ownership remains
+// with explicit attack/defense nodes reviewed later.
+// ============================================================================
