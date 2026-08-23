@@ -35,3 +35,5 @@ jobs:
         run: python tools/test_turn_4bp.py
       - name: Test Turn CBet coverage boundary
         run: python tools/test_turn_cbet_coverage.py
+      - name: Test Turn CBet runtime sizing contract
+        run: python tools/test_turn_cbet_runtime.py
