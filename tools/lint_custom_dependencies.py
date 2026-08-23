@@ -1,34 +1,27 @@
 #!/usr/bin/env python3
 """Static linter for CashCrusher OpenPPL source.
 
-This linter intentionally encodes project-level OpenPPL safety rules learned
-from the DeepCrusher audit.  The most important one is that CashCrusher strategy
-must be written as FLAT, COMPLETE WHEN rules.  OpenPPL does not create logical
-scope from indentation.  Therefore a visually indented ``WHEN parent`` followed
-by child WHENs is dangerous: the parser treats the first WHEN as an open-ended
-condition and its scope is determined by token order/back-patching, not by tabs
-or spaces.
+The linter encodes project-level OpenPPL safety rules carried from the audited
+DeepCrusher work. CashCrusher deliberately uses a stricter coding subset than
+OpenPPL technically permits so that visual indentation can never hide semantics.
 
 Hard checks
 ===========
 - unresolved ``f$cc_*`` references across ``src/*.txt``;
 - duplicate ``##f$cc_*##`` definitions;
-- legacy positional game-router dependencies (``f$game_*``) in executable
-  CashCrusher code;
-- reintroduction of the inherited ``f$hand_StackOffDraws`` shortcut;
-- accidental ``BetMax`` use in current flop-CBet modules, where Gate01 policy
-  is explicitly sizing-family based and must not auto-jam;
-- **open-ended WHEN conditions** in CashCrusher source.  Every WHEN must own an
-  explicit action before the next WHEN/function boundary.  Strategic scope must
-  be expressed by repeating/combining the full predicate on each rule, never by
-  indentation.
+- legacy ``f$game_*`` dependencies in executable CashCrusher code;
+- reintroduction of ``f$hand_StackOffDraws``;
+- accidental ``BetMax`` in current flop-CBet modules;
+- **open-ended WHEN conditions**. Every WHEN must own an explicit action before
+  the next WHEN/function boundary; indentation never creates scope;
+- missing nearby Source/Provenance comment in reviewed strategic modules whose
+  filename begins ``CashCrusher_Flop_CBet``.
 
 Warnings
 ========
-- custom definitions not referenced by other executable lines yet;
-- function headers without a nearby provenance comment.  This remains warning
-  only while the first modules are being retrofitted, but all newly reviewed
-  strategy functions are expected to carry explicit source/provenance comments.
+- function headers without nearby provenance comment in mechanical/supporting
+  modules still undergoing retrofit;
+- custom definitions not referenced by other executable lines yet.
 
 Native OpenHoldem/OpenPPL symbols are outside dependency resolution by design.
 """
@@ -50,24 +43,25 @@ STACKOFF_RE = re.compile(r"\bf\$hand_StackOffDraws\b")
 BETMAX_RE = re.compile(r"\bBetMax\b")
 WHEN_RE = re.compile(r"\bWhen\b", re.IGNORECASE)
 
-# Every CashCrusher WHEN is required to be terminal on its own rule.  The action
-# may live on the following physical line, therefore the scanner works on the
-# token span between this WHEN and the next WHEN/function boundary.
-#
-# ``Set`` is an action in OpenPPL even though execution continues afterwards.
-# Direct poker actions are included for future top-level formula integration.
 ACTION_RE = re.compile(
     r"\b(?:Return|Set|Check|Call|Fold|RaiseTo|RaiseBy|Raise|BetMax|Bet|Allin|"
     r"MinRaise|SitIn|SitOut|Leave|Prefold)\b",
     re.IGNORECASE,
 )
 
-PROVENANCE_RE = re.compile(r"\b(?:Provenance|Source|Fonte|Legacy parent|Source anchor)\b", re.IGNORECASE)
+PROVENANCE_RE = re.compile(
+    r"\b(?:Provenance|Source|Fonte|Legacy parent|Source anchor)\b", re.IGNORECASE
+)
 
 
 def executable_part(line: str) -> str:
     """Drop ``//`` comments before policy/dependency checks."""
     return line.split("//", 1)[0]
+
+
+def is_reviewed_strategy_module(path: Path) -> bool:
+    """Modules where per-function provenance is already a release requirement."""
+    return path.name.startswith("CashCrusher_Flop_CBet")
 
 
 def function_blocks(lines: list[str]):
@@ -93,25 +87,19 @@ def function_blocks(lines: list[str]):
 
 
 def open_ended_when_hits(path: Path, lines: list[str]):
-    """Find WHENs that have no explicit action before the next WHEN/boundary.
+    """Find WHENs lacking an explicit action before the next WHEN/boundary.
 
-    This intentionally rejects valid-but-risky OpenPPL open-ended WHEN syntax.
-    CashCrusher's coding contract is stricter than the parser: conditions are
-    flattened so indentation can never change or obscure logical ownership.
+    OpenPPL itself supports open-ended WHEN/backpatching. CashCrusher forbids it:
+    each strategic rule must repeat/combine its complete predicate explicitly.
     """
     hits: list[tuple[Path, int, str, str]] = []
 
     for func_name, _header, body in function_blocks(lines):
-        # Build one executable string while retaining source-line ownership for
-        # the first token on each physical line.
         chunks: list[tuple[int, str]] = []
         for lineno, raw in body:
             code = executable_part(raw).strip()
             if code:
                 chunks.append((lineno, code))
-
-        # Each physical code line becomes a sentinel-separated segment.  We do
-        # not treat newlines as scope; they only help report the offending line.
         if not chunks:
             continue
 
@@ -132,7 +120,6 @@ def open_ended_when_hits(path: Path, lines: list[str]):
             if ACTION_RE.search(span):
                 continue
 
-            # Find the closest physical source line whose offset is <= token.
             source_line = chunks[0][0]
             for off, lineno in offset_to_line:
                 if off <= start:
@@ -145,12 +132,8 @@ def open_ended_when_hits(path: Path, lines: list[str]):
 
 
 def nearby_provenance(lines: list[str], header_lineno: int) -> bool:
-    """Return true when the immediately preceding comment neighborhood names source/provenance.
-
-    Mechanical one-line aliases can share a section-level source comment, so the
-    search window is intentionally small but not restricted to the adjacent line.
-    """
-    start = max(0, header_lineno - 9)
+    """Check the local pre-header comment neighborhood for source/provenance."""
+    start = max(0, header_lineno - 10)
     neighborhood = "\n".join(lines[start : header_lineno - 1])
     return bool(PROVENANCE_RE.search(neighborhood))
 
@@ -167,12 +150,12 @@ def main() -> int:
     stackoff_hits: list[tuple[Path, int, str]] = []
     cbet_betmax_hits: list[tuple[Path, int, str]] = []
     open_when_hits: list[tuple[Path, int, str, str]] = []
+    provenance_errors: list[tuple[Path, int, str]] = []
     provenance_warnings: list[tuple[Path, int, str]] = []
 
     for path in files:
         text = path.read_text(encoding="utf-8", errors="strict")
         lines = text.splitlines()
-
         open_when_hits.extend(open_ended_when_hits(path, lines))
 
         for lineno, line in enumerate(lines, 1):
@@ -182,8 +165,8 @@ def main() -> int:
                 name = m.group(1)
                 definitions[name].append((path, lineno))
                 if not nearby_provenance(lines, lineno):
-                    provenance_warnings.append((path, lineno, name))
-                # Function markers are definitions, not references.
+                    target = provenance_errors if is_reviewed_strategy_module(path) else provenance_warnings
+                    target.append((path, lineno, name))
                 continue
 
             code = executable_part(line)
@@ -236,12 +219,17 @@ def main() -> int:
             print(f"  {path.relative_to(ROOT)}:{lineno}: {code}")
 
     if open_when_hits:
-        print("\nERROR: open-ended WHEN found (CashCrusher requires flat complete rules):")
+        print("\nERROR: open-ended WHEN found (flat complete rules are mandatory):")
         for path, lineno, func_name, span in open_when_hits:
             print(f"  {path.relative_to(ROOT)}:{lineno} [{func_name}]: {span}")
 
+    if provenance_errors:
+        print("\nERROR: reviewed strategy function lacks nearby Source/Provenance comment:")
+        for path, lineno, name in provenance_errors:
+            print(f"  {path.relative_to(ROOT)}:{lineno}: {name}")
+
     if provenance_warnings:
-        print("\nWARNING: function header without nearby Source/Provenance comment:")
+        print("\nWARNING: supporting function lacks nearby Source/Provenance comment:")
         for path, lineno, name in provenance_warnings:
             print(f"  {path.relative_to(ROOT)}:{lineno}: {name}")
 
@@ -257,11 +245,12 @@ def main() -> int:
         or stackoff_hits
         or cbet_betmax_hits
         or open_when_hits
+        or provenance_errors
     )
     if hard_error:
         return 1
 
-    print("\nPASS: dependency, flat-WHEN and current strategy-safety checks passed")
+    print("\nPASS: dependency, flat-WHEN, strategy-provenance and safety checks passed")
     return 0
 
 
