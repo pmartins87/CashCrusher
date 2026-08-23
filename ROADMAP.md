@@ -6,9 +6,10 @@
 - [x] **00B** — build HU 6-max SRP matchup/ancestry matrix and identify unsupported pot families.
 - [x] **00C** — implement OpenPPL context layer: players, pot family, Hero role, absolute/relative position, matchup, history.
 - [x] **00D** — implement raw SPR/effective-stack geometry for cash-depth review.
+- [x] **00D.2** — preserve explicit multiway shallowest + deepest effective relationships; require coherent dual-bound geometry before multiway strategy.
 - [x] **00E** — implement exact true-multiway context/composition classes.
 - [x] **00F** — support dynamic 2-6 handed deals and distinguish true HU from preflop-/postflop-reduced HU.
-- [ ] **00V** — parser/runtime validation of Gate00 context matrix with deterministic fixtures.
+- [ ] **00V** — parser/runtime validation of Gate00 context matrix with deterministic OpenHoldem fixtures.
 
 Gate 00 design/code is frozen enough for strategy work, but it is not release-certified until 00V passes.
 
@@ -20,7 +21,7 @@ Gate 00 design/code is frozen enough for strategy work, but it is not release-ce
 - [x] **01A.2** — handedness-aware source audit v2; true HU HUSB/HUBB ancestry corrected.
 - [x] **01A.3** — binding flat-complete-WHEN and per-function provenance contract.
 - [x] **01A.4** — corrected short-stack migration rule: stack-sensitive DeepCrusher rules require exact cash-context review; they are not globally banned or forced to zero.
-- [x] **01A.5** — per-function Purpose/Source/Provenance retrofit completed for the core context engine; missing provenance is now a hard CI error for every `f$cc_*` function.
+- [x] **01A.5** — per-function Source/Provenance comments are now a hard linter requirement for all `f$cc_*` functions.
 
 ### Ordinary one-raise HU families
 
@@ -61,14 +62,20 @@ Gate 00 design/code is frozen enough for strategy work, but it is not release-ce
 
 - [x] **01J.1** — true three-way ordinary SRP CBet; legacy 3w ancestry used only where actually supported.
 - [x] **01J.2** — exact 4/5/6-way ordinary SRP CBet with new P-theory parent.
+- [x] **01J.3** — re-audit all implemented multiway CBet SPR exceptions against deepest-effective geometry; short-only sidepot stacks no longer collapse whole-field SPR.
 
 ### Execution / sizing / validation
 
 - [x] **01K.1** — native size-ID adapter: 33/50/75/100 -> `BetThirdPot`/`BetHalfPot`/`BetThreeFourthPot`/`BetPot`.
-- [ ] **01K.2** — integrate CBet native adapter into eventual whole-bot `f$BestBetsize` without stealing sizing ownership from other postflop nodes.
-- [ ] **01K.3** — audit stack-sensitive size-to-all-in promotion, including DeepCrusher's historical ~60%-of-stack behavior and the global `f$allin_on_betsize_balance_ratio` callback. Review per context; do not blindly copy or globally disable.
-- [x] **01L** — static dependency/flat-WHEN/global-provenance lint PASS on current reviewed implementation.
-- [ ] **01M** — deterministic CBet policy fixtures/replays PASS.
+- [ ] **01K.2** — integrate the local CBet execution adapter into eventual whole-bot `f$BestBetsize` without stealing sizing ownership from other postflop nodes.
+- [x] **01K.3A** — source-audit DeepCrusher 50/55/60 commitment mechanisms and implement dual-bound HU/multiway diagnostic geometry.
+- [x] **01K.3B** — implement only mechanically forced/equivalent CBet `BetMax`: requested size reaches Hero balance or reaches the deepest/all-live effective relationship. Shortest-only sidepot reach is explicitly not promoted.
+- [ ] **01K.3C** — decide strategic near-all-in promotion (historical ~50% effective / ~60% Hero-stack) per exact CBet pot/range/board/hand/SPR node; no global transplant.
+- [ ] **01K.3D** — revisit `f$Raise_Committed` separately in defensive flop/turn call/raise ownership; it must not be smuggled into CBet sizing.
+- [ ] **01K.4** — compose final global `f$allin_on_betsize_balance_ratio` only after all postflop sizing owners that it can affect have been audited.
+- [x] **01L** — static dependency/flat-WHEN/global-provenance/multiway-SPR lint PASS on reviewed implementation.
+- [x] **01L.2** — deterministic mathematical multiway stack/all-in-equivalence contract tests run in CI.
+- [ ] **01M** — deterministic OpenPPL/OpenHoldem CBet policy fixtures/replays PASS.
 - [ ] **01N** — ensure skipped-CBet branches have complete X/C/X/R/turn follow-through before release.
 
 No uncovered pot family may inherit an ordinary-SRP child as fallback.
