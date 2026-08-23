@@ -86,13 +86,15 @@ When Others Return f$cc_turn_cbet_requested_betsize Force
 (user_cc_turn_cbet_plan_size_75 * 1) +
 (user_cc_turn_cbet_plan_size_100 * 1)
 
-// Purpose: validate PRE-ACTION Turn plan markers without claiming execution.
+// Purpose: validate stored Turn plan markers without recomputing the old turn
+// geometry. This must remain meaningful on River, after current SPR/cards changed.
 // Source/Provenance: P engineering invariant over T per-hand marker semantics.
 ##f$cc_turn_cbet_plan_markers_consistent##
-When !user_cc_turn_cbet_plan_bet_seen Return !user_cc_turn_cbet_plan_size_recorded && f$cc_turn_cbet_plan_size_marker_count = 0 && !user_cc_turn_cbet_plan_expected_allin Force
-When !user_cc_turn_cbet_plan_size_recorded Return false Force
-When f$cc_turn_cbet_plan_size_marker_count != 1 Return false Force
-When user_cc_turn_cbet_plan_expected_allin && !f$cc_turn_cbet_natural_allin_equivalent Return false Force
+When user_cc_turn_cbet_plan_size_recorded && !user_cc_turn_cbet_plan_bet_seen Return false Force
+When user_cc_turn_cbet_plan_bet_seen && !user_cc_turn_cbet_plan_size_recorded Return false Force
+When user_cc_turn_cbet_plan_size_recorded && f$cc_turn_cbet_plan_size_marker_count != 1 Return false Force
+When !user_cc_turn_cbet_plan_size_recorded && f$cc_turn_cbet_plan_size_marker_count != 0 Return false Force
+When user_cc_turn_cbet_plan_expected_allin && !user_cc_turn_cbet_plan_size_recorded Return false Force
 When Others Return true Force
 
 // Purpose: prove shortest-only MW sidepot reach cannot trigger local BetMax while
