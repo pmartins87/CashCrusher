@@ -23,3 +23,5 @@ jobs:
         run: python tools/test_turn_cbet_contract.py
       - name: Test post-multiway HU Turn CBet contract
         run: python tools/test_turn_postmultiway_hu.py
+      - name: Test ordinary-SRP multiway Turn CBet contract
+        run: python tools/test_turn_multiway_srp.py
