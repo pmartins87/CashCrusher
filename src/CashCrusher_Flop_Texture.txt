@@ -2,16 +2,24 @@
 // CashCrusher_Flop_Texture.txt
 // Mechanical flop texture descriptors for six-max post-flop policy
 // ============================================================================
-// Raw mechanical components are canonical. The final "pressure" families below
-// are P-provenance engineering abstractions and must not be mistaken for solver
-// frequencies or universal labels such as "always dry" / "always wet".
+// Purpose:
+//   Keep raw board facts separate from strategic abstractions.  DeepCrusher had
+//   useful dry/wet concepts but some were entangled with old game labels; here
+//   mechanical OpenPPL texture is canonical and range pressure is layered above.
+//
+// Provenance:
+//   T/A = runtime/OpenPPL board facts and cleaned DeepCrusher texture concepts.
+//   P   = broad strategy-parent labels (`static_high`, `dynamic_lowmid`, etc.).
+// Those P labels are engineering parents, NOT solver frequencies or universal
+// statements that a board is "always dry/wet" in every matchup.
 // ============================================================================
 
 // -----------------------------------------------------------------------------
-// T.01 — Suit structure
-// IDs: 1 monotone | 2 two-tone | 3 rainbow
+// T.01 — Suit structure: 1 monotone | 2 two-tone | 3 rainbow
 // -----------------------------------------------------------------------------
 
+// Purpose: canonical flop suit-count ID.
+// Source/Provenance: OpenPPL `SuitsOnFlop`, T mechanical fact.
 ##f$cc_flop_suit_id##
 When !IsFlop Return 0 Force
 When SuitsOnFlop = 1 Return 1 Force
@@ -19,40 +27,55 @@ When SuitsOnFlop = 2 Return 2 Force
 When SuitsOnFlop = 3 Return 3 Force
 When Others Return 0 Force
 
+// Purpose: monotone-flop shortcut.
+// Source/Provenance: T alias of canonical suit ID.
 ##f$cc_flop_monotone##
 f$cc_flop_suit_id = 1
 
+// Purpose: two-tone-flop shortcut.
+// Source/Provenance: T alias of canonical suit ID.
 ##f$cc_flop_twotone##
 f$cc_flop_suit_id = 2
 
+// Purpose: rainbow-flop shortcut.
+// Source/Provenance: T alias of canonical suit ID.
 ##f$cc_flop_rainbow##
 f$cc_flop_suit_id = 3
 
 // -----------------------------------------------------------------------------
-// T.02 — Pairing structure
-// IDs: 1 trips board | 2 paired board | 3 unpaired board
+// T.02 — Pairing structure: 1 trips board | 2 paired | 3 unpaired
 // -----------------------------------------------------------------------------
 
+// Purpose: canonical pairing/trips/unpaired flop ID.
+// Source/Provenance: OpenPPL board-pair symbols, T mechanical fact.
 ##f$cc_flop_pairing_id##
 When !IsFlop Return 0 Force
 When TripsOnBoardOnFlop Return 1 Force
 When PairOnFlop Return 2 Force
 When Others Return 3 Force
 
+// Purpose: board itself contains trips.
+// Source/Provenance: T alias.
 ##f$cc_flop_trips_board##
 f$cc_flop_pairing_id = 1
 
+// Purpose: board itself is paired but not trips.
+// Source/Provenance: T alias.
 ##f$cc_flop_paired##
 f$cc_flop_pairing_id = 2
 
+// Purpose: three distinct flop ranks.
+// Source/Provenance: T alias.
 ##f$cc_flop_unpaired##
 f$cc_flop_pairing_id = 3
 
 // -----------------------------------------------------------------------------
 // T.03 — High-card structure
-// IDs: 5 A-high | 4 K-high | 3 Q-high | 2 J/T-high | 1 9-high or lower
+// 5 A-high | 4 K-high | 3 Q-high | 2 J/T-high | 1 9-high or lower
 // -----------------------------------------------------------------------------
 
+// Purpose: coarse high-card band while retaining exact cards elsewhere.
+// Source/Provenance: OpenPPL flop ranks, T/A mechanical grouping.
 ##f$cc_flop_highcard_id##
 When !IsFlop Return 0 Force
 When TopFlopCard = ace Return 5 Force
@@ -62,18 +85,28 @@ When TopFlopCard >= ten Return 2 Force
 When TopFlopCard >= two Return 1 Force
 When Others Return 0 Force
 
+// Purpose: A-high board shortcut.
+// Source/Provenance: T/A alias.
 ##f$cc_flop_ahigh##
 f$cc_flop_highcard_id = 5
 
+// Purpose: K-high board shortcut.
+// Source/Provenance: T/A alias.
 ##f$cc_flop_khigh##
 f$cc_flop_highcard_id = 4
 
+// Purpose: Q-high board shortcut.
+// Source/Provenance: T/A alias.
 ##f$cc_flop_qhigh##
 f$cc_flop_highcard_id = 3
 
+// Purpose: J- or T-high mid/high board shortcut.
+// Source/Provenance: A grouping for later policy.
 ##f$cc_flop_jt_high##
 f$cc_flop_highcard_id = 2
 
+// Purpose: 9-high or lower board shortcut.
+// Source/Provenance: A grouping for later policy.
 ##f$cc_flop_9low##
 f$cc_flop_highcard_id = 1
 
@@ -81,47 +114,61 @@ f$cc_flop_highcard_id = 1
 // T.04 — Broadway count (T/J/Q/K/A)
 // -----------------------------------------------------------------------------
 
+// Purpose: count broadway ranks physically present on flop.
+// Source/Provenance: OpenPPL flop-card ranks, T mechanical calculation.
 ##f$cc_flop_broadway_count##
 ((FirstFlopCard >= ten) ? 1 : 0) +
 ((SecondFlopCard >= ten) ? 1 : 0) +
 ((ThirdFlopCard >= ten) ? 1 : 0)
 
+// Purpose: no broadway flop cards.
+// Source/Provenance: T alias of broadway count.
 ##f$cc_flop_0bw##
 f$cc_flop_broadway_count = 0
 
+// Purpose: exactly one broadway flop card.
+// Source/Provenance: T alias.
 ##f$cc_flop_1bw##
 f$cc_flop_broadway_count = 1
 
+// Purpose: exactly two broadway flop cards.
+// Source/Provenance: T alias.
 ##f$cc_flop_2bw##
 f$cc_flop_broadway_count = 2
 
+// Purpose: all three flop cards are broadway.
+// Source/Provenance: T alias.
 ##f$cc_flop_3bw##
 f$cc_flop_broadway_count = 3
 
 // -----------------------------------------------------------------------------
 // T/A.05 — Straight/connectivity pressure
-// The OpenPPL primitives are kept independently so later policy can reason on
-// exact board interaction instead of relying on one inherited "wet" flag.
 // -----------------------------------------------------------------------------
 
+// Purpose: expose whether board ranks permit a made-straight topology on flop.
+// Source/Provenance: OpenPPL `StraightPossibleOnFlop`, T.
 ##f$cc_flop_straight_possible##
 IsFlop && StraightPossibleOnFlop
 
+// Purpose: expose whether an OESD topology is possible on the flop board/ranks.
+// Source/Provenance: OpenPPL `OpenEndedStraightDrawPossibleOnFlop`, T.
 ##f$cc_flop_oesd_possible##
 IsFlop && OpenEndedStraightDrawPossibleOnFlop
 
+// Purpose: preserve OpenPPL's strict uncoordinated-flop predicate separately.
+// Source/Provenance: OpenPPL `UncoordinatedFlop`, T.
 ##f$cc_flop_uncoordinated##
 IsFlop && UncoordinatedFlop
 
+// Purpose: numerical high-to-low rank span for diagnostics/refinement.
+// Source/Provenance: mechanical flop ranks, T/A; -1 off flop.
 ##f$cc_flop_rank_span##
 When !IsFlop Return -1 Force
 When Others Return (TopFlopCard - LowestFlopCard) Force
 
-// Mechanical connectivity ID:
-//   4 = made-straight topology possible from board ranks
-//   3 = OESD/double-ended topology possible
-//   2 = coordinated but below the above categories
-//   1 = OpenPPL uncoordinated
+// Purpose: canonical connectivity ID: 4 straight-possible, 3 OESD-possible,
+// 2 coordinated residual, 1 OpenPPL-uncoordinated.
+// Source/Provenance: T/A mechanical hierarchy; no betting frequency implied.
 ##f$cc_flop_connectivity_id##
 When !IsFlop Return 0 Force
 When f$cc_flop_straight_possible Return 4 Force
@@ -131,24 +178,30 @@ When Others Return 2 Force
 
 // -----------------------------------------------------------------------------
 // P.06 — Strategy-parent board pressure descriptors
-// These are intentionally broad parents. Exact matchup and exact board remain
-// available; no betting frequency is encoded here.
+// Exact matchup and exact board remain available; these parents only reduce
+// duplicated strategy code and are explicitly professional-theory abstractions.
 // -----------------------------------------------------------------------------
 
+// Purpose: unpaired A/K/Q-high with limited straight pressure, excluding monotone.
+// Source: DeepCrusher frequently small-bets calmer high-card structures.
+// Provenance: A source principle + P generalized six-max pressure parent.
 ##f$cc_flop_static_high_parent##
-// Unpaired high-card board with limited straight pressure. Monotone flops are
-// excluded because one-suit nut distribution changes the strategy materially.
 f$cc_flop_unpaired &&
 (f$cc_flop_ahigh || f$cc_flop_khigh || f$cc_flop_qhigh) &&
 !f$cc_flop_straight_possible &&
 !f$cc_flop_oesd_possible &&
 !f$cc_flop_monotone
 
+// Purpose: high/JT board with material straight or monotone pressure.
+// Source/Provenance: P parent constrained by A source dry/wet distinctions.
 ##f$cc_flop_dynamic_high_parent##
 f$cc_flop_unpaired &&
 (f$cc_flop_ahigh || f$cc_flop_khigh || f$cc_flop_qhigh || f$cc_flop_jt_high) &&
 (f$cc_flop_straight_possible || f$cc_flop_oesd_possible || f$cc_flop_monotone)
 
+// Purpose: unpaired J/T-or-lower board without major straight/monotone pressure.
+// Source/Provenance: P parent for six-max policy; exact range interaction remains
+// matchup-specific rather than assumed from the label alone.
 ##f$cc_flop_static_lowmid_parent##
 f$cc_flop_unpaired &&
 (f$cc_flop_jt_high || f$cc_flop_9low) &&
@@ -156,20 +209,29 @@ f$cc_flop_unpaired &&
 !f$cc_flop_oesd_possible &&
 !f$cc_flop_monotone
 
+// Purpose: low/mid board with straight or monotone pressure; commonly the most
+// caller-interactive broad parent in current SRP policy.
+// Source: DeepCrusher reduces indiscriminate air betting on straight-rich boards.
+// Provenance: A source concept + P six-max range-pressure abstraction.
 ##f$cc_flop_dynamic_lowmid_parent##
 f$cc_flop_unpaired &&
 (f$cc_flop_jt_high || f$cc_flop_9low) &&
 (f$cc_flop_straight_possible || f$cc_flop_oesd_possible || f$cc_flop_monotone)
 
+// Purpose: aggregate paired and trips-board textures into a dedicated parent.
+// Source/Provenance: A/P; paired boards have distinct nut/range behavior and are
+// kept separate from unpaired static/dynamic parents.
 ##f$cc_flop_paired_parent##
 f$cc_flop_paired || f$cc_flop_trips_board
 
 // -----------------------------------------------------------------------------
 // P.07 — Coarse pressure ID
 // 1 static high | 2 dynamic high | 3 static low/mid | 4 dynamic low/mid
-// 5 paired/trips | 0 no coarse parent / invalid
+// 5 paired/trips | 0 invalid/no parent
 // -----------------------------------------------------------------------------
 
+// Purpose: compact logging/routing ID for broad strategy-parent texture.
+// Source/Provenance: P engineering metadata; not an optimal-action lookup key.
 ##f$cc_flop_pressure_id##
 When f$cc_flop_paired_parent Return 5 Force
 When f$cc_flop_static_high_parent Return 1 Force
@@ -180,10 +242,13 @@ When Others Return 0 Force
 
 // -----------------------------------------------------------------------------
 // T.08 — Exact mechanical texture ID for logs/tests
-// H = highcard id, P = pairing id, S = suit id, C = connectivity id, B = BW count
-// ID = H*10000 + P*1000 + S*100 + C*10 + B
+// H = highcard, P = pairing, S = suit, C = connectivity, B = broadway count.
 // -----------------------------------------------------------------------------
 
+// Purpose: deterministic compact texture fingerprint for fixtures/logging while
+// keeping the raw primitives individually queryable.
+// Source/Provenance: T/A engineering ID over mechanical board facts.
+// Safety: invalid/off-flop components return 0; ID itself never selects strategy.
 ##f$cc_flop_texture_id##
 When !IsFlop Return 0 Force
 When f$cc_flop_highcard_id <= 0 Return 0 Force
