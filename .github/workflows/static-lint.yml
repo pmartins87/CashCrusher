@@ -15,3 +15,5 @@ jobs:
           python-version: '3.12'
       - name: Lint f$cc dependencies
         run: python tools/lint_custom_dependencies.py
+      - name: Test multiway stack geometry contract
+        run: python tools/test_multiway_stack_geometry.py
