@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """Static linter for CashCrusher OpenPPL source.
 
-The linter encodes project-level OpenPPL safety rules carried from the audited
-DeepCrusher work. CashCrusher deliberately uses a stricter coding subset than
-OpenPPL technically permits so visual indentation cannot silently change logic.
+CashCrusher deliberately uses a stricter coding/documentation subset than
+OpenPPL technically permits.  The goal is to make semantic scope, source
+provenance and short-stack review obligations visible in code rather than
+relying on indentation or tribal knowledge.
 
 Hard checks
 ===========
@@ -12,25 +13,22 @@ Hard checks
 - legacy ``f$game_*`` dependencies in executable CashCrusher strategy code;
 - **open-ended WHEN conditions**. Every WHEN must own an explicit action before
   the next WHEN/function boundary; indentation never creates scope;
-- missing nearby Source/Provenance comment in reviewed strategic modules whose
-  filename begins ``CashCrusher_Flop_CBet``.
+- **every ``f$cc_*`` function must have a nearby Source/Provenance comment**.
 
 Review warnings — NOT prohibitions
 ==================================
-DeepCrusher was short-stack Spin strategy.  The following constructs are useful
-but deserve explicit cash-stack review whenever imported:
+DeepCrusher was short-stack Spin strategy. The following constructs can be
+correct in CashCrusher, but deserve explicit cash-stack review when imported:
 - ``f$Raise_Committed``;
 - ``f$hand_StackOffDraws``;
 - ``f$allin_on_betsize_balance_ratio``;
 - executable ``BetMax`` / ``Allin``.
 
-The linter only WARNS about those constructs.  It does not force them to zero,
-disable them, or declare them invalid.  Their correctness depends on the exact
-pot family, effective stack/SPR, ranges, board and action size.
+The linter only WARNS about these constructs. It does not force them to zero,
+disable them, or declare them invalid. Correctness depends on the exact pot
+family, range provenance, board/runout, effective stack/SPR and action size.
 
-Warnings also include supporting functions still lacking local provenance and
-custom definitions not referenced by other executable lines yet.
-
+Other warnings include custom definitions not referenced by executable code yet.
 Native OpenHoldem/OpenPPL symbols are outside dependency resolution by design.
 """
 
@@ -68,11 +66,6 @@ def executable_part(line: str) -> str:
     return line.split("//", 1)[0]
 
 
-def is_reviewed_strategy_module(path: Path) -> bool:
-    """Modules where per-function provenance is already a release requirement."""
-    return path.name.startswith("CashCrusher_Flop_CBet")
-
-
 def function_blocks(lines: list[str]):
     """Yield ``(name, header_line, body_lines)`` for every function/list block."""
     current_name: str | None = None
@@ -96,7 +89,7 @@ def function_blocks(lines: list[str]):
 
 
 def open_ended_when_hits(path: Path, lines: list[str]):
-    """Find WHENs lacking an explicit action before the next WHEN/boundary.
+    """Find WHENs lacking an explicit action before next WHEN/boundary.
 
     OpenPPL itself supports open-ended WHEN/backpatching. CashCrusher forbids it:
     each strategic rule must repeat/combine its complete predicate explicitly.
@@ -141,7 +134,7 @@ def open_ended_when_hits(path: Path, lines: list[str]):
 
 
 def nearby_provenance(lines: list[str], header_lineno: int) -> bool:
-    """Check local pre-header comments for source/provenance."""
+    """Require local source/provenance immediately around each custom function."""
     start = max(0, header_lineno - 10)
     neighborhood = "\n".join(lines[start : header_lineno - 1])
     return bool(PROVENANCE_RE.search(neighborhood))
@@ -161,7 +154,6 @@ def main() -> int:
     callback_defs: list[tuple[Path, int]] = []
     open_when_hits: list[tuple[Path, int, str, str]] = []
     provenance_errors: list[tuple[Path, int, str]] = []
-    provenance_warnings: list[tuple[Path, int, str]] = []
 
     for path in files:
         text = path.read_text(encoding="utf-8", errors="strict")
@@ -180,8 +172,7 @@ def main() -> int:
                 name = m.group(1)
                 definitions[name].append((path, lineno))
                 if not nearby_provenance(lines, lineno):
-                    target = provenance_errors if is_reviewed_strategy_module(path) else provenance_warnings
-                    target.append((path, lineno, name))
+                    provenance_errors.append((path, lineno, name))
                 continue
 
             code = executable_part(line)
@@ -229,7 +220,7 @@ def main() -> int:
             print(f"  {path.relative_to(ROOT)}:{lineno} [{func_name}]: {span}")
 
     if provenance_errors:
-        print("\nERROR: reviewed strategy function lacks nearby Source/Provenance comment:")
+        print("\nERROR: custom function lacks nearby Source/Provenance comment:")
         for path, lineno, name in provenance_errors:
             print(f"  {path.relative_to(ROOT)}:{lineno}: {name}")
 
@@ -239,7 +230,7 @@ def main() -> int:
             print(f"  {path.relative_to(ROOT)}:{lineno}: {code}")
 
     if callback_defs:
-        print("\nWARNING: allin_on_betsize_balance_ratio is defined; verify its threshold against CashCrusher stack geometry:")
+        print("\nWARNING: allin_on_betsize_balance_ratio is defined; verify threshold against CashCrusher stack geometry:")
         for path, lineno in callback_defs:
             print(f"  {path.relative_to(ROOT)}:{lineno}")
 
@@ -247,11 +238,6 @@ def main() -> int:
         print("\nWARNING: explicit all-in action found; verify exact pot/range/SPR ownership:")
         for path, lineno, code in allin_review_hits:
             print(f"  {path.relative_to(ROOT)}:{lineno}: {code}")
-
-    if provenance_warnings:
-        print("\nWARNING: supporting function lacks nearby Source/Provenance comment:")
-        for path, lineno, name in provenance_warnings:
-            print(f"  {path.relative_to(ROOT)}:{lineno}: {name}")
 
     if unused:
         print("\nWARNING: custom definitions with no executable reference yet:")
@@ -268,7 +254,7 @@ def main() -> int:
     if hard_error:
         return 1
 
-    print("\nPASS: dependency, flat-WHEN, provenance and safety checks passed")
+    print("\nPASS: dependency, flat-WHEN, global provenance and safety checks passed")
     return 0
 
 
