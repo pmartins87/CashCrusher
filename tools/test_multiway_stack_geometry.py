@@ -1,13 +1,16 @@
 #!/usr/bin/env python3
 """Deterministic contract tests for CashCrusher multiway stack geometry.
 
-These tests do NOT pretend to execute OpenPPL/OpenHoldem.  They validate the
+These tests do NOT pretend to execute OpenPPL/OpenHoldem. They validate the
 mathematical contract that the OpenPPL implementation is required to preserve:
 
     shallowest effective = min(Hero, min(live opponent stacks))
     deepest effective    = min(Hero, max(live opponent stacks))
 
-The distinction matters whenever one short opponent coexists with a deeper one.
+They also validate the narrow Gate 01K.3B distinction between:
+- mechanically forced/equivalent all-in execution; and
+- strategic near-all-in promotion, which remains a separate audit.
+
 DeepCrusher's f$EffectiveStack_BKP uses the biggest active opponent, therefore
 its multiway effective-stack ancestry maps to the *deepest* relation.
 """
@@ -49,6 +52,31 @@ def requested_bet(pot: float, fraction: float) -> float:
     assert pot > 0
     assert fraction > 0
     return pot * fraction
+
+
+def natural_allin_equivalent(
+    hero: float,
+    opponents: tuple[float, ...],
+    requested: float,
+) -> bool:
+    """Mirror Gate 01K.3B mechanical/effective equivalence only."""
+    assert hero > 0
+    assert opponents
+    assert requested >= 0
+    deepest_effective = min(hero, max(opponents))
+    reaches_hero = requested >= hero
+    reaches_all_live_effective = requested >= deepest_effective
+    return reaches_hero or reaches_all_live_effective
+
+
+def sidepot_divergence(
+    hero: float,
+    opponents: tuple[float, ...],
+    requested: float,
+) -> bool:
+    shallow = min(hero, min(opponents))
+    deep = min(hero, max(opponents))
+    return requested >= shallow and requested < deep
 
 
 def main() -> int:
@@ -140,12 +168,34 @@ def main() -> int:
 
     # Sidepot-divergence candidate: requested bet can cover the short opponent
     # while still being small relative to the deep opponent.
-    shallow, deep, *_ = geometry(100, (5, 100), 10)
+    hero = 100
+    opponents = (5, 100)
     bet = requested_bet(10, 0.75)  # 7.5bb
-    assert bet >= shallow
-    assert bet < deep
+    assert sidepot_divergence(hero, opponents, bet)
+    assert not natural_allin_equivalent(hero, opponents, bet)
 
-    # Low-SPR relaxation must mean ALL live effective relations are low.  Testing
+    # Reaching the deepest effective opponent makes the requested action already
+    # effective-all-in versus the whole live field, even if Hero covers everyone.
+    hero = 100
+    opponents = (15, 35)
+    bet = 35
+    assert not sidepot_divergence(hero, opponents, bet)
+    assert natural_allin_equivalent(hero, opponents, bet)
+
+    # Hero-balance reach is mechanically all-in even when all opponents cover Hero.
+    hero = 40
+    opponents = (100, 120)
+    bet = 40
+    assert natural_allin_equivalent(hero, opponents, bet)
+
+    # Near-all-in is deliberately NOT equivalent. A 60%-of-Hero-stack bet remains
+    # a strategic promotion candidate, not a mechanical BetMax requirement.
+    hero = 100
+    opponents = (100, 100)
+    bet = 60
+    assert not natural_allin_equivalent(hero, opponents, bet)
+
+    # Low-SPR relaxation must mean ALL live effective relations are low. Testing
     # deepest SPR is sufficient because it is the maximum of individual effective
     # SPRs under the common-pot denominator.
     _, _, shallow_spr, deep_spr = geometry(100, (15, 100), 10)
@@ -153,7 +203,7 @@ def main() -> int:
     assert deep_spr >= 4
     assert not (deep_spr < 4)
 
-    print(f"PASS: {len(cases)} deterministic multiway stack cases + invariants")
+    print(f"PASS: {len(cases)} deterministic multiway stack cases + all-in invariants")
     return 0
 
 
