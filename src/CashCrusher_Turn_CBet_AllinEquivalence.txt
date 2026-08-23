@@ -1,0 +1,109 @@
+// ============================================================================
+// CashCrusher_Turn_CBet_AllinEquivalence.txt
+// Gate 02J.2B — local natural/mechanical all-in equivalence for Turn CBet
+// ============================================================================
+// Purpose:
+//   Convert a reviewed Turn size to BetMax ONLY when the requested size already
+//   reaches Hero's balance or every live effective relationship. This avoids a
+//   meaningless residual/unmatched amount without importing short-stack strategy.
+//
+// Source boundary:
+//   DeepCrusher's historical ~50/~55/~60% commitment thresholds are deliberately
+//   NOT implemented here. They remain review evidence for exact strategic nodes.
+//
+// Source/Provenance:
+//   T = OpenHoldem BetMax/balance/effective-stack execution geometry.
+//   A = same mechanical-equivalence separation already frozen for Flop CBet.
+//   P = sidepot safety and plan-v-execution diagnostics.
+//
+// Safety:
+//   * shortest-only multiway reach is never promoted;
+//   * no hand class (including TP/OP) creates BetMax by itself;
+//   * later response to a raise is not owned here;
+//   * `user_*` markers below record PRE-ACTION PLAN only, never proof of execution.
+// ============================================================================
+
+// Purpose: requested size reaches every currently matchable live relationship.
+// HU uses exact sole-Villain effective stack; multiway uses deepest effective.
+// Source/Provenance: T/A whole-field mechanical reach definition.
+##f$cc_turn_cbet_requested_reaches_all_live_effective##
+When !f$cc_turn_cbet_stackgeom_clean Return false Force
+When f$cc_hu && f$cc_turn_cbet_requested_reaches_hu_effective Return true Force
+When f$cc_multiway && f$cc_turn_cbet_requested_reaches_mw_deepest Return true Force
+When Others Return false Force
+
+// Purpose: local mechanical-equivalence decision for Turn CBet.
+// Source/Provenance: T/A natural all-in equivalence, not strategic commitment.
+// Safety: historical 50/60 triggers and shortest-only sidepot reach are excluded.
+##f$cc_turn_cbet_natural_allin_equivalent##
+When !f$cc_turn_cbet_runtime_size_ready Return false Force
+When !f$cc_turn_cbet_stackgeom_clean Return false Force
+When f$cc_turn_cbet_requested_reaches_hero_stack Return true Force
+When f$cc_turn_cbet_requested_reaches_all_live_effective Return true Force
+When Others Return false Force
+
+// Purpose: identify why local Turn BetMax equivalence fired.
+// IDs: 1 Hero stack reached; 2 HU effective reached; 3 MW deepest/all-live reached;
+// 0 no local natural all-in.
+// Source/Provenance: P engineering metadata over T/A mechanical conditions.
+##f$cc_turn_cbet_natural_allin_reason_id##
+When !f$cc_turn_cbet_natural_allin_equivalent Return 0 Force
+When f$cc_turn_cbet_requested_reaches_hero_stack Return 1 Force
+When f$cc_hu && f$cc_turn_cbet_requested_reaches_hu_effective Return 2 Force
+When f$cc_multiway && f$cc_turn_cbet_requested_reaches_mw_deepest Return 3 Force
+When Others Return 0 Force
+
+// Purpose: final local Turn-CBet execution size plus plan provenance for River.
+// Source: T OpenPPL BetMax / reviewed requested betsize adapter.
+// Provenance: T/A execution adapter; P user markers record intent only.
+// Safety: actual Turn execution must later be confirmed from CLOSED round-3
+// OpenHoldem history (`did*round3`, final aggressor), never from these markers.
+##f$cc_turn_cbet_execution_betsize##
+When !f$cc_turn_cbet_runtime_size_ready Return 0 Force
+When f$cc_turn_cbet_runtime_size_ready Set user_cc_turn_cbet_opportunity_seen
+When f$cc_turn_cbet_runtime_size_ready Set user_cc_turn_cbet_plan_bet_seen
+When f$cc_turn_cbet_runtime_size_ready Set user_cc_turn_cbet_plan_size_recorded
+When f$cc_turn_cbet_size_id = 1 Set user_cc_turn_cbet_plan_size_25
+When f$cc_turn_cbet_size_id = 2 Set user_cc_turn_cbet_plan_size_33
+When f$cc_turn_cbet_size_id = 3 Set user_cc_turn_cbet_plan_size_40
+When f$cc_turn_cbet_size_id = 4 Set user_cc_turn_cbet_plan_size_50
+When f$cc_turn_cbet_size_id = 5 Set user_cc_turn_cbet_plan_size_625
+When f$cc_turn_cbet_size_id = 6 Set user_cc_turn_cbet_plan_size_75
+When f$cc_turn_cbet_size_id = 7 Set user_cc_turn_cbet_plan_size_100
+When f$cc_turn_cbet_natural_allin_equivalent Set user_cc_turn_cbet_plan_expected_allin
+When f$cc_turn_cbet_natural_allin_equivalent Return BetMax Force
+When Others Return f$cc_turn_cbet_requested_betsize Force
+
+// Purpose: count mutually exclusive Turn plan-size markers for future River
+// history validation.
+// Source/Provenance: P integrity check over T per-hand user variables.
+##f$cc_turn_cbet_plan_size_marker_count##
+(user_cc_turn_cbet_plan_size_25 * 1) +
+(user_cc_turn_cbet_plan_size_33 * 1) +
+(user_cc_turn_cbet_plan_size_40 * 1) +
+(user_cc_turn_cbet_plan_size_50 * 1) +
+(user_cc_turn_cbet_plan_size_625 * 1) +
+(user_cc_turn_cbet_plan_size_75 * 1) +
+(user_cc_turn_cbet_plan_size_100 * 1)
+
+// Purpose: validate PRE-ACTION Turn plan markers without claiming execution.
+// Source/Provenance: P engineering invariant over T per-hand marker semantics.
+##f$cc_turn_cbet_plan_markers_consistent##
+When !user_cc_turn_cbet_plan_bet_seen Return !user_cc_turn_cbet_plan_size_recorded && f$cc_turn_cbet_plan_size_marker_count = 0 && !user_cc_turn_cbet_plan_expected_allin Force
+When !user_cc_turn_cbet_plan_size_recorded Return false Force
+When f$cc_turn_cbet_plan_size_marker_count != 1 Return false Force
+When user_cc_turn_cbet_plan_expected_allin && !f$cc_turn_cbet_natural_allin_equivalent Return false Force
+When Others Return true Force
+
+// Purpose: prove shortest-only MW sidepot reach cannot trigger local BetMax while
+// a deeper live opponent remains uncovered.
+// Source/Provenance: P invariant over T dual-bound geometry.
+##f$cc_turn_cbet_sidepot_divergence_not_promoted##
+When !f$cc_turn_cbet_mw_sidepot_divergence_candidate Return true Force
+When f$cc_turn_cbet_natural_allin_equivalent Return false Force
+When Others Return true Force
+
+// ============================================================================
+// End Gate 02J.2B local execution equivalence.
+// Strategic near-all-in promotion remains exact-node/global-callback audit work.
+// ============================================================================
