@@ -152,12 +152,14 @@ false
 ##f$cc_flop_cbet_hu_4bp_4bettor_oop##
 false
 
-// Purpose: multiway ordinary SRP child.
-// Source: exact true-threeway strategy in Flop_CBet_Multiway_SRP; four-way+
-// remains outside that child's context and therefore fails closed.
-// Source/Provenance: A/P true3 policy; P-gap for four-way+.
+// Purpose: multiway ordinary SRP child, split by exact flop origin count.
+// Source: true3 policy in Flop_CBet_Multiway_SRP; 4/5/6-way policy in
+// Flop_CBet_Multiway_SRP4Plus.
+// Source/Provenance: A/P true3 and P-heavy four-way+ policy.
 ##f$cc_flop_cbet_mw_srp_pfa##
-f$cc_cbet_mw_srp_true3_action
+When f$cc_mw_srp_true3_pfa_context Return f$cc_cbet_mw_srp_true3_action Force
+When f$cc_mw_srp_4plus_pfa_context Return f$cc_cbet_mw_srp_4plus_action Force
+When Others Return false Force
 
 // Purpose: multiway ISO placeholder.
 // Source/Provenance: P exact composition exists; strategy pending.
@@ -204,6 +206,7 @@ When f$cc_cbet_squeeze_vs_pre3bet_coldcaller_oop_context Return true Force
 When f$cc_cbet_squeeze_vs_post3bet_coldcaller_ip_context Return true Force
 When f$cc_cbet_squeeze_vs_post3bet_coldcaller_oop_context Return true Force
 When f$cc_mw_srp_true3_pfa_context Return true Force
+When f$cc_mw_srp_4plus_pfa_context Return true Force
 When Others Return false Force
 
 // Purpose: map implemented positive CBet to reviewed size-family ID.
@@ -233,6 +236,7 @@ When f$cc_cbet_squeeze_vs_pre3bet_coldcaller_oop_context Return f$cc_cbet_squeez
 When f$cc_cbet_squeeze_vs_post3bet_coldcaller_ip_context Return f$cc_cbet_squeeze_vs_post3bet_coldcaller_ip_size_id Force
 When f$cc_cbet_squeeze_vs_post3bet_coldcaller_oop_context Return f$cc_cbet_squeeze_vs_post3bet_coldcaller_oop_size_id Force
 When f$cc_mw_srp_true3_pfa_context Return f$cc_cbet_mw_srp_true3_size_id Force
+When f$cc_mw_srp_4plus_pfa_context Return f$cc_cbet_mw_srp_4plus_size_id Force
 When Others Return 0 Force
 
 // Purpose: invariant tying positive action to positive size and check to zero size.
