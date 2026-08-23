@@ -7,7 +7,8 @@
 //
 // CashCrusher terminology:
 //   CBet = Hero was final preflop aggressor in a raised pot and is checked to.
-//   A bet in an unraised/limped pot is NOT routed here.
+//   A bet in an unraised/limped pot is NOT routed here unless a raise created a
+//   proven HU limp-raised pot (SB limp -> BB raise -> call).
 //
 // Critical HU distinction:
 //   TRUE HU DEAL (origin=1) != 3-6h deal reduced to HU by preflop folds (origin=2)
@@ -18,15 +19,12 @@
 //
 // Gate 01 current strategic coverage:
 //   * TRUE HU ordinary SRP, SB/Button PFA IP vs BB;
+//   * TRUE HU SB limp -> BB raise -> call, BB PFA OOP;
 //   * reduced-HU ordinary SRP PFA IP vs BB/SB;
 //   * reduced-HU ordinary SRP PFA OOP: SB-v-BB and opener-v-later cold caller.
 //
 // Other pot families remain explicit false stubs until individually audited.
 // ============================================================================
-
-// -----------------------------------------------------------------------------
-// 01.01 — Gate ownership
-// -----------------------------------------------------------------------------
 
 ##f$cc_flop_cbet_opportunity##
 When !IsFlop Return false Force
@@ -41,14 +39,10 @@ When Others Return false Force
 ##f$cc_flop_cbet_router##
 When !f$cc_flop_cbet_opportunity Return false Force
 
-// -------------------------------------------------------------------------
-// TRUE HU DEALS — never share a child policy with fold-reduced 3-6h HU.
-// -------------------------------------------------------------------------
-
+// TRUE HU DEALS.
 When f$cc_true_hu && f$cc_pot_family_id = 2 && f$cc_pf_role_pfa && f$cc_pf_one_raise_ordinary_srp && f$cc_hu && f$cc_hu_ip
 Return f$cc_flop_cbet_true_hu_srp_sb_pfa_ip Force
 
-// SB limped, BB raised, SB called. HU limp-raised pot, not ISO.
 When f$cc_true_hu && f$cc_pot_family_id = 2 && f$cc_pf_role_pfa && f$cc_pf_hu_limp_raise_proven && f$cc_hu && f$cc_hu_oop
 Return f$cc_flop_cbet_true_hu_limpraised_bb_pfa_oop Force
 
@@ -62,11 +56,7 @@ Return f$cc_flop_cbet_true_hu_4bp_4bettor_ip Force
 When f$cc_true_hu && f$cc_pot_family_id = 4 && f$cc_pf_role_4bettor && f$cc_hu && f$cc_hu_oop
 Return f$cc_flop_cbet_true_hu_4bp_4bettor_oop Force
 
-// -------------------------------------------------------------------------
-// 3-6 HANDED DEALS — HU only if preflop folds left two flop entrants.
-// origin=3 is deliberately excluded from ordinary-HU children.
-// -------------------------------------------------------------------------
-
+// 3-6 HANDED DEALS reduced to HU preflop.
 When f$cc_hu_origin_preflop_reduced && f$cc_pot_family_id = 2 && f$cc_pf_role_pfa && f$cc_pf_iso_proven && f$cc_hu_ip
 Return f$cc_flop_cbet_hu_iso_pfa_ip Force
 When f$cc_hu_origin_preflop_reduced && f$cc_pot_family_id = 2 && f$cc_pf_role_pfa && f$cc_pf_iso_proven && f$cc_hu_oop
@@ -92,10 +82,7 @@ Return f$cc_flop_cbet_hu_4bp_4bettor_ip Force
 When f$cc_hu_origin_preflop_reduced && f$cc_pot_family_id = 4 && f$cc_pf_role_4bettor && f$cc_hu_oop
 Return f$cc_flop_cbet_hu_4bp_4bettor_oop Force
 
-// -------------------------------------------------------------------------
-// MULTIWAY CURRENT FLOP — exact composition retained by Gate00E/00F.
-// -------------------------------------------------------------------------
-
+// MULTIWAY CURRENT FLOP.
 When f$cc_multiway && f$cc_pot_family_id = 2 && f$cc_pf_role_pfa && f$cc_pf_iso_proven
 Return f$cc_flop_cbet_mw_iso_pfa Force
 When f$cc_multiway && f$cc_pot_family_id = 2 && f$cc_pf_role_pfa && f$cc_pf_one_raise_ordinary_srp
@@ -108,40 +95,27 @@ Return f$cc_flop_cbet_mw_3bp_3bettor Force
 
 When f$cc_multiway && f$cc_pot_family_id = 4 && f$cc_pf_role_4bettor
 Return f$cc_flop_cbet_mw_4bp_4bettor Force
-
 When Others Return false Force
 
 // -----------------------------------------------------------------------------
-// 01.02 — Legacy ancestry metadata for HU ordinary SRP PFA
+// Legacy ancestry metadata
 // -----------------------------------------------------------------------------
-// Ancestor IDs:
-//   1 HUSB       true HU Hero SB/Button, IP vs BB
-//   2 HUBB       true HU Hero BB, OOP vs SB/Button
-//   3 3wBTNvSB
-//   4 3wBTNvBB
-//   6 3wSBvBTN positional skeleton
-//   7 3wSBvBB
-//   0 no safe parent
-// -----------------------------------------------------------------------------
+// 1 HUSB | 2 HUBB | 3 3wBTNvSB | 4 3wBTNvBB | 6 3wSBvBTN | 7 3wSBvBB
 
 ##f$cc_flop_cbet_hu_srp_legacy_ancestor_id##
 When f$cc_pot_family_id != 2 Return 0 Force
 When !f$cc_pf_role_pfa Return 0 Force
-
 When f$cc_true_hu && f$cc_pf_one_raise_ordinary_srp && f$cc_hu_matchup_id = 56 Return 1 Force
 When f$cc_true_hu && f$cc_pf_hu_limp_raise_proven && f$cc_hu_matchup_id = 65 Return 2 Force
-
 When f$cc_hu_origin_preflop_reduced && f$cc_pf_one_raise_ordinary_srp && f$cc_hu_matchup_id = 46 Return 4 Force
 When f$cc_hu_origin_preflop_reduced && f$cc_pf_one_raise_ordinary_srp && f$cc_hu_matchup_id = 45 Return 3 Force
 When f$cc_hu_origin_preflop_reduced && f$cc_pf_one_raise_ordinary_srp && f$cc_hu_matchup_id = 56 Return 7 Force
-
 When f$cc_hu_origin_preflop_reduced && f$cc_hu_matchup_id = 16 Return 4 Force
 When f$cc_hu_origin_preflop_reduced && f$cc_hu_matchup_id = 26 Return 4 Force
 When f$cc_hu_origin_preflop_reduced && f$cc_hu_matchup_id = 36 Return 4 Force
 When f$cc_hu_origin_preflop_reduced && f$cc_hu_matchup_id = 15 Return 3 Force
 When f$cc_hu_origin_preflop_reduced && f$cc_hu_matchup_id = 25 Return 3 Force
 When f$cc_hu_origin_preflop_reduced && f$cc_hu_matchup_id = 35 Return 3 Force
-
 When f$cc_hu_origin_preflop_reduced && f$cc_hu_matchup_id = 12 Return 6 Force
 When f$cc_hu_origin_preflop_reduced && f$cc_hu_matchup_id = 13 Return 6 Force
 When f$cc_hu_origin_preflop_reduced && f$cc_hu_matchup_id = 14 Return 6 Force
@@ -153,7 +127,6 @@ When Others Return 0 Force
 ##f$cc_flop_cbet_hu_srp_parent_confidence_id##
 When f$cc_true_hu && f$cc_pf_one_raise_ordinary_srp && f$cc_hu_matchup_id = 56 Return 3 Force
 When f$cc_true_hu && f$cc_pf_hu_limp_raise_proven && f$cc_hu_matchup_id = 65 Return 2 Force
-
 When f$cc_hu_origin_preflop_reduced && f$cc_hu_matchup_id = 46 Return 3 Force
 When f$cc_hu_origin_preflop_reduced && f$cc_hu_matchup_id = 45 Return 3 Force
 When f$cc_hu_origin_preflop_reduced && f$cc_hu_matchup_id = 56 Return 3 Force
@@ -172,18 +145,14 @@ When f$cc_hu_origin_preflop_reduced && f$cc_hu_matchup_id = 34 Return 1 Force
 When Others Return 0 Force
 
 // -----------------------------------------------------------------------------
-// 01.03 — Child strategy functions
+// Child strategy functions
 // -----------------------------------------------------------------------------
-// Audited ordinary-SRP families delegate to Gate01B/01C. All other pot
-// families remain fail-closed stubs until reviewed individually.
 
-// TRUE HU ordinary SRP: ACTIVE strategic baseline.
 ##f$cc_flop_cbet_true_hu_srp_sb_pfa_ip##
 f$cc_cbet_srp_ip_true_hu_action
 
-// TRUE HU limp-raised / 3BP / 4BP: uncovered.
 ##f$cc_flop_cbet_true_hu_limpraised_bb_pfa_oop##
-false
+f$cc_cbet_true_hu_limpraised_action
 
 ##f$cc_flop_cbet_true_hu_3bp_3bettor_ip##
 false
@@ -197,14 +166,12 @@ false
 ##f$cc_flop_cbet_true_hu_4bp_4bettor_oop##
 false
 
-// 3-6h ordinary SRP reduced HU: ACTIVE strategic baselines.
 ##f$cc_flop_cbet_hu_srp_pfa_ip##
 f$cc_cbet_srp_ip_reduced_action
 
 ##f$cc_flop_cbet_hu_srp_pfa_oop##
 f$cc_cbet_srp_oop_reduced_action
 
-// Other reduced-HU pot families: uncovered.
 ##f$cc_flop_cbet_hu_iso_pfa_ip##
 false
 
@@ -229,7 +196,6 @@ false
 ##f$cc_flop_cbet_hu_4bp_4bettor_oop##
 false
 
-// Multiway: uncovered.
 ##f$cc_flop_cbet_mw_srp_pfa##
 false
 
@@ -246,13 +212,12 @@ false
 false
 
 // -----------------------------------------------------------------------------
-// 01.04 — Coverage and sizing routers
+// Coverage and sizing routers
 // -----------------------------------------------------------------------------
-// Coverage means "a reviewed baseline exists for this context", not "bet".
-// A covered strategy can correctly return CHECK.
 
 ##f$cc_flop_cbet_strategy_covered##
 When f$cc_cbet_srp_ip_true_hu_context Return true Force
+When f$cc_cbet_true_hu_limpraised_context Return true Force
 When f$cc_cbet_srp_ip_vs_bb_context Return true Force
 When f$cc_cbet_srp_ip_vs_sb_context Return true Force
 When f$cc_cbet_srp_oop_sb_vs_bb_context Return true Force
@@ -262,6 +227,7 @@ When Others Return false Force
 ##f$cc_flop_cbet_size_id##
 When !f$cc_flop_cbet_opportunity Return 0 Force
 When f$cc_cbet_srp_ip_true_hu_context Return f$cc_cbet_srp_ip_true_hu_size_id Force
+When f$cc_cbet_true_hu_limpraised_context Return f$cc_cbet_true_hu_limpraised_size_id Force
 When f$cc_cbet_srp_ip_vs_bb_context Return f$cc_cbet_srp_ip_vs_bb_size_id Force
 When f$cc_cbet_srp_ip_vs_sb_context Return f$cc_cbet_srp_ip_vs_sb_size_id Force
 When f$cc_cbet_srp_oop_sb_vs_bb_context Return f$cc_cbet_srp_oop_sb_vs_bb_size_id Force
