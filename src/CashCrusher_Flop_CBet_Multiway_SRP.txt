@@ -23,6 +23,9 @@
 //   This file owns only flop CBet/check and a size family. DeepCrusher commitment
 //   helpers are neither imported automatically nor globally banned; later
 //   call/raise/jam nodes audit them against the exact cash SPR/range geometry.
+//   Multiway one-pair SPR relaxations use the DEEPEST effective opponent relation:
+//   one short opponent cannot make the whole pot behave as short stacked while a
+//   deeper opponent remains live.
 //
 // OpenPPL safety:
 //   flat complete WHENs only.  Four-way-origin and other pot families never enter.
@@ -46,13 +49,13 @@
 When !f$cc_mw_srp_true3_pfa_last_context Return false Force
 When !f$cc_mw_srp_true3_context_consistent Return false Force
 When f$cc_cbet_flop_very_strong_value Return true Force
-When f$cc_cbet_flop_overpair && f$cc_flop_dynamic_lowmid_parent && f$cc_mw_srp_true3_two_nonblinds && f$cc_cbet_high_spr Return false Force
+When f$cc_cbet_flop_overpair && f$cc_flop_dynamic_lowmid_parent && f$cc_mw_srp_true3_two_nonblinds && f$cc_mw_cbet_high_spr Return false Force
 When f$cc_cbet_flop_overpair Return true Force
-When f$cc_cbet_flop_strong_top_pair && f$cc_flop_dynamic_lowmid_parent && f$cc_mw_srp_true3_two_nonblinds && f$cc_cbet_high_spr Return false Force
+When f$cc_cbet_flop_strong_top_pair && f$cc_flop_dynamic_lowmid_parent && f$cc_mw_srp_true3_two_nonblinds && f$cc_mw_cbet_high_spr Return false Force
 When f$cc_cbet_flop_strong_top_pair Return true Force
 When f$cc_cbet_flop_medium_top_pair && f$cc_pair_plus_draw Return true Force
 When f$cc_cbet_flop_medium_top_pair && f$cc_flop_static_high_parent && !f$cc_mw_srp_true3_two_nonblinds Return true Force
-When f$cc_cbet_flop_medium_top_pair && f$cc_flop_paired_parent && f$cc_mw_srp_true3_both_blinds && f$cc_spr_round_start < 6 Return true Force
+When f$cc_cbet_flop_medium_top_pair && f$cc_flop_paired_parent && f$cc_mw_srp_true3_both_blinds && f$cc_mw_all_effective_spr_below_6 Return true Force
 When f$cc_cbet_flop_medium_top_pair Return false Force
 When f$cc_cbet_flop_weak_top_pair Return false Force
 When f$cc_hand_second_pair_or_pocket && f$cc_pair_plus_draw && f$cc_mw_srp_true3_both_blinds Return true Force
@@ -95,13 +98,13 @@ When Others Return 2 Force
 When !f$cc_mw_srp_true3_pfa_middle_context Return false Force
 When !f$cc_mw_srp_true3_context_consistent Return false Force
 When f$cc_cbet_flop_very_strong_value Return true Force
-When f$cc_cbet_flop_overpair && f$cc_flop_dynamic_lowmid_parent && f$cc_cbet_high_spr Return false Force
+When f$cc_cbet_flop_overpair && f$cc_flop_dynamic_lowmid_parent && f$cc_mw_cbet_high_spr Return false Force
 When f$cc_cbet_flop_overpair && (f$cc_flop_static_high_parent || f$cc_flop_paired_parent) Return true Force
 When f$cc_cbet_flop_overpair && f$cc_flop_dynamic_high_parent && !f$cc_mw_srp_true3_two_nonblinds Return true Force
 When f$cc_cbet_flop_overpair Return false Force
 When f$cc_cbet_flop_strong_top_pair && f$cc_pair_plus_draw Return true Force
 When f$cc_cbet_flop_strong_top_pair && f$cc_flop_static_high_parent Return true Force
-When f$cc_cbet_flop_strong_top_pair && f$cc_flop_paired_parent && !f$cc_cbet_high_spr Return true Force
+When f$cc_cbet_flop_strong_top_pair && f$cc_flop_paired_parent && !f$cc_mw_cbet_high_spr Return true Force
 When f$cc_cbet_flop_strong_top_pair Return false Force
 When f$cc_cbet_flop_medium_top_pair Return false Force
 When f$cc_cbet_flop_weak_top_pair Return false Force
@@ -139,17 +142,17 @@ When !f$cc_mw_srp_true3_pfa_first_context Return false Force
 When !f$cc_mw_srp_true3_context_consistent Return false Force
 When f$cc_cbet_flop_very_strong_value Return true Force
 When f$cc_cbet_flop_overpair && (f$cc_flop_static_high_parent || f$cc_flop_paired_parent) Return true Force
-When f$cc_cbet_flop_overpair && f$cc_flop_dynamic_high_parent && f$cc_spr_round_start < 6 && !f$cc_mw_srp_true3_two_nonblinds Return true Force
+When f$cc_cbet_flop_overpair && f$cc_flop_dynamic_high_parent && f$cc_mw_all_effective_spr_below_6 && !f$cc_mw_srp_true3_two_nonblinds Return true Force
 When f$cc_cbet_flop_overpair Return false Force
 When f$cc_cbet_flop_strong_top_pair && f$cc_pair_plus_draw Return true Force
 When f$cc_cbet_flop_strong_top_pair && f$cc_flop_static_high_parent && !f$cc_mw_srp_true3_two_nonblinds Return true Force
-When f$cc_cbet_flop_strong_top_pair && f$cc_flop_paired_parent && f$cc_spr_round_start < 4 Return true Force
+When f$cc_cbet_flop_strong_top_pair && f$cc_flop_paired_parent && f$cc_mw_all_effective_spr_below_4 Return true Force
 When f$cc_cbet_flop_strong_top_pair Return false Force
 When f$cc_cbet_flop_medium_top_pair Return false Force
 When f$cc_cbet_flop_weak_top_pair Return false Force
 When f$cc_cbet_flop_showdown_pair Return false Force
 When f$cc_cbet_flop_premium_draw && (f$cc_flop_static_high_parent || f$cc_flop_paired_parent) Return true Force
-When f$cc_cbet_flop_premium_draw && f$cc_flop_dynamic_high_parent && f$cc_mw_srp_true3_both_blinds && f$cc_spr_round_start < 4 Return true Force
+When f$cc_cbet_flop_premium_draw && f$cc_flop_dynamic_high_parent && f$cc_mw_srp_true3_both_blinds && f$cc_mw_all_effective_spr_below_4 Return true Force
 When f$cc_real_frontdoor_draw Return false Force
 When Others Return false Force
 
