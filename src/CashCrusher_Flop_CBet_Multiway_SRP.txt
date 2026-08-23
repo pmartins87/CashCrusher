@@ -1,0 +1,190 @@
+// ============================================================================
+// CashCrusher_Flop_CBet_Multiway_SRP.txt
+// Gate 01J.1 — TRUE THREE-WAY ordinary-SRP PFA flop CBet
+// ============================================================================
+// Exact scope:
+//   exactly 3 players entered flop and exactly 3 remain; ordinary one-raise SRP;
+//   Hero is PFA/final aggressor; no flop bet before Hero acts.
+//
+// Strategy axes retained:
+//   FIRST / MIDDLE / LAST relative position;
+//   BOTH_BLINDS / ONE_BLIND_ONE_NONBLIND / TWO_NONBLINDS caller composition;
+//   exact Hero position and exact opponent mask remain available downstream.
+//
+// Source hierarchy:
+//   LAST: legacy 3wBTNv2p is an A/P donor, but DeepCrusher itself says it is a
+//         mature CrusherTBP gap fill rather than a dedicated Starting Strategy.
+//   FIRST/MIDDLE: legacy 3wSBv2p/3wBBv2p give positional shells only; no direct
+//         initiative-CBet branch exists in f$move_flop_cbet.  Policy is P-heavy.
+//   File `9- CRUSHFEST BBorSBv2pp` supports a generally honest/selective
+//         multiway philosophy but owns donk/defense nodes, not PFA CBet.
+//
+// Stack-depth note:
+//   This file owns only flop CBet/check and a size family. DeepCrusher commitment
+//   helpers are neither imported automatically nor globally banned; later
+//   call/raise/jam nodes audit them against the exact cash SPR/range geometry.
+//
+// OpenPPL safety:
+//   flat complete WHENs only.  Four-way-origin and other pot families never enter.
+// Size IDs: 1 ~33% | 2 ~50% | 3 ~75% | 0 check
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// MW3.01 — Hero LAST
+// -----------------------------------------------------------------------------
+
+// Purpose: choose flop CBet/check when PFA is LAST after both opponents check.
+// Context: exact true-threeway ordinary SRP only.
+// Source: 3wBTNv2p supplies A/P hand/texture/sizing ancestry but its broad final
+// `Return true` is not transplanted into 100bb cash multiway.
+// Provenance: A/P.  Exact caller-composition tightening is a six-max P fill.
+// Decision logic: robust value broad; medium one-pair selective; premium draws
+// aggressive; good draws depend on texture/composition; air restricted to strong
+// backdoors on favorable static boards, especially versus both blinds.
+// Safety/Limits: no implication about response versus a check-raise.
+##f$cc_cbet_mw_srp_true3_last_action##
+When !f$cc_mw_srp_true3_pfa_last_context Return false Force
+When !f$cc_mw_srp_true3_context_consistent Return false Force
+When f$cc_cbet_flop_very_strong_value Return true Force
+When f$cc_cbet_flop_overpair && f$cc_flop_dynamic_lowmid_parent && f$cc_mw_srp_true3_two_nonblinds && f$cc_cbet_high_spr Return false Force
+When f$cc_cbet_flop_overpair Return true Force
+When f$cc_cbet_flop_strong_top_pair && f$cc_flop_dynamic_lowmid_parent && f$cc_mw_srp_true3_two_nonblinds && f$cc_cbet_high_spr Return false Force
+When f$cc_cbet_flop_strong_top_pair Return true Force
+When f$cc_cbet_flop_medium_top_pair && f$cc_pair_plus_draw Return true Force
+When f$cc_cbet_flop_medium_top_pair && f$cc_flop_static_high_parent && !f$cc_mw_srp_true3_two_nonblinds Return true Force
+When f$cc_cbet_flop_medium_top_pair && f$cc_flop_paired_parent && f$cc_mw_srp_true3_both_blinds && f$cc_spr_round_start < 6 Return true Force
+When f$cc_cbet_flop_medium_top_pair Return false Force
+When f$cc_cbet_flop_weak_top_pair Return false Force
+When f$cc_hand_second_pair_or_pocket && f$cc_pair_plus_draw && f$cc_mw_srp_true3_both_blinds Return true Force
+When f$cc_cbet_flop_showdown_pair Return false Force
+When f$cc_cbet_flop_premium_draw Return true Force
+When f$cc_cbet_flop_good_draw && (f$cc_flop_static_high_parent || f$cc_flop_paired_parent) Return true Force
+When f$cc_cbet_flop_good_draw && f$cc_flop_dynamic_high_parent && !f$cc_mw_srp_true3_two_nonblinds Return true Force
+When f$cc_cbet_flop_good_draw && f$cc_flop_dynamic_lowmid_parent && f$cc_mw_srp_true3_both_blinds && f$cc_two_overcards Return true Force
+When f$cc_real_frontdoor_draw Return false Force
+When f$cc_cbet_flop_air_best_backdoors && f$cc_flop_static_high_parent && f$cc_mw_srp_true3_both_blinds Return true Force
+When f$cc_cbet_flop_air_best_backdoors && f$cc_flop_static_high_parent && f$cc_mw_srp_true3_one_blind_one_nonblind && f$cc_mw_srp_true3_pfa_early Return true Force
+When f$cc_cbet_flop_air_best_backdoors && f$cc_flop_paired_parent && f$cc_mw_srp_true3_both_blinds && f$cc_mw_srp_true3_pfa_late Return true Force
+When Others Return false Force
+
+// Purpose: reviewed size-family ID for positive LAST true3 SRP CBet.
+// Source/Provenance: A legacy texture-sensitive sizing + P cash normalization.
+// Decision logic: static high/paired small; dynamic robust region 50/75.
+##f$cc_cbet_mw_srp_true3_last_size_id##
+When !f$cc_cbet_mw_srp_true3_last_action Return 0 Force
+When f$cc_flop_dynamic_lowmid_parent && (f$cc_cbet_flop_very_strong_value || f$cc_cbet_flop_premium_draw) Return 3 Force
+When f$cc_flop_dynamic_lowmid_parent Return 2 Force
+When f$cc_flop_dynamic_high_parent && (f$cc_cbet_flop_very_strong_value || f$cc_cbet_flop_overpair || f$cc_cbet_flop_premium_draw) Return 2 Force
+When f$cc_flop_dynamic_high_parent Return 1 Force
+When f$cc_flop_static_lowmid_parent && (f$cc_cbet_flop_very_strong_value || f$cc_cbet_flop_overpair || f$cc_cbet_flop_premium_draw) Return 2 Force
+When f$cc_flop_static_lowmid_parent Return 1 Force
+When f$cc_flop_static_high_parent || f$cc_flop_paired_parent Return 1 Force
+When Others Return 2 Force
+
+// -----------------------------------------------------------------------------
+// MW3.02 — Hero MIDDLE
+// -----------------------------------------------------------------------------
+
+// Purpose: choose CBet/check when PFA is MIDDLE with one opponent still behind.
+// Source: legacy 3wBBv2p is only an A positional shell; no dedicated source CBet
+// branch exists.  `BBorSBv2pp` supports multiway selectivity but is not this node.
+// Provenance: P-heavy professional cash fill constrained by A source principles.
+// Decision logic: robust value bets; one-pair threshold tightens; dynamic draws
+// often check; pure air is absent from baseline because a player remains behind.
+##f$cc_cbet_mw_srp_true3_middle_action##
+When !f$cc_mw_srp_true3_pfa_middle_context Return false Force
+When !f$cc_mw_srp_true3_context_consistent Return false Force
+When f$cc_cbet_flop_very_strong_value Return true Force
+When f$cc_cbet_flop_overpair && f$cc_flop_dynamic_lowmid_parent && f$cc_cbet_high_spr Return false Force
+When f$cc_cbet_flop_overpair && (f$cc_flop_static_high_parent || f$cc_flop_paired_parent) Return true Force
+When f$cc_cbet_flop_overpair && f$cc_flop_dynamic_high_parent && !f$cc_mw_srp_true3_two_nonblinds Return true Force
+When f$cc_cbet_flop_overpair Return false Force
+When f$cc_cbet_flop_strong_top_pair && f$cc_pair_plus_draw Return true Force
+When f$cc_cbet_flop_strong_top_pair && f$cc_flop_static_high_parent Return true Force
+When f$cc_cbet_flop_strong_top_pair && f$cc_flop_paired_parent && !f$cc_cbet_high_spr Return true Force
+When f$cc_cbet_flop_strong_top_pair Return false Force
+When f$cc_cbet_flop_medium_top_pair Return false Force
+When f$cc_cbet_flop_weak_top_pair Return false Force
+When f$cc_cbet_flop_showdown_pair Return false Force
+When f$cc_cbet_flop_premium_draw && (f$cc_flop_static_high_parent || f$cc_flop_paired_parent) Return true Force
+When f$cc_cbet_flop_premium_draw && f$cc_flop_dynamic_high_parent && !f$cc_mw_srp_true3_two_nonblinds Return true Force
+When f$cc_real_frontdoor_draw Return false Force
+When Others Return false Force
+
+// Purpose: reviewed size ID for positive MIDDLE true3 SRP CBet.
+// Source/Provenance: P-heavy with A texture-sensitive sizing ancestry.
+##f$cc_cbet_mw_srp_true3_middle_size_id##
+When !f$cc_cbet_mw_srp_true3_middle_action Return 0 Force
+When f$cc_flop_dynamic_lowmid_parent && f$cc_cbet_flop_very_strong_value Return 3 Force
+When f$cc_flop_dynamic_high_parent && (f$cc_cbet_flop_very_strong_value || f$cc_cbet_flop_overpair || f$cc_cbet_flop_premium_draw) Return 2 Force
+When f$cc_flop_dynamic_high_parent Return 1 Force
+When f$cc_flop_static_lowmid_parent && (f$cc_cbet_flop_very_strong_value || f$cc_cbet_flop_overpair) Return 2 Force
+When f$cc_flop_static_high_parent Return 1 Force
+When f$cc_flop_paired_parent Return 1 Force
+When Others Return 2 Force
+
+// -----------------------------------------------------------------------------
+// MW3.03 — Hero FIRST
+// -----------------------------------------------------------------------------
+
+// Purpose: choose CBet/check when PFA acts FIRST into two opponents.
+// Source: legacy 3wSBv2p gives only positional ancestry; no source initiative-CBet
+// tree exists.  `BBorSBv2pp` is a different donk/defense node and is not copied.
+// Provenance: P-heavy conservative cash baseline.
+// Decision logic: value-dense betting only; medium/weak one-pair checks; premium
+// draws bet mainly on static/paired parents while dynamic draws can remain checks;
+// no air CBet baseline with two opponents still to act.
+##f$cc_cbet_mw_srp_true3_first_action##
+When !f$cc_mw_srp_true3_pfa_first_context Return false Force
+When !f$cc_mw_srp_true3_context_consistent Return false Force
+When f$cc_cbet_flop_very_strong_value Return true Force
+When f$cc_cbet_flop_overpair && (f$cc_flop_static_high_parent || f$cc_flop_paired_parent) Return true Force
+When f$cc_cbet_flop_overpair && f$cc_flop_dynamic_high_parent && f$cc_spr_round_start < 6 && !f$cc_mw_srp_true3_two_nonblinds Return true Force
+When f$cc_cbet_flop_overpair Return false Force
+When f$cc_cbet_flop_strong_top_pair && f$cc_pair_plus_draw Return true Force
+When f$cc_cbet_flop_strong_top_pair && f$cc_flop_static_high_parent && !f$cc_mw_srp_true3_two_nonblinds Return true Force
+When f$cc_cbet_flop_strong_top_pair && f$cc_flop_paired_parent && f$cc_spr_round_start < 4 Return true Force
+When f$cc_cbet_flop_strong_top_pair Return false Force
+When f$cc_cbet_flop_medium_top_pair Return false Force
+When f$cc_cbet_flop_weak_top_pair Return false Force
+When f$cc_cbet_flop_showdown_pair Return false Force
+When f$cc_cbet_flop_premium_draw && (f$cc_flop_static_high_parent || f$cc_flop_paired_parent) Return true Force
+When f$cc_cbet_flop_premium_draw && f$cc_flop_dynamic_high_parent && f$cc_mw_srp_true3_both_blinds && f$cc_spr_round_start < 4 Return true Force
+When f$cc_real_frontdoor_draw Return false Force
+When Others Return false Force
+
+// Purpose: reviewed size ID for positive FIRST true3 SRP CBet.
+// Source/Provenance: P-heavy; static pressure small, robust dynamic value larger.
+##f$cc_cbet_mw_srp_true3_first_size_id##
+When !f$cc_cbet_mw_srp_true3_first_action Return 0 Force
+When f$cc_flop_dynamic_lowmid_parent && f$cc_cbet_flop_very_strong_value Return 3 Force
+When f$cc_flop_dynamic_high_parent && (f$cc_cbet_flop_very_strong_value || f$cc_cbet_flop_overpair) Return 2 Force
+When f$cc_flop_dynamic_high_parent Return 1 Force
+When f$cc_flop_static_lowmid_parent && f$cc_cbet_flop_very_strong_value Return 2 Force
+When f$cc_flop_static_high_parent Return 1 Force
+When f$cc_flop_paired_parent Return 1 Force
+When Others Return 2 Force
+
+// -----------------------------------------------------------------------------
+// MW3.04 — Dispatchers
+// -----------------------------------------------------------------------------
+
+// Purpose: route exact true3 ordinary-SRP PFA CBet by relative position.
+// Source/Provenance: A/P multiway topology router; unsupported state checks.
+##f$cc_cbet_mw_srp_true3_action##
+When f$cc_mw_srp_true3_pfa_first_context Return f$cc_cbet_mw_srp_true3_first_action Force
+When f$cc_mw_srp_true3_pfa_middle_context Return f$cc_cbet_mw_srp_true3_middle_action Force
+When f$cc_mw_srp_true3_pfa_last_context Return f$cc_cbet_mw_srp_true3_last_action Force
+When Others Return false Force
+
+// Purpose: paired size router for exact true3 ordinary-SRP PFA CBet.
+// Source/Provenance: A/P safety dispatcher; uncovered/check -> 0.
+##f$cc_cbet_mw_srp_true3_size_id##
+When f$cc_mw_srp_true3_pfa_first_context Return f$cc_cbet_mw_srp_true3_first_size_id Force
+When f$cc_mw_srp_true3_pfa_middle_context Return f$cc_cbet_mw_srp_true3_middle_size_id Force
+When f$cc_mw_srp_true3_pfa_last_context Return f$cc_cbet_mw_srp_true3_last_size_id Force
+When Others Return 0 Force
+
+// ============================================================================
+// End Gate 01J.1 true-threeway ordinary-SRP baseline.
+// ============================================================================
