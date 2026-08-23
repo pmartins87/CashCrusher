@@ -205,17 +205,18 @@ f$cc_cbet_iso_hu_ip_action
 f$cc_cbet_iso_hu_oop_action
 
 // Purpose: ordinary reduced-HU plain 3BP 3bettor-IP child.
-// Source/Provenance: A architecture + P policy in Flop_CBet_3BP.txt.
-// Safety: only original-opener survivor is currently implemented; a post-3bet
-// coldcaller reaches this child but fails its exact context and checks.
+// Source: opener-call policy lives in Flop_CBet_3BP; post-3bet coldcaller policy
+// lives in Flop_CBet_3BP_ColdCaller.
+// Provenance: A architecture + P survivor-specific range policies.
+// Safety: unknown/contradictory survivor returns false in dispatcher.
 ##f$cc_flop_cbet_hu_3bp_3bettor_ip##
-f$cc_cbet_plain3bp_vs_opener_ip_action
+f$cc_cbet_plain3bp_ip_survivor_dispatch
 
 // Purpose: ordinary reduced-HU plain 3BP 3bettor-OOP child.
-// Source/Provenance: A architecture + P policy in Flop_CBet_3BP.txt.
-// Safety: only original-opener survivor covered.
+// Source/Provenance: A architecture + P exact-survivor policies.
+// Safety: no generic 3BP range fallback; unknown survivor checks.
 ##f$cc_flop_cbet_hu_3bp_3bettor_oop##
-f$cc_cbet_plain3bp_vs_opener_oop_action
+f$cc_cbet_plain3bp_oop_survivor_dispatch
 
 // Purpose: placeholder for reduced-HU squeeze 3bettor IP CBet.
 // Source/Provenance: squeeze-specific range policy not yet audited -> X fail closed.
@@ -284,6 +285,8 @@ When f$cc_cbet_iso_hu_coldcaller_oop_context Return true Force
 When f$cc_cbet_true_hu_plain3bp_oop_context Return true Force
 When f$cc_cbet_plain3bp_vs_opener_ip_context Return true Force
 When f$cc_cbet_plain3bp_vs_opener_oop_context Return true Force
+When f$cc_cbet_plain3bp_postcoldcaller_ip_context Return true Force
+When f$cc_cbet_plain3bp_postcoldcaller_oop_context Return true Force
 When Others Return false Force
 
 // Purpose: pair every implemented positive CBet with reviewed sizing-family ID.
@@ -304,6 +307,8 @@ When f$cc_cbet_iso_hu_coldcaller_oop_context Return f$cc_cbet_iso_hu_coldcaller_
 When f$cc_cbet_true_hu_plain3bp_oop_context Return f$cc_cbet_true_hu_plain3bp_oop_size_id Force
 When f$cc_cbet_plain3bp_vs_opener_ip_context Return f$cc_cbet_plain3bp_vs_opener_ip_size_id Force
 When f$cc_cbet_plain3bp_vs_opener_oop_context Return f$cc_cbet_plain3bp_vs_opener_oop_size_id Force
+When f$cc_cbet_plain3bp_postcoldcaller_ip_context Return f$cc_cbet_plain3bp_postcoldcaller_ip_size_id Force
+When f$cc_cbet_plain3bp_postcoldcaller_oop_context Return f$cc_cbet_plain3bp_postcoldcaller_oop_size_id Force
 When Others Return 0 Force
 
 // Purpose: invariant used by tests/logging: positive CBet must have positive size,
