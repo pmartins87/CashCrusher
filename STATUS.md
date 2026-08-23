@@ -30,116 +30,147 @@ For every stack-sensitive inherited rule:
 
 This applies to TP+/draw commitment lines, `f$Raise_Committed`, `f$hand_StackOffDraws`, `f$allin_on_betsize_balance_ratio`, `BetMax` and related mechanisms.
 
-## Multiway stack correction
+## Gate 00 — context/stack foundation
 
-The initial Gate00 generic multiway SPR used the shortest live opponent as a coarse descriptor. That remains useful for detecting short-player/sidepot geometry, but it is no longer allowed to stand in for the whole multiway effective depth.
+Design/code foundation is complete; OpenHoldem parser/runtime certification remains pending.
 
-CashCrusher now preserves both:
+Important correction now frozen:
 
-- **shallowest effective** = `min(Hero, shortest live opponent)`;
-- **deepest effective** = `min(Hero, biggest live opponent)`.
+- HU uses exact Hero-v-Villain effective stack;
+- multiway preserves both **shallowest effective** and **deepest effective**;
+- actor-specific defense later uses actor-specific effective stack;
+- a short sidepot player cannot make the whole multiway pot inherit short-stack aggression;
+- true-HU deal, preflop-reduced HU and postflop-reduced HU remain separate range origins.
 
-The second is also the mechanical analogue of DeepCrusher `f$EffectiveStack_BKP`, because the source helper uses the biggest active opponent.
+## Gate 01 — Flop CBet
 
-Multiway CBet one-pair low-SPR exceptions now use the deepest-effective SPR. Therefore a short third player cannot make a still-deep decision against another live opponent inherit short-stack aggression.
+Implemented baselines include:
 
-`CashCrusher_Multiway_StackContext.txt` requires coherent shallow/deep bounds before a reviewed multiway context is considered valid.
+- true-HU and reduced-HU ordinary SRP;
+- SB-v-BB and opener-OOP-v-later-coldcaller SRP gaps;
+- true-HU limp-raised BB-PFA-OOP;
+- HU and multiway ISO;
+- HU and multiway plain 3BP/squeeze with opener / pre-3bet coldcaller / post-3bet coldcaller provenance;
+- true-threeway and exact 4/5/6-way ordinary SRP;
+- clean supported HU 4BP families.
 
-The linter rejects generic `f$cc_spr_round_start`/bucket helpers inside `CashCrusher_Flop_CBet_Multiway_*` strategy modules.
+Still fail-closed: multiway 4BP, reversed/backraise/limp-reraise 4BP histories without stronger chronology evidence, and 5bet+.
 
-## Gate 00 — mechanical context foundation
+### Flop sizing / all-in
 
-Complete in design/code; OpenHoldem parser/runtime validation still pending:
+Native strategic palette remains 33 / 50 / 75 / pot.
 
-- legacy Spin game labels decomposed into strategic properties;
-- exact dynamic 2-6 handedness;
-- true-HU deal vs preflop-reduced HU vs postflop-reduced HU;
-- pot family / Hero role / absolute and relative position;
-- exact flop-entry count and live-opponent masks;
-- ISO, 3BP and squeeze survivor provenance;
-- HU effective stack plus multiway shallowest/deepest effective envelopes;
-- actor-specific SPR versus `raischair` for future defense nodes;
-- true-multiway composition framework.
+Local `BetMax` is currently used only for mechanically forced/equivalent execution when the reviewed requested size already reaches Hero's available stack or the deepest/all-live effective relationship.
 
-## Gate 01 — Flop CBet implementation
+Historical DeepCrusher ~50% effective / ~60% Hero-stack promotion remains diagnostic rather than one generic CashCrusher action. This does not ban it: an exact node may restore a strategic jam when its range/board/SPR logic supports it.
 
-### Ordinary one-raise HU
+`f$Raise_Committed` remains defense-owned and has not been globally disabled.
 
-Implemented true-HU and reduced-HU ordinary SRP families, including SB-v-BB and opener-OOP-v-later-coldcaller gaps.
+## Gate 01N — executed flop history now implemented
 
-### ISO
+The project no longer treats a pre-action CBet decision as proof that a CBet actually happened.
 
-Implemented HU and multiway. Survivor provenance remains explicit: original limper vs post-raise coldcaller in HU, and exact/coarse limper+coldcaller composition multiway.
+`CashCrusher_Flop_ActionHistory.txt` uses closed OpenHoldem round-2 history:
 
-### 3BP and squeeze
+- `didchecround2`;
+- `didcallround2`;
+- `didraisround2`;
+- `didbetsizeround2`;
+- `didalliround2`;
+- `lastraised2`.
 
-Implemented HU and multiway. Original opener, pre-3bet coldcaller and post-3bet coldcaller remain separate survivor origins; plain 3BP and squeeze never share a generic fallback.
+It distinguishes:
 
-### Ordinary multiway SRP
+- normal executed CBet;
+- skipped CBet + check-through;
+- check-call;
+- check-raise/re-aggression;
+- CBet → raise → call;
+- CBet → re-aggression;
+- planned normal sizing unexpectedly executed all-in;
+- planned mechanical all-in unexpectedly executed as normal sizing.
 
-Implemented true-threeway FIRST/MIDDLE/LAST and exact 4/5/6-way parents. All current multiway SRP/ISO/3BP/squeeze CBet SPR exceptions have been reaudited against deepest-effective geometry.
+### Flop strategic snapshot for Turn
 
-### 4BP
+Before the action, the history-aware CBet wrapper also snapshots only **plan/provenance facts** that disappear after the flop:
 
-Clean HU 4BP families are implemented for true-HU opener4 and reduced-HU opener4/cold4 versus supported original raiser survivors. Multiway 4BP, reversed/backraise/limp-reraise chronology and 5bet+ remain fail-closed.
+- 2P+ / overpair / TP / lower pair / no-made primary class;
+- TP kicker bands relevant to direct source trees;
+- premium/good/weak draw features;
+- BDSD/BDFD;
+- quality/pure air;
+- flop strategic texture parent and selected exact flop facts.
 
-## CBet sizing and all-in execution
+These markers never prove execution. A Turn source branch consumes them only together with actual executed CBet history.
 
-Strategic size IDs remain 33 / 50 / 75 / pot with native `BetThirdPot`, `BetHalfPot`, `BetThreeFourthPot`, `BetPot` execution.
+## Gate 02 — Turn CBet started
 
-DeepCrusher contains three distinct stack-sensitive mechanisms that must not be conflated:
+### Source audit / foundation
 
-1. explicit sizing promotion near 60% of Hero `StackSize`;
-2. `f$allin_on_betsize_balance_ratio`, with special ~50% `f$EffectiveStack_BKP` logic plus Hero-balance fallback;
-3. `f$Raise_Committed`, which can promote an already-approved flop/turn call around separate ~55% geometry.
+`GATE_02A_TURN_CBET_SOURCE_AUDIT.md` freezes the key source boundary:
 
-### Mechanically equivalent BetMax — implemented
+- standard Turn CBet is separate from flop X/R, CBet-call-raise, donk, probe and delayed histories;
+- current turn hand strength supersedes stale flop class;
+- flop class/backdoors remain useful provenance where source explicitly depends on them;
+- no generic TP+ stack-off rule;
+- HUSB `20bb+ -> 100/200%` is not a literal 100bb-cash transplant;
+- HUBB low-SPR shove remains an exact-node candidate, not a global rule;
+- BTN-v-BB / BTN-v-SB are the strongest direct reduced-HU IP source descendants;
+- SB-v-BB retains its distinct source checking/XR architecture;
+- EP/MP range gaps, 3BP/squeeze/4BP and 4-way+ Turn strategy are P-heavy.
 
-`CashCrusher_Flop_CBet_AllinEquivalence.txt` returns local `BetMax` only when the already-reviewed requested CBet:
+Portable turn runout primitives now cover completed/super-completed turns, newly completed straight/flush, OC/mOC, undercard, glued OC, paired turn and the exact HUSB two-low pressure-card source shape.
 
-- reaches Hero's available stack; or
-- reaches the deepest/all-live effective relationship.
+### Implemented Turn-CBet strategic children
 
-Shortest-only multiway reach is a sidepot-divergence state and does not qualify.
+Current router has five source-anchored HU descendants:
 
-### Strategic historical 50/60% promotion — audited, not globally activated
+1. **true HU HUSB — SB/Button PFA IP vs BB**;
+2. **reduced HU BTN PFA IP vs BB**;
+3. **reduced HU BTN PFA IP vs SB**;
+4. **true HU BB PFA OOP after SB limp → BB raise → call**;
+5. **reduced HU SB PFA OOP vs BB** source-safe subset.
 
-`GATE_01K3_STRATEGIC_ALLIN_PROMOTION_AUDIT.md` separates the historical mechanisms from mechanical clipping. The audit result is:
+Notable source preservation:
 
-- preserve 50%-effective and 60%-Hero thresholds as useful source diagnostics;
-- do not let one generic threshold silently rewrite every CashCrusher CBet size after the strategy node has selected 33/50/75;
-- any true strategic flop jam must be owned by the exact SRP/ISO/3BP/4BP node and documented as T/A/P/X;
-- 4BP is the strongest future candidate for explicit node-owned flop jams because low SPR can arise naturally at 100bb;
-- `f$Raise_Committed` remains deferred to defensive call/raise ownership, not CBet sizing;
-- final global `f$allin_on_betsize_balance_ratio` remains deferred until all postflop sizing owners that it can affect are audited.
+- HUSB TP/OP barrels are separate from response to a turn raise;
+- HUSB flop-TP demotion on turn overcard gets the smaller source barrel;
+- HUSB good-draw and narrow air pressure-card branches remain distinct;
+- BTN-v-BB preserves fresh TP vs carried TP/OP and the flop-BDSD weak-TP exception;
+- BTN-v-SB does **not** inherit HUSB's generic draw barrel: source says flop draw/air CBet normally gives up turn unless it improves;
+- SB-v-BB does **not** inherit an IP TP+ barrel tail: source often checks TP+ after actual CBet to induce/protect X/R, with the explicit newly-straight-completing turn pot-size exception retained;
+- true-HU limp-raised HUBB value uses completed/non-completed sizing without automatically importing its historical low-SPR shove.
 
-This is not a global disablement of inherited short-stack mechanisms; it prevents them from overriding cash-specific node strategy outside reviewed contexts.
+All other Turn-CBet families currently return false / size 0 rather than borrow a neighboring strategy.
 
-## Deterministic quality checks
+## Current automated checks
 
-GitHub Actions runs:
+GitHub Actions currently runs:
 
-1. the static OpenPPL strategy linter; and
-2. `tools/test_multiway_stack_geometry.py`.
+1. global `f$cc_*` dependency / flat-WHEN / provenance linter;
+2. deterministic multiway shallowest/deepest stack-geometry tests;
+3. deterministic flop final-action/history + strategic-snapshot source contract.
 
-The deterministic test covers equal stacks, short+deep fields, Hero-capped effective stacks, raised-pot asymmetry, false shallowest-based 50%-effective triggers, sidepot divergence, all-live effective reach and the fact that a mere 60%-of-Hero-stack bet is not mechanically identical to all-in.
+`tests/TURN_CBET_POLICY_MATRIX.md` documents the current Turn source-anchored acceptance cases and explicit fail-closed gaps.
 
-## Release blockers
+## Remaining release blockers
 
 No table-ready claim before:
 
 1. Gate00 OpenHoldem parser/runtime context validation;
-2. deterministic OpenPPL/OpenHoldem CBet policy fixtures/replays;
-3. whole-bot `f$BestBetsize` ownership integration;
-4. any explicit node-owned strategic jam audits that are actually needed;
-5. skipped-CBet X/C/X/R and turn follow-through coverage;
-6. final regression and unknown-state fail-closed audit.
+2. whole-bot history-aware `f$flop` and `f$BestBetsize` composition;
+3. deterministic OpenHoldem flop/turn policy replays;
+4. completion of Turn SRP six-max gaps, ISO, 3BP, squeeze, 4BP and multiway;
+5. subsequent River/Float/Donk/Probe/Delayed and 32 defense gates;
+6. final stack-sensitive commitment audit in each action owner;
+7. full regression / unknown-state fail-closed audit.
 
-## Current development direction
+## Immediate development direction
 
-Immediate next work:
+Continue Gate02 without broad fallbacks:
 
-- current-head CI confirmation;
-- source-first audit of whether any clean 4BP flop family needs an explicit node-owned jam size rather than 33/50;
-- then Gate 01N flop final-action/history capture so a skipped CBet reaches Delayed CBet rather than being misrouted as Turn CBet;
-- after that begin Turn CBet source adaptation using actual flop-action provenance.
+- P-heavy UTG/HJ/CO PFA-IP versus blinds;
+- P-heavy opener-PFA-OOP versus later nonblind cold caller;
+- postflop-reduced-HU and current multiway SRP;
+- then ISO → plain 3BP → squeeze → 4BP;
+- only after strategic coverage, add Turn runtime sizing/all-in execution and replay fixtures.
