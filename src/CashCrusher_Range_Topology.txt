@@ -1,33 +1,86 @@
 // ============================================================================
 // CashCrusher_Range_Topology.txt
-// Six-max HU SRP range-topology parents
+// Six-max cash HU SRP range-topology parents — handedness aware
 // ============================================================================
-// Exact matchup IDs remain canonical. Parent groups only reduce duplication;
-// they never authorize copying one absolute-position range into another.
+// Exact matchup IDs remain canonical. Parent groups reduce duplication only;
+// they NEVER authorize copying one absolute-position range into another.
+//
+// Critical distinction:
+//   * TRUE HU DEAL (f$cc_hu_origin_id=1): exactly two players were dealt.
+//     SB is also BTN and acts IP postflop. Legacy HUSB/HUBB is the primary
+//     strategic ancestry.
+//   * PREFLOP-REDUCED HU (origin=2): a 3-6 handed deal reached the flop HU
+//     because other players folded preflop. Six-max-equivalent absolute ranges
+//     remain relevant (BTN-v-BB, SB-v-BB, HJ-v-BB, etc.).
+//   * POSTFLOP-REDUCED HU (origin=3): flop began multiway. Do NOT route into
+//     ordinary HU range parents on later streets.
 // ============================================================================
 
 // -----------------------------------------------------------------------------
-// R.01 — Ordinary one-raise PFA families
+// R.00 — HU origin guards
+// -----------------------------------------------------------------------------
+
+##f$cc_range_true_hu##
+f$cc_hu && f$cc_hu_origin_true
+
+##f$cc_range_reduced_hu##
+f$cc_hu && f$cc_hu_origin_preflop_reduced
+
+##f$cc_range_postflop_reduced_hu##
+f$cc_hu && f$cc_hu_origin_postflop_reduced
+
+// -----------------------------------------------------------------------------
+// R.01 — TRUE HU one-raise PFA families
+// -----------------------------------------------------------------------------
+// Canonical true-HU matchup IDs are 56 (Hero SB/Button vs BB) and
+// 65 (Hero BB vs SB/Button). The same numeric ID 56 can also occur in a 3-6h
+// deal when SB and BB are the two survivors, therefore origin is mandatory.
+
+##f$cc_srp_true_hu_sb_pfa_ip_vs_bb##
+f$cc_range_true_hu &&
+f$cc_pot_family_id = 2 &&
+f$cc_pf_role_pfa &&
+f$cc_pf_one_raise_ordinary_srp &&
+f$cc_hu_matchup_id = 56 &&
+f$cc_hu_ip
+
+##f$cc_srp_true_hu_bb_pfa_oop_after_limp##
+f$cc_range_true_hu &&
+f$cc_pot_family_id = 2 &&
+f$cc_pf_role_pfa &&
+f$cc_pf_hu_limp_raise_proven &&
+f$cc_hu_matchup_id = 65 &&
+f$cc_hu_oop
+
+// -----------------------------------------------------------------------------
+// R.02 — 3-to-6-handed deals that reach flop HU
 // -----------------------------------------------------------------------------
 
 ##f$cc_srp_pfa_ip_vs_bb##
-f$cc_pot_family_id = 2 && f$cc_pf_role_pfa && !f$cc_pf_iso_proven && f$cc_hu_ip &&
+f$cc_range_reduced_hu &&
+f$cc_pot_family_id = 2 && f$cc_pf_role_pfa && f$cc_pf_one_raise_ordinary_srp && f$cc_hu_ip &&
 (f$cc_hu_matchup_id = 16 || f$cc_hu_matchup_id = 26 || f$cc_hu_matchup_id = 36 || f$cc_hu_matchup_id = 46)
 
 ##f$cc_srp_pfa_ip_vs_sb##
-f$cc_pot_family_id = 2 && f$cc_pf_role_pfa && !f$cc_pf_iso_proven && f$cc_hu_ip &&
+f$cc_range_reduced_hu &&
+f$cc_pot_family_id = 2 && f$cc_pf_role_pfa && f$cc_pf_one_raise_ordinary_srp && f$cc_hu_ip &&
 (f$cc_hu_matchup_id = 15 || f$cc_hu_matchup_id = 25 || f$cc_hu_matchup_id = 35 || f$cc_hu_matchup_id = 45)
 
 ##f$cc_srp_pfa_oop_vs_lp_coldcaller##
-f$cc_pot_family_id = 2 && f$cc_pf_role_pfa && !f$cc_pf_iso_proven && f$cc_hu_oop &&
+f$cc_range_reduced_hu &&
+f$cc_pot_family_id = 2 && f$cc_pf_role_pfa && f$cc_pf_one_raise_ordinary_srp && f$cc_hu_oop &&
 (f$cc_hu_matchup_id = 12 || f$cc_hu_matchup_id = 13 || f$cc_hu_matchup_id = 14 ||
  f$cc_hu_matchup_id = 23 || f$cc_hu_matchup_id = 24 || f$cc_hu_matchup_id = 34)
 
 ##f$cc_srp_sb_pfa_oop_vs_bb##
-f$cc_pot_family_id = 2 && f$cc_pf_role_pfa && !f$cc_pf_iso_proven && f$cc_hu_matchup_id = 56
+// This is the 3-6h SB-v-BB descendant of legacy 3wSBvBB.
+// TRUE HU matchup 56 is deliberately excluded by origin.
+f$cc_range_reduced_hu &&
+f$cc_pot_family_id = 2 && f$cc_pf_role_pfa && f$cc_pf_one_raise_ordinary_srp &&
+f$cc_hu_matchup_id = 56 && f$cc_hu_oop
 
 // -----------------------------------------------------------------------------
-// R.02 — Opener bands (descriptors only)
+// R.03 — Opener bands (descriptors only)
 // -----------------------------------------------------------------------------
 
 ##f$cc_pfa_ep_band##
@@ -40,36 +93,44 @@ f$cc_hero_pos_id = 3 || f$cc_hero_pos_id = 4
 f$cc_hero_pos_id = 5 || f$cc_hero_pos_id = 6
 
 // -----------------------------------------------------------------------------
-// R.03 — Direct versus adapted legacy ancestry
+// R.04 — Direct versus adapted legacy ancestry
 // -----------------------------------------------------------------------------
 
+##f$cc_srp_direct_true_hu_sb_vs_bb##
+f$cc_srp_true_hu_sb_pfa_ip_vs_bb
+
 ##f$cc_srp_direct_btn_vs_bb##
-f$cc_hu_matchup_id = 46
+f$cc_range_reduced_hu && f$cc_hu_matchup_id = 46
 
 ##f$cc_srp_direct_btn_vs_sb##
-f$cc_hu_matchup_id = 45
+f$cc_range_reduced_hu && f$cc_hu_matchup_id = 45
 
 ##f$cc_srp_direct_sb_vs_bb##
-f$cc_hu_matchup_id = 56
+f$cc_range_reduced_hu && f$cc_hu_matchup_id = 56
 
 ##f$cc_srp_earlier_opener_vs_bb##
-f$cc_hu_matchup_id = 16 || f$cc_hu_matchup_id = 26 || f$cc_hu_matchup_id = 36
+f$cc_range_reduced_hu && (f$cc_hu_matchup_id = 16 || f$cc_hu_matchup_id = 26 || f$cc_hu_matchup_id = 36)
 
 ##f$cc_srp_earlier_opener_vs_sb##
-f$cc_hu_matchup_id = 15 || f$cc_hu_matchup_id = 25 || f$cc_hu_matchup_id = 35
+f$cc_range_reduced_hu && (f$cc_hu_matchup_id = 15 || f$cc_hu_matchup_id = 25 || f$cc_hu_matchup_id = 35)
 
 ##f$cc_srp_new_oop_coldcaller_family##
 f$cc_srp_pfa_oop_vs_lp_coldcaller
 
 // -----------------------------------------------------------------------------
-// R.04 — Parent IDs for logs and child policy routing
-// 1 PFA IP vs BB
-// 2 PFA IP vs SB
-// 3 PFA OOP vs later-position cold caller
-// 4 SB PFA OOP vs BB
+// R.05 — Parent IDs for logs and child-policy routing
 // -----------------------------------------------------------------------------
+// 1  reduced-HU PFA IP vs BB
+// 2  reduced-HU PFA IP vs SB
+// 3  reduced-HU PFA OOP vs later-position cold caller
+// 4  reduced-HU SB PFA OOP vs BB
+// 5  TRUE HU SB/Button PFA IP vs BB (legacy HUSB)
+// 6  TRUE HU BB PFA OOP after SB limp (legacy HU limped family)
+// 0  unsupported / postflop-reduced HU / other pot family
 
 ##f$cc_srp_pfa_parent_id##
+When f$cc_srp_true_hu_sb_pfa_ip_vs_bb Return 5 Force
+When f$cc_srp_true_hu_bb_pfa_oop_after_limp Return 6 Force
 When f$cc_srp_pfa_ip_vs_bb Return 1 Force
 When f$cc_srp_pfa_ip_vs_sb Return 2 Force
 When f$cc_srp_pfa_oop_vs_lp_coldcaller Return 3 Force
@@ -77,15 +138,36 @@ When f$cc_srp_sb_pfa_oop_vs_bb Return 4 Force
 When Others Return 0 Force
 
 // Exact-matchup adjustment requirement:
-//   direct Spin descendant still requires deep-stack adaptation (A);
-//   structurally grouped earlier-position matchups require additional P range
-//   work; OOP cold-call family is primarily P.
+//   1 = A direct descendant; deep-stack geometry still needs adaptation.
+//   2 = A/P structural ancestry; absolute range work required.
+//   3 = P-heavy new six-max family.
+//   4 = T/A true-HU source ancestry (closest positional/range descendant), but
+//       deep-stack cash SPR/sizing still requires adaptation.
+//   0 = no ordinary HU parent.
+
 ##f$cc_srp_matchup_adjustment_id##
-// 1 = A direct descendant; 2 = A/P structural; 3 = P-heavy new family
+When f$cc_srp_direct_true_hu_sb_vs_bb Return 4 Force
 When f$cc_srp_direct_btn_vs_bb || f$cc_srp_direct_btn_vs_sb || f$cc_srp_direct_sb_vs_bb Return 1 Force
 When f$cc_srp_earlier_opener_vs_bb || f$cc_srp_earlier_opener_vs_sb Return 2 Force
 When f$cc_srp_new_oop_coldcaller_family Return 3 Force
 When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// R.06 — Handedness descriptor for logging/audit
+// -----------------------------------------------------------------------------
+// Canonical position IDs intentionally collapse only positions that are absent
+// from a shorter table, e.g. a five-handed first nonblind seat maps to HJ=2.
+// Deal size remains a separate dimension and must stay available to strategy.
+
+##f$cc_handedness_id##
+f$cc_deal_size
+
+##f$cc_handedness_adjustment_required##
+// TRUE HU is its own source family. For reduced-HU cash, a shorter original
+// table can change ranges even when the canonical matchup ID matches.
+When f$cc_true_hu Return false Force
+When f$cc_deal_size >= 3 && f$cc_deal_size <= 5 Return true Force
+When Others Return false Force
 
 // ============================================================================
 // End range-topology module.
