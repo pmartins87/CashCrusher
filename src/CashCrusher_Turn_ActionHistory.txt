@@ -1,0 +1,502 @@
+// ============================================================================
+// CashCrusher_Turn_ActionHistory.txt
+// Gate 02N — executed TURN-action provenance for River routing
+// ============================================================================
+// Purpose:
+//   Preserve the difference between a Turn CBet opportunity/plan and what
+//   OpenHoldem actually executed. River strategy consumes CLOSED round-3 history;
+//   no `user_*` pre-action marker is allowed to prove that Hero really bet.
+//
+// Runtime findings from project OpenHoldem source:
+//   * turn = betting round 3; river = round 4;
+//   * didchec/call/rais/betsize/alliround3 are action COUNTERS internally;
+//   * successful BetPot-family actions register as `betsize` history;
+//   * OpenPPL RaiseBy percentage actions execute through numeric betsize/swag;
+//   * BetMax registers as `allin` history;
+//   * lastraised3 is the stable previous-street final aggressor once river begins.
+//
+// Provenance:
+//   T = OpenHoldem closed-round action history + persistent user-variable semantics.
+//   A = Gate01N final-action repair carried one street forward.
+//   P = CashCrusher turn-state/family/live-mask snapshot for future River routing.
+//
+// OpenPPL safety:
+//   Flat complete WHENs only. `user_*` variables written before action are plan /
+//   provenance only. Actual execution requires did*round3 + final-aggressor proof.
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// TH.01 — PRE-ACTION Turn-CBet opportunity + strategic provenance snapshot
+// -----------------------------------------------------------------------------
+
+// Purpose: canonical action predicate for eventual Turn CBet runtime composition.
+// Source: Gate01N pattern + Gate02 reviewed router.
+// Provenance: A/T wrapper around exact Turn-CBet strategy; P snapshot metadata.
+// Safety: all writes below are PRE-ACTION facts and never prove execution.
+##f$cc_turn_cbet_action_with_history##
+When !f$cc_turn_cbet_opportunity Return false Force
+When f$cc_turn_cbet_opportunity Set user_cc_turn_cbet_opportunity_seen
+When f$cc_turn_cbet_opportunity Set user_cc_turn_state_snapshot_recorded
+
+// Primary current TURN hand class. Exactly one must be present at a valid snapshot.
+When f$cc_turn_cbet_opportunity && f$cc_turn_cbet_two_pair_plus Set user_cc_turn_state_had_2pplus
+When f$cc_turn_cbet_opportunity && f$cc_turn_cbet_overpair Set user_cc_turn_state_had_overpair
+When f$cc_turn_cbet_opportunity && f$cc_turn_cbet_top_pair Set user_cc_turn_state_had_top_pair
+When f$cc_turn_cbet_opportunity && f$cc_turn_cbet_second_pair Set user_cc_turn_state_had_second_pair
+When f$cc_turn_cbet_opportunity && f$cc_turn_cbet_third_or_worse_pair Set user_cc_turn_state_had_third_or_worse_pair
+When f$cc_turn_cbet_opportunity && f$cc_hand_no_made Set user_cc_turn_state_had_no_made
+
+// TP kicker provenance. Current river strength will still supersede this history.
+When f$cc_turn_cbet_opportunity && f$cc_turn_cbet_strong_top_pair Set user_cc_turn_state_tp_strong
+When f$cc_turn_cbet_opportunity && f$cc_turn_cbet_medium_top_pair Set user_cc_turn_state_tp_medium
+When f$cc_turn_cbet_opportunity && f$cc_turn_cbet_weak_top_pair Set user_cc_turn_state_tp_weak
+
+// Current turn equity provenance; one draw tier at most, air separate.
+When f$cc_turn_cbet_opportunity && f$cc_turn_cbet_premium_draw Set user_cc_turn_state_had_premium_draw
+When f$cc_turn_cbet_opportunity && f$cc_turn_cbet_good_draw Set user_cc_turn_state_had_good_draw
+When f$cc_turn_cbet_opportunity && f$cc_turn_cbet_weak_draw Set user_cc_turn_state_had_weak_draw
+When f$cc_turn_cbet_opportunity && f$cc_turn_cbet_air Set user_cc_turn_state_had_air
+
+// Turn runout ID snapshot. The seven markers follow f$cc_turn_runout_id precedence.
+When f$cc_turn_cbet_opportunity && f$cc_turn_runout_id = 1 Set user_cc_turn_state_runout_super_completed
+When f$cc_turn_cbet_opportunity && f$cc_turn_runout_id = 2 Set user_cc_turn_state_runout_new_completion
+When f$cc_turn_cbet_opportunity && f$cc_turn_runout_id = 3 Set user_cc_turn_state_runout_paired_flop_rank
+When f$cc_turn_cbet_opportunity && f$cc_turn_runout_id = 4 Set user_cc_turn_state_runout_glued_overcard
+When f$cc_turn_cbet_opportunity && f$cc_turn_runout_id = 5 Set user_cc_turn_state_runout_other_overcard
+When f$cc_turn_cbet_opportunity && f$cc_turn_runout_id = 6 Set user_cc_turn_state_runout_undercard
+When f$cc_turn_cbet_opportunity && f$cc_turn_runout_id = 7 Set user_cc_turn_state_runout_neutral
+
+// Exact top-level Turn-CBet family snapshot. IDs 5/6 remain diagnostic residual
+// families and cannot own a positive reviewed Turn-CBet action.
+When f$cc_turn_cbet_opportunity && f$cc_turn_cbet_family_id = 1 Set user_cc_turn_state_family_1
+When f$cc_turn_cbet_opportunity && f$cc_turn_cbet_family_id = 2 Set user_cc_turn_state_family_2
+When f$cc_turn_cbet_opportunity && f$cc_turn_cbet_family_id = 3 Set user_cc_turn_state_family_3
+When f$cc_turn_cbet_opportunity && f$cc_turn_cbet_family_id = 4 Set user_cc_turn_state_family_4
+When f$cc_turn_cbet_opportunity && f$cc_turn_cbet_family_id = 5 Set user_cc_turn_state_family_5
+When f$cc_turn_cbet_opportunity && f$cc_turn_cbet_family_id = 6 Set user_cc_turn_state_family_6
+When f$cc_turn_cbet_opportunity && f$cc_turn_cbet_family_id = 7 Set user_cc_turn_state_family_7
+When f$cc_turn_cbet_opportunity && f$cc_turn_cbet_family_id = 8 Set user_cc_turn_state_family_8
+When f$cc_turn_cbet_opportunity && f$cc_turn_cbet_family_id = 9 Set user_cc_turn_state_family_9
+When f$cc_turn_cbet_opportunity && f$cc_turn_cbet_family_id = 10 Set user_cc_turn_state_family_10
+When f$cc_turn_cbet_opportunity && f$cc_turn_cbet_family_id = 11 Set user_cc_turn_state_family_11
+When f$cc_turn_cbet_opportunity && f$cc_turn_cbet_family_id = 12 Set user_cc_turn_state_family_12
+
+// Current handedness and relative position at the TURN decision.
+When f$cc_turn_cbet_opportunity && f$cc_hu Set user_cc_turn_state_was_hu
+When f$cc_turn_cbet_opportunity && f$cc_multiway Set user_cc_turn_state_was_multiway
+When f$cc_turn_cbet_opportunity && f$cc_relpos_id = 1 Set user_cc_turn_state_relpos_first
+When f$cc_turn_cbet_opportunity && f$cc_relpos_id = 2 Set user_cc_turn_state_relpos_middle
+When f$cc_turn_cbet_opportunity && f$cc_relpos_id = 3 Set user_cc_turn_state_relpos_last
+
+// Exact number of players alive when Hero reached the Turn CBet decision.
+When f$cc_turn_cbet_opportunity && nplayersplaying = 2 Set user_cc_turn_state_players_2
+When f$cc_turn_cbet_opportunity && nplayersplaying = 3 Set user_cc_turn_state_players_3
+When f$cc_turn_cbet_opportunity && nplayersplaying = 4 Set user_cc_turn_state_players_4
+When f$cc_turn_cbet_opportunity && nplayersplaying = 5 Set user_cc_turn_state_players_5
+When f$cc_turn_cbet_opportunity && nplayersplaying = 6 Set user_cc_turn_state_players_6
+
+// Canonical live-opponent mask at Turn decision. Essential when a multiway turn
+// becomes HU on river after folds to the second barrel.
+When f$cc_turn_cbet_opportunity && f$cc_opp_live_utg Set user_cc_turn_state_live_utg
+When f$cc_turn_cbet_opportunity && f$cc_opp_live_hj Set user_cc_turn_state_live_hj
+When f$cc_turn_cbet_opportunity && f$cc_opp_live_co Set user_cc_turn_state_live_co
+When f$cc_turn_cbet_opportunity && f$cc_opp_live_btn Set user_cc_turn_state_live_btn
+When f$cc_turn_cbet_opportunity && f$cc_opp_live_sb Set user_cc_turn_state_live_sb
+When f$cc_turn_cbet_opportunity && f$cc_opp_live_bb Set user_cc_turn_state_live_bb
+
+// A positive strategy decision is still only a plan here. Size/all-in plan
+// markers are written by f$cc_turn_cbet_execution_betsize before execution.
+When f$cc_turn_cbet_router Set user_cc_turn_cbet_plan_bet_seen
+When f$cc_turn_cbet_router Return true Force
+When Others Return false Force
+
+// Purpose: count mutually exclusive turn primary-class snapshot markers.
+// Source/Provenance: P integrity check over A/T current turn classification.
+##f$cc_hist_turn_state_primary_class_marker_count##
+(user_cc_turn_state_had_2pplus * 1) +
+(user_cc_turn_state_had_overpair * 1) +
+(user_cc_turn_state_had_top_pair * 1) +
+(user_cc_turn_state_had_second_pair * 1) +
+(user_cc_turn_state_had_third_or_worse_pair * 1) +
+(user_cc_turn_state_had_no_made * 1)
+
+// Purpose: count mutually exclusive TP-kicker snapshot bands.
+// Source/Provenance: P integrity check over Gate02 A/P kicker classes.
+##f$cc_hist_turn_state_tp_kicker_marker_count##
+(user_cc_turn_state_tp_strong * 1) +
+(user_cc_turn_state_tp_medium * 1) +
+(user_cc_turn_state_tp_weak * 1)
+
+// Purpose: count mutually exclusive turn draw-tier provenance markers.
+// Source/Provenance: P integrity check; made hand + draw may coexist by design.
+##f$cc_hist_turn_state_draw_marker_count##
+(user_cc_turn_state_had_premium_draw * 1) +
+(user_cc_turn_state_had_good_draw * 1) +
+(user_cc_turn_state_had_weak_draw * 1)
+
+// Purpose: count exactly one turn runout marker.
+// Source/Provenance: P integrity check over T/A runout-ID snapshot.
+##f$cc_hist_turn_state_runout_marker_count##
+(user_cc_turn_state_runout_super_completed * 1) +
+(user_cc_turn_state_runout_new_completion * 1) +
+(user_cc_turn_state_runout_paired_flop_rank * 1) +
+(user_cc_turn_state_runout_glued_overcard * 1) +
+(user_cc_turn_state_runout_other_overcard * 1) +
+(user_cc_turn_state_runout_undercard * 1) +
+(user_cc_turn_state_runout_neutral * 1)
+
+// Purpose: count stored top-level Turn-CBet family markers.
+// Source/Provenance: P integrity check over Gate02 exact family ID.
+##f$cc_hist_turn_state_family_marker_count##
+(user_cc_turn_state_family_1 * 1) +
+(user_cc_turn_state_family_2 * 1) +
+(user_cc_turn_state_family_3 * 1) +
+(user_cc_turn_state_family_4 * 1) +
+(user_cc_turn_state_family_5 * 1) +
+(user_cc_turn_state_family_6 * 1) +
+(user_cc_turn_state_family_7 * 1) +
+(user_cc_turn_state_family_8 * 1) +
+(user_cc_turn_state_family_9 * 1) +
+(user_cc_turn_state_family_10 * 1) +
+(user_cc_turn_state_family_11 * 1) +
+(user_cc_turn_state_family_12 * 1)
+
+// Purpose: recover snapshotted Turn-CBet family ID after turn is closed.
+// Source/Provenance: P deterministic boolean-marker decoder.
+// Safety: contradictory family markers -> 0.
+##f$cc_hist_turn_state_family_id##
+When !f$cc_hist_turn_closed Return 0 Force
+When f$cc_hist_turn_state_family_marker_count != 1 Return 0 Force
+When user_cc_turn_state_family_1 Return 1 Force
+When user_cc_turn_state_family_2 Return 2 Force
+When user_cc_turn_state_family_3 Return 3 Force
+When user_cc_turn_state_family_4 Return 4 Force
+When user_cc_turn_state_family_5 Return 5 Force
+When user_cc_turn_state_family_6 Return 6 Force
+When user_cc_turn_state_family_7 Return 7 Force
+When user_cc_turn_state_family_8 Return 8 Force
+When user_cc_turn_state_family_9 Return 9 Force
+When user_cc_turn_state_family_10 Return 10 Force
+When user_cc_turn_state_family_11 Return 11 Force
+When user_cc_turn_state_family_12 Return 12 Force
+When Others Return 0 Force
+
+// Purpose: count stored turn player-count markers.
+// Source/Provenance: P integrity check over T nplayersplaying snapshot.
+##f$cc_hist_turn_state_player_count_marker_count##
+(user_cc_turn_state_players_2 * 1) +
+(user_cc_turn_state_players_3 * 1) +
+(user_cc_turn_state_players_4 * 1) +
+(user_cc_turn_state_players_5 * 1) +
+(user_cc_turn_state_players_6 * 1)
+
+// Purpose: recover number of players alive at Turn CBet decision.
+// Source/Provenance: P decoder over T snapshot.
+##f$cc_hist_turn_state_player_count##
+When !f$cc_hist_turn_closed Return 0 Force
+When f$cc_hist_turn_state_player_count_marker_count != 1 Return 0 Force
+When user_cc_turn_state_players_2 Return 2 Force
+When user_cc_turn_state_players_3 Return 3 Force
+When user_cc_turn_state_players_4 Return 4 Force
+When user_cc_turn_state_players_5 Return 5 Force
+When user_cc_turn_state_players_6 Return 6 Force
+When Others Return 0 Force
+
+// Purpose: reconstruct exact canonical opponent mask that faced the Turn decision.
+// Source/Provenance: A/P decoder over T canonical live-position snapshot.
+##f$cc_hist_turn_state_live_opp_mask##
+(user_cc_turn_state_live_utg * 1) +
+(user_cc_turn_state_live_hj * 2) +
+(user_cc_turn_state_live_co * 4) +
+(user_cc_turn_state_live_btn * 8) +
+(user_cc_turn_state_live_sb * 16) +
+(user_cc_turn_state_live_bb * 32)
+
+// Purpose: count turn relative-position markers.
+// Source/Provenance: P integrity check over T/A FIRST/MIDDLE/LAST snapshot.
+##f$cc_hist_turn_state_relpos_marker_count##
+(user_cc_turn_state_relpos_first * 1) +
+(user_cc_turn_state_relpos_middle * 1) +
+(user_cc_turn_state_relpos_last * 1)
+
+// Purpose: validate strategic turn snapshot once River has begun.
+// Source: River source often depends on how Hero arrived there; current river
+// strength remains primary and stored class is provenance only.
+// Provenance: P integrity contract over T/A snapshot facts.
+##f$cc_hist_turn_state_snapshot_consistent##
+When !f$cc_hist_turn_closed Return false Force
+When !user_cc_turn_cbet_opportunity_seen Return !user_cc_turn_state_snapshot_recorded Force
+When !user_cc_turn_state_snapshot_recorded Return false Force
+When f$cc_hist_turn_state_primary_class_marker_count != 1 Return false Force
+When user_cc_turn_state_had_top_pair && f$cc_hist_turn_state_tp_kicker_marker_count != 1 Return false Force
+When !user_cc_turn_state_had_top_pair && f$cc_hist_turn_state_tp_kicker_marker_count != 0 Return false Force
+When f$cc_hist_turn_state_draw_marker_count > 1 Return false Force
+When user_cc_turn_state_had_air && (!user_cc_turn_state_had_no_made || f$cc_hist_turn_state_draw_marker_count != 0) Return false Force
+When f$cc_hist_turn_state_runout_marker_count != 1 Return false Force
+When ((user_cc_turn_state_was_hu * 1) + (user_cc_turn_state_was_multiway * 1)) != 1 Return false Force
+When f$cc_hist_turn_state_relpos_marker_count != 1 Return false Force
+When f$cc_hist_turn_state_player_count_marker_count != 1 Return false Force
+When BitCount(f$cc_hist_turn_state_live_opp_mask) != (f$cc_hist_turn_state_player_count - 1) Return false Force
+When user_cc_turn_state_was_hu && f$cc_hist_turn_state_player_count != 2 Return false Force
+When user_cc_turn_state_was_hu && user_cc_turn_state_relpos_middle Return false Force
+When user_cc_turn_state_was_multiway && f$cc_hist_turn_state_player_count < 3 Return false Force
+When user_cc_turn_cbet_plan_bet_seen && f$cc_hist_turn_state_family_marker_count != 1 Return false Force
+When user_cc_turn_cbet_plan_bet_seen && (user_cc_turn_state_family_5 || user_cc_turn_state_family_6) Return false Force
+When Others Return true Force
+
+// -----------------------------------------------------------------------------
+// TH.02 — CLOSED-STREET OpenHoldem turn action primitives
+// -----------------------------------------------------------------------------
+
+// Purpose: turn has ended; round-3 history can now be treated as final.
+// Source/Provenance: T OpenHoldem betround numbering, River = round 4.
+##f$cc_hist_turn_closed##
+IsRiver
+
+// Purpose: Hero executed at least one turn check.
+// Source/Provenance: T `didchecround3` action counter.
+##f$cc_hist_turn_hero_checked##
+f$cc_hist_turn_closed && didchecround3 > 0
+
+// Purpose: Hero executed at least one turn call.
+// Source/Provenance: T `didcallround3` action counter.
+##f$cc_hist_turn_hero_called##
+f$cc_hist_turn_closed && didcallround3 > 0
+
+// Purpose: Hero executed at least one generic Raise action on turn.
+// Source/Provenance: T `didraisround3`; normal CashCrusher Turn CBet uses betsize.
+##f$cc_hist_turn_hero_raised##
+f$cc_hist_turn_closed && didraisround3 > 0
+
+// Purpose: Hero executed at least one numeric/betpot/percentage size on turn.
+// Source: successful BetPot is registered as betsize; RaiseBy percent reaches
+// the same numeric betsize/swag execution path.
+// Provenance: T canonical normal Turn-CBet execution signal.
+##f$cc_hist_turn_hero_betsized##
+f$cc_hist_turn_closed && didbetsizeround3 > 0
+
+// Purpose: Hero executed at least one explicit all-in on turn.
+// Source/Provenance: T `didalliround3`, including BetMax execution.
+##f$cc_hist_turn_hero_allin##
+f$cc_hist_turn_closed && didalliround3 > 0
+
+// Purpose: count Hero aggressive turn actions recorded by OpenHoldem.
+// Source/Provenance: T action-counter arithmetic; >1 signals re-aggression.
+##f$cc_hist_turn_hero_aggression_count##
+When !f$cc_hist_turn_closed Return 0 Force
+When Others Return (didraisround3 + didbetsizeround3 + didalliround3) Force
+
+// Purpose: Hero is final recorded turn aggressor.
+// Source: OpenHoldem stable previous-round `lastraised3`.
+// Provenance: T; meaningful only with proven Hero aggression.
+##f$cc_hist_turn_final_aggressor_is_hero##
+f$cc_hist_turn_closed && f$cc_hist_turn_hero_aggression_count > 0 && lastraised3 = userchair
+
+// -----------------------------------------------------------------------------
+// TH.03 — PRE-ACTION Turn-CBet size-plan metadata decoded on river
+// -----------------------------------------------------------------------------
+
+// Purpose: count mutually-exclusive Turn plan-size markers written by Gate02J.
+// Source/Provenance: P integrity check over T boolean user variables.
+##f$cc_hist_turn_cbet_plan_size_marker_count##
+(user_cc_turn_cbet_plan_size_25 * 1) +
+(user_cc_turn_cbet_plan_size_33 * 1) +
+(user_cc_turn_cbet_plan_size_40 * 1) +
+(user_cc_turn_cbet_plan_size_50 * 1) +
+(user_cc_turn_cbet_plan_size_625 * 1) +
+(user_cc_turn_cbet_plan_size_75 * 1) +
+(user_cc_turn_cbet_plan_size_100 * 1)
+
+// Purpose: recover reviewed strategic Turn size ID on river.
+// Source/Provenance: A deterministic map of Gate02J size IDs.
+// Safety: contradictory/missing size markers -> 0.
+##f$cc_hist_turn_cbet_plan_size_id##
+When !f$cc_hist_turn_closed Return 0 Force
+When !user_cc_turn_cbet_plan_size_recorded Return 0 Force
+When f$cc_hist_turn_cbet_plan_size_marker_count != 1 Return 0 Force
+When user_cc_turn_cbet_plan_size_25 Return 1 Force
+When user_cc_turn_cbet_plan_size_33 Return 2 Force
+When user_cc_turn_cbet_plan_size_40 Return 3 Force
+When user_cc_turn_cbet_plan_size_50 Return 4 Force
+When user_cc_turn_cbet_plan_size_625 Return 5 Force
+When user_cc_turn_cbet_plan_size_75 Return 6 Force
+When user_cc_turn_cbet_plan_size_100 Return 7 Force
+When Others Return 0 Force
+
+// Purpose: planned Turn execution was mechanically all-in-equivalent before click.
+// Source/Provenance: T/A Gate02J.2B marker, not a strategic jam label.
+##f$cc_hist_turn_cbet_plan_expected_allin##
+f$cc_hist_turn_closed && user_cc_turn_cbet_plan_expected_allin
+
+// Purpose: validate stored Turn CBet plan metadata after street close.
+// Source/Provenance: P invariant. Natural-allin condition itself is not re-run
+// on river because its geometry belongs to the turn decision state.
+##f$cc_hist_turn_cbet_plan_markers_consistent##
+When !f$cc_hist_turn_closed Return false Force
+When user_cc_turn_cbet_plan_size_recorded && !user_cc_turn_cbet_plan_bet_seen Return false Force
+When user_cc_turn_cbet_plan_size_recorded && f$cc_hist_turn_cbet_plan_size_marker_count != 1 Return false Force
+When user_cc_turn_cbet_plan_expected_allin && !user_cc_turn_cbet_plan_size_recorded Return false Force
+When user_cc_turn_cbet_plan_bet_seen && !user_cc_turn_cbet_plan_size_recorded Return false Force
+When Others Return true Force
+
+// -----------------------------------------------------------------------------
+// TH.04 — EXECUTED initial turn line after a CBet opportunity
+// -----------------------------------------------------------------------------
+
+// Purpose: prove Hero actually executed initial Turn CBet aggression.
+// Source: opportunity marker is pre-action; execution comes from closed round 3.
+// Provenance: A/T final-action proof.
+// Safety: any prior turn check wins classification; check-raise is not a CBet.
+##f$cc_hist_turn_initial_cbet_executed##
+f$cc_hist_turn_closed &&
+user_cc_turn_cbet_opportunity_seen &&
+didchecround3 = 0 &&
+(didbetsizeround3 > 0 || didalliround3 > 0)
+
+// Purpose: initial Turn CBet was executed as a normal numeric/betpot size.
+// Source/Provenance: T round-3 history.
+##f$cc_hist_turn_initial_cbet_was_sized##
+f$cc_hist_turn_initial_cbet_executed && didbetsizeround3 > 0
+
+// Purpose: initial Turn CBet itself was direct all-in.
+// Source/Provenance: T allin/betsize/raise counters + P initial-action disambiguation.
+##f$cc_hist_turn_initial_cbet_was_direct_allin##
+f$cc_hist_turn_initial_cbet_executed &&
+didalliround3 > 0 &&
+didbetsizeround3 = 0 &&
+didraisround3 = 0
+
+// Purpose: Hero skipped available Turn CBet and the entire turn checked through.
+// Source/Provenance: T closed-street action counters + A cross-street ownership.
+// Safety: checked-then-called/aggressed histories are excluded.
+##f$cc_hist_turn_skipped_cbet_checkthrough##
+f$cc_hist_turn_closed &&
+user_cc_turn_cbet_opportunity_seen &&
+didchecround3 > 0 &&
+didcallround3 = 0 &&
+didraisround3 = 0 &&
+didbetsizeround3 = 0 &&
+didalliround3 = 0
+
+// Purpose: Hero checked initial Turn CBet opportunity then called later action.
+// Source/Provenance: T closed round-3 action counters.
+##f$cc_hist_turn_checked_then_called##
+f$cc_hist_turn_closed &&
+user_cc_turn_cbet_opportunity_seen &&
+didchecround3 > 0 &&
+didcallround3 > 0 &&
+didraisround3 = 0 &&
+didbetsizeround3 = 0 &&
+didalliround3 = 0
+
+// Purpose: Hero checked initial Turn CBet opportunity then later aggressed.
+// Source/Provenance: T action history; this belongs to check-raise/probe ownership.
+##f$cc_hist_turn_checked_then_aggressed##
+f$cc_hist_turn_closed &&
+user_cc_turn_cbet_opportunity_seen &&
+didchecround3 > 0 &&
+(didraisround3 > 0 || didbetsizeround3 > 0 || didalliround3 > 0)
+
+// Purpose: Hero Turn CBet, faced later aggression and continued by calling.
+// Source/Provenance: T action counters + final aggressor history.
+// Safety: not a normal River CBet parent because Villain ended turn as aggressor.
+##f$cc_hist_turn_cbet_then_called_raise##
+f$cc_hist_turn_initial_cbet_executed &&
+didcallround3 > 0 &&
+lastraised3 != userchair
+
+// Purpose: Hero Turn CBet and then re-aggressed on same street.
+// Source/Provenance: T action counts + P exact route separator.
+// Safety: raised-turn continuation family, never ordinary River CBet.
+##f$cc_hist_turn_cbet_then_reaggressed##
+f$cc_hist_turn_initial_cbet_executed &&
+(didbetsizeround3 >= 2 || didraisround3 > 0 || (didbetsizeround3 > 0 && didalliround3 > 0))
+
+// -----------------------------------------------------------------------------
+// TH.05 — CANONICAL River routing parents
+// -----------------------------------------------------------------------------
+
+// Purpose: standard River CBet parent: Hero made one sized initial Turn CBet,
+// never checked/called/re-raised afterwards and remains final turn aggressor.
+// Source: DeepCrusher initiative architecture corrected by actual runtime history.
+// Provenance: A/T. Direct turn all-in is excluded because no normal river decision
+// can arise from an all-in Hero continuation.
+##f$cc_hist_river_standard_cbet_parent##
+f$cc_hist_turn_closed &&
+user_cc_turn_cbet_opportunity_seen &&
+didchecround3 = 0 &&
+didcallround3 = 0 &&
+didraisround3 = 0 &&
+didbetsizeround3 = 1 &&
+didalliround3 = 0 &&
+f$cc_hist_turn_final_aggressor_is_hero
+
+// Purpose: river no-action/delayed parent after Hero had Turn-CBet opportunity
+// but actually checked and no later turn action occurred.
+// Source/Provenance: A cross-street ownership + T exact check-through history.
+##f$cc_hist_river_after_turn_checkthrough_parent##
+f$cc_hist_turn_skipped_cbet_checkthrough
+
+// Purpose: standard River CBet and turn-checkthrough parents cannot overlap.
+// Source/Provenance: P safety invariant.
+##f$cc_hist_river_cbet_parent_exclusive##
+!(f$cc_hist_river_standard_cbet_parent && f$cc_hist_river_after_turn_checkthrough_parent)
+
+// -----------------------------------------------------------------------------
+// TH.06 — PLAN vs EXECUTION drift diagnostics
+// -----------------------------------------------------------------------------
+
+// Purpose: strategy planned Turn CBet but OpenHoldem records initial check.
+// Source/Provenance: P diagnostic over T closed history.
+##f$cc_hist_turn_planned_bet_but_checked##
+f$cc_hist_turn_closed &&
+user_cc_turn_cbet_plan_bet_seen &&
+didchecround3 > 0
+
+// Purpose: actual initial Turn CBet exists without canonical plan capture.
+// Source/Provenance: P runtime-composition diagnostic.
+##f$cc_hist_turn_cbet_executed_without_plan_capture##
+f$cc_hist_turn_initial_cbet_executed && !user_cc_turn_cbet_plan_bet_seen
+
+// Purpose: planned sized Turn CBet became a direct all-in unexpectedly.
+// Source: external/global sizing callback can promote execution after local plan.
+// Provenance: T/P diagnostic; poker action is retained as actual history.
+##f$cc_hist_turn_unexpected_allin_promotion##
+f$cc_hist_turn_closed &&
+user_cc_turn_cbet_plan_size_recorded &&
+!user_cc_turn_cbet_plan_expected_allin &&
+f$cc_hist_turn_initial_cbet_was_direct_allin
+
+// Purpose: local Gate02J expected direct BetMax but execution remained sized.
+// Source/Provenance: T/P plan-v-runtime mismatch diagnostic.
+##f$cc_hist_turn_expected_allin_not_executed##
+f$cc_hist_turn_closed &&
+user_cc_turn_cbet_plan_expected_allin &&
+f$cc_hist_turn_initial_cbet_was_sized &&
+didalliround3 = 0
+
+// Purpose: compact Turn-CBet runtime mismatch flag for River fail-closed routing.
+// Source/Provenance: P union of T/A exact inconsistencies.
+// Safety: actual executed history remains authoritative; mismatch diagnoses wiring.
+##f$cc_hist_turn_cbet_runtime_mismatch##
+When !f$cc_hist_turn_closed Return false Force
+When !f$cc_hist_turn_cbet_plan_markers_consistent Return true Force
+When !f$cc_hist_turn_state_snapshot_consistent Return true Force
+When f$cc_hist_turn_planned_bet_but_checked Return true Force
+When f$cc_hist_turn_cbet_executed_without_plan_capture Return true Force
+When f$cc_hist_turn_unexpected_allin_promotion Return true Force
+When f$cc_hist_turn_expected_allin_not_executed Return true Force
+When Others Return false Force
+
+// Purpose: River can use standard CBet history only when plan, snapshot and
+// runtime action agree. This helper is deliberately stricter than raw parent.
+// Source/Provenance: P fail-closed wrapper over T/A canonical history.
+##f$cc_hist_river_standard_cbet_parent_valid##
+f$cc_hist_river_standard_cbet_parent &&
+f$cc_hist_turn_cbet_plan_markers_consistent &&
+f$cc_hist_turn_state_snapshot_consistent &&
+!f$cc_hist_turn_cbet_runtime_mismatch
+
+// ============================================================================
+// End Gate 02N executed Turn-action provenance layer.
+// ============================================================================
