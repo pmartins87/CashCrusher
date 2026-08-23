@@ -3,40 +3,66 @@
 // Portable post-flop hand/draw primitives
 // ============================================================================
 // Purpose:
-//   transplant context-independent DeepCrusher hand classification while
+//   Transplant context-independent DeepCrusher hand classification while
 //   removing game-label, opponent-profile and shallow-stack assumptions.
 //
+// Source hierarchy:
+//   1) audited DeepCrusher mechanical hand/board helpers;
+//   2) OpenHoldem/OpenPPL Hold'em symbols for the underlying card evaluation;
+//   3) no professional-theory betting policy is allowed in this file.
+//
 // Provenance:
-//   T = mechanical hand/pair/kicker definitions inherited from mature source.
-//   A = cleaned naming / Hold'em-specific real-draw filtering.
-//   No betting policy lives here.
+//   T = mechanical definition carried from the mature source/runtime meaning.
+//   A = cleaned naming or Hold'em-specific filtering needed by CashCrusher.
+//
+// OpenPPL safety contract:
+//   Every WHEN below is complete and owns its Return.  No logical scope depends
+//   on indentation or an open-ended parent WHEN.
 // ============================================================================
 
 // -----------------------------------------------------------------------------
 // P.01 — Made-hand ladders
 // -----------------------------------------------------------------------------
 
+// Purpose: true when Hero has at least one pair or any stronger made hand.
+// Source/Provenance: DeepCrusher hand ladder, T; descriptor only, never an action.
 ##f$cc_hand_pair_or_better##
 HavePair || HaveTwoPair || HaveSet || HaveTrips || HaveStraight || HaveFlush || HaveFullHouse || HaveQuads || HaveStraightFlush
 
+// Purpose: true for overpair or any hand stronger than one pair.
+// Source/Provenance: DeepCrusher made-hand hierarchy, T.
 ##f$cc_hand_overpair_or_better##
 HaveOverPair || HaveTwoPair || HaveSet || HaveTrips || HaveStraight || HaveFlush || HaveFullHouse || HaveQuads || HaveStraightFlush
 
+// Purpose: isolate the robust two-pair+ value region.
+// Source/Provenance: DeepCrusher made-hand hierarchy, T.
 ##f$cc_hand_two_pair_or_better##
 HaveTwoPair || HaveSet || HaveTrips || HaveStraight || HaveFlush || HaveFullHouse || HaveQuads || HaveStraightFlush
 
+// Purpose: identify trips/set or any stronger made hand.
+// Source/Provenance: DeepCrusher made-hand hierarchy, T.
 ##f$cc_hand_trips_or_better##
 HaveTrips || HaveSet || HaveStraight || HaveFlush || HaveFullHouse || HaveQuads || HaveStraightFlush
 
+// Purpose: repair the pocket-overpair case on paired boards where generic pair
+// labels can be misleading.
+// Source/Provenance: audited DeepCrusher paired-board helper, T/A.
 ##f$cc_have_over_nonboard_paired_pocket_pair##
 (betround >= flop) && ispair && (rankhiplayer > HighestUnpairedBoardCard)
 
+// Purpose: canonical CashCrusher top-pair-or-better descriptor, including the
+// repaired paired-board overpair case.
+// Source/Provenance: DeepCrusher hierarchy plus paired-board repair, T/A.
 ##f$cc_hand_top_pair_or_better##
 HaveTopNonBoardPairedPair || f$cc_have_over_nonboard_paired_pocket_pair || f$cc_hand_overpair_or_better
 
+// Purpose: top pair exactly, excluding overpairs/two-pair+.
+// Source/Provenance: derived mechanically from the T/A ladder above.
 ##f$cc_hand_just_top_pair##
 f$cc_hand_top_pair_or_better && !f$cc_hand_overpair_or_better
 
+// Purpose: mark hands with no pair made by Hero and no stronger made hand.
+// Source/Provenance: mechanical negation of the source ladder, T/A.
 ##f$cc_hand_no_made##
 !HavePair && !f$cc_hand_overpair_or_better
 
@@ -47,36 +73,54 @@ f$cc_hand_top_pair_or_better && !f$cc_hand_overpair_or_better
 // is duplicated.
 // -----------------------------------------------------------------------------
 
+// Purpose: reconstruct the real second non-board-paired pair on paired boards.
+// Source/Provenance: audited DeepCrusher paired-board correction, T.
 ##f$cc_have_second_top_nonboard_paired_pair##
 When HaveSecondTopPair Return true Force
 When RankOfTopPairOnBoard > ThirdBestBoardCard && HaveThirdTopPair Return true Force
 When Others Return false Force
 
+// Purpose: reconstruct the real third non-board-paired pair after rank shifting.
+// Source/Provenance: audited DeepCrusher paired-board correction, T.
 ##f$cc_have_third_top_nonboard_paired_pair##
 When HaveThirdTopPair Return true Force
 When RankOfTopPairOnBoard > FourthBestBoardCard && HaveFourthTopPair Return true Force
 When Others Return false Force
 
+// Purpose: reconstruct the real fourth non-board-paired pair after rank shifting.
+// Source/Provenance: audited DeepCrusher paired-board correction, T.
 ##f$cc_have_fourth_top_nonboard_paired_pair##
 When HaveFourthTopPair Return true Force
 When RankOfTopPairOnBoard > FifthBestBoardCard && HaveFifthTopPair Return true Force
 When Others Return false Force
 
+// Purpose: expose the fifth pair tier when OpenPPL reports it directly.
+// Source/Provenance: OpenPPL/DeepCrusher mechanical descriptor, T.
 ##f$cc_have_fifth_top_nonboard_paired_pair##
 HaveFifthTopPair
 
+// Purpose: canonical second-pair/pocket-pair tier used by later policy nodes.
+// Source/Provenance: DeepCrusher pair-tier logic with paired-board repair, T/A.
 ##f$cc_hand_second_pair_or_pocket##
 (f$cc_have_second_top_nonboard_paired_pair && !f$cc_hand_top_pair_or_better) || (ispair && IndividualOvercardsOnBoard = 1)
 
+// Purpose: canonical third-pair/pocket-pair tier.
+// Source/Provenance: DeepCrusher pair-tier logic with paired-board repair, T/A.
 ##f$cc_hand_third_pair_or_pocket##
 (f$cc_have_third_top_nonboard_paired_pair && !f$cc_have_second_top_nonboard_paired_pair && !f$cc_hand_top_pair_or_better) || (ispair && IndividualOvercardsOnBoard = 2)
 
+// Purpose: canonical fourth-pair/pocket-pair tier.
+// Source/Provenance: DeepCrusher pair-tier logic with paired-board repair, T/A.
 ##f$cc_hand_fourth_pair_or_pocket##
 (f$cc_have_fourth_top_nonboard_paired_pair && !f$cc_have_third_top_nonboard_paired_pair && !f$cc_have_second_top_nonboard_paired_pair && !f$cc_hand_top_pair_or_better) || (ispair && IndividualOvercardsOnBoard = 3)
 
+// Purpose: canonical fifth-pair/pocket-pair tier.
+// Source/Provenance: DeepCrusher pair-tier logic with paired-board repair, T/A.
 ##f$cc_hand_fifth_pair_or_pocket##
 (f$cc_have_fifth_top_nonboard_paired_pair && !f$cc_have_fourth_top_nonboard_paired_pair && !f$cc_have_third_top_nonboard_paired_pair && !f$cc_have_second_top_nonboard_paired_pair && !f$cc_hand_top_pair_or_better) || (ispair && IndividualOvercardsOnBoard = 4)
 
+// Purpose: aggregate showdown-value pair tiers below top pair.
+// Source/Provenance: DeepCrusher pair ladder, T/A; policy remains external.
 ##f$cc_hand_middle_or_bottom_pair##
 f$cc_hand_second_pair_or_pocket || f$cc_hand_third_pair_or_pocket || f$cc_hand_fourth_pair_or_pocket || f$cc_hand_fifth_pair_or_pocket || HaveUnderPair
 
@@ -84,9 +128,13 @@ f$cc_hand_second_pair_or_pocket || f$cc_hand_third_pair_or_pocket || f$cc_hand_f
 // P.03 — Kicker reconstruction
 // -----------------------------------------------------------------------------
 
+// Purpose: read the fifth-card rank encoded in OpenHoldem pokerval.
+// Source/Provenance: audited DeepCrusher/OpenHoldem representation, T.
 ##f$cc_made_hand_fifth_card_rank##
 (pokerval >> 0) & 0x0F
 
+// Purpose: identify the rank currently forming Hero's one-pair category.
+// Source/Provenance: OpenPPL pair-rank symbols assembled as in DeepCrusher, T/A.
 ##f$cc_pair_rank##
 When !HavePair Return 0 Force
 When HaveTopPair Return TopPairRank Force
@@ -96,31 +144,46 @@ When HaveFourthTopPair Return FourthTopPairRank Force
 When HaveFifthTopPair Return FifthTopPairRank Force
 When Others Return 0 Force
 
+// Purpose: highest hole-card rank, independent of made-hand status.
+// Source/Provenance: mechanical OpenPPL ranks, T.
 ##f$cc_best_hole_rank##
 RankOfFirstHoleCard > RankOfSecondHoleCard ? RankOfFirstHoleCard : RankOfSecondHoleCard
 
+// Purpose: lower hole-card rank, used when the high card itself forms the pair.
+// Source/Provenance: mechanical OpenPPL ranks, T.
 ##f$cc_second_hole_rank##
 RankOfFirstHoleCard < RankOfSecondHoleCard ? RankOfFirstHoleCard : RankOfSecondHoleCard
 
+// Purpose: best hole rank that is not the rank already making Hero's pair.
+// Source/Provenance: DeepCrusher kicker reconstruction, T/A.
 ##f$cc_best_nonpaired_hole_rank##
 When f$cc_best_hole_rank = f$cc_pair_rank Return f$cc_second_hole_rank Force
 When Others Return f$cc_best_hole_rank Force
 
+// Purpose: reconstruct the relevant kicker for one-pair/two-pair/trips/quads
+// without relying on visually nested WHENs.
+// Source/Provenance: DeepCrusher kicker algorithm, T; rewritten flat for OPPL
+// safety because indentation does not create scope.
 ##f$cc_my_kicker##
-When isfourofakind || istwopair || isthreeofakind || isonepair
-    When f$cc_best_nonpaired_hole_rank >= f$cc_made_hand_fifth_card_rank Return f$cc_best_nonpaired_hole_rank Force
-    When Others Return f$cc_made_hand_fifth_card_rank Force
+When (isfourofakind || istwopair || isthreeofakind || isonepair) && f$cc_best_nonpaired_hole_rank >= f$cc_made_hand_fifth_card_rank Return f$cc_best_nonpaired_hole_rank Force
+When (isfourofakind || istwopair || isthreeofakind || isonepair) Return f$cc_made_hand_fifth_card_rank Force
 When Others Return 0 Force
 
+// Purpose: count ranks above Hero's kicker that are not already visible in the
+// evaluated five-card poker hand.
+// Source/Provenance: audited DeepCrusher kicker-quality helper, T/A.
 ##f$cc_number_better_kickers##
 When f$cc_my_kicker <= 0 Return 99 Force
 When Others Return ((ace - f$cc_my_kicker) - BitCount(rankbitspoker >> (f$cc_my_kicker + 1))) Force
 
+// Purpose: preserve the historical TPGK+ boundary as a descriptor only.
+// Source/Provenance: DeepCrusher legacy threshold, T descriptor; exact six-max
+// betting policy is A/P and may choose different kicker cutoffs per matchup.
 ##f$cc_hand_tpgk_or_better_legacy##
-// Legacy DeepCrusher threshold kept as a DESCRIPTOR only. Six-max policy may
-// choose a different kicker boundary for a specific range matchup.
 ((HaveTopNonBoardPairedPair || f$cc_have_over_nonboard_paired_pocket_pair) && f$cc_number_better_kickers <= 3) || f$cc_hand_overpair_or_better
 
+// Purpose: identify top-pair/weak-kicker within the portable hand layer.
+// Source/Provenance: DeepCrusher kicker split, T/A descriptor only.
 ##f$cc_hand_tpwk##
 HaveTopNonBoardPairedPair && f$cc_number_better_kickers > 3 && !f$cc_hand_overpair_or_better
 
@@ -130,15 +193,23 @@ HaveTopNonBoardPairedPair && f$cc_number_better_kickers > 3 && !f$cc_hand_overpa
 // where the source provides that distinction.
 // -----------------------------------------------------------------------------
 
+// Purpose: real non-made flush draw available to Hero before river.
+// Source/Provenance: HoldEm_HaveFlushDraw + DeepCrusher intent, T/A.
 ##f$cc_real_fd##
 !IsRiver && !HaveFlush && HoldEm_HaveFlushDraw
 
+// Purpose: distinguish nut flush draws from other real flush draws.
+// Source/Provenance: OpenPPL HaveNutFlushDraw, T.
 ##f$cc_real_nut_fd##
 f$cc_real_fd && HaveNutFlushDraw
 
+// Purpose: real Hero OESD, excluding a straight draw that exists only on board.
+// Source/Provenance: DeepCrusher real-draw correction using Hold'em evaluator, T/A.
 ##f$cc_real_oesd##
 !IsRiver && !HaveStraight && HoldEm_HaveOpenEndedStraightDraw && !OpenEndedStraightDrawOnBoard
 
+// Purpose: real gutshot/nut-straight-draw descriptor before river.
+// Source/Provenance: audited DeepCrusher/OpenPPL draw logic, T/A.
 ##f$cc_real_gutshot##
 When IsRiver Return false Force
 When HaveStraight Return false Force
@@ -146,12 +217,18 @@ When HaveInsideStraightDraw && (nstraightfillcommon - nstraightfill = 2) Return 
 When HaveNutStraightDraw Return true Force
 When Others Return false Force
 
+// Purpose: aggregate real OESD and gutshot families.
+// Source/Provenance: mechanical composition of T/A draw primitives.
 ##f$cc_real_straight_draw##
 f$cc_real_oesd || f$cc_real_gutshot
 
+// Purpose: any real frontdoor flush or straight draw owned by Hero.
+// Source/Provenance: mechanical composition; T/A, no action implied.
 ##f$cc_real_frontdoor_draw##
 f$cc_real_fd || f$cc_real_straight_draw
 
+// Purpose: simultaneous real flush + straight draw.
+// Source/Provenance: DeepCrusher combo-draw concept, T/A.
 ##f$cc_real_combo_draw##
 f$cc_real_fd && f$cc_real_straight_draw
 
@@ -160,26 +237,39 @@ f$cc_real_fd && f$cc_real_straight_draw
 // These are ingredients for combo selection, not automatic betting triggers.
 // -----------------------------------------------------------------------------
 
+// Purpose: flop backdoor flush draw.
+// Source/Provenance: OpenPPL HaveBackdoorFlushDraw, T.
 ##f$cc_backdoor_fd##
 IsFlop && HaveBackdoorFlushDraw
 
+// Purpose: flop backdoor straight draw.
+// Source/Provenance: OpenPPL HaveBackdoorStraightDraw, T.
 ##f$cc_backdoor_sd##
 IsFlop && HaveBackdoorStraightDraw
 
+// Purpose: simultaneous backdoor flush and straight equity.
+// Source/Provenance: DeepCrusher combo-backdoor concept, T/A.
 ##f$cc_combo_backdoors##
 f$cc_backdoor_fd && f$cc_backdoor_sd
 
+// Purpose: both hole cards are overcards to the current board evaluator.
+// Source/Provenance: OpenPPL Overcards, T.
 ##f$cc_two_overcards##
 Overcards = 2
 
+// Purpose: at least one hole-card overcard.
+// Source/Provenance: OpenPPL Overcards, T.
 ##f$cc_one_or_more_overcards##
 Overcards >= 1
 
+// Purpose: stricter two-overcard descriptor where both hole ranks exceed the
+// flop's second-highest rank; useful for source-equity families.
+// Source/Provenance: DeepCrusher source-derived descriptor, T/A; policy external.
 ##f$cc_two_meaningful_overcards##
-// Source-derived descriptor: both hole ranks are above the flop's second-highest
-// rank. Kept separate from policy because its value depends on matchup.
 IsFlop && !ispair && (rankloplayer > SecondTopFlopCard)
 
+// Purpose: no made hand and no real frontdoor draw.
+// Source/Provenance: mechanical CashCrusher composition, A.
 ##f$cc_air_no_frontdoor##
 f$cc_hand_no_made && !f$cc_real_frontdoor_draw
 
@@ -187,12 +277,19 @@ f$cc_hand_no_made && !f$cc_real_frontdoor_draw
 // P.06 — Useful compound descriptors, intentionally non-strategic
 // -----------------------------------------------------------------------------
 
+// Purpose: made pair-or-better plus a real frontdoor draw.
+// Source/Provenance: DeepCrusher pair+draw concept, A descriptor.
 ##f$cc_pair_plus_draw##
 f$cc_hand_pair_or_better && f$cc_real_frontdoor_draw
 
+// Purpose: real frontdoor draw accompanied by two overcards.
+// Source/Provenance: DeepCrusher draw-quality ingredient, A descriptor.
 ##f$cc_draw_plus_two_overcards##
 f$cc_real_frontdoor_draw && f$cc_two_overcards
 
+// Purpose: nut flush draw or combo draw; intentionally NOT named stack-off.
+// Source/Provenance: A from DeepCrusher draw-quality concepts; the old Spin
+// StackOffDraws action implication is X and is deliberately absent.
 ##f$cc_nut_or_combo_draw##
 f$cc_real_nut_fd || f$cc_real_combo_draw
 
