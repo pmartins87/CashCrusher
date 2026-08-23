@@ -92,13 +92,14 @@ false
 ##f$cc_flop_cbet_true_hu_3bp_3bettor_oop##
 f$cc_cbet_true_hu_plain3bp_oop_action
 
-// Purpose: true-HU 4BP IP placeholder.
-// Source/Provenance: X pending dedicated audit.
+// Purpose: clean true-HU ordinary 4BP SB/Button-4bettor-IP child.
+// Source/Provenance: A HU topology + P Flop_CBet_4BP policy.
+// Safety: reversed/limp-reraise true-HU 4BP cannot satisfy the clean child.
 ##f$cc_flop_cbet_true_hu_4bp_4bettor_ip##
-false
+f$cc_cbet_true_hu_4bp_opener4_ip_action
 
-// Purpose: true-HU 4BP OOP placeholder.
-// Source/Provenance: X pending dedicated audit.
+// Purpose: true-HU 4bettor-OOP is not a clean standard opener4 topology.
+// Source/Provenance: P/A chronology guard; reversed histories remain unsupported.
 ##f$cc_flop_cbet_true_hu_4bp_4bettor_oop##
 false
 
@@ -142,15 +143,17 @@ f$cc_cbet_squeeze_hu_ip_action
 ##f$cc_flop_cbet_hu_squeeze_3bettor_oop##
 f$cc_cbet_squeeze_hu_oop_action
 
-// Purpose: reduced-HU 4BP IP placeholder.
-// Source/Provenance: X pending dedicated audit.
+// Purpose: clean reduced-HU 4BP 4bettor-IP child.
+// Source/Provenance: P/A exact opener4/cold4 survivor dispatcher.
+// Safety: non-raiser survivor and ambiguous chronology check inside dispatcher.
 ##f$cc_flop_cbet_hu_4bp_4bettor_ip##
-false
+f$cc_cbet_4bp_reduced_hu_action
 
-// Purpose: reduced-HU 4BP OOP placeholder.
-// Source/Provenance: X pending dedicated audit.
+// Purpose: clean reduced-HU 4BP 4bettor-OOP child.
+// Source/Provenance: P/A exact opener4/cold4 survivor dispatcher.
+// Safety: no generic 4BP fallback.
 ##f$cc_flop_cbet_hu_4bp_4bettor_oop##
-false
+f$cc_cbet_4bp_reduced_hu_action
 
 // Purpose: multiway ordinary SRP child, split by exact flop origin count.
 // Source: true3 policy in Flop_CBet_Multiway_SRP; 4/5/6-way policy in
@@ -187,8 +190,9 @@ When f$cc_mw_squeeze_exact3_context Return f$cc_cbet_mw_squeeze_action Force
 When f$cc_mw_squeeze_4plus_context Return f$cc_cbet_mw_squeeze_action Force
 When Others Return false Force
 
-// Purpose: multiway 4BP placeholder.
-// Source/Provenance: X pending dedicated audit.
+// Purpose: multiway 4BP remains mechanically classified but strategically pending.
+// Source/Provenance: P exact opener/3bettor/othercaller metadata exists; caller
+// chronology is not precise enough yet for a blanket multiway action policy.
 ##f$cc_flop_cbet_mw_4bp_4bettor##
 false
 
@@ -216,6 +220,13 @@ When f$cc_cbet_squeeze_vs_pre3bet_coldcaller_ip_context Return true Force
 When f$cc_cbet_squeeze_vs_pre3bet_coldcaller_oop_context Return true Force
 When f$cc_cbet_squeeze_vs_post3bet_coldcaller_ip_context Return true Force
 When f$cc_cbet_squeeze_vs_post3bet_coldcaller_oop_context Return true Force
+When f$cc_cbet_true_hu_4bp_opener4_ip_context Return true Force
+When f$cc_cbet_4bp_opener4_vs_threebettor_ip_context Return true Force
+When f$cc_cbet_4bp_opener4_vs_threebettor_oop_context Return true Force
+When f$cc_cbet_4bp_cold4_vs_opener_ip_context Return true Force
+When f$cc_cbet_4bp_cold4_vs_opener_oop_context Return true Force
+When f$cc_cbet_4bp_cold4_vs_threebettor_ip_context Return true Force
+When f$cc_cbet_4bp_cold4_vs_threebettor_oop_context Return true Force
 When f$cc_mw_srp_true3_context_consistent Return true Force
 When f$cc_mw_srp_4plus_context_consistent Return true Force
 When f$cc_mw_iso_true3_context_consistent Return true Force
@@ -252,6 +263,13 @@ When f$cc_cbet_squeeze_vs_pre3bet_coldcaller_ip_context Return f$cc_cbet_squeeze
 When f$cc_cbet_squeeze_vs_pre3bet_coldcaller_oop_context Return f$cc_cbet_squeeze_vs_pre3bet_coldcaller_oop_size_id Force
 When f$cc_cbet_squeeze_vs_post3bet_coldcaller_ip_context Return f$cc_cbet_squeeze_vs_post3bet_coldcaller_ip_size_id Force
 When f$cc_cbet_squeeze_vs_post3bet_coldcaller_oop_context Return f$cc_cbet_squeeze_vs_post3bet_coldcaller_oop_size_id Force
+When f$cc_cbet_true_hu_4bp_opener4_ip_context Return f$cc_cbet_true_hu_4bp_opener4_ip_size_id Force
+When f$cc_cbet_4bp_opener4_vs_threebettor_ip_context Return f$cc_cbet_4bp_opener4_vs_threebettor_size_id Force
+When f$cc_cbet_4bp_opener4_vs_threebettor_oop_context Return f$cc_cbet_4bp_opener4_vs_threebettor_size_id Force
+When f$cc_cbet_4bp_cold4_vs_opener_ip_context Return f$cc_cbet_4bp_cold4_vs_opener_size_id Force
+When f$cc_cbet_4bp_cold4_vs_opener_oop_context Return f$cc_cbet_4bp_cold4_vs_opener_size_id Force
+When f$cc_cbet_4bp_cold4_vs_threebettor_ip_context Return f$cc_cbet_4bp_cold4_vs_threebettor_size_id Force
+When f$cc_cbet_4bp_cold4_vs_threebettor_oop_context Return f$cc_cbet_4bp_cold4_vs_threebettor_size_id Force
 When f$cc_mw_srp_true3_context_consistent Return f$cc_cbet_mw_srp_true3_size_id Force
 When f$cc_mw_srp_4plus_context_consistent Return f$cc_cbet_mw_srp_4plus_size_id Force
 When f$cc_mw_iso_true3_context_consistent Return f$cc_cbet_mw_iso_true3_size_id Force
