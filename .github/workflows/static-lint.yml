@@ -21,3 +21,5 @@ jobs:
         run: python tools/test_flop_action_history.py
       - name: Test Turn CBet source-boundary contract
         run: python tools/test_turn_cbet_contract.py
+      - name: Test post-multiway HU Turn CBet contract
+        run: python tools/test_turn_postmultiway_hu.py
