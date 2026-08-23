@@ -1,0 +1,123 @@
+// ============================================================================
+// CashCrusher_ISO_Context.txt
+// Gate 01E.0 — isolation-pot survivor provenance
+// ============================================================================
+// A proven preflop isolation action does NOT prove that the surviving flop
+// opponent is the limper.
+//
+// Example:
+//   UTG limps -> HJ raises -> BTN calls -> UTG folds.
+// The pot was created by an isolation raise, but HJ reaches the flop HU against
+// a POST-RAISE COLD CALLER, not against the original limper.
+//
+// CashCrusher therefore preserves two distinct HU ISO descendants:
+//   1) isolator vs surviving PRE-RAISE LIMPER;
+//   2) isolator vs surviving POST-RAISE COLD CALLER.
+//
+// Multiway ISO pots can contain both types simultaneously and retain both masks.
+// True HU is excluded; SB limp -> BB raise is owned by the true-HU limp-raised
+// family, not ISO.
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// ISO.01 — Canonical position bit for HU villain
+// -----------------------------------------------------------------------------
+
+##f$cc_hu_villain_pos_bit##
+When f$cc_hu_villain_pos_id = 1 Return 1 Force
+When f$cc_hu_villain_pos_id = 2 Return 2 Force
+When f$cc_hu_villain_pos_id = 3 Return 4 Force
+When f$cc_hu_villain_pos_id = 4 Return 8 Force
+When f$cc_hu_villain_pos_id = 5 Return 16 Force
+When f$cc_hu_villain_pos_id = 6 Return 32 Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// ISO.02 — Call masks relative to the sole raiser
+// -----------------------------------------------------------------------------
+// In a supported non-HU one-raise first-orbit history, a call bit from a
+// canonical position BEFORE the raiser is evidence that the player limped before
+// the isolation raise. A call bit AFTER the raiser is a post-raise caller.
+//
+// This is an action-history provenance classifier, not a player-quality label.
+
+##f$cc_pf_pre_raise_limper_mask##
+When !f$cc_pf_iso_proven Return 0 Force
+When f$cc_pf_single_raiser_pos_id = 2 Return (f$cc_pf_call_utg * 1) Force
+When f$cc_pf_single_raiser_pos_id = 3 Return ((f$cc_pf_call_utg * 1) + (f$cc_pf_call_hj * 2)) Force
+When f$cc_pf_single_raiser_pos_id = 4 Return ((f$cc_pf_call_utg * 1) + (f$cc_pf_call_hj * 2) + (f$cc_pf_call_co * 4)) Force
+When f$cc_pf_single_raiser_pos_id = 5 Return ((f$cc_pf_call_utg * 1) + (f$cc_pf_call_hj * 2) + (f$cc_pf_call_co * 4) + (f$cc_pf_call_btn * 8)) Force
+When f$cc_pf_single_raiser_pos_id = 6 Return ((f$cc_pf_call_utg * 1) + (f$cc_pf_call_hj * 2) + (f$cc_pf_call_co * 4) + (f$cc_pf_call_btn * 8) + (f$cc_pf_call_sb * 16)) Force
+When Others Return 0 Force
+
+##f$cc_pf_post_raise_coldcaller_mask##
+When !f$cc_pf_iso_proven Return 0 Force
+When f$cc_pf_single_raiser_pos_id = 1 Return ((f$cc_pf_call_hj * 2) + (f$cc_pf_call_co * 4) + (f$cc_pf_call_btn * 8) + (f$cc_pf_call_sb * 16) + (f$cc_pf_call_bb * 32)) Force
+When f$cc_pf_single_raiser_pos_id = 2 Return ((f$cc_pf_call_co * 4) + (f$cc_pf_call_btn * 8) + (f$cc_pf_call_sb * 16) + (f$cc_pf_call_bb * 32)) Force
+When f$cc_pf_single_raiser_pos_id = 3 Return ((f$cc_pf_call_btn * 8) + (f$cc_pf_call_sb * 16) + (f$cc_pf_call_bb * 32)) Force
+When f$cc_pf_single_raiser_pos_id = 4 Return ((f$cc_pf_call_sb * 16) + (f$cc_pf_call_bb * 32)) Force
+When f$cc_pf_single_raiser_pos_id = 5 Return (f$cc_pf_call_bb * 32) Force
+When f$cc_pf_single_raiser_pos_id = 6 Return 0 Force
+When Others Return 0 Force
+
+##f$cc_pf_iso_has_pre_raise_limper##
+f$cc_pf_pre_raise_limper_mask > 0
+
+##f$cc_pf_iso_has_post_raise_coldcaller##
+f$cc_pf_post_raise_coldcaller_mask > 0
+
+// -----------------------------------------------------------------------------
+// ISO.03 — Current HU survivor type
+// -----------------------------------------------------------------------------
+
+##f$cc_hu_iso_villain_was_limper##
+f$cc_hu_origin_preflop_reduced &&
+f$cc_pf_iso_proven &&
+f$cc_hu_villain_pos_bit > 0 &&
+((f$cc_pf_pre_raise_limper_mask BitAnd f$cc_hu_villain_pos_bit) > 0)
+
+##f$cc_hu_iso_villain_was_postraise_coldcaller##
+f$cc_hu_origin_preflop_reduced &&
+f$cc_pf_iso_proven &&
+f$cc_hu_villain_pos_bit > 0 &&
+((f$cc_pf_post_raise_coldcaller_mask BitAnd f$cc_hu_villain_pos_bit) > 0)
+
+##f$cc_hu_iso_survivor_type_id##
+When f$cc_hu_iso_villain_was_limper Return 1 Force
+When f$cc_hu_iso_villain_was_postraise_coldcaller Return 2 Force
+When Others Return 0 Force
+
+##f$cc_hu_iso_survivor_proven##
+f$cc_hu_iso_survivor_type_id > 0
+
+// Contradiction guard: a single surviving player must not be classified as both.
+##f$cc_hu_iso_survivor_consistent##
+When !f$cc_hu_origin_preflop_reduced Return true Force
+When !f$cc_pf_iso_proven Return true Force
+When f$cc_hu_iso_villain_was_limper && f$cc_hu_iso_villain_was_postraise_coldcaller Return false Force
+When f$cc_hu_iso_survivor_proven Return true Force
+When Others Return false Force
+
+// -----------------------------------------------------------------------------
+// ISO.04 — Multiway composition descriptors
+// -----------------------------------------------------------------------------
+
+##f$cc_mw_iso_live_limper_mask##
+When !f$cc_multiway Return 0 Force
+When !f$cc_pf_iso_proven Return 0 Force
+When Others Return (f$cc_opp_live_mask BitAnd f$cc_pf_pre_raise_limper_mask) Force
+
+##f$cc_mw_iso_live_postraise_coldcaller_mask##
+When !f$cc_multiway Return 0 Force
+When !f$cc_pf_iso_proven Return 0 Force
+When Others Return (f$cc_opp_live_mask BitAnd f$cc_pf_post_raise_coldcaller_mask) Force
+
+##f$cc_mw_iso_live_limper_count##
+BitCount(f$cc_mw_iso_live_limper_mask)
+
+##f$cc_mw_iso_live_postraise_coldcaller_count##
+BitCount(f$cc_mw_iso_live_postraise_coldcaller_mask)
+
+// ============================================================================
+// End ISO survivor provenance.
+// ============================================================================
