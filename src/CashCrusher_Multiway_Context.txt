@@ -1,23 +1,23 @@
 // ============================================================================
 // CashCrusher_Multiway_Context.txt
-// Gate 00E — true multiway context descriptors for 3+ players post-flop
+// Gate 00E/00F — true multiway context descriptors for 3+ players post-flop
 // ============================================================================
-// This module does NOT copy a 3-handed Spin range into six-max. It exposes the
-// mechanical properties required to decide later whether a legacy multiway rule
-// is T/A, or whether a new P-theory rule is required.
+// This module does NOT copy a 3-handed Spin range into six-max cash. It exposes
+// the mechanical properties required to decide later whether a legacy multiway
+// rule is T/A or whether a new P-theory rule is required.
 //
-// Exact context key keeps:
-//   player count + pot family + Hero preflop role + Hero absolute position
-//   + exact live-opponent position mask + Hero relative post-flop position.
+// Exact context key preserves:
+//   dealt-player count + flop-entry count + CURRENT player count + pot family
+//   + Hero preflop role + Hero absolute position + exact CURRENT live-opponent
+//   mask + Hero relative post-flop position.
+//
+// Why both flop-entry and current counts matter:
+//   A turn that is 3-way after a 4-way flop is not strategically identical to
+//   a hand that reached the flop 3-way. Multiway provenance must survive folds.
 // ============================================================================
 
 ##f$cc_multiway##
 nplayersplaying >= 3 && nplayersplaying <= 6
-
-##f$cc_live_mask_consistent##
-When !f$cc_player_count_valid Return false Force
-When BitCount(f$cc_opp_live_mask) = nopponentsplaying Return true Force
-When Others Return false Force
 
 ##f$cc_multiway_rel_first##
 f$cc_multiway && f$cc_relpos_id = 1
@@ -34,24 +34,27 @@ When f$cc_pf_role_id <= 0 Return 0 Force
 When f$cc_relpos_id <= 0 Return 0 Force
 When Others Return (f$cc_pf_role_id * 10 + f$cc_relpos_id) Force
 
-// Stable exact mechanical key. It is deliberately NOT a strategy ID.
-// Layout (decimal fields):
-//   P C R H MM Q
-//   P  = nplayersplaying (3..6)
+// Stable exact mechanical key. It is deliberately NOT a solved strategy ID.
+// Decimal layout:
+//   D F P C R H MM Q
+//   D  = players dealt at hand start (2..6)
+//   F  = players who reached flop (2..6)
+//   P  = players currently playing (3..6 here)
 //   C  = pot family (1..5)
 //   R  = Hero role (1..9)
-//   H  = Hero position (1..6)
-//   MM = live-opponent mask (01..63)
+//   H  = Hero canonical position (1..6)
+//   MM = current live-opponent mask (01..63)
 //   Q  = relative position (1..3)
-// Implemented arithmetically to remain pure OpenPPL.
 ##f$cc_multiway_exact_context_id##
 When !f$cc_multiway Return 0 Force
 When !f$cc_live_mask_consistent Return 0 Force
+When f$cc_deal_size <= 0 Return 0 Force
+When f$cc_flop_entry_count <= 0 Return 0 Force
 When f$cc_pot_family_id <= 0 Return 0 Force
 When f$cc_pf_role_id <= 0 Return 0 Force
 When f$cc_hero_pos_id <= 0 Return 0 Force
 When f$cc_relpos_id <= 0 Return 0 Force
-When Others Return ((nplayersplaying * 1000000) + (f$cc_pot_family_id * 100000) + (f$cc_pf_role_id * 10000) + (f$cc_hero_pos_id * 1000) + (f$cc_opp_live_mask * 10) + f$cc_relpos_id) Force
+When Others Return ((f$cc_deal_size * 100000000) + (f$cc_flop_entry_count * 10000000) + (nplayersplaying * 1000000) + (f$cc_pot_family_id * 100000) + (f$cc_pf_role_id * 10000) + (f$cc_hero_pos_id * 1000) + (f$cc_opp_live_mask * 10) + f$cc_relpos_id) Force
 
 // Broad structural families used only as routing parents. Exact matchup/ranges
 // remain available through f$cc_multiway_exact_context_id and live mask.
@@ -92,25 +95,29 @@ f$cc_multiway && (f$cc_pf_role_open_call_3bet || f$cc_pf_role_cold_call_3bet) &&
 f$cc_multiway && (f$cc_pf_role_open_call_3bet || f$cc_pf_role_cold_call_3bet) && f$cc_multiway_rel_last
 
 // Legacy ancestry hints. These do not authorize copying legacy frequencies.
+// They apply only when EXACTLY three players reached the flop. If a 4-way flop
+// later shrinks to three players, the old 3w shapes are no longer adequate.
+//
 // 3wBTNv2p: Hero last against two players.
 // 3wSBv2p : Hero first against two players.
 // 3wBBv2p : Hero middle against two players.
 ##f$cc_legacy_mw_ancestor_btnv2p_shape##
-f$cc_threeway && f$cc_multiway_rel_last
+f$cc_threeway && f$cc_flop_entry_count = 3 && f$cc_multiway_rel_last
 
 ##f$cc_legacy_mw_ancestor_sbv2p_shape##
-f$cc_threeway && f$cc_multiway_rel_first
+f$cc_threeway && f$cc_flop_entry_count = 3 && f$cc_multiway_rel_first
 
 ##f$cc_legacy_mw_ancestor_bbv2p_shape##
-f$cc_threeway && f$cc_multiway_rel_middle
+f$cc_threeway && f$cc_flop_entry_count = 3 && f$cc_multiway_rel_middle
 
-// Four-, five- and six-way pots have no literal Crusher ancestor.
+// Four-, five- and six-way FLOP origins have no literal Crusher ancestor.
+// This remains true even if later folds reduce current player count.
 ##f$cc_mw_requires_new_theory_parent##
-f$cc_fourway || f$cc_fiveway || f$cc_sixway
+f$cc_flop_entry_count >= 4
 
 ##f$cc_multiway_context_valid##
 f$cc_context_valid && f$cc_multiway && f$cc_live_mask_consistent && f$cc_multiway_exact_context_id > 0
 
 // ============================================================================
-// End Gate 00E.
+// End Gate 00E/00F.
 // ============================================================================
