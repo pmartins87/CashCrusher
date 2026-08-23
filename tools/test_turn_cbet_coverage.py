@@ -25,7 +25,8 @@ def block(text: str, name: str) -> str:
 
 def all_turn_strategy_files() -> list[Path]:
     names = [
-        "CashCrusher_Turn_CBet_SRP_SourceAnchored.txt",
+        "CashCrusher_Turn_CBet_SRP_IP.txt",
+        "CashCrusher_Turn_CBet_SRP_OOP.txt",
         "CashCrusher_Turn_CBet_SRP_6MaxGaps.txt",
         "CashCrusher_Turn_CBet_SRP_PostMultiwayHU.txt",
         "CashCrusher_Turn_CBet_SRP_Multiway.txt",
@@ -116,11 +117,11 @@ def main() -> None:
         for ref in size_ref_re.findall(text):
             assert ref in allowed_helpers, f"noncanonical Turn size helper {ref} in {path.name}"
 
-    # 7) Family IDs are explicit 1..12 with 0 unknown; exact owners are evaluated
-    # before residual diagnostics, never by a generic pot-family fallthrough.
+    # 7) Family IDs 1..12 are explicit. IDs 5/6 remain diagnostic residual gaps;
+    # their presence here does NOT make them strategy-covered (asserted above).
     family = block(ROUTER, "f$cc_turn_cbet_family_id")
     assert "When Others Return 0 Force" in family
-    for value in (1, 2, 3, 4, 7, 8, 9, 10, 11, 12):
+    for value in range(1, 13):
         assert f"Return {value} Force" in family
 
     print("PASS: Gate02J.0 Turn-CBet coverage/exclusivity/fail-closed contract")
