@@ -15,6 +15,7 @@ Working branch: `gate-00-context-engine`
 - Source-derived and professional-theory rules remain explicitly distinguishable.
 - Unknown/unsupported strategic context fails closed.
 - OpenPPL strategy code uses flat complete `WHEN` rules; indentation is never logical scope.
+- Every `f$cc_*` function must now have nearby Source/Provenance documentation; CI treats absence as a hard error.
 
 ## Stack-depth migration rule
 
@@ -29,7 +30,7 @@ For every stack-sensitive inherited rule:
 
 This applies to TP+/draw commitment lines, `f$Raise_Committed`, `f$hand_StackOffDraws`, `f$allin_on_betsize_balance_ratio`, `BetMax` and related mechanisms.
 
-`CashCrusher_SPR_Commitment.txt` currently computes geometry only. It does not impose a global commitment policy.
+`CashCrusher_SPR_Commitment.txt` computes geometry only. It does not impose a global commitment policy.
 
 ## Gate 00 — mechanical context foundation
 
@@ -43,6 +44,8 @@ Complete in design/code; OpenHoldem parser/runtime validation still pending:
 - ISO, 3BP and squeeze survivor provenance;
 - raw effective-stack and SPR geometry;
 - true-multiway composition framework.
+
+The core `CashCrusher_Context.txt` retrofit is complete: each custom context function now has local Purpose/Source/Provenance comments. The linter was promoted accordingly from warning to global hard error.
 
 ## Gate 01 — Flop CBet implementation
 
@@ -63,40 +66,23 @@ Implemented HU and multiway.
 
 HU preserves original limper vs post-raise coldcaller and IP/OOP.
 
-True three-way preserves:
-
-- two original limpers;
-- one limper + one post-raise coldcaller;
-- two post-raise coldcallers.
-
-4/5/6-way preserves all-limper / mixed / all-postraise-coldcaller composition and exact field size.
+True three-way preserves two limpers, limper+coldcaller and two post-raise coldcallers. 4/5/6-way preserves all-limper / mixed / all-postraise-coldcaller composition and exact field size.
 
 ### 3BP and squeeze
 
 Implemented HU and multiway.
 
-HU distinguishes:
-
-1. original opener;
-2. pre-3bet coldcaller surviving a squeeze;
-3. post-3bet coldcaller.
-
-Multiway preserves exact live opener/pre3bet-caller/post3bet-caller counts and exact 3/4/5/6-player field size. Plain 3BP and squeeze never share a generic fallback.
+HU distinguishes original opener, pre-3bet coldcaller surviving squeeze, and post-3bet coldcaller. Multiway preserves exact live opener/pre3bet-caller/post3bet-caller counts and exact field size. Plain 3BP and squeeze never share a generic fallback.
 
 ### Ordinary multiway SRP
 
-Implemented:
+Implemented true three-way FIRST/MIDDLE/LAST with exact caller composition and exact 4/5/6-way parents.
 
-- true three-way FIRST/MIDDLE/LAST with exact caller composition;
-- exact 4/5/6-way parents.
-
-The true-threeway BTN-last source ancestry is only A/P because the DeepCrusher audit itself identifies that branch as a human-reviewed gap fill rather than a dedicated Starting Strategy tree. FIRST/MIDDLE and four-way+ are P-heavy and explicitly labelled.
+The true-threeway BTN-last source ancestry is A/P because the audited DeepCrusher branch is itself a human-reviewed CrusherTBP gap fill rather than a dedicated Starting Strategy tree. FIRST/MIDDLE and four-way+ are P-heavy and explicitly labelled.
 
 ### 4BP
 
-Gate 01I now reconstructs only clean first-orbit histories that aggregate OpenPPL preflop masks can support conservatively.
-
-Implemented HU families:
+Implemented clean HU families after conservative chronology reconstruction:
 
 - true-HU standard opener4: SB/Button 4bettor IP vs BB 3bettor-call;
 - reduced-HU opener4 vs 3bettor-call, IP/OOP;
@@ -105,48 +91,39 @@ Implemented HU families:
 
 Still fail-closed:
 
-- non-raiser HU survivor in a 4BP because exact call stage is not proven;
+- non-raiser HU survivor in 4BP because exact call stage is not proven;
 - reversed/limp-reraise/backraise chronology;
 - multiway 4BP action policy;
 - 5bet+.
 
-This is an evidence limitation, not a blanket anti-aggression rule. Normal 100bb 4BP can reach low SPR and may legitimately support aggressive one-pair/draw lines.
+Normal 100bb 4BP can reach low SPR and may legitimately support aggressive one-pair/draw lines. The exact later commitment decision remains a separate node review.
 
-## CBet size runtime
+## CBet size runtime and stack geometry
 
-Strategic IDs remain:
+Strategic IDs remain `1` ~33%, `2` 50%, `3` 75%, `4` pot, `0` check/uncovered.
 
-- `1` ~33%;
-- `2` 50%;
-- `3` 75%;
-- `4` pot;
-- `0` check/uncovered.
+`CashCrusher_Flop_CBet_Betsize.txt` maps them to native OpenPPL `BetThirdPot`, `BetHalfPot`, `BetThreeFourthPot` and `BetPot` actions.
 
-`CashCrusher_Flop_CBet_Betsize.txt` now maps these IDs to native OpenPPL actions:
+A deeper source audit found that DeepCrusher had **overlapping, not identical**, stack-sensitive mechanisms:
 
-- `BetThirdPot`;
-- `BetHalfPot`;
-- `BetThreeFourthPot`;
-- `BetPot`.
+- explicit betsize routers commonly promoted requested sizes around **60% of Hero StackSize** to `BetMax`;
+- `f$allin_on_betsize_balance_ratio` had a special **~50% effective-stack** trigger and a `.50` Hero-balance fallback through OpenHoldem's all-in adjustment;
+- `f$Raise_Committed` separately used approximately **55%** call-to-shove logic in flop/turn defense.
 
-OpenHoldem source was checked: `f$allin_on_betsize_balance_ratio` can later affect `f$betsize` and all betpot actions. Gate 01K deliberately does not make a global decision about that callback. DeepCrusher's historical ~60%-of-stack BetMax promotion remains a per-context audit target.
+These are now deliberately separated instead of being described as one generic commitment rule.
+
+`CashCrusher_Flop_CBet_StackGeometry.txt` exposes requested bet/stack ratios, exact HU effective-stack ratio, projected HU SPR after a full call and historical 50/60% diagnostic flags. It returns no all-in action and does not change the global callback.
 
 ## Static quality state
 
-Latest reviewed CBet integration passed the GitHub static lint after multiway integration, clean HU 4BP integration and native size-adapter additions.
-
-The linter checks hard errors for:
+Latest completed global-provenance lint passed. Hard checks include:
 
 - unresolved/duplicate `f$cc_*`;
 - executable legacy `f$game_*` dependencies;
 - open-ended/nested-looking `WHEN` scope;
-- missing local Source/Provenance comments in reviewed `CashCrusher_Flop_CBet*` strategy modules.
+- missing nearby Source/Provenance comment for **any** `f$cc_*` function.
 
-Stack-sensitive DeepCrusher mechanisms are review warnings/targets, not globally prohibited.
-
-## Known documentation debt
-
-`CashCrusher_Context.txt` still has many functions documented only by section rather than by individual Purpose/Source/Provenance comments. CI reports those as warnings. Gate 01A.5 remains open until the file is fully retrofitted and the requirement can safely be promoted from warning to error.
+Stack-sensitive DeepCrusher mechanisms remain review warnings/targets, not global prohibitions.
 
 ## Release blockers
 
@@ -155,15 +132,13 @@ No table-ready claim before:
 1. Gate00 OpenHoldem parser/runtime context validation;
 2. deterministic CBet policy fixtures/replays;
 3. whole-bot `f$BestBetsize` ownership integration;
-4. stack-sensitive size/commitment audit;
+4. context-aware stack-sensitive size/commitment policy audit;
 5. skipped-CBet X/C/X/R and turn follow-through coverage;
-6. complete supporting-function provenance comments;
-7. final regression and unknown-state fail-closed audit.
+6. final regression and unknown-state fail-closed audit.
 
 ## Current development direction
 
-Immediate work is now split between:
+Immediate work:
 
-- finishing Gate 01A.5 per-function context comments;
-- continuing Gate 01K stack-sensitive sizing review without globally trusting or disabling inherited mechanisms;
-- building deterministic Gate00/Gate01 runtime fixtures before the Flop CBet gate is called release-certified.
+- use the new stack-geometry descriptors to audit size-to-all-in conversion **per CBet family**, beginning with clean HU SRP/3BP/4BP rather than imposing one threshold globally;
+- then build deterministic Gate00/Gate01 runtime fixtures and wire the native CBet size adapter into the whole-bot sizing owner.
