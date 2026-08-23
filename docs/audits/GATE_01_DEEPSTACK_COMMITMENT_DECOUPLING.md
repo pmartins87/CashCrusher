@@ -1,138 +1,66 @@
-# Gate 01 — Deep-stack commitment decoupling from DeepCrusher TP+
+# Gate 01 — Cash-depth review of DeepCrusher commitment rules
 
-Status: **binding strategic migration audit**.
+Status: **corrected after rollback of an over-broad migration rule**.
 
-## Why this audit exists
+## Correction
 
-DeepCrusher was built for Spin/short-stack geometry. In that environment, a large fraction of top-pair-plus hands quickly become economically committed. That fact is useful context for understanding the source, but it is **not transferable as a generic six-max cash rule**.
+The earlier version of this note extrapolated too far from one valid observation: DeepCrusher is short-stack Spin strategy, so many TP+/draw/commitment lines may not transfer unchanged to a 100bb cash environment.
 
-CashCrusher therefore separates two questions that are often coupled in DeepCrusher:
+That does **not** justify globally disabling or prohibiting:
 
-1. **Should Hero bet/call this street with this hand?**
-2. **Is Hero willing to play the remaining effective stack for this hand?**
+- `f$Raise_Committed`;
+- `f$hand_StackOffDraws`;
+- `f$allin_on_betsize_balance_ratio`;
+- `BetMax` / explicit all-in actions.
 
-A positive answer to question 1 never automatically answers question 2.
+The CashCrusher rule is now narrower and source-faithful:
 
-## Concrete DeepCrusher source behavior being quarantined
+> **Audit stack-sensitive DeepCrusher rules in the exact cash context before reusing them. Do not assume short-stack logic survives; do not assume it fails either.**
 
-### 1. `f$Raise_Committed`
+## What still remains true
 
-DeepCrusher contains a generic helper that promotes an already-profitable flop/turn call into an all-in raise when the call consumes most of Hero's or Villain's effective resources. The core thresholds are approximately 55% of the relevant remaining stack geometry.
+A hand label such as TP+, overpair, strong draw or two-pair is not enough by itself to prove that the same stack-off frequency used in short-stack Spin is correct at 100bb. The relevant decision can depend on:
 
-That helper makes sense as a short-stack simplification, but it is **X** in CashCrusher because:
-
-- a profitable call can remain a call even when large;
-- stack depth, range polarity, nut distribution and future street geometry matter;
-- a bluffcatcher must not become a value shove merely because the call is expensive;
-- in multiway pots, effective stack versus one actor cannot be replaced by a generic shortest-stack commitment rule.
-
-The CashCrusher linter now rejects any executable reference to `f$Raise_Committed`.
-
-### 2. TP+/overpair frequently behaves like a commitment family
-
-DeepCrusher contains many branches where `TopPairReal`, `TopPairOrBetter`, overpair or a broad TP+ bucket is sufficient to continue aggressively, especially at low/very-low SPR.
-
-That is not treated as an error in the source: it reflects the game geometry the bot was designed for.
-
-For CashCrusher, however:
-
-- **top pair = one-pair hand**;
-- **overpair = one-pair hand**;
-- one pair may be value, bluffcatch, thin value, check-back, check-call or fold depending on the exact node;
-- one pair does not become a stack-off hand because its label says TP+;
-- the same hand can be a comfortable stack-off at SPR ~1 and a clear non-stack-off at SPR 8+.
-
-### 3. DeepCrusher itself already contains exceptions
-
-The later source-fidelity work in DeepCrusher contains several corrections where plain top pair is explicitly **not** a generic raise versus polarized large bets, and where some TP+ source families call/check rather than raise.
-
-This reinforces the migration rule: even inside the source, `TP+` is not a universal action truth. CashCrusher must therefore preserve the useful hand classification while discarding any accidental global commitment meaning.
-
-## CashCrusher commitment contract
-
-### A. Attack nodes own only their immediate action
-
-If a flop CBet function returns `true`, it means:
-
-> bet this flop with the reviewed size family.
-
-It does **not** mean:
-
-- call a check-raise;
-- 3bet a check-raise;
-- call an all-in;
-- barrel every turn;
-- barrel every river;
-- play for stacks.
-
-The same applies to Donk, Float, Probe and Delayed-Bet nodes.
-
-### B. Defense/raise nodes must re-evaluate commitment from scratch
-
-A stack-off decision must be owned by the exact response node and consider, where relevant:
-
-- pot family: SRP / ISO / 3BP / squeeze / 4BP;
+- pot family: limped / SRP / ISO / 3BP / squeeze / 4BP;
 - Hero and Villain range provenance;
-- exact absolute matchup and IP/OOP/multiway relative position;
-- current board/runout and nut distribution;
-- hand class **and** kicker/nut quality;
-- effective stack and raw SPR versus the relevant actor;
-- Villain sizing and line;
-- whether the hand began HU or multiway;
-- whether Hero's current hand improved or was reclassified on the new street.
+- IP/OOP or multiway relative position;
+- exact board/runout;
+- effective stack and SPR;
+- action size and prior street history;
+- number of opponents.
 
-### C. No generic made-hand stack-off ladder
+This is a **review requirement**, not a prohibition.
 
-CashCrusher will not contain a global rule such as:
+## How to migrate a DeepCrusher commitment rule
 
-```text
-TP+ -> stack off
-Overpair+ -> stack off
-TwoPair+ -> stack off
-```
+For every stack-sensitive source line, classify it locally:
 
-Even two pair can be a non-nut bluffcatch/value hand on some deep, connected or multiway runouts. Stronger made-hand categories increase willingness to continue but do not replace context.
+- **T — Transplant:** the same effective-stack/SPR geometry and strategic meaning still apply;
+- **A — Adapt:** the source idea remains useful but threshold, scope, sizing or range must change;
+- **P — Professional fill:** the source does not answer the deeper cash case sufficiently;
+- **X — Reject:** the rule is genuinely dependent on shallow Spin geometry.
 
-### D. Low-SPR one-pair stack-offs are allowed only locally
+Do not classify the function name globally. `f$Raise_Committed`, for example, may be wrong in one node and useful in another low-SPR cash node.
 
-This audit does **not** say one pair can never play for stacks.
+## Specific note on TP+
 
-Examples where one pair can legitimately become a stack-off candidate include some:
+The practical warning that triggered this audit remains important: DeepCrusher frequently reaches stack commitment with TP+ because short-stack Spin SPRs are small. CashCrusher must not mechanically copy that *frequency* to ordinary 100bb pots.
 
-- 3BP/4BP low-SPR flops;
-- blind-v-blind wide-range pots;
-- heavily polarized range-advantage spots;
-- shallow effective stacks created naturally by preflop action.
+But neither should it hardcode the opposite rule. A top pair or overpair can absolutely be a stack-off in some 3BP/4BP/low-SPR/range matchups. The correct answer belongs to the exact node.
 
-But the rule must be derived in that exact node. It must never arrive through a generic `TP+`, `StrongMade`, `call >55% stack` or `f$Raise_Committed` shortcut.
+## `f$allin_on_betsize_balance_ratio`
 
-## OpenPPL enforcement
+CashCrusher no longer overrides this callback to `0.00` merely because the source game was short stacked. Its eventual definition belongs to the sizing/commitment audit. The DeepCrusher callback should be treated as source material to test/adapt, not as automatically valid or invalid.
 
-The static linter enforces several parts of this contract:
+## Linter behavior
 
-- `f$Raise_Committed` executable reference -> hard error;
-- `f$hand_StackOffDraws` executable reference -> hard error;
-- nonzero `f$allin_on_betsize_balance_ratio` -> hard error;
-- `BetMax` without local `ALLIN_OWNER_REVIEWED` marker -> hard error;
-- `BetMax` inside current flop-CBet strategy modules -> hard error.
+The linter now treats legacy commitment helpers and explicit all-ins as **review warnings**, not errors. The warnings exist only to make sure short-stack inheritance is noticed and commented when it enters CashCrusher code.
 
-The marker is deliberately noisy. Any future all-in branch must explain why that **exact** node owns the stack-off.
+## Bottom line
 
-## Migration classification
+The migration rule is deliberately conservative in both directions:
 
-| DeepCrusher concept | CashCrusher classification |
-|---|---|
-| TP/overpair hand classification | T/A descriptor |
-| board- and sizing-dependent TP behavior | A |
-| low-SPR willingness to stack some one-pair hands | A/P, exact-node only |
-| global TP+ commitment implication | X |
-| `f$Raise_Committed` call-to-shove promotion | X |
-| `StackOffDraws` action shortcut | X |
-| automatic half-stack bet-to-jam conversion | X |
-| explicit exact-node all-in after full deep-stack audit | P/A allowed |
+- do not copy short-stack commitment automatically;
+- do not ban useful commitment machinery automatically.
 
-## Consequence for Gate 01
-
-The current Flop CBet baselines may bet top pair or overpair frequently where range/board advantage supports it. That is intentional and is **not** a regression to the DeepCrusher stack-off model.
-
-Commitment will only be decided later when the bot actually faces a raise, a large bet, a later-street barrel or a node whose reviewed strategy explicitly owns an all-in.
+Review the exact poker state and preserve source provenance.
