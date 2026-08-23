@@ -20,7 +20,7 @@ Gate 00 design/code is frozen enough for strategy work, but it is not release-ce
 - [x] **01A.2** — handedness-aware source audit v2; true HU HUSB/HUBB ancestry corrected.
 - [x] **01A.3** — binding flat-complete-WHEN and per-function provenance contract.
 - [x] **01A.4** — corrected short-stack migration rule: stack-sensitive DeepCrusher rules require exact cash-context review; they are not globally banned or forced to zero.
-- [ ] **01A.5** — finish per-function Purpose/Source/Provenance comments in supporting mechanical modules, especially `CashCrusher_Context.txt`.
+- [x] **01A.5** — per-function Purpose/Source/Provenance retrofit completed for the core context engine; missing provenance is now a hard CI error for every `f$cc_*` function.
 
 ### Ordinary one-raise HU families
 
@@ -67,7 +67,7 @@ Gate 00 design/code is frozen enough for strategy work, but it is not release-ce
 - [x] **01K.1** — native size-ID adapter: 33/50/75/100 -> `BetThirdPot`/`BetHalfPot`/`BetThreeFourthPot`/`BetPot`.
 - [ ] **01K.2** — integrate CBet native adapter into eventual whole-bot `f$BestBetsize` without stealing sizing ownership from other postflop nodes.
 - [ ] **01K.3** — audit stack-sensitive size-to-all-in promotion, including DeepCrusher's historical ~60%-of-stack behavior and the global `f$allin_on_betsize_balance_ratio` callback. Review per context; do not blindly copy or globally disable.
-- [x] **01L** — static dependency/flat-WHEN/provenance lint PASS on current reviewed implementation.
+- [x] **01L** — static dependency/flat-WHEN/global-provenance lint PASS on current reviewed implementation.
 - [ ] **01M** — deterministic CBet policy fixtures/replays PASS.
 - [ ] **01N** — ensure skipped-CBet branches have complete X/C/X/R/turn follow-through before release.
 
