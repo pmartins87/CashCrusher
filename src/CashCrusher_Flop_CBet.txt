@@ -157,24 +157,35 @@ false
 // Flop_CBet_Multiway_SRP4Plus.
 // Source/Provenance: A/P true3 and P-heavy four-way+ policy.
 ##f$cc_flop_cbet_mw_srp_pfa##
-When f$cc_mw_srp_true3_pfa_context Return f$cc_cbet_mw_srp_true3_action Force
-When f$cc_mw_srp_4plus_pfa_context Return f$cc_cbet_mw_srp_4plus_action Force
+When f$cc_mw_srp_true3_context_consistent Return f$cc_cbet_mw_srp_true3_action Force
+When f$cc_mw_srp_4plus_context_consistent Return f$cc_cbet_mw_srp_4plus_action Force
 When Others Return false Force
 
-// Purpose: multiway ISO placeholder.
-// Source/Provenance: P exact composition exists; strategy pending.
+// Purpose: multiway ISO child, preserving exact limper/coldcaller composition.
+// Source: true3 policy in Flop_CBet_Multiway_ISO; 4/5/6-way policy in
+// Flop_CBet_Multiway_ISO4Plus.
+// Source/Provenance: A/P true3 and P-heavy four-way+ policy.
+// Safety: unresolved survivor composition fails closed before action.
 ##f$cc_flop_cbet_mw_iso_pfa##
-false
+When f$cc_mw_iso_true3_context_consistent Return f$cc_cbet_mw_iso_true3_action Force
+When f$cc_mw_iso_4plus_context_consistent Return f$cc_cbet_mw_iso_4plus_action Force
+When Others Return false Force
 
-// Purpose: multiway ordinary 3BP placeholder.
-// Source/Provenance: P exact composition exists; strategy pending.
+// Purpose: multiway ordinary plain-3BP child with opener/coldcaller provenance.
+// Source/Provenance: A 3BP mechanics + P multiway policy in Multiway_3BP module.
+// Safety: plain subtype never absorbs squeeze or unclassified caller origins.
 ##f$cc_flop_cbet_mw_3bp_3bettor##
-false
+When f$cc_mw_plain3bp_exact3_context Return f$cc_cbet_mw_plain3bp_action Force
+When f$cc_mw_plain3bp_4plus_context Return f$cc_cbet_mw_plain3bp_action Force
+When Others Return false Force
 
-// Purpose: multiway squeeze placeholder.
-// Source/Provenance: P exact composition exists; strategy pending.
+// Purpose: multiway squeeze child with exact live range-origin composition.
+// Source/Provenance: P-heavy policy in Flop_CBet_Multiway_3BP, constrained by A
+// initiative/texture architecture. Squeeze is never treated as ordinary 3BP.
 ##f$cc_flop_cbet_mw_squeeze_3bettor##
-false
+When f$cc_mw_squeeze_exact3_context Return f$cc_cbet_mw_squeeze_action Force
+When f$cc_mw_squeeze_4plus_context Return f$cc_cbet_mw_squeeze_action Force
+When Others Return false Force
 
 // Purpose: multiway 4BP placeholder.
 // Source/Provenance: X pending dedicated audit.
@@ -205,8 +216,14 @@ When f$cc_cbet_squeeze_vs_pre3bet_coldcaller_ip_context Return true Force
 When f$cc_cbet_squeeze_vs_pre3bet_coldcaller_oop_context Return true Force
 When f$cc_cbet_squeeze_vs_post3bet_coldcaller_ip_context Return true Force
 When f$cc_cbet_squeeze_vs_post3bet_coldcaller_oop_context Return true Force
-When f$cc_mw_srp_true3_pfa_context Return true Force
-When f$cc_mw_srp_4plus_pfa_context Return true Force
+When f$cc_mw_srp_true3_context_consistent Return true Force
+When f$cc_mw_srp_4plus_context_consistent Return true Force
+When f$cc_mw_iso_true3_context_consistent Return true Force
+When f$cc_mw_iso_4plus_context_consistent Return true Force
+When f$cc_mw_plain3bp_exact3_context Return true Force
+When f$cc_mw_plain3bp_4plus_context Return true Force
+When f$cc_mw_squeeze_exact3_context Return true Force
+When f$cc_mw_squeeze_4plus_context Return true Force
 When Others Return false Force
 
 // Purpose: map implemented positive CBet to reviewed size-family ID.
@@ -235,8 +252,14 @@ When f$cc_cbet_squeeze_vs_pre3bet_coldcaller_ip_context Return f$cc_cbet_squeeze
 When f$cc_cbet_squeeze_vs_pre3bet_coldcaller_oop_context Return f$cc_cbet_squeeze_vs_pre3bet_coldcaller_oop_size_id Force
 When f$cc_cbet_squeeze_vs_post3bet_coldcaller_ip_context Return f$cc_cbet_squeeze_vs_post3bet_coldcaller_ip_size_id Force
 When f$cc_cbet_squeeze_vs_post3bet_coldcaller_oop_context Return f$cc_cbet_squeeze_vs_post3bet_coldcaller_oop_size_id Force
-When f$cc_mw_srp_true3_pfa_context Return f$cc_cbet_mw_srp_true3_size_id Force
-When f$cc_mw_srp_4plus_pfa_context Return f$cc_cbet_mw_srp_4plus_size_id Force
+When f$cc_mw_srp_true3_context_consistent Return f$cc_cbet_mw_srp_true3_size_id Force
+When f$cc_mw_srp_4plus_context_consistent Return f$cc_cbet_mw_srp_4plus_size_id Force
+When f$cc_mw_iso_true3_context_consistent Return f$cc_cbet_mw_iso_true3_size_id Force
+When f$cc_mw_iso_4plus_context_consistent Return f$cc_cbet_mw_iso_4plus_size_id Force
+When f$cc_mw_plain3bp_exact3_context Return f$cc_cbet_mw_plain3bp_size_id Force
+When f$cc_mw_plain3bp_4plus_context Return f$cc_cbet_mw_plain3bp_size_id Force
+When f$cc_mw_squeeze_exact3_context Return f$cc_cbet_mw_squeeze_size_id Force
+When f$cc_mw_squeeze_4plus_context Return f$cc_cbet_mw_squeeze_size_id Force
 When Others Return 0 Force
 
 // Purpose: invariant tying positive action to positive size and check to zero size.
