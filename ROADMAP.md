@@ -5,22 +5,22 @@
 - [x] **00A** — decompose legacy Spin scenarios into strategic properties instead of literal position copies.
 - [x] **00B** — build HU 6-max SRP matchup/ancestry matrix and identify unsupported pot families.
 - [x] **00C** — implement OpenPPL context layer: players, pot family, Hero role, absolute/relative position, matchup, history.
-- [x] **00D** — implement raw SPR/buckets and quarantine inherited short-stack commitment/jam conversion.
+- [x] **00D** — implement raw SPR/effective-stack geometry for cash-depth review.
 - [x] **00E** — implement exact true-multiway context/composition classes.
 - [x] **00F** — support dynamic 2-6 handed deals and distinguish true HU from preflop-/postflop-reduced HU.
-- [ ] **00V** — parser/runtime validation of the Gate00 context matrix with deterministic fixtures.
+- [ ] **00V** — parser/runtime validation of Gate00 context matrix with deterministic fixtures.
 
 Gate 00 design/code is frozen enough for strategy work, but it is not release-certified until 00V passes.
 
 ## Gate 01 — Flop CBet
 
-### Source/audit, documentation and safety
+### Source/audit and coding safety
 
 - [x] **01A** — source audit and portable CBet combo/texture primitives.
 - [x] **01A.2** — handedness-aware source audit v2; true HU HUSB/HUBB ancestry corrected.
-- [x] **01A.3** — binding OpenPPL flat-WHEN/provenance coding contract.
-- [x] **01A.4** — deep-stack commitment decoupling: TP+/overpair no longer imply stack-off; `f$Raise_Committed`, `StackOffDraws` and global auto-jam are quarantined.
-- [ ] **01A.5** — retrofit per-function Purpose/Source/Provenance/Safety comments into remaining supporting context helpers, beginning with `CashCrusher_Context.txt`; only then promote supporting-function provenance warnings to hard CI errors.
+- [x] **01A.3** — binding flat-complete-WHEN and per-function provenance contract.
+- [x] **01A.4** — corrected short-stack migration rule: stack-sensitive DeepCrusher rules require exact cash-context review; they are not globally banned or forced to zero.
+- [ ] **01A.5** — finish per-function Purpose/Source/Provenance comments in supporting mechanical modules, especially `CashCrusher_Context.txt`.
 
 ### Ordinary one-raise HU families
 
@@ -37,27 +37,27 @@ Gate 00 design/code is frozen enough for strategy work, but it is not release-ce
 - [x] **01E.2** — reduced-HU ISO versus post-raise cold caller, IP/OOP.
 - [ ] **01E.3** — true multiway ISO CBet with live limper/coldcaller composition.
 
-### 3-bet-pot CBet
+### 3-bet-pot and squeeze CBet
 
-- [x] **01F.0** — reconstruct 3BP survivor provenance: opener / pre-3bet coldcaller / post-3bet coldcaller.
+- [x] **01F.0** — reconstruct survivor provenance: opener / pre-3bet coldcaller / post-3bet coldcaller.
 - [x] **01F.1** — true-HU standard plain 3BP: BB 3bettor OOP vs SB/Button opener-call.
 - [x] **01G.1** — 3-6h plain 3BP versus original opener-call, IP/OOP.
 - [x] **01G.2** — 3-6h plain 3BP versus post-3bet cold caller, IP/OOP.
-- [ ] **01H.1** — squeeze versus original opener, IP/OOP.
-- [ ] **01H.2** — squeeze versus pre-3bet cold caller, IP/OOP.
-- [ ] **01H.3** — squeeze versus post-3bet cold caller, IP/OOP.
+- [x] **01H.1** — HU squeeze versus original opener, IP/OOP.
+- [x] **01H.2** — HU squeeze versus pre-3bet cold caller, IP/OOP.
+- [x] **01H.3** — HU squeeze versus post-3bet cold caller, IP/OOP.
 - [ ] **01H.4** — multiway squeeze/3BP CBet using exact live-range composition.
 
 ### Higher re-raised pots and multiway SRP
 
-- [ ] **01I** — 4BP CBet, only after separate range/SPR audit.
+- [ ] **01I** — 4BP CBet after separate range/SPR audit.
 - [ ] **01J.1** — true three-way ordinary SRP CBet using legacy 3w ancestry where valid.
 - [ ] **01J.2** — four-way+ ordinary SRP CBet with new P-theory parent.
 
 ### Execution/validation
 
-- [ ] **01K** — map CBet size IDs (~33/~50/~75) into final OpenPPL betsize runtime.
-- [x] **01L** — static dependency/safety lint PASS on current review head (`run 82`), with supporting-context provenance warnings still tracked by 01A.5.
+- [ ] **01K** — map CBet size IDs (~33/~50/~75 and any separately reviewed stack-sensitive conversion) into final OpenPPL betsize runtime.
+- [ ] **01L** — static dependency/safety lint PASS on current review head.
 - [ ] **01M** — deterministic CBet policy fixtures/replays PASS.
 - [ ] **01N** — ensure skipped-CBet branches have complete X/C/X/R/turn follow-through before release.
 
@@ -90,21 +90,12 @@ After attack coverage is structurally stable, audit the 32 defensive nodes indiv
 - raise/call versus Raise;
 - sizing families and actor-specific SPR.
 
-However, a defense dependency may be brought forward when an attack node explicitly creates an X/C or X/R plan; no dangling strategic plan is allowed into a release branch.
-
-### Binding defense/commitment rule
-
-A made-hand label is never sufficient to authorize stacks by itself. In particular:
-
-- TP is one pair;
-- overpair is one pair;
-- TP+ in DeepCrusher is source classification, not CashCrusher commitment permission;
-- every call/raise/jam response must be rebuilt in the exact node from range provenance, board/runout, sizing, position and actor-specific SPR.
+A DeepCrusher commitment helper may be retained, adapted or rejected **per exact node**. The only blanket rule is: do not assume a short-stack threshold or TP+ stack-off frequency still applies at ordinary cash depth without review.
 
 ## Final structural phases
 
-- Complete deeper-stack betsize architecture.
-- Explicit commitment/all-in nodes from actual SPR; no global half-stack auto-jam.
+- Complete cash-depth betsize architecture.
+- Review/adapt commitment/all-in helpers against actual SPR and range geometry.
 - Static OpenPPL validation.
 - OpenHoldem parser/runtime validation.
 - Scenario/handedness/pot-family coverage audit.
