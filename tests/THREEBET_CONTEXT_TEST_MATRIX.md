@@ -6,7 +6,7 @@ Purpose: verify that a two-raise pot is not collapsed into one generic 3BP range
 
 ## Expected survivor IDs
 
-- `1` = original opener who called the 3bet;
+- `1` = original opener who called the 3bet/squeeze;
 - `2` = pre-3bet cold caller who continued after a squeeze;
 - `3` = post-3bet cold caller;
 - `0` = unknown / unsupported chronology.
@@ -43,12 +43,12 @@ Mandatory invariant for case 5:
 
 Case 6 must never become a normal strategy merely because a generic `3bettor && IP` predicate can be formed.
 
-## Post-3bet cold caller survives
+## Post-3bet cold caller survives a PLAIN 3BP
 
-| # | Preflop line | Hero | Original opener | Survivor | Expected subtype | Rel | Coverage |
-|---:|---|---|---|---|---|---|---|
-| 8 | UTG raise → BTN 3bet → BB coldcall → UTG fold | BTN | UTG | BB | plain 3BP, survivor type 3 | IP | **covered** |
-| 9 | HJ raise → CO 3bet → BTN coldcall → HJ fold | CO | HJ | BTN | plain 3BP, survivor type 3 | OOP | **covered** |
+| # | Preflop line | Hero | Original opener | Survivor | Expected subtype | Coverage |
+|---:|---|---|---|---|---|---|
+| 8 | UTG raise → BTN 3bet → BB coldcall → UTG fold | BTN | UTG | BB | plain 3BP | covered |
+| 9 | HJ raise → CO 3bet → BTN coldcall → HJ fold | CO | HJ | BTN | plain 3BP | covered |
 
 Acceptance:
 
@@ -56,79 +56,60 @@ Acceptance:
 - `f$cc_hu_3bp_villain_is_post3bet_coldcaller = true`;
 - `f$cc_hu_3bp_villain_is_opener = false`;
 - `f$cc_hu_3bp_survivor_type_id = 3`;
-- `f$cc_hu_3bp_survivor_consistent = true`;
-- **generic opener-only action context remains false**;
-- `f$cc_cbet_plain3bp_postcoldcaller_ip_context` or `_oop_context` owns the family;
-- top-level plain-3BP child uses the survivor-aware dispatcher rather than the opener-only child.
-
-Mandatory anti-leak rule:
-
-> A post-3bet cold caller may now have a reviewed CBet baseline, but it must never be reclassified as the original opener-call range.
-
-## Commitment anti-leak for all covered 3BP cases
-
-A positive CBet action is intentionally **not** a stack-off decision.
-
-For every covered case 1-9:
-
-- `f$cc_flop_cbet_router = true` may mean only "bet this flop";
-- `f$cc_flop_cbet_size_id > 0` may choose only the reviewed flop size family;
-- no current flop-CBet module may contain `BetMax`;
-- no current strategy may call `f$Raise_Committed`;
-- TP/overpair CBet branches must not imply call-vs-XR, 3bet-vs-XR or future-street commitment.
-
-Those responses require separate exact-node tests when defense is implemented.
+- opener-call and coldcaller child contexts are mutually exclusive.
 
 ## Squeeze — original opener survives
 
 | # | Preflop line | Hero | Survivor | Expected | Coverage |
 |---:|---|---|---|---|---|
-| 10 | UTG raise → HJ call → BTN squeeze → HJ fold → UTG call | BTN | UTG opener | squeeze + type 1 | not yet covered |
-| 11 | HJ raise → CO call → SB squeeze → CO fold → HJ call | SB | HJ opener | squeeze + type 1 | not yet covered |
+| 10 | UTG raise → HJ call → BTN squeeze → HJ fold → UTG call | BTN | UTG opener | squeeze + type 1, IP | covered |
+| 11 | HJ raise → CO call → SB squeeze → CO fold → HJ call | SB | HJ opener | squeeze + type 1, OOP | covered |
 
 Acceptance:
 
 - `f$cc_pf_squeeze_proven = true`;
 - `f$cc_hu_3bp_villain_is_opener = true`;
 - survivor ID `1`;
-- ordinary plain-3BP child must not fire.
+- ordinary plain-3BP child must not fire;
+- exact squeeze opener IP/OOP context must fire.
 
 ## Squeeze — pre-3bet cold caller survives
 
 | # | Preflop line | Hero | Survivor | Expected | Coverage |
 |---:|---|---|---|---|---|
-| 12 | UTG raise → HJ call → BTN squeeze → UTG fold → HJ call | BTN | HJ | squeeze + type 2 | not yet covered |
-| 13 | HJ raise → BTN call → BB squeeze → HJ fold → BTN call | BB | BTN | squeeze + type 2 | not yet covered |
+| 12 | UTG raise → HJ call → BTN squeeze → UTG fold → HJ call | BTN | HJ | squeeze + type 2, IP | covered |
+| 13 | HJ raise → BTN call → BB squeeze → HJ fold → BTN call | BB | BTN | squeeze + type 2, OOP | covered |
 
 Acceptance:
 
 - `f$cc_pf_squeeze_proven = true`;
-- survivor's canonical bit is inside `f$cc_pf_pre3bet_coldcaller_mask`;
+- survivor bit is inside `f$cc_pf_pre3bet_coldcaller_mask`;
 - `f$cc_hu_3bp_villain_is_pre3bet_coldcaller = true`;
 - survivor ID `2`;
-- opener-call 3BP strategy must not fire.
+- opener-call squeeze policy must not fire.
 
 ## Squeeze — post-3bet cold caller survives
 
 | # | Preflop line | Hero | Survivor | Expected | Coverage |
 |---:|---|---|---|---|---|
-| 14 | UTG raise → HJ call → BTN squeeze → BB coldcall → UTG/HJ fold | BTN | BB | squeeze + type 3 | not yet covered |
+| 14 | UTG raise → HJ call → BTN squeeze → BB coldcall → UTG/HJ fold | BTN | BB | squeeze + type 3, IP | covered |
 
 Acceptance:
 
 - squeeze proven;
 - survivor ID `3`;
-- no opener/pre-3bet-caller policy leakage.
+- no opener/pre-3bet-caller policy leakage;
+- post-3bet coldcaller squeeze child owns the action.
 
 ## Multiway 3BP composition
 
-| # | Line reaching flop | Expected live provenance |
-|---:|---|---|
-| 15 | UTG raise → BTN 3bet → UTG call → BB coldcall; flop 3-way | opener mask + post-3bet-coldcaller mask |
-| 16 | UTG raise → HJ call → BTN squeeze → UTG call → HJ call | opener mask + pre-3bet-coldcaller mask |
-| 17 | UTG raise → HJ call → BTN squeeze → UTG/HJ/BB call | opener + pre3bet caller + post3bet caller masks |
+| # | Line reaching flop | Expected live provenance | Strategic coverage |
+|---:|---|---|---|
+| 15 | UTG raise → BTN 3bet → UTG call → BB coldcall; flop 3-way | opener mask + post-3bet-coldcaller mask | fail closed |
+| 16 | UTG raise → HJ call → BTN squeeze → UTG call → HJ call | opener mask + pre-3bet-coldcaller mask | fail closed |
+| 17 | UTG raise → HJ call → BTN squeeze → UTG/HJ/BB call | opener + pre3bet caller + post3bet caller masks | fail closed |
 
-All remain strategically fail-closed while multiway 3BP policy is unimplemented.
+Multiway 3BP/squeeze remains strategically separate even though HU variants are now covered.
 
 ## Invalid / ambiguous histories
 
@@ -138,9 +119,13 @@ All remain strategically fail-closed while multiway 3BP policy is unimplemented.
 | 19 | two raises reported but original/final raiser cannot be reconstructed | survivor unknown; fail closed |
 | 20 | same current Villain matches >1 survivor type due contradictory scrape/history | `f$cc_hu_3bp_survivor_consistent = false` |
 
+## Cash-depth / commitment note
+
+Coverage of a flop CBet context does **not** imply that the old short-stack DeepCrusher stack-off rule is copied. Nor does CashCrusher globally prohibit the old commitment helpers. Any later call/raise/jam rule must be reviewed in that exact effective-stack/SPR context.
+
 ## Runtime gate
 
 Static success does not prove OpenHoldem behavior. Before release, every acceptance case above needs either:
 
-1. deterministic OpenHoldem replay/table-state fixture with the required persisted preflop bits; or
+1. deterministic OpenHoldem replay/table-state fixture with required persisted preflop bits; or
 2. a dedicated test formula/log probe printing raise count, raiser IDs, call masks, survivor flags, HU origin, action and size.
