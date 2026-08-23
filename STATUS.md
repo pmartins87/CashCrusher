@@ -83,7 +83,7 @@ Plain 3BP baselines exist for:
 
 ### Implemented HU squeeze families
 
-`CashCrusher_Flop_CBet_Squeeze.txt` now covers all three HU survivor types separately:
+`CashCrusher_Flop_CBet_Squeeze.txt` covers all three HU survivor types separately:
 
 - squeeze vs original opener, IP/OOP;
 - squeeze vs pre-3bet cold caller, IP/OOP;
