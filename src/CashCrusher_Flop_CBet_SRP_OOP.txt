@@ -1,89 +1,91 @@
 // ============================================================================
 // CashCrusher_Flop_CBet_SRP_OOP.txt
-// Gate 01C — first strategic implementation: HU ordinary-SRP PFA OOP
+// Gate 01C — HU ordinary-SRP PFA OOP flop CBet
 // ============================================================================
 // Covered families:
-//   1) 3-6h SB PFA OOP versus BB — direct 3wSBvBB ancestry (A, high confidence).
-//   2) Earlier PFA OOP versus later-position cold caller — no direct source
-//      range parent; professional-theory construction (P-heavy).
+//   1) 3-6h SB PFA OOP versus BB — direct 3wSBvBB ancestry.
+//   2) UTG/HJ/CO PFA OOP versus later-position cold caller — new six-max gap.
 //
-// True HU does not use this module for ordinary open-raised pots because the
-// true-HU SB is the Button and therefore IP postflop.
+// True HU ordinary open-raised pots are excluded because SB is also Button and
+// therefore IP postflop.  True-HU BB-PFA after a limp is owned separately.
 //
-// DeepCrusher's useful OOP lesson is preserved: a PFA check is an active part of
-// strategy, not a failure to CBet. Many draws/marginal made hands remain in the
-// checking range so future X/C and X/R nodes can own them.
+// Source hierarchy / provenance:
+//   A — audited 3wSBvBB provides strong OOP checking/XR/XC architecture.
+//   A — 3wSBvBTN supplies positional/history shape for OOP-vs-later-player only.
+//   P — exact early/middle-position opener versus cold-caller policy is a major
+//       six-max professional-theory fill and is labelled as such below.
+//   X — shallow commitment, blanket air CBet and automatic jam responses.
+//
+// OpenPPL safety: all WHEN rules are flat, complete and ordered intentionally.
+// Size IDs: 1 ~33% | 2 ~50% | 3 ~75% | 0 check
 // ============================================================================
 
 // -----------------------------------------------------------------------------
-// OOP.00 — Context guards
+// OOP.00 — Context guards and opener-band descriptors
 // -----------------------------------------------------------------------------
 
+// Purpose: exact ordinary-SRP SB-PFA OOP versus BB context.
+// Context: 3-6 handed deal reduced HU preflop; SB raised, BB called.
+// Source/Provenance: 3wSBvBB direct A ancestor plus Gate00 mechanics.
 ##f$cc_cbet_srp_oop_sb_vs_bb_context##
 f$cc_srp_sb_pfa_oop_vs_bb &&
 f$cc_flop_cbet_opportunity &&
 f$cc_spr_valid
 
+// Purpose: exact family for PFA OOP versus a later nonblind cold caller.
+// Context: UTG->HJ/CO/BTN, HJ->CO/BTN, or CO->BTN ordinary open/call.
+// Source/Provenance: 3wSBvBTN gives A positional skeleton only; range policy P.
 ##f$cc_cbet_srp_oop_coldcaller_context##
 f$cc_srp_pfa_oop_vs_lp_coldcaller &&
 f$cc_flop_cbet_opportunity &&
 f$cc_spr_valid
 
+// Purpose: mark UTG/HJ opener members of the new OOP-coldcaller family.
+// Source/Provenance: P six-max range-topology descriptor for later refinement.
 ##f$cc_cbet_srp_oop_coldcaller_ep##
 f$cc_cbet_srp_oop_coldcaller_context && (f$cc_hero_pos_id = 1 || f$cc_hero_pos_id = 2)
 
+// Purpose: mark CO opener versus BTN cold caller within the new family.
+// Source/Provenance: P six-max range-topology descriptor.
 ##f$cc_cbet_srp_oop_coldcaller_lp##
 f$cc_cbet_srp_oop_coldcaller_context && (f$cc_hero_pos_id = 3)
 
 // -----------------------------------------------------------------------------
 // OOP.01 — SB PFA OOP versus BB
 // -----------------------------------------------------------------------------
-// Source anchor: audited 3wSBvBB checks MP/BP, checks all raised-pot frontdoor
-// draws into X/R/X/C subtrees, checks straight-possible air, and uses board-
-// dependent TP+ CBet/XR splits. Literal short-stack tails are not copied.
 
+// Purpose: choose CBet/check for SB PFA OOP versus BB in ordinary SRP.
+// Source: audited 3wSBvBB checks MP/BP; preserves raised-pot real draws for
+// X/R or X/C; checks straight-possible air; and uses board-dependent TP+ CBet.
+// Provenance: A high-confidence source adaptation.  P only replaces shallow
+// sizing/SPR details and selects deep-stack backdoor air; X rejects blanket air.
+// Decision logic: robust value can bet; dynamic-low TP/draw regions strengthen
+// checking range; marginal SDV checks; selected backdoor air bets static parents.
+// Safety/Limits: checking does not mean give-up — future Float-defense owns X/C/XR.
 ##f$cc_cbet_srp_oop_sb_vs_bb_action##
 When !f$cc_cbet_srp_oop_sb_vs_bb_context Return false Force
-
-// Two-pair+ stays in the betting range on dynamic boards rather than inheriting
-// a shallow universal X/R. On static/paired boards a small/medium bet is enough.
 When f$cc_cbet_flop_very_strong_value Return true Force
-
-// Overpairs: robust value/protection, but size varies strongly by board.
 When f$cc_cbet_flop_overpair Return true Force
-
-// Strong TP follows source structure: favourable static/high families can bet;
-// dynamic low/mid boards preserve the strong OOP check range.
 When f$cc_cbet_flop_strong_top_pair && f$cc_flop_dynamic_lowmid_parent Return false Force
 When f$cc_cbet_flop_strong_top_pair Return true Force
-
-// Medium TP: bet only on favourable static/high or paired parents; otherwise
-// check. Weak TP is checked except at lower SPR on the cleanest static-high node.
 When f$cc_cbet_flop_medium_top_pair && (f$cc_flop_static_high_parent || f$cc_flop_paired_parent) Return true Force
 When f$cc_cbet_flop_medium_top_pair Return false Force
 When f$cc_cbet_flop_weak_top_pair && f$cc_flop_static_high_parent && !f$cc_cbet_high_spr Return true Force
 When f$cc_cbet_flop_weak_top_pair Return false Force
-
-// MP/BP source main plan = check. Pair+draw also stays checked so the later
-// defense tree can choose X/C or X/R with full price/SPR information.
 When f$cc_cbet_flop_showdown_pair Return false Force
-
-// Raised-pot draws: direct source concept retained. A CBet node should not
-// pre-commit their action; future Float-defense owns X/R versus X/C.
 When f$cc_real_frontdoor_draw Return false Force
-
-// Air: reject the source's literal "bet every non-straight structure" tail.
-// Selected backdoor air can small-bet on static range-advantage boards; dynamic
-// low/mid and straight-rich boards stay checked.
 When f$cc_air_no_frontdoor && f$cc_flop_straight_possible Return false Force
 When f$cc_cbet_flop_quality_air && f$cc_flop_static_high_parent Return true Force
 When f$cc_cbet_flop_air_best_backdoors && f$cc_flop_paired_parent Return true Force
 When f$cc_cbet_flop_air_two_oc_backdoor && f$cc_flop_static_lowmid_parent && !f$cc_cbet_high_spr Return true Force
 When Others Return false Force
 
+// Purpose: choose size ID for positive SB-v-BB OOP CBet.
+// Source: 3wSBvBB uses small/static and stronger/dynamic board-dependent sizing.
+// Provenance: A concept + P normalization to 33/50/75 deep-stack palette.
+// Safety: returns 0 on check; no global auto-jam semantics.
 ##f$cc_cbet_srp_oop_sb_vs_bb_size_id##
 When !f$cc_cbet_srp_oop_sb_vs_bb_action Return 0 Force
-
 When f$cc_flop_dynamic_lowmid_parent && f$cc_cbet_flop_very_strong_value Return 3 Force
 When f$cc_flop_dynamic_lowmid_parent && f$cc_cbet_flop_overpair Return 2 Force
 When f$cc_flop_dynamic_high_parent && (f$cc_cbet_flop_very_strong_value || f$cc_cbet_flop_overpair || f$cc_cbet_flop_strong_top_pair) Return 2 Force
@@ -94,51 +96,40 @@ When Others Return 1 Force
 // -----------------------------------------------------------------------------
 // OOP.02 — PFA OOP versus later-position cold caller
 // -----------------------------------------------------------------------------
-// This is the largest new SRP theory gap: UTG/HJ/CO opens and a later nonblind
-// player calls. 3wSBvBTN supplies position/history shape only; range policy is P.
-//
-// Professional baseline principles used here:
-//   * OOP checking frequency is high;
-//   * static A/K/Q boards can still support small range-pressure bets;
-//   * low/mid connected boards improve the caller's condensed suited/pair
-//     region and sharply reduce indiscriminate air CBetting;
-//   * marginal SDV checks; strong draws can remain in X/R range;
-//   * stronger value chooses larger sizing as board dynamism rises.
 
+// Purpose: choose CBet/check in the major new six-max SRP gap where Hero opened
+// before a later-position nonblind caller and therefore reaches flop OOP.
+// Context: UTG/HJ/CO opener versus HJ/CO/BTN caller according to exact matchup.
+// Source: 3wSBvBTN supplies only OOP positional/history shape; source does NOT
+// contain these cash ranges or exact frequencies.
+// Provenance: P-heavy explicit "tapa-buraco" constrained by A source principles.
+// Professional fill: OOP checks materially more; static A/K/Q can support small
+// pressure; low/mid connected boards favor caller realization; marginal SDV
+// checks; strong draws may remain in X/R range.
+// Safety/Limits: baseline is not solver-exact; exact matchup remains available
+// for future position-specific refinement and no shallow stack-off rule survives.
 ##f$cc_cbet_srp_oop_coldcaller_action##
 When !f$cc_cbet_srp_oop_coldcaller_context Return false Force
-
 When f$cc_cbet_flop_very_strong_value Return true Force
 When f$cc_cbet_flop_overpair Return true Force
-
-// Strong TP value-bets favourable/high boards. Dynamic low/mid is checked at
-// high SPR to avoid a deterministic bet/bet/bet one-pair tree OOP.
 When f$cc_cbet_flop_strong_top_pair && f$cc_flop_dynamic_lowmid_parent && f$cc_cbet_high_spr Return false Force
 When f$cc_cbet_flop_strong_top_pair Return true Force
-
-// Medium TP only bets the most favourable static high parent or when paired
-// with a real draw. Weak TP protects checking range.
 When f$cc_cbet_flop_medium_top_pair && f$cc_flop_static_high_parent Return true Force
 When f$cc_cbet_flop_medium_top_pair && f$cc_pair_plus_draw Return true Force
 When f$cc_cbet_flop_medium_top_pair Return false Force
 When f$cc_cbet_flop_weak_top_pair Return false Force
-
 When f$cc_cbet_flop_showdown_pair Return false Force
-
-// Premium draws can bet on high/static structures but remain X/R candidates on
-// dynamic low/mid boards. Good/weak draws mostly check OOP.
 When f$cc_cbet_flop_premium_draw && !f$cc_flop_dynamic_lowmid_parent Return true Force
 When f$cc_real_frontdoor_draw Return false Force
-
-// Air is deliberately narrow. Static high-card boards are the only baseline
-// bluff parent, and only quality-backdoor combos are selected. Exact future
-// position/range work may widen/narrow this family per matchup.
 When f$cc_cbet_flop_quality_air && f$cc_flop_static_high_parent Return true Force
 When Others Return false Force
 
+// Purpose: choose size for the P-heavy OOP-coldcaller CBet baseline.
+// Source: A dry-small/dynamic-larger source architecture.
+// Provenance: P exact six-max sizing map using 33/50/75 families.
+// Safety/Limits: 0 on check; no overbet/jam is introduced by this baseline.
 ##f$cc_cbet_srp_oop_coldcaller_size_id##
 When !f$cc_cbet_srp_oop_coldcaller_action Return 0 Force
-
 When f$cc_flop_dynamic_lowmid_parent && f$cc_cbet_flop_very_strong_value Return 3 Force
 When f$cc_flop_dynamic_lowmid_parent Return 2 Force
 When f$cc_flop_dynamic_high_parent Return 2 Force
@@ -148,19 +139,24 @@ When f$cc_flop_paired_parent Return 1 Force
 When Others Return 2 Force
 
 // -----------------------------------------------------------------------------
-// OOP.03 — Ordinary-SRP reduced-HU dispatcher
+// OOP.03 — Ordinary-SRP reduced-HU dispatchers
 // -----------------------------------------------------------------------------
 
+// Purpose: route ordinary reduced-HU OOP CBet to direct SB-v-BB or new
+// opener-v-later-coldcaller family without merging ranges.
+// Source/Provenance: A/P topology router; unknown family fails closed.
 ##f$cc_cbet_srp_oop_reduced_action##
 When f$cc_cbet_srp_oop_sb_vs_bb_context Return f$cc_cbet_srp_oop_sb_vs_bb_action Force
 When f$cc_cbet_srp_oop_coldcaller_context Return f$cc_cbet_srp_oop_coldcaller_action Force
 When Others Return false Force
 
+// Purpose: route size ID to the same OOP family that owns the action.
+// Source/Provenance: A/P safety router; uncovered context returns 0.
 ##f$cc_cbet_srp_oop_reduced_size_id##
 When f$cc_cbet_srp_oop_sb_vs_bb_context Return f$cc_cbet_srp_oop_sb_vs_bb_size_id Force
 When f$cc_cbet_srp_oop_coldcaller_context Return f$cc_cbet_srp_oop_coldcaller_size_id Force
 When Others Return 0 Force
 
 // ============================================================================
-// End first SRP OOP CBet strategic implementation.
+// End SRP OOP CBet implementation.
 // ============================================================================
