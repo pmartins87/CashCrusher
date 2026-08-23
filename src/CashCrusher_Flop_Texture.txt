@@ -1,0 +1,197 @@
+// ============================================================================
+// CashCrusher_Flop_Texture.txt
+// Mechanical flop texture descriptors for six-max post-flop policy
+// ============================================================================
+// Raw mechanical components are canonical. The final "pressure" families below
+// are P-provenance engineering abstractions and must not be mistaken for solver
+// frequencies or universal labels such as "always dry" / "always wet".
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// T.01 — Suit structure
+// IDs: 1 monotone | 2 two-tone | 3 rainbow
+// -----------------------------------------------------------------------------
+
+##f$cc_flop_suit_id##
+When !IsFlop Return 0 Force
+When SuitsOnFlop = 1 Return 1 Force
+When SuitsOnFlop = 2 Return 2 Force
+When SuitsOnFlop = 3 Return 3 Force
+When Others Return 0 Force
+
+##f$cc_flop_monotone##
+f$cc_flop_suit_id = 1
+
+##f$cc_flop_twotone##
+f$cc_flop_suit_id = 2
+
+##f$cc_flop_rainbow##
+f$cc_flop_suit_id = 3
+
+// -----------------------------------------------------------------------------
+// T.02 — Pairing structure
+// IDs: 1 trips board | 2 paired board | 3 unpaired board
+// -----------------------------------------------------------------------------
+
+##f$cc_flop_pairing_id##
+When !IsFlop Return 0 Force
+When TripsOnBoardOnFlop Return 1 Force
+When PairOnFlop Return 2 Force
+When Others Return 3 Force
+
+##f$cc_flop_trips_board##
+f$cc_flop_pairing_id = 1
+
+##f$cc_flop_paired##
+f$cc_flop_pairing_id = 2
+
+##f$cc_flop_unpaired##
+f$cc_flop_pairing_id = 3
+
+// -----------------------------------------------------------------------------
+// T.03 — High-card structure
+// IDs: 5 A-high | 4 K-high | 3 Q-high | 2 J/T-high | 1 9-high or lower
+// -----------------------------------------------------------------------------
+
+##f$cc_flop_highcard_id##
+When !IsFlop Return 0 Force
+When TopFlopCard = ace Return 5 Force
+When TopFlopCard = king Return 4 Force
+When TopFlopCard = queen Return 3 Force
+When TopFlopCard >= ten Return 2 Force
+When TopFlopCard >= two Return 1 Force
+When Others Return 0 Force
+
+##f$cc_flop_ahigh##
+f$cc_flop_highcard_id = 5
+
+##f$cc_flop_khigh##
+f$cc_flop_highcard_id = 4
+
+##f$cc_flop_qhigh##
+f$cc_flop_highcard_id = 3
+
+##f$cc_flop_jt_high##
+f$cc_flop_highcard_id = 2
+
+##f$cc_flop_9low##
+f$cc_flop_highcard_id = 1
+
+// -----------------------------------------------------------------------------
+// T.04 — Broadway count (T/J/Q/K/A)
+// -----------------------------------------------------------------------------
+
+##f$cc_flop_broadway_count##
+((FirstFlopCard >= ten) ? 1 : 0) +
+((SecondFlopCard >= ten) ? 1 : 0) +
+((ThirdFlopCard >= ten) ? 1 : 0)
+
+##f$cc_flop_0bw##
+f$cc_flop_broadway_count = 0
+
+##f$cc_flop_1bw##
+f$cc_flop_broadway_count = 1
+
+##f$cc_flop_2bw##
+f$cc_flop_broadway_count = 2
+
+##f$cc_flop_3bw##
+f$cc_flop_broadway_count = 3
+
+// -----------------------------------------------------------------------------
+// T/A.05 — Straight/connectivity pressure
+// The OpenPPL primitives are kept independently so later policy can reason on
+// exact board interaction instead of relying on one inherited "wet" flag.
+// -----------------------------------------------------------------------------
+
+##f$cc_flop_straight_possible##
+IsFlop && StraightPossibleOnFlop
+
+##f$cc_flop_oesd_possible##
+IsFlop && OpenEndedStraightDrawPossibleOnFlop
+
+##f$cc_flop_uncoordinated##
+IsFlop && UncoordinatedFlop
+
+##f$cc_flop_rank_span##
+When !IsFlop Return -1 Force
+When Others Return (TopFlopCard - LowestFlopCard) Force
+
+// Mechanical connectivity ID:
+//   4 = made-straight topology possible from board ranks
+//   3 = OESD/double-ended topology possible
+//   2 = coordinated but below the above categories
+//   1 = OpenPPL uncoordinated
+##f$cc_flop_connectivity_id##
+When !IsFlop Return 0 Force
+When f$cc_flop_straight_possible Return 4 Force
+When f$cc_flop_oesd_possible Return 3 Force
+When f$cc_flop_uncoordinated Return 1 Force
+When Others Return 2 Force
+
+// -----------------------------------------------------------------------------
+// P.06 — Strategy-parent board pressure descriptors
+// These are intentionally broad parents. Exact matchup and exact board remain
+// available; no betting frequency is encoded here.
+// -----------------------------------------------------------------------------
+
+##f$cc_flop_static_high_parent##
+// Unpaired high-card board with limited straight pressure. Monotone flops are
+// excluded because one-suit nut distribution changes the strategy materially.
+f$cc_flop_unpaired &&
+(f$cc_flop_ahigh || f$cc_flop_khigh || f$cc_flop_qhigh) &&
+!f$cc_flop_straight_possible &&
+!f$cc_flop_oesd_possible &&
+!f$cc_flop_monotone
+
+##f$cc_flop_dynamic_high_parent##
+f$cc_flop_unpaired &&
+(f$cc_flop_ahigh || f$cc_flop_khigh || f$cc_flop_qhigh || f$cc_flop_jt_high) &&
+(f$cc_flop_straight_possible || f$cc_flop_oesd_possible || f$cc_flop_monotone)
+
+##f$cc_flop_static_lowmid_parent##
+f$cc_flop_unpaired &&
+(f$cc_flop_jt_high || f$cc_flop_9low) &&
+!f$cc_flop_straight_possible &&
+!f$cc_flop_oesd_possible &&
+!f$cc_flop_monotone
+
+##f$cc_flop_dynamic_lowmid_parent##
+f$cc_flop_unpaired &&
+(f$cc_flop_jt_high || f$cc_flop_9low) &&
+(f$cc_flop_straight_possible || f$cc_flop_oesd_possible || f$cc_flop_monotone)
+
+##f$cc_flop_paired_parent##
+f$cc_flop_paired || f$cc_flop_trips_board
+
+// -----------------------------------------------------------------------------
+// P.07 — Coarse pressure ID
+// 1 static high | 2 dynamic high | 3 static low/mid | 4 dynamic low/mid
+// 5 paired/trips | 0 no coarse parent / invalid
+// -----------------------------------------------------------------------------
+
+##f$cc_flop_pressure_id##
+When f$cc_flop_paired_parent Return 5 Force
+When f$cc_flop_static_high_parent Return 1 Force
+When f$cc_flop_dynamic_high_parent Return 2 Force
+When f$cc_flop_static_lowmid_parent Return 3 Force
+When f$cc_flop_dynamic_lowmid_parent Return 4 Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// T.08 — Exact mechanical texture ID for logs/tests
+// H = highcard id, P = pairing id, S = suit id, C = connectivity id, B = BW count
+// ID = H*10000 + P*1000 + S*100 + C*10 + B
+// -----------------------------------------------------------------------------
+
+##f$cc_flop_texture_id##
+When !IsFlop Return 0 Force
+When f$cc_flop_highcard_id <= 0 Return 0 Force
+When f$cc_flop_pairing_id <= 0 Return 0 Force
+When f$cc_flop_suit_id <= 0 Return 0 Force
+When f$cc_flop_connectivity_id <= 0 Return 0 Force
+When Others Return ((f$cc_flop_highcard_id * 10000) + (f$cc_flop_pairing_id * 1000) + (f$cc_flop_suit_id * 100) + (f$cc_flop_connectivity_id * 10) + f$cc_flop_broadway_count) Force
+
+// ============================================================================
+// End flop texture module.
+// ============================================================================
