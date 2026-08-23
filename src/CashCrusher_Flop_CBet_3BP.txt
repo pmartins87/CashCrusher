@@ -1,0 +1,253 @@
+// ============================================================================
+// CashCrusher_Flop_CBet_3BP.txt
+// Gate 01F.1 — HU PLAIN 3-bet-pot flop CBet versus ORIGINAL OPENER
+// ============================================================================
+// Implemented now:
+//   1) TRUE HU: BB 3bettor OOP vs SB/Button opener-call.
+//   2) 3-6h reduced HU: Hero 3bettor IP vs original opener-call.
+//   3) 3-6h reduced HU: Hero 3bettor OOP vs original opener-call.
+//
+// Deliberately NOT implemented here:
+//   * post-3bet cold caller as sole Villain;
+//   * any squeeze descendant;
+//   * multiway 3BP;
+//   * reversed/limp-reraise chronology;
+//   * 4BP.
+// Those families remain fail-closed instead of borrowing opener-call strategy.
+//
+// Source hierarchy:
+//   A — DeepCrusher initiative routing and HUSB/HUBB/3w board/hand principles.
+//   IMPORTANT: source does NOT contain a clean dedicated deep-stack 3BP CBet
+//   tree. `f$pot_Reraised` is not used to create a separate `f$move_flop_cbet`
+//   policy. Therefore exact 3BP frequencies cannot be labeled T.
+//   P — professional deep-stack NLHE 3BP theory fills range/SPR/frequency gaps.
+//   X — shallow commitment, StackOffDraws, blanket air and auto-jam tails.
+//
+// OpenPPL safety:
+//   Flat complete WHENs only. Exact survivor provenance is mandatory.  Unknown
+//   3BP caller type returns false/size0.
+//
+// Size IDs: 1 ~33% | 2 ~50% | 3 ~75% | 0 check
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// 3BP.C00 — Context guards
+// -----------------------------------------------------------------------------
+
+// Purpose: exact supported true-HU ordinary 3BP CBet context.
+// Context: SB/Button opened, Hero BB 3bet, SB/Button called; Hero is OOP.
+// Source: HUBB is direct positional ancestry but not pot-type-specific strategy.
+// Provenance: A topology/source architecture + P 3BP range adaptation.
+##f$cc_cbet_true_hu_plain3bp_oop_context##
+f$cc_flop_cbet_opportunity &&
+f$cc_true_hu_plain3bp_bb_3bettor_oop &&
+f$cc_spr_valid
+
+// Purpose: reduced-HU plain 3BP where Hero is 3bettor IP and sole Villain is
+// the ORIGINAL opener who called the 3bet.
+// Source/Provenance: P 3BP range topology constrained by A source architecture.
+// Safety: post-3bet cold caller cannot satisfy `f$cc_hu_plain3bp_vs_opener`.
+##f$cc_cbet_plain3bp_vs_opener_ip_context##
+f$cc_flop_cbet_opportunity &&
+f$cc_hu_origin_preflop_reduced &&
+f$cc_hu_plain3bp_vs_opener &&
+f$cc_hu_ip &&
+f$cc_spr_valid
+
+// Purpose: reduced-HU plain 3BP where Hero is 3bettor OOP versus original opener.
+// Source/Provenance: P 3BP range topology + A OOP source architecture.
+##f$cc_cbet_plain3bp_vs_opener_oop_context##
+f$cc_flop_cbet_opportunity &&
+f$cc_hu_origin_preflop_reduced &&
+f$cc_hu_plain3bp_vs_opener &&
+f$cc_hu_oop &&
+f$cc_spr_valid
+
+// Purpose: mark opener-call range as early-position UTG/HJ in reduced-HU 3BP.
+// Source/Provenance: P exact-position modifier; no frequency implied by itself.
+##f$cc_cbet_plain3bp_vs_early_opener##
+(f$cc_cbet_plain3bp_vs_opener_ip_context || f$cc_cbet_plain3bp_vs_opener_oop_context) &&
+(f$cc_hu_villain_pos_id = 1 || f$cc_hu_villain_pos_id = 2)
+
+// Purpose: mark CO/BTN opener-call in reduced-HU 3BP, typically created by a
+// later-position/nonblind or blind 3bet against wider opening range.
+// Source/Provenance: P exact-position modifier.
+##f$cc_cbet_plain3bp_vs_late_opener##
+(f$cc_cbet_plain3bp_vs_opener_ip_context || f$cc_cbet_plain3bp_vs_opener_oop_context) &&
+(f$cc_hu_villain_pos_id = 3 || f$cc_hu_villain_pos_id = 4)
+
+// Purpose: identify BB 3bettor IP versus SB opener-call in a multi-handed deal.
+// This is not true HU even though current matchup can also be 65.
+// Source/Provenance: P range-topology modifier with strict HU-origin separation.
+##f$cc_cbet_plain3bp_bb_ip_vs_sb_opener##
+f$cc_cbet_plain3bp_vs_opener_ip_context &&
+f$cc_hero_pos_id = 6 && f$cc_hu_villain_pos_id = 5
+
+// -----------------------------------------------------------------------------
+// 3BP.C01 — TRUE HU BB 3bettor OOP vs SB/Button opener-call
+// -----------------------------------------------------------------------------
+
+// Purpose: choose CBet/check in true-HU plain 3BP with Hero BB OOP.
+// Source: HUBB source protects OOP checks, may keep strong draws for X/R, and
+// sizes TP+ small on calmer / larger on dynamic boards.
+// Provenance: A source architecture; P accounts for tighter 3BP ranges/lower SPR;
+// exact frequencies are intentionally not attributed to DeepCrusher.
+// Decision logic: robust value bets; medium/weak one-pair selectively bets calm
+// boards; dynamic strong draws often preserve X/R; static-high backdoor air is
+// the principal bluff region.
+// Safety/Limits: no action here dictates response versus a later raise/float.
+##f$cc_cbet_true_hu_plain3bp_oop_action##
+When !f$cc_cbet_true_hu_plain3bp_oop_context Return false Force
+When f$cc_cbet_flop_very_strong_value Return true Force
+When f$cc_cbet_flop_overpair Return true Force
+When f$cc_cbet_flop_strong_top_pair && f$cc_flop_dynamic_lowmid_parent && f$cc_cbet_high_spr Return false Force
+When f$cc_cbet_flop_strong_top_pair Return true Force
+When f$cc_cbet_flop_medium_top_pair && (f$cc_flop_static_high_parent || f$cc_flop_paired_parent) Return true Force
+When f$cc_cbet_flop_medium_top_pair && f$cc_pair_plus_draw Return true Force
+When f$cc_cbet_flop_medium_top_pair Return false Force
+When f$cc_cbet_flop_weak_top_pair && f$cc_flop_static_high_parent && !f$cc_cbet_high_spr Return true Force
+When f$cc_cbet_flop_weak_top_pair Return false Force
+When f$cc_hand_second_pair_or_pocket && f$cc_cbet_board_small_bet_parent && f$cc_spr_round_start < 4 Return true Force
+When f$cc_cbet_flop_showdown_pair Return false Force
+When f$cc_cbet_flop_premium_draw && (f$cc_flop_dynamic_high_parent || f$cc_flop_dynamic_lowmid_parent) Return false Force
+When f$cc_cbet_flop_premium_draw Return true Force
+When f$cc_cbet_flop_good_draw && f$cc_cbet_board_small_bet_parent Return true Force
+When f$cc_real_frontdoor_draw Return false Force
+When f$cc_cbet_flop_quality_air && f$cc_flop_static_high_parent Return true Force
+When f$cc_cbet_flop_air_best_backdoors && f$cc_flop_paired_parent Return true Force
+When f$cc_cbet_flop_air_best_backdoors && f$cc_flop_dynamic_high_parent && f$cc_spr_round_start < 4 Return true Force
+When Others Return false Force
+
+// Purpose: size positive true-HU OOP 3BP CBet.
+// Source: A calm-small / dynamic-larger HUBB concept.
+// Provenance: P/A 33/50/75 3BP map; lower SPR favors small static pressure.
+// Safety: no size auto-jams because global conversion remains disabled.
+##f$cc_cbet_true_hu_plain3bp_oop_size_id##
+When !f$cc_cbet_true_hu_plain3bp_oop_action Return 0 Force
+When f$cc_flop_dynamic_lowmid_parent && (f$cc_cbet_flop_very_strong_value || f$cc_cbet_flop_premium_draw) Return 3 Force
+When f$cc_flop_dynamic_lowmid_parent Return 2 Force
+When f$cc_flop_dynamic_high_parent && (f$cc_cbet_flop_very_strong_value || f$cc_cbet_flop_overpair || f$cc_cbet_flop_strong_top_pair) Return 2 Force
+When f$cc_flop_dynamic_high_parent Return 1 Force
+When f$cc_flop_static_lowmid_parent && (f$cc_cbet_flop_very_strong_value || f$cc_cbet_flop_overpair) Return 2 Force
+When f$cc_flop_static_high_parent || f$cc_flop_paired_parent Return 1 Force
+When Others Return 1 Force
+
+// -----------------------------------------------------------------------------
+// 3BP.C02 — Reduced-HU 3bettor IP versus ORIGINAL opener-call
+// -----------------------------------------------------------------------------
+
+// Purpose: choose CBet/check for standard plain 3BP with 3bettor IP.
+// Context: non-true-HU, original opener is sole caller.
+// Source: no dedicated source 3BP tree; 3wBTN/IP source gives only A board/hand
+// structure. Exact 3BP strategy is a P professional-theory fill.
+// Professional fill: tight/lower-SPR ranges support broad small pressure on
+// static high/paired boards; low/mid dynamic boards are more selective; marginal
+// one-pair checks more as SPR grows; premium equity can use polar larger bets.
+// Safety/Limits: post-3bet coldcaller and squeeze ranges are excluded upstream.
+##f$cc_cbet_plain3bp_vs_opener_ip_action##
+When !f$cc_cbet_plain3bp_vs_opener_ip_context Return false Force
+When f$cc_cbet_flop_very_strong_value Return true Force
+When f$cc_cbet_flop_overpair Return true Force
+When f$cc_cbet_flop_strong_top_pair Return true Force
+When f$cc_cbet_flop_medium_top_pair && f$cc_flop_dynamic_lowmid_parent && f$cc_cbet_high_spr Return false Force
+When f$cc_cbet_flop_medium_top_pair Return true Force
+When f$cc_cbet_flop_weak_top_pair && (f$cc_flop_static_high_parent || f$cc_flop_paired_parent) && !f$cc_cbet_very_high_spr Return true Force
+When f$cc_cbet_flop_weak_top_pair Return false Force
+When f$cc_hand_second_pair_or_pocket && f$cc_pair_plus_draw Return true Force
+When f$cc_hand_second_pair_or_pocket && f$cc_cbet_board_small_bet_parent && f$cc_spr_round_start < 4 Return true Force
+When f$cc_cbet_flop_showdown_pair Return false Force
+When f$cc_cbet_flop_premium_draw Return true Force
+When f$cc_cbet_flop_good_draw && !f$cc_flop_dynamic_lowmid_parent Return true Force
+When f$cc_cbet_flop_good_draw && f$cc_flop_dynamic_lowmid_parent && f$cc_one_or_more_overcards Return true Force
+When f$cc_cbet_flop_weak_draw && f$cc_cbet_board_small_bet_parent && f$cc_spr_round_start < 4 Return true Force
+When f$cc_real_frontdoor_draw Return false Force
+When f$cc_cbet_flop_quality_air && (f$cc_flop_static_high_parent || f$cc_flop_paired_parent) Return true Force
+When f$cc_cbet_flop_air_best_backdoors && f$cc_flop_dynamic_high_parent Return true Force
+When f$cc_cbet_flop_air_two_oc_backdoor && f$cc_flop_static_lowmid_parent && f$cc_cbet_plain3bp_vs_late_opener Return true Force
+When Others Return false Force
+
+// Purpose: select size for reduced-HU 3bettor-IP vs opener-call.
+// Source/Provenance: A source sizing shape + P 3BP lower-SPR normalization.
+// Decision logic: static high/paired mostly 33; dynamic high usually 33/50 by
+// strength; low dynamic uses 50/75 for robust polar region.
+##f$cc_cbet_plain3bp_vs_opener_ip_size_id##
+When !f$cc_cbet_plain3bp_vs_opener_ip_action Return 0 Force
+When f$cc_flop_dynamic_lowmid_parent && (f$cc_cbet_flop_very_strong_value || f$cc_cbet_flop_premium_draw) Return 3 Force
+When f$cc_flop_dynamic_lowmid_parent Return 2 Force
+When f$cc_flop_dynamic_high_parent && (f$cc_cbet_flop_very_strong_value || f$cc_cbet_flop_overpair || f$cc_cbet_flop_premium_draw) Return 2 Force
+When f$cc_flop_dynamic_high_parent Return 1 Force
+When f$cc_flop_static_lowmid_parent && (f$cc_cbet_flop_very_strong_value || f$cc_cbet_flop_overpair || f$cc_cbet_flop_premium_draw) Return 2 Force
+When f$cc_flop_static_lowmid_parent Return 1 Force
+When f$cc_flop_static_high_parent || f$cc_flop_paired_parent Return 1 Force
+When Others Return 1 Force
+
+// -----------------------------------------------------------------------------
+// 3BP.C03 — Reduced-HU 3bettor OOP versus ORIGINAL opener-call
+// -----------------------------------------------------------------------------
+
+// Purpose: choose CBet/check for blind/other 3bettor OOP versus original opener.
+// Source: OOP DeepCrusher trees preserve check range/XR with draws; no dedicated
+// deep-stack 3BP frequencies exist.
+// Provenance: A architecture + P 3BP theory fill.
+// Professional fill: 3bettor can still own range/nut advantage on high/static
+// boards, especially versus late opens, so OOP is not an automatic range-check;
+// dynamic low boards and marginal pairs check much more.
+// Safety/Limits: exact opener position remains available and squeeze/coldcallers
+// cannot enter this function.
+##f$cc_cbet_plain3bp_vs_opener_oop_action##
+When !f$cc_cbet_plain3bp_vs_opener_oop_context Return false Force
+When f$cc_cbet_flop_very_strong_value Return true Force
+When f$cc_cbet_flop_overpair Return true Force
+When f$cc_cbet_flop_strong_top_pair && f$cc_flop_dynamic_lowmid_parent && f$cc_cbet_high_spr Return false Force
+When f$cc_cbet_flop_strong_top_pair Return true Force
+When f$cc_cbet_flop_medium_top_pair && f$cc_flop_static_high_parent Return true Force
+When f$cc_cbet_flop_medium_top_pair && f$cc_pair_plus_draw Return true Force
+When f$cc_cbet_flop_medium_top_pair && f$cc_flop_paired_parent && f$cc_spr_round_start < 4 Return true Force
+When f$cc_cbet_flop_medium_top_pair Return false Force
+When f$cc_cbet_flop_weak_top_pair Return false Force
+When f$cc_cbet_flop_showdown_pair Return false Force
+When f$cc_cbet_flop_premium_draw && !f$cc_flop_dynamic_lowmid_parent Return true Force
+When f$cc_cbet_flop_premium_draw && f$cc_flop_dynamic_lowmid_parent Return false Force
+When f$cc_cbet_flop_good_draw && f$cc_cbet_board_small_bet_parent Return true Force
+When f$cc_real_frontdoor_draw Return false Force
+When f$cc_cbet_flop_quality_air && f$cc_flop_static_high_parent Return true Force
+When f$cc_cbet_flop_air_best_backdoors && f$cc_flop_paired_parent && f$cc_cbet_plain3bp_vs_late_opener Return true Force
+When Others Return false Force
+
+// Purpose: size positive reduced-HU OOP 3BP CBet versus original opener.
+// Source/Provenance: A/P; static range-pressure stays small, dynamic robust region
+// expands to 50/75 without importing short-stack commitment.
+##f$cc_cbet_plain3bp_vs_opener_oop_size_id##
+When !f$cc_cbet_plain3bp_vs_opener_oop_action Return 0 Force
+When f$cc_flop_dynamic_lowmid_parent && f$cc_cbet_flop_very_strong_value Return 3 Force
+When f$cc_flop_dynamic_lowmid_parent Return 2 Force
+When f$cc_flop_dynamic_high_parent && (f$cc_cbet_flop_very_strong_value || f$cc_cbet_flop_overpair || f$cc_cbet_flop_strong_top_pair) Return 2 Force
+When f$cc_flop_dynamic_high_parent Return 1 Force
+When f$cc_flop_static_lowmid_parent && (f$cc_cbet_flop_very_strong_value || f$cc_cbet_flop_overpair) Return 2 Force
+When f$cc_flop_static_high_parent || f$cc_flop_paired_parent Return 1 Force
+When Others Return 1 Force
+
+// -----------------------------------------------------------------------------
+// 3BP.C04 — Plain-opener dispatchers
+// -----------------------------------------------------------------------------
+
+// Purpose: route supported plain 3BP Hero-3bettor CBet action by HU origin/IP-OOP.
+// Source/Provenance: P/A router; unknown caller type and impossible true-HU IP
+// state fail closed rather than borrowing another child.
+##f$cc_cbet_plain3bp_supported_action##
+When f$cc_cbet_true_hu_plain3bp_oop_context Return f$cc_cbet_true_hu_plain3bp_oop_action Force
+When f$cc_cbet_plain3bp_vs_opener_ip_context Return f$cc_cbet_plain3bp_vs_opener_ip_action Force
+When f$cc_cbet_plain3bp_vs_opener_oop_context Return f$cc_cbet_plain3bp_vs_opener_oop_action Force
+When Others Return false Force
+
+// Purpose: paired size dispatcher for the same supported plain-3BP children.
+// Source/Provenance: P/A safety router; unsupported -> 0.
+##f$cc_cbet_plain3bp_supported_size_id##
+When f$cc_cbet_true_hu_plain3bp_oop_context Return f$cc_cbet_true_hu_plain3bp_oop_size_id Force
+When f$cc_cbet_plain3bp_vs_opener_ip_context Return f$cc_cbet_plain3bp_vs_opener_ip_size_id Force
+When f$cc_cbet_plain3bp_vs_opener_oop_context Return f$cc_cbet_plain3bp_vs_opener_oop_size_id Force
+When Others Return 0 Force
+
+// ============================================================================
+// End Gate 01F.1 plain 3BP baseline.
+// ============================================================================
