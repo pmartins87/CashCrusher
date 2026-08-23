@@ -15,6 +15,9 @@
 // Stack-depth note:
 //   This file does not settle later commitment. Legacy commitment helpers remain
 //   available for exact-node review; no helper is globally disabled here.
+//   Any low-SPR relaxation of one-pair betting requires the DEEPEST effective
+//   opponent relation to be low; one short opponent does not make a deeper live
+//   opponent disappear from the decision.
 //
 // OpenPPL safety:
 //   flat complete WHENs only; exact flop-origin count must remain unchanged.
@@ -41,10 +44,10 @@ When f$cc_cbet_flop_overpair && f$cc_flop_dynamic_high_parent && f$cc_mw_srp_4pl
 When f$cc_cbet_flop_overpair Return false Force
 When f$cc_cbet_flop_strong_top_pair && f$cc_pair_plus_draw Return true Force
 When f$cc_cbet_flop_strong_top_pair && f$cc_flop_static_high_parent Return true Force
-When f$cc_cbet_flop_strong_top_pair && f$cc_flop_paired_parent && !f$cc_cbet_high_spr Return true Force
+When f$cc_cbet_flop_strong_top_pair && f$cc_flop_paired_parent && !f$cc_mw_cbet_high_spr Return true Force
 When f$cc_cbet_flop_strong_top_pair && f$cc_flop_static_lowmid_parent && f$cc_mw_srp_4plus_pfa_last_context && f$cc_mw_srp_4plus_both_blinds_live Return true Force
 When f$cc_cbet_flop_strong_top_pair Return false Force
-When f$cc_cbet_flop_medium_top_pair && f$cc_flop_static_high_parent && f$cc_mw_srp_4plus_pfa_last_context && f$cc_mw_srp_4plus_both_blinds_live && f$cc_spr_round_start < 4 Return true Force
+When f$cc_cbet_flop_medium_top_pair && f$cc_flop_static_high_parent && f$cc_mw_srp_4plus_pfa_last_context && f$cc_mw_srp_4plus_both_blinds_live && f$cc_mw_all_effective_spr_below_4 Return true Force
 When f$cc_cbet_flop_medium_top_pair Return false Force
 When f$cc_cbet_flop_weak_top_pair Return false Force
 When f$cc_cbet_flop_showdown_pair Return false Force
@@ -81,7 +84,7 @@ When f$cc_cbet_flop_overpair && (f$cc_flop_static_high_parent || f$cc_flop_stati
 When f$cc_cbet_flop_overpair Return false Force
 When f$cc_cbet_flop_strong_top_pair && f$cc_pair_plus_draw Return true Force
 When f$cc_cbet_flop_strong_top_pair && f$cc_flop_static_high_parent && f$cc_mw_srp_4plus_pfa_last_context Return true Force
-When f$cc_cbet_flop_strong_top_pair && f$cc_flop_static_high_parent && f$cc_mw_srp_4plus_pfa_first_context && f$cc_spr_round_start < 4 Return true Force
+When f$cc_cbet_flop_strong_top_pair && f$cc_flop_static_high_parent && f$cc_mw_srp_4plus_pfa_first_context && f$cc_mw_all_effective_spr_below_4 Return true Force
 When f$cc_cbet_flop_strong_top_pair Return false Force
 When f$cc_cbet_flop_medium_top_pair Return false Force
 When f$cc_cbet_flop_weak_top_pair Return false Force
