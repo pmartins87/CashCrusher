@@ -1,0 +1,158 @@
+// ============================================================================
+// CashCrusher_Flop_CBet_Multiway_SRP4Plus.txt
+// Gate 01J.2 — 4/5/6-way ordinary-SRP PFA flop CBet
+// ============================================================================
+// Source boundary:
+//   DeepCrusher has no literal four-way+ postflop CBet tree.  Every action
+//   frequency here is P-heavy professional theory, constrained by A-level
+//   multiway/texture/hand-class principles from the audited source.
+//
+// Core direction:
+//   more opponents -> less fold equity -> progressively more value/equity dense
+//   betting.  This is NOT a blanket ban on one-pair betting: strong TP/overpair
+//   can still value/protection bet suitable static boards.
+//
+// Stack-depth note:
+//   This file does not settle later commitment. Legacy commitment helpers remain
+//   available for exact-node review; no helper is globally disabled here.
+//
+// OpenPPL safety:
+//   flat complete WHENs only; exact flop-origin count must remain unchanged.
+// Size IDs: 1 ~33% | 2 ~50% | 3 ~75% | 0 check
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// MW4.01 — EXACT FOUR-WAY
+// -----------------------------------------------------------------------------
+
+// Purpose: choose CBet/check on an exact four-player ordinary-SRP flop.
+// Context: Hero PFA; three opponents; FIRST/MIDDLE/LAST retained in predicates.
+// Source: no direct DeepCrusher four-way source.
+// Provenance: P-heavy; A source contributes multiway selectivity and texture logic.
+// Decision logic: robust value broad; overpair/strong TP bet static structures;
+// marginal one-pair mostly checks; premium draws selective; no pure-air baseline.
+##f$cc_cbet_mw_srp_exact4_action##
+When !f$cc_mw_srp_exact4_pfa_context Return false Force
+When !f$cc_mw_srp_4plus_context_consistent Return false Force
+When f$cc_cbet_flop_very_strong_value Return true Force
+When f$cc_cbet_flop_overpair && f$cc_flop_dynamic_lowmid_parent Return false Force
+When f$cc_cbet_flop_overpair && (f$cc_flop_static_high_parent || f$cc_flop_static_lowmid_parent || f$cc_flop_paired_parent) Return true Force
+When f$cc_cbet_flop_overpair && f$cc_flop_dynamic_high_parent && f$cc_mw_srp_4plus_pfa_last_context && !f$cc_mw_srp_4plus_nonblind_dense Return true Force
+When f$cc_cbet_flop_overpair Return false Force
+When f$cc_cbet_flop_strong_top_pair && f$cc_pair_plus_draw Return true Force
+When f$cc_cbet_flop_strong_top_pair && f$cc_flop_static_high_parent Return true Force
+When f$cc_cbet_flop_strong_top_pair && f$cc_flop_paired_parent && !f$cc_cbet_high_spr Return true Force
+When f$cc_cbet_flop_strong_top_pair && f$cc_flop_static_lowmid_parent && f$cc_mw_srp_4plus_pfa_last_context && f$cc_mw_srp_4plus_both_blinds_live Return true Force
+When f$cc_cbet_flop_strong_top_pair Return false Force
+When f$cc_cbet_flop_medium_top_pair && f$cc_flop_static_high_parent && f$cc_mw_srp_4plus_pfa_last_context && f$cc_mw_srp_4plus_both_blinds_live && f$cc_spr_round_start < 4 Return true Force
+When f$cc_cbet_flop_medium_top_pair Return false Force
+When f$cc_cbet_flop_weak_top_pair Return false Force
+When f$cc_cbet_flop_showdown_pair Return false Force
+When f$cc_cbet_flop_premium_draw && f$cc_mw_srp_4plus_pfa_last_context && !f$cc_flop_dynamic_lowmid_parent Return true Force
+When f$cc_cbet_flop_premium_draw && f$cc_mw_srp_4plus_pfa_middle_context && (f$cc_flop_static_high_parent || f$cc_flop_paired_parent) Return true Force
+When f$cc_cbet_flop_premium_draw && f$cc_mw_srp_4plus_pfa_first_context && f$cc_flop_paired_parent Return true Force
+When f$cc_real_frontdoor_draw Return false Force
+When Others Return false Force
+
+// Purpose: size positive exact-fourway SRP CBet.
+// Source/Provenance: P baseline using A texture-sensitive sizing principles.
+##f$cc_cbet_mw_srp_exact4_size_id##
+When !f$cc_cbet_mw_srp_exact4_action Return 0 Force
+When f$cc_flop_dynamic_lowmid_parent && f$cc_cbet_flop_very_strong_value Return 3 Force
+When f$cc_flop_dynamic_high_parent && (f$cc_cbet_flop_very_strong_value || f$cc_cbet_flop_premium_draw) Return 2 Force
+When f$cc_flop_dynamic_high_parent Return 1 Force
+When f$cc_flop_static_lowmid_parent && f$cc_cbet_flop_very_strong_value Return 2 Force
+When f$cc_flop_static_high_parent || f$cc_flop_static_lowmid_parent || f$cc_flop_paired_parent Return 1 Force
+When Others Return 2 Force
+
+// -----------------------------------------------------------------------------
+// MW5.02 — EXACT FIVE-WAY
+// -----------------------------------------------------------------------------
+
+// Purpose: choose CBet/check on exact five-player ordinary-SRP flop.
+// Source/Provenance: P-heavy; no direct source.  With four opponents, baseline
+// becomes substantially value/equity dense while still allowing strong one-pair
+// value bets on static structures.
+##f$cc_cbet_mw_srp_exact5_action##
+When !f$cc_mw_srp_exact5_pfa_context Return false Force
+When !f$cc_mw_srp_4plus_context_consistent Return false Force
+When f$cc_cbet_flop_very_strong_value Return true Force
+When f$cc_cbet_flop_overpair && (f$cc_flop_static_high_parent || f$cc_flop_static_lowmid_parent || f$cc_flop_paired_parent) Return true Force
+When f$cc_cbet_flop_overpair Return false Force
+When f$cc_cbet_flop_strong_top_pair && f$cc_pair_plus_draw Return true Force
+When f$cc_cbet_flop_strong_top_pair && f$cc_flop_static_high_parent && f$cc_mw_srp_4plus_pfa_last_context Return true Force
+When f$cc_cbet_flop_strong_top_pair && f$cc_flop_static_high_parent && f$cc_mw_srp_4plus_pfa_first_context && f$cc_spr_round_start < 4 Return true Force
+When f$cc_cbet_flop_strong_top_pair Return false Force
+When f$cc_cbet_flop_medium_top_pair Return false Force
+When f$cc_cbet_flop_weak_top_pair Return false Force
+When f$cc_cbet_flop_showdown_pair Return false Force
+When f$cc_cbet_flop_premium_draw && f$cc_mw_srp_4plus_pfa_last_context && (f$cc_flop_static_high_parent || f$cc_flop_paired_parent) Return true Force
+When f$cc_real_frontdoor_draw Return false Force
+When Others Return false Force
+
+// Purpose: size positive exact-fiveway SRP CBet.
+// Source/Provenance: P conservative sizing; static value mostly small.
+##f$cc_cbet_mw_srp_exact5_size_id##
+When !f$cc_cbet_mw_srp_exact5_action Return 0 Force
+When f$cc_flop_dynamic_lowmid_parent && f$cc_cbet_flop_very_strong_value Return 3 Force
+When f$cc_flop_dynamic_high_parent && f$cc_cbet_flop_very_strong_value Return 2 Force
+When f$cc_flop_static_lowmid_parent && f$cc_cbet_flop_very_strong_value Return 2 Force
+When f$cc_flop_static_high_parent || f$cc_flop_static_lowmid_parent || f$cc_flop_paired_parent Return 1 Force
+When Others Return 2 Force
+
+// -----------------------------------------------------------------------------
+// MW6.03 — EXACT SIX-WAY
+// -----------------------------------------------------------------------------
+
+// Purpose: choose CBet/check when all six dealt seats reach an ordinary-SRP flop.
+// Source/Provenance: P-only action frequencies; DeepCrusher cannot supply this node.
+// Decision logic: robust value remains active; overpair and strongest TP may still
+// value/protection bet static boards; draws/air baseline checks with five opponents.
+// Safety: betting one pair here does not imply commitment to later aggression.
+##f$cc_cbet_mw_srp_exact6_action##
+When !f$cc_mw_srp_exact6_pfa_context Return false Force
+When !f$cc_mw_srp_4plus_context_consistent Return false Force
+When f$cc_cbet_flop_very_strong_value Return true Force
+When f$cc_cbet_flop_overpair && (f$cc_flop_static_high_parent || f$cc_flop_static_lowmid_parent || f$cc_flop_paired_parent) Return true Force
+When f$cc_cbet_flop_overpair Return false Force
+When f$cc_cbet_flop_strong_top_pair && f$cc_flop_static_high_parent Return true Force
+When f$cc_cbet_flop_strong_top_pair && f$cc_pair_plus_draw && f$cc_flop_paired_parent Return true Force
+When f$cc_cbet_flop_strong_top_pair Return false Force
+When f$cc_cbet_flop_medium_top_pair Return false Force
+When f$cc_cbet_flop_weak_top_pair Return false Force
+When f$cc_cbet_flop_showdown_pair Return false Force
+When f$cc_real_frontdoor_draw Return false Force
+When Others Return false Force
+
+// Purpose: size positive exact-sixway SRP CBet.
+// Source/Provenance: P conservative static-small / robust-dynamic-medium baseline.
+##f$cc_cbet_mw_srp_exact6_size_id##
+When !f$cc_cbet_mw_srp_exact6_action Return 0 Force
+When f$cc_flop_dynamic_lowmid_parent && f$cc_cbet_flop_very_strong_value Return 2 Force
+When f$cc_flop_dynamic_high_parent && f$cc_cbet_flop_very_strong_value Return 2 Force
+When f$cc_flop_static_high_parent || f$cc_flop_static_lowmid_parent || f$cc_flop_paired_parent Return 1 Force
+When Others Return 2 Force
+
+// -----------------------------------------------------------------------------
+// MW+.04 — Dispatchers
+// -----------------------------------------------------------------------------
+
+// Purpose: route four-way+ ordinary-SRP PFA CBet by exact flop player count.
+// Source/Provenance: P exact-count dispatcher; unsupported state checks.
+##f$cc_cbet_mw_srp_4plus_action##
+When f$cc_mw_srp_exact4_pfa_context Return f$cc_cbet_mw_srp_exact4_action Force
+When f$cc_mw_srp_exact5_pfa_context Return f$cc_cbet_mw_srp_exact5_action Force
+When f$cc_mw_srp_exact6_pfa_context Return f$cc_cbet_mw_srp_exact6_action Force
+When Others Return false Force
+
+// Purpose: paired size router for four-way+ ordinary-SRP CBet.
+// Source/Provenance: P safety dispatcher; check/uncovered -> 0.
+##f$cc_cbet_mw_srp_4plus_size_id##
+When f$cc_mw_srp_exact4_pfa_context Return f$cc_cbet_mw_srp_exact4_size_id Force
+When f$cc_mw_srp_exact5_pfa_context Return f$cc_cbet_mw_srp_exact5_size_id Force
+When f$cc_mw_srp_exact6_pfa_context Return f$cc_cbet_mw_srp_exact6_size_id Force
+When Others Return 0 Force
+
+// ============================================================================
+// End Gate 01J.2 four-way+ ordinary-SRP baseline.
+// ============================================================================
