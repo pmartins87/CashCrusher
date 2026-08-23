@@ -4,12 +4,12 @@
 // ============================================================================
 // Purpose:
 //   Separate pot/range families BEFORE any strategic CBet policy is allowed to
-//   fire.  A good strategy routed to the wrong range topology is still a bug.
+//   fire. A good strategy routed to the wrong range topology is still a bug.
 //
 // CashCrusher terminology:
-//   CBet = Hero was the final preflop aggressor in a raised pot and faces no flop
-//   bet before acting.  Unraised/limped-pot bets are owned by different nodes,
-//   except the separately proven true-HU SB-limp -> BB-raise family.
+//   CBet = Hero was final preflop aggressor in a raised pot and faces no flop bet
+//   before acting. Unraised/limped-pot bets are owned by different nodes, except
+//   the separately proven true-HU SB-limp -> BB-raise family.
 //
 // Critical HU distinction:
 //   origin=1 TRUE HU DEAL;
@@ -22,12 +22,12 @@
 //
 // Source/Provenance:
 //   A = routing architecture adapted from audited DeepCrusher initiative/history;
-//   P = six-max topology separation where the Spin source has no literal state;
+//   P = six-max topology/range separation where Spin source has no literal state;
 //   X = unsupported families fail closed rather than borrowing a neighbor.
 //
 // OpenPPL safety:
-//   all WHEN rules are complete.  Indentation is never used to imply logical
-//   scope.  Every unsupported child returns false / size 0 explicitly.
+//   all WHEN rules are complete. Indentation never implies logical scope.
+//   Every unsupported child returns false / size 0 explicitly.
 // ============================================================================
 
 // -----------------------------------------------------------------------------
@@ -62,7 +62,8 @@ When !f$cc_flop_cbet_opportunity Return false Force
 // TRUE HU DEALS.
 When f$cc_true_hu && f$cc_pot_family_id = 2 && f$cc_pf_role_pfa && f$cc_pf_one_raise_ordinary_srp && f$cc_hu && f$cc_hu_ip Return f$cc_flop_cbet_true_hu_srp_sb_pfa_ip Force
 When f$cc_true_hu && f$cc_pot_family_id = 2 && f$cc_pf_role_pfa && f$cc_pf_hu_limp_raise_proven && f$cc_hu && f$cc_hu_oop Return f$cc_flop_cbet_true_hu_limpraised_bb_pfa_oop Force
-When f$cc_true_hu && f$cc_pot_family_id = 3 && f$cc_pf_role_3bettor && f$cc_pf_3bet_plain_proven && f$cc_hu && f$cc_hu_ip Return f$cc_flop_cbet_true_hu_3bp_3bettor_ip Force
+// Supported ordinary true-HU plain 3BP has BB as final 3bettor OOP. A true-HU
+// plain-3BP 3bettor-IP state is an invalid topology and therefore has no route.
 When f$cc_true_hu && f$cc_pot_family_id = 3 && f$cc_pf_role_3bettor && f$cc_pf_3bet_plain_proven && f$cc_hu && f$cc_hu_oop Return f$cc_flop_cbet_true_hu_3bp_3bettor_oop Force
 When f$cc_true_hu && f$cc_pot_family_id = 4 && f$cc_pf_role_4bettor && f$cc_hu && f$cc_hu_ip Return f$cc_flop_cbet_true_hu_4bp_4bettor_ip Force
 When f$cc_true_hu && f$cc_pot_family_id = 4 && f$cc_pf_role_4bettor && f$cc_hu && f$cc_hu_oop Return f$cc_flop_cbet_true_hu_4bp_4bettor_oop Force
@@ -88,7 +89,7 @@ When f$cc_multiway && f$cc_pot_family_id = 4 && f$cc_pf_role_4bettor Return f$cc
 When Others Return false Force
 
 // -----------------------------------------------------------------------------
-// 01.02 — Legacy ancestry metadata
+// 01.02 — Legacy ancestry metadata for one-raise HU CBet
 // -----------------------------------------------------------------------------
 // Ancestor IDs: 1 HUSB | 2 HUBB | 3 3wBTNvSB | 4 3wBTNvBB |
 //               6 3wSBvBTN positional skeleton | 7 3wSBvBB.
@@ -158,15 +159,18 @@ f$cc_cbet_srp_ip_true_hu_action
 ##f$cc_flop_cbet_true_hu_limpraised_bb_pfa_oop##
 f$cc_cbet_true_hu_limpraised_action
 
-// Purpose: placeholder for true-HU IP 3bettor CBet.
-// Source/Provenance: not audited yet -> X fail-closed placeholder.
+// Purpose: impossible/unsupported true-HU ordinary 3BP 3bettor-IP child.
+// Source: HU preflop order makes ordinary final 3bettor BB/OOP; SB limp-reraise
+// has reversed chronology and is not `plain_proven`.
+// Provenance: X fail-closed invariant; retained as named diagnostic placeholder.
 ##f$cc_flop_cbet_true_hu_3bp_3bettor_ip##
 false
 
-// Purpose: placeholder for true-HU OOP 3bettor CBet.
-// Source/Provenance: not audited yet -> X fail-closed placeholder.
+// Purpose: supported true-HU ordinary 3BP BB-3bettor-OOP child.
+// Source/Provenance: A HUBB architecture + P 3BP policy in Flop_CBet_3BP.txt.
+// Safety: exact context inside child requires original opener as survivor.
 ##f$cc_flop_cbet_true_hu_3bp_3bettor_oop##
-false
+f$cc_cbet_true_hu_plain3bp_oop_action
 
 // Purpose: placeholder for true-HU IP 4bettor CBet.
 // Source/Provenance: no reviewed deep-stack policy yet -> X fail closed.
@@ -188,35 +192,38 @@ f$cc_cbet_srp_ip_reduced_action
 ##f$cc_flop_cbet_hu_srp_pfa_oop##
 f$cc_cbet_srp_oop_reduced_action
 
-// Purpose: HU ISO PFA-IP child, including explicit limper/coldcaller survivor split.
+// Purpose: HU ISO PFA-IP child with explicit limper/coldcaller survivor split.
 // Source/Provenance: A/P implementation in CashCrusher_Flop_CBet_ISO.txt.
-// Safety: unproven survivor type returns false inside the dispatcher.
+// Safety: unproven survivor type returns false inside dispatcher.
 ##f$cc_flop_cbet_hu_iso_pfa_ip##
 f$cc_cbet_iso_hu_ip_action
 
-// Purpose: HU ISO PFA-OOP child, including explicit limper/coldcaller survivor split.
+// Purpose: HU ISO PFA-OOP child with explicit limper/coldcaller survivor split.
 // Source/Provenance: A/P implementation in CashCrusher_Flop_CBet_ISO.txt.
-// Safety: unproven survivor type returns false inside the dispatcher.
+// Safety: unproven survivor type returns false inside dispatcher.
 ##f$cc_flop_cbet_hu_iso_pfa_oop##
 f$cc_cbet_iso_hu_oop_action
 
-// Purpose: placeholder for ordinary reduced-HU 3BP 3bettor IP CBet.
-// Source/Provenance: pending Gate01F audit -> X fail-closed placeholder.
+// Purpose: ordinary reduced-HU plain 3BP 3bettor-IP child.
+// Source/Provenance: A architecture + P policy in Flop_CBet_3BP.txt.
+// Safety: only original-opener survivor is currently implemented; a post-3bet
+// coldcaller reaches this child but fails its exact context and checks.
 ##f$cc_flop_cbet_hu_3bp_3bettor_ip##
-false
+f$cc_cbet_plain3bp_vs_opener_ip_action
 
-// Purpose: placeholder for ordinary reduced-HU 3BP 3bettor OOP CBet.
-// Source/Provenance: pending Gate01F audit -> X fail-closed placeholder.
+// Purpose: ordinary reduced-HU plain 3BP 3bettor-OOP child.
+// Source/Provenance: A architecture + P policy in Flop_CBet_3BP.txt.
+// Safety: only original-opener survivor covered.
 ##f$cc_flop_cbet_hu_3bp_3bettor_oop##
-false
+f$cc_cbet_plain3bp_vs_opener_oop_action
 
 // Purpose: placeholder for reduced-HU squeeze 3bettor IP CBet.
-// Source/Provenance: pending squeeze-specific audit -> X fail closed.
+// Source/Provenance: squeeze-specific range policy not yet audited -> X fail closed.
 ##f$cc_flop_cbet_hu_squeeze_3bettor_ip##
 false
 
 // Purpose: placeholder for reduced-HU squeeze 3bettor OOP CBet.
-// Source/Provenance: pending squeeze-specific audit -> X fail closed.
+// Source/Provenance: squeeze-specific range policy not yet audited -> X fail closed.
 ##f$cc_flop_cbet_hu_squeeze_3bettor_oop##
 false
 
@@ -231,17 +238,17 @@ false
 false
 
 // Purpose: placeholder for ordinary multiway SRP PFA CBet.
-// Source/Provenance: legacy 3-way source exists only as A ancestry; policy not yet audited.
+// Source/Provenance: legacy true-3way ancestry exists as A only; policy not audited.
 ##f$cc_flop_cbet_mw_srp_pfa##
 false
 
 // Purpose: placeholder for multiway ISO PFA CBet.
-// Source/Provenance: no reviewed policy yet; survivor masks already preserved -> X for action.
+// Source/Provenance: survivor masks exist but policy not reviewed -> X for action.
 ##f$cc_flop_cbet_mw_iso_pfa##
 false
 
 // Purpose: placeholder for multiway ordinary 3BP CBet.
-// Source/Provenance: no reviewed deep-stack policy yet -> X fail closed.
+// Source/Provenance: exact 3BP range composition now exists, policy not reviewed.
 ##f$cc_flop_cbet_mw_3bp_3bettor##
 false
 
@@ -259,10 +266,10 @@ false
 // 01.04 — Coverage and sizing routers
 // -----------------------------------------------------------------------------
 
-// Purpose: report whether the current CBet context has an implemented strategic
+// Purpose: report whether current CBet context has an implemented strategic
 // baseline rather than merely a mechanical route.
 // Source/Provenance: P engineering coverage contract.
-// Safety: a covered context may still choose check; coverage != positive action.
+// Safety: covered context may still choose check; coverage != positive action.
 ##f$cc_flop_cbet_strategy_covered##
 When f$cc_cbet_srp_ip_true_hu_context Return true Force
 When f$cc_cbet_true_hu_limpraised_context Return true Force
@@ -274,9 +281,12 @@ When f$cc_cbet_iso_hu_limper_ip_context Return true Force
 When f$cc_cbet_iso_hu_limper_oop_context Return true Force
 When f$cc_cbet_iso_hu_coldcaller_ip_context Return true Force
 When f$cc_cbet_iso_hu_coldcaller_oop_context Return true Force
+When f$cc_cbet_true_hu_plain3bp_oop_context Return true Force
+When f$cc_cbet_plain3bp_vs_opener_ip_context Return true Force
+When f$cc_cbet_plain3bp_vs_opener_oop_context Return true Force
 When Others Return false Force
 
-// Purpose: pair every implemented positive CBet with its reviewed sizing-family ID.
+// Purpose: pair every implemented positive CBet with reviewed sizing-family ID.
 // Source/Provenance: A/P sizing routers from child policy modules.
 // Safety: unknown/uncovered/check state -> 0; no global all-in conversion.
 ##f$cc_flop_cbet_size_id##
@@ -291,6 +301,9 @@ When f$cc_cbet_iso_hu_limper_ip_context Return f$cc_cbet_iso_hu_limper_ip_size_i
 When f$cc_cbet_iso_hu_limper_oop_context Return f$cc_cbet_iso_hu_limper_oop_size_id Force
 When f$cc_cbet_iso_hu_coldcaller_ip_context Return f$cc_cbet_iso_hu_coldcaller_ip_size_id Force
 When f$cc_cbet_iso_hu_coldcaller_oop_context Return f$cc_cbet_iso_hu_coldcaller_oop_size_id Force
+When f$cc_cbet_true_hu_plain3bp_oop_context Return f$cc_cbet_true_hu_plain3bp_oop_size_id Force
+When f$cc_cbet_plain3bp_vs_opener_ip_context Return f$cc_cbet_plain3bp_vs_opener_ip_size_id Force
+When f$cc_cbet_plain3bp_vs_opener_oop_context Return f$cc_cbet_plain3bp_vs_opener_oop_size_id Force
 When Others Return 0 Force
 
 // Purpose: invariant used by tests/logging: positive CBet must have positive size,
