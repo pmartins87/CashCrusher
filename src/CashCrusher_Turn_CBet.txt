@@ -18,7 +18,8 @@
 //   * ordinary-SRP turn still multiway, preserving flop origin/current composition;
 //   * ISO HU/multiway, preserving original-limper vs post-raise-coldcaller origin;
 //   * plain 3BP HU/multiway, preserving opener-call vs post-3bet-coldcaller origin;
-//   * squeeze HU/multiway, preserving opener/pre3bet/post3bet survivor origin.
+//   * squeeze HU/multiway, preserving opener/pre3bet/post3bet survivor origin;
+//   * clean HU 4BP opener4/cold4 families with exact original raiser survivor.
 //
 // Everything else remains explicitly fail-closed until its own source/adaptation
 // audit. This is deliberate: Turn CBet must not inherit an HUSB/BTN frequency just
@@ -69,7 +70,8 @@ f$cc_pf_squeeze_proven &&
 !f$cc_pf_3bet_plain_proven
 
 // Purpose: clean supported 4BP Turn-CBet context for Hero 4bettor.
-// Source/Provenance: A/P topology gate; strategy pending exact 4BP audit.
+// Source: no dedicated deep-stack 4BP second-barrel tree exists.
+// Provenance: A/T topology gate; exact clean-HU policy is P-heavy Gate02I.
 ##f$cc_turn_cbet_4bp_context##
 f$cc_turn_cbet_opportunity &&
 f$cc_pot_family_id = 4 &&
@@ -116,13 +118,14 @@ f$cc_hu_oop &&
 // IDs: 1 source SRP IP; 2 P-heavy SRP IP gap; 3 source SRP OOP;
 // 4 P-heavy SRP OOP gap; 5 residual SRP IP; 6 residual SRP OOP;
 // 7 postflop-reduced SRP HU; 8 SRP multiway; 9 ISO; 10 plain3BP;
-// 11 squeeze; 12 4BP; 0 unknown.
+// 11 squeeze; 12 clean HU 4BP; 0 unknown.
 // Source/Provenance: P engineering metadata; ID never selects strategy alone.
 ##f$cc_turn_cbet_family_id##
 When !f$cc_turn_cbet_opportunity Return 0 Force
 When f$cc_turn_iso_covered Return 9 Force
 When f$cc_turn_plain3bp_covered Return 10 Force
 When f$cc_turn_squeeze_covered Return 11 Force
+When f$cc_turn_4bp_covered Return 12 Force
 When f$cc_turn_srp_postmw_hu_covered Return 7 Force
 When f$cc_turn_mw_srp_covered Return 8 Force
 When f$cc_turn_srp_ip_source_anchored_covered Return 1 Force
@@ -131,7 +134,6 @@ When f$cc_turn_srp_ip_epmpco_vs_bb_context || f$cc_turn_srp_ip_epmpco_vs_sb_cont
 When f$cc_turn_srp_oop_vs_nonblind_coldcaller_context Return 4 Force
 When f$cc_turn_cbet_srp_ip_uncovered_range_context Return 5 Force
 When f$cc_turn_cbet_srp_oop_uncovered_context Return 6 Force
-When f$cc_turn_cbet_4bp_context Return 12 Force
 When Others Return 0 Force
 
 // Purpose: top-level Turn CBet action router.
@@ -143,6 +145,7 @@ When !f$cc_turn_cbet_opportunity Return false Force
 When f$cc_turn_iso_covered Return f$cc_turn_iso_action Force
 When f$cc_turn_plain3bp_covered Return f$cc_turn_plain3bp_action Force
 When f$cc_turn_squeeze_covered Return f$cc_turn_squeeze_action Force
+When f$cc_turn_4bp_covered Return f$cc_turn_4bp_action Force
 When f$cc_turn_srp_postmw_hu_covered Return f$cc_turn_srp_postmw_hu_action Force
 When f$cc_turn_mw_srp_covered Return f$cc_turn_mw_srp_action Force
 When f$cc_turn_srp_ip_source_anchored_covered Return f$cc_turn_srp_ip_source_anchored_action Force
@@ -158,6 +161,7 @@ When !f$cc_turn_cbet_opportunity Return 0 Force
 When f$cc_turn_iso_covered Return f$cc_turn_iso_size_id Force
 When f$cc_turn_plain3bp_covered Return f$cc_turn_plain3bp_size_id Force
 When f$cc_turn_squeeze_covered Return f$cc_turn_squeeze_size_id Force
+When f$cc_turn_4bp_covered Return f$cc_turn_4bp_size_id Force
 When f$cc_turn_srp_postmw_hu_covered Return f$cc_turn_srp_postmw_hu_size_id Force
 When f$cc_turn_mw_srp_covered Return f$cc_turn_mw_srp_size_id Force
 When f$cc_turn_srp_ip_source_anchored_covered Return f$cc_turn_srp_ip_source_anchored_size_id Force
@@ -171,6 +175,7 @@ When Others Return 0 Force
 f$cc_turn_iso_covered ||
 f$cc_turn_plain3bp_covered ||
 f$cc_turn_squeeze_covered ||
+f$cc_turn_4bp_covered ||
 f$cc_turn_srp_postmw_hu_covered ||
 f$cc_turn_mw_srp_covered ||
 f$cc_turn_srp_ip_source_anchored_covered ||
