@@ -1,0 +1,289 @@
+// ============================================================================
+// CashCrusher_4BP_Context.txt
+// Gate 01I.0 — clean 4-bet-pot chronology and survivor provenance
+// ============================================================================
+// Purpose:
+//   Reconstruct only the 4BP histories that aggregate preflop masks can support
+//   conservatively.  A three-raise pot is not automatically a clean open/3bet/4bet.
+//
+// Clean subtype IDs:
+//   1 = STANDARD_OPENER_4BET
+//       Hero opened, one later player 3bet, Hero 4bet.
+//   2 = STANDARD_COLD_4BET
+//       opener < 3bettor < Hero cold4bet in normal first-orbit order.
+//   0 = unresolved/reversed/backraise/other chronology.
+//
+// HU survivor IDs:
+//   1 = original opener
+//   2 = original 3bettor
+//   3 = non-raiser caller with unresolved exact call stage
+//   0 = unknown/inconsistent
+//
+// Source/Provenance:
+//   A = persisted raise/call bits, Hero role and canonical positions from Gate00.
+//   P = conservative chronology proof required for six-max 4BP range routing.
+//
+// Safety:
+//   callbits/raisbits are aggregate history, not a full action log.  We therefore
+//   prove only clean positional sequences and fail closed on the rest.
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// 4BP.01 — Other raisers around Hero
+// -----------------------------------------------------------------------------
+
+// Purpose: in a 3-raise pot with exactly two unique raisers, return the other
+// raiser's canonical position.
+// Source/Provenance: A mechanical scan of persisted raiser bits.
+// Safety: only valid when Hero is final 4bettor and exactly two raisers exist.
+##f$cc_pf_4bet_two_raiser_other_pos_id##
+When f$cc_pf_raise_count != 3 Return 0 Force
+When !f$cc_pf_role_4bettor Return 0 Force
+When f$cc_pf_unique_raiser_count != 2 Return 0 Force
+When f$cc_pf_raise_utg && f$cc_hero_pos_id != 1 Return 1 Force
+When f$cc_pf_raise_hj && f$cc_hero_pos_id != 2 Return 2 Force
+When f$cc_pf_raise_co && f$cc_hero_pos_id != 3 Return 3 Force
+When f$cc_pf_raise_btn && f$cc_hero_pos_id != 4 Return 4 Force
+When f$cc_pf_raise_sb && f$cc_hero_pos_id != 5 Return 5 Force
+When f$cc_pf_raise_bb && f$cc_hero_pos_id != 6 Return 6 Force
+When Others Return 0 Force
+
+// Purpose: for a three-unique-raiser 4BP, return the earliest non-Hero raiser.
+// Source/Provenance: A raiser bits + canonical first-orbit order.
+// Safety: this is only a candidate opener until strict ordering is proven below.
+##f$cc_pf_4bet_cold_first_raiser_pos_id##
+When f$cc_pf_raise_count != 3 Return 0 Force
+When !f$cc_pf_role_4bettor Return 0 Force
+When f$cc_pf_unique_raiser_count != 3 Return 0 Force
+When f$cc_pf_raise_utg && f$cc_hero_pos_id != 1 Return 1 Force
+When f$cc_pf_raise_hj && f$cc_hero_pos_id != 2 Return 2 Force
+When f$cc_pf_raise_co && f$cc_hero_pos_id != 3 Return 3 Force
+When f$cc_pf_raise_btn && f$cc_hero_pos_id != 4 Return 4 Force
+When f$cc_pf_raise_sb && f$cc_hero_pos_id != 5 Return 5 Force
+When f$cc_pf_raise_bb && f$cc_hero_pos_id != 6 Return 6 Force
+When Others Return 0 Force
+
+// Purpose: for a three-unique-raiser 4BP, return the latest non-Hero raiser.
+// Source/Provenance: A raiser bits scanned in reverse canonical order.
+// Safety: paired with the previous helper to prove opener < 3bettor < Hero.
+##f$cc_pf_4bet_cold_second_raiser_pos_id##
+When f$cc_pf_raise_count != 3 Return 0 Force
+When !f$cc_pf_role_4bettor Return 0 Force
+When f$cc_pf_unique_raiser_count != 3 Return 0 Force
+When f$cc_pf_raise_bb && f$cc_hero_pos_id != 6 Return 6 Force
+When f$cc_pf_raise_sb && f$cc_hero_pos_id != 5 Return 5 Force
+When f$cc_pf_raise_btn && f$cc_hero_pos_id != 4 Return 4 Force
+When f$cc_pf_raise_co && f$cc_hero_pos_id != 3 Return 3 Force
+When f$cc_pf_raise_hj && f$cc_hero_pos_id != 2 Return 2 Force
+When f$cc_pf_raise_utg && f$cc_hero_pos_id != 1 Return 1 Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// 4BP.02 — Clean first-orbit subtype proof
+// -----------------------------------------------------------------------------
+
+// Purpose: prove standard opener -> later 3bet -> Hero/opener 4bet.
+// Source/Provenance: P conservative chronology proof over A persisted history.
+// Safety: `!hero_ever_called` and Hero<other reject common limp/backraise shapes.
+##f$cc_pf_4bet_standard_opener4_proven##
+f$cc_pf_raise_count = 3 &&
+f$cc_pf_role_4bettor &&
+f$cc_pf_unique_raiser_count = 2 &&
+!f$cc_pf_hero_ever_called &&
+f$cc_pf_4bet_two_raiser_other_pos_id > 0 &&
+f$cc_hero_pos_id < f$cc_pf_4bet_two_raiser_other_pos_id
+
+// Purpose: prove standard opener < later 3bettor < still-later Hero cold 4bet.
+// Source/Provenance: P conservative first-orbit reconstruction.
+// Safety: Hero with a prior call is a backraise candidate and is excluded.
+##f$cc_pf_4bet_standard_cold4_proven##
+f$cc_pf_raise_count = 3 &&
+f$cc_pf_role_4bettor &&
+f$cc_pf_unique_raiser_count = 3 &&
+!f$cc_pf_hero_ever_called &&
+f$cc_pf_4bet_cold_first_raiser_pos_id > 0 &&
+f$cc_pf_4bet_cold_second_raiser_pos_id > 0 &&
+f$cc_pf_4bet_cold_first_raiser_pos_id < f$cc_pf_4bet_cold_second_raiser_pos_id &&
+f$cc_pf_4bet_cold_second_raiser_pos_id < f$cc_hero_pos_id
+
+// Purpose: stable clean 4BP subtype ID.
+// Source/Provenance: P engineering contract; unresolved histories return 0.
+##f$cc_pf_4bet_subtype_id##
+When f$cc_pf_4bet_standard_opener4_proven Return 1 Force
+When f$cc_pf_4bet_standard_cold4_proven Return 2 Force
+When Others Return 0 Force
+
+// Purpose: canonical original opener position for a clean 4BP.
+// Source/Provenance: A/P derived from clean subtype proof.
+##f$cc_pf_4bet_opener_pos_id##
+When f$cc_pf_4bet_standard_opener4_proven Return f$cc_hero_pos_id Force
+When f$cc_pf_4bet_standard_cold4_proven Return f$cc_pf_4bet_cold_first_raiser_pos_id Force
+When Others Return 0 Force
+
+// Purpose: canonical original 3bettor position for a clean 4BP.
+// Source/Provenance: A/P derived from clean subtype proof.
+##f$cc_pf_4bet_threebettor_pos_id##
+When f$cc_pf_4bet_standard_opener4_proven Return f$cc_pf_4bet_two_raiser_other_pos_id Force
+When f$cc_pf_4bet_standard_cold4_proven Return f$cc_pf_4bet_cold_second_raiser_pos_id Force
+When Others Return 0 Force
+
+// Purpose: canonical final 4bettor position.
+// Source/Provenance: A Hero role/position alias; only clean subtype returns value.
+##f$cc_pf_4bet_final_pos_id##
+When f$cc_pf_4bet_subtype_id <= 0 Return 0 Force
+When Others Return f$cc_hero_pos_id Force
+
+// -----------------------------------------------------------------------------
+// 4BP.03 — Position bits for multiway composition
+// -----------------------------------------------------------------------------
+
+// Purpose: bitmask bit for clean 4BP opener.
+// Source/Provenance: A canonical-position bit mapping.
+##f$cc_pf_4bet_opener_bit##
+When f$cc_pf_4bet_opener_pos_id = 1 Return 1 Force
+When f$cc_pf_4bet_opener_pos_id = 2 Return 2 Force
+When f$cc_pf_4bet_opener_pos_id = 3 Return 4 Force
+When f$cc_pf_4bet_opener_pos_id = 4 Return 8 Force
+When f$cc_pf_4bet_opener_pos_id = 5 Return 16 Force
+When f$cc_pf_4bet_opener_pos_id = 6 Return 32 Force
+When Others Return 0 Force
+
+// Purpose: bitmask bit for clean 4BP 3bettor.
+// Source/Provenance: A canonical-position bit mapping.
+##f$cc_pf_4bet_threebettor_bit##
+When f$cc_pf_4bet_threebettor_pos_id = 1 Return 1 Force
+When f$cc_pf_4bet_threebettor_pos_id = 2 Return 2 Force
+When f$cc_pf_4bet_threebettor_pos_id = 3 Return 4 Force
+When f$cc_pf_4bet_threebettor_pos_id = 4 Return 8 Force
+When f$cc_pf_4bet_threebettor_pos_id = 5 Return 16 Force
+When f$cc_pf_4bet_threebettor_pos_id = 6 Return 32 Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// 4BP.04 — HU survivor type
+// -----------------------------------------------------------------------------
+
+// Purpose: prove sole HU Villain is the original opener in a clean cold4 pot.
+// Source/Provenance: A exact current Villain position + P clean subtype proof.
+##f$cc_hu_4bp_villain_is_opener##
+f$cc_hu &&
+f$cc_pf_4bet_subtype_id > 0 &&
+f$cc_hu_villain_pos_id = f$cc_pf_4bet_opener_pos_id
+
+// Purpose: prove sole HU Villain is the original 3bettor.
+// Source/Provenance: A exact current Villain position + clean 4BP reconstruction.
+##f$cc_hu_4bp_villain_is_threebettor##
+f$cc_hu &&
+f$cc_pf_4bet_subtype_id > 0 &&
+f$cc_hu_villain_pos_id = f$cc_pf_4bet_threebettor_pos_id
+
+// Purpose: identify a live HU 4BP caller who was neither clean opener nor 3bettor.
+// Source: aggregate call bits do not prove whether this player cold-called open,
+// 3bet or 4bet (or called more than once).
+// Provenance: P evidence-limit classification, strategically unsupported for now.
+##f$cc_hu_4bp_villain_is_othercaller##
+f$cc_hu &&
+f$cc_pf_4bet_subtype_id > 0 &&
+!f$cc_hu_4bp_villain_is_opener &&
+!f$cc_hu_4bp_villain_is_threebettor
+
+// Purpose: stable HU 4BP survivor ID: 1 opener, 2 3bettor, 3 other caller.
+// Source/Provenance: P routing metadata.
+##f$cc_hu_4bp_survivor_type_id##
+When f$cc_hu_4bp_villain_is_opener Return 1 Force
+When f$cc_hu_4bp_villain_is_threebettor Return 2 Force
+When f$cc_hu_4bp_villain_is_othercaller Return 3 Force
+When Others Return 0 Force
+
+// Purpose: HU 4BP provenance consistency guard.
+// Source/Provenance: P fail-closed invariant.
+##f$cc_hu_4bp_survivor_consistent##
+When !f$cc_hu Return true Force
+When f$cc_pot_family_id != 4 Return true Force
+When !f$cc_pf_role_4bettor Return true Force
+When f$cc_pf_4bet_subtype_id <= 0 Return false Force
+When f$cc_hu_4bp_survivor_type_id <= 0 Return false Force
+When Others Return true Force
+
+// -----------------------------------------------------------------------------
+// 4BP.05 — Clean HU range families
+// -----------------------------------------------------------------------------
+
+// Purpose: true-HU standard SB/Button opener4 IP versus BB 3bettor-call.
+// Source/Provenance: T/A HU position order + P clean 4BP reconstruction.
+// Safety: true-HU BB final 4bet belongs to reversed/limp-reraise history and fails.
+##f$cc_true_hu_4bp_opener4_ip_vs_threebettor##
+f$cc_true_hu &&
+f$cc_pf_4bet_standard_opener4_proven &&
+f$cc_hero_pos_id = 5 &&
+f$cc_hu_villain_pos_id = 6 &&
+f$cc_hu_4bp_villain_is_threebettor &&
+f$cc_hu_ip &&
+f$cc_hu_4bp_survivor_consistent
+
+// Purpose: reduced-HU standard opener4 versus its 3bettor caller.
+// Source/Provenance: P exact six-max 4BP range parent over A mechanics.
+##f$cc_reduced_hu_4bp_opener4_vs_threebettor##
+f$cc_hu_origin_preflop_reduced &&
+f$cc_pf_4bet_standard_opener4_proven &&
+f$cc_hu_4bp_villain_is_threebettor &&
+f$cc_hu_4bp_survivor_consistent
+
+// Purpose: reduced-HU standard cold4 versus original opener caller.
+// Source/Provenance: P distinct strong/condensed opener-continuation family.
+##f$cc_reduced_hu_4bp_cold4_vs_opener##
+f$cc_hu_origin_preflop_reduced &&
+f$cc_pf_4bet_standard_cold4_proven &&
+f$cc_hu_4bp_villain_is_opener &&
+f$cc_hu_4bp_survivor_consistent
+
+// Purpose: reduced-HU standard cold4 versus original 3bettor caller.
+// Source/Provenance: P distinct 3bettor-continuation family.
+##f$cc_reduced_hu_4bp_cold4_vs_threebettor##
+f$cc_hu_origin_preflop_reduced &&
+f$cc_pf_4bet_standard_cold4_proven &&
+f$cc_hu_4bp_villain_is_threebettor &&
+f$cc_hu_4bp_survivor_consistent
+
+// -----------------------------------------------------------------------------
+// 4BP.06 — Multiway composition metadata for future policy
+// -----------------------------------------------------------------------------
+
+// Purpose: clean-subtype multiway 4BP CBet context, without claiming strategy.
+// Source/Provenance: A/P exact context assembly.
+##f$cc_mw_4bp_pfa_context##
+f$cc_multiway_context_valid &&
+f$cc_pot_family_id = 4 &&
+f$cc_pf_role_4bettor &&
+f$cc_pf_4bet_subtype_id > 0 &&
+f$cc_flop_cbet_opportunity &&
+f$cc_spr_valid
+
+// Purpose: live opener bit among current multiway opponents.
+// Source/Provenance: A exact live-mask intersection.
+##f$cc_mw_4bp_live_opener_mask##
+When !f$cc_mw_4bp_pfa_context Return 0 Force
+When Others Return (f$cc_opp_live_mask BitAnd f$cc_pf_4bet_opener_bit) Force
+
+// Purpose: live 3bettor bit among current multiway opponents.
+// Source/Provenance: A exact live-mask intersection.
+##f$cc_mw_4bp_live_threebettor_mask##
+When !f$cc_mw_4bp_pfa_context Return 0 Force
+When Others Return (f$cc_opp_live_mask BitAnd f$cc_pf_4bet_threebettor_bit) Force
+
+// Purpose: live non-raiser callers after removing opener/3bettor bits.
+// Source: their exact call stage is not provable from aggregate callbits.
+// Provenance: P evidence-limit bucket for future conservative policy.
+##f$cc_mw_4bp_live_othercaller_count##
+When !f$cc_mw_4bp_pfa_context Return 0 Force
+When Others Return (nopponentsplaying - BitCount(f$cc_mw_4bp_live_opener_mask) - BitCount(f$cc_mw_4bp_live_threebettor_mask)) Force
+
+// Purpose: compact audit key retaining count, subtype, Hero, live mask and relpos.
+// Source/Provenance: P engineering metadata; never a solved strategy lookup.
+##f$cc_mw_4bp_range_key##
+When !f$cc_mw_4bp_pfa_context Return 0 Force
+When Others Return ((nplayersplaying * 10000000) + (f$cc_pf_4bet_subtype_id * 1000000) + (f$cc_hero_pos_id * 10000) + (f$cc_opp_live_mask * 100) + (f$cc_mw_4bp_live_othercaller_count * 10) + f$cc_relpos_id) Force
+
+// ============================================================================
+// End Gate 01I.0 4BP context.
+// ============================================================================
