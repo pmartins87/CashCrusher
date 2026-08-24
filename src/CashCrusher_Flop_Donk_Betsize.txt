@@ -1,0 +1,51 @@
+// ============================================================================
+// CashCrusher_Flop_Donk_Betsize.txt
+// Gate 07J.1 — OpenPPL runtime adapter for reviewed Flop Donk sizes
+// ============================================================================
+// Purpose:
+//   Translate strategic Donk size IDs 50/75/100 into native OpenPPL bet actions.
+//   This file does not decide whether to Donk and does not decide commitment.
+//
+// Source/Provenance:
+//   T = native BetHalfPot / BetThreeFourthPot / BetPot runtime actions.
+//   A = direct source 50/75/100 palette preserved by reviewed adaptations.
+// ============================================================================
+
+// Purpose: positive reviewed Donk owns one valid runtime size.
+// Source/Provenance: P engineering guard over A/T strategic router.
+##f$cc_flop_donk_runtime_size_ready##
+When !f$cc_flop_donk_router Return false Force
+When !f$cc_flop_donk_size_consistent Return false Force
+When f$cc_flop_donk_size_id >= 1 && f$cc_flop_donk_size_id <= 3 Return true Force
+When Others Return false Force
+
+// Purpose: map strategic Donk size ID to exact pot fraction.
+// Source/Provenance: T/A frozen 50/75/100 palette.
+##f$cc_flop_donk_requested_pot_fraction##
+When !f$cc_flop_donk_runtime_size_ready Return 0 Force
+When f$cc_flop_donk_size_id = 1 Return 0.50 Force
+When f$cc_flop_donk_size_id = 2 Return 0.75 Force
+When f$cc_flop_donk_size_id = 3 Return 1.00 Force
+When Others Return 0 Force
+
+// Purpose: native OpenPPL execution size before natural all-in equivalence.
+// Source/Provenance: T runtime adapter over reviewed Donk size IDs.
+##f$cc_flop_donk_requested_betsize##
+When !f$cc_flop_donk_runtime_size_ready Return 0 Force
+When f$cc_flop_donk_size_id = 1 Return BetHalfPot Force
+When f$cc_flop_donk_size_id = 2 Return BetThreeFourthPot Force
+When f$cc_flop_donk_size_id = 3 Return BetPot Force
+When Others Return 0 Force
+
+// Purpose: positive action resolves to exactly one positive fraction.
+// Source/Provenance: P invariant over T/A runtime map.
+##f$cc_flop_donk_runtime_mapping_valid##
+When !f$cc_flop_donk_router Return f$cc_flop_donk_requested_pot_fraction = 0 Force
+When !f$cc_flop_donk_runtime_size_ready Return false Force
+When f$cc_flop_donk_requested_pot_fraction <= 0 Return false Force
+When f$cc_flop_donk_size_id < 1 || f$cc_flop_donk_size_id > 3 Return false Force
+When Others Return true Force
+
+// ============================================================================
+// End Gate07J.1 Donk runtime sizing adapter.
+// ============================================================================
