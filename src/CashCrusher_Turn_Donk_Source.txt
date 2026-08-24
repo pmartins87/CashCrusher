@@ -1,0 +1,199 @@
+// ============================================================================
+// CashCrusher_Turn_Donk_Source.txt
+// Gate 08B — direct `(BBorSB)v2pp` Turn Donk strategy
+// ============================================================================
+// Purpose:
+//   Translate only the dedicated Starting Strategy Turn-Donk descendants whose
+//   CLOSED flop history can be proved. Do not use broad legacy Donk-router
+//   membership as source provenance.
+//
+// Direct source branches audited here:
+//   A) good/medium draw FLOP X/C -> Turn Donk 75%;
+//   B) source high-card/backdoor FLOP X/C -> if 2HC OESD/FD pickup, Donk 50%;
+//      otherwise no Turn Donk;
+//   C) source draw FLOP Donk -> raise -> medium-draw call -> Turn Donk 75%.
+//
+// Evidence boundary:
+//   * A is executable now because the source draw-X/C class and actual X/C are
+//     both preserved independently.
+//   * B additionally requires proof the source high-air flop call was <=33%.
+//     That price belongs future flop defense and is not reconstructible from the
+//     current pre-action snapshot, so the branch is fail-closed until a defense
+//     marker proves it.
+//   * C additionally requires proof Hero's Donk-raise call was the source medium
+//     draw + normal (~<=3x) raise class. That also belongs flop defense and is
+//     fail-closed until its dedicated marker exists.
+//
+// Source/Provenance:
+//   T = dedicated `(BBorSB)v2pp` Starting Strategy action/size/history wording.
+//   A = Gate07/08 closed-history reconstruction and contribution-aware current
+//       no-made state.
+//   X = current DeepCrusher C++ TP+/2P+ reclassification inside the high-air
+//       branch is NOT primary-source Turn-Donk policy and is excluded here.
+//
+// Safety:
+//   No generic TP+/OP lead, no stackoff, no Turn jam, no historical commitment
+//   threshold, no random/HandPower. Parent2 action counters alone cannot create
+//   the B/C source state.
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// TDS.01 — exact native source X/C draw descendant
+// -----------------------------------------------------------------------------
+
+// Purpose: native source draw-check candidate actually became the clean X/C
+// parent owned by Gate08A.
+// Source: Draws `(BBorSB)v2pp`, AFTER FLOP X/C.
+// Provenance: T source state + A closed execution proof.
+##f$cc_turn_donk_source_native_draw_xc_context##
+f$cc_turn_donk_opportunity &&
+f$cc_turn_donk_parent_id = 1 &&
+f$cc_hist_flop_donk_family_id = 1 &&
+f$cc_hist_flop_donk_source_turn_xc_draw_snapshot
+
+// Purpose: source explicitly leads Turn after this draw X/C history.
+// Source: "Turn after flop X/C or B/C ... DB size - 75% OTT".
+// Provenance: T direct action.
+##f$cc_turn_donk_source_native_draw_xc_action##
+f$cc_turn_donk_source_native_draw_xc_context
+
+// Purpose: exact source size for draw X/C Turn lead.
+// Source/Provenance: T direct 75% sizing.
+##f$cc_turn_donk_source_native_draw_xc_size_id##
+When f$cc_turn_donk_source_native_draw_xc_action Return f$cc_turn_donk_size_75_id Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// TDS.02 — high-card/backdoor X/C descendant, price-gated by future defense
+// -----------------------------------------------------------------------------
+
+// Purpose: future defense-owned proof that the exact high-air/backdoor candidate
+// called a flop bet no larger than the source's 33% ceiling.
+// Source: source says A-high+BDSD and lower BDFD+OC may call up to 33%.
+// Provenance: P ownership bridge to a future T/A defensive price marker.
+// Safety: no current Gate08 code sets this variable; therefore false/fail-closed
+// until the relevant flop Call-vs-Bet node has been audited and wired.
+##f$cc_turn_donk_source_native_highair_call_price_proven##
+user_cc_flop_donk_source_highair_called_le33
+
+// Purpose: exact high-air X/C history only after the defense-owned price proof.
+// Source/Provenance: T source history + A/P execution/price ownership.
+##f$cc_turn_donk_source_native_highair_xc_context##
+f$cc_turn_donk_opportunity &&
+f$cc_turn_donk_parent_id = 1 &&
+f$cc_hist_flop_donk_family_id = 1 &&
+f$cc_hist_flop_donk_source_turn_xc_highair_snapshot &&
+f$cc_turn_donk_source_native_highair_call_price_proven
+
+// Purpose: exact source improvement: no made hand + two-hole-card OESD or FD.
+// Source: "If we improve to 2HC OESD or FD"; mature DeepCrusher expresses this
+// as the two-hole-card straight-fill delta or same-suit two-hole-card FD.
+// Provenance: T/A direct source/runtime translation.
+##f$cc_turn_donk_source_native_highair_2hc_draw_pickup##
+When !f$cc_hand_no_made Return false Force
+When HaveStraightDraw && (nstraightfillcommon - nstraightfill = 2) Return true Force
+When HaveFlushDraw && SuitsInHand = 1 Return true Force
+When Others Return false Force
+
+// Purpose: high-air source Turn Donk action only on exact 2HC draw pickup.
+// Source/Provenance: T direct action; non-improvement is explicit check/no-donk.
+##f$cc_turn_donk_source_native_highair_xc_action##
+f$cc_turn_donk_source_native_highair_xc_context &&
+f$cc_turn_donk_source_native_highair_2hc_draw_pickup
+
+// Purpose: exact source high-air pickup size.
+// Source/Provenance: T direct 50% sizing.
+##f$cc_turn_donk_source_native_highair_xc_size_id##
+When f$cc_turn_donk_source_native_highair_xc_action Return f$cc_turn_donk_size_50_id Force
+When Others Return 0 Force
+
+// Purpose: source-shaped high-air X/C exists but price provenance is absent.
+// Source/Provenance: P audit diagnostic; never an action.
+##f$cc_turn_donk_source_native_highair_needs_price_provenance##
+f$cc_turn_donk_opportunity &&
+f$cc_turn_donk_parent_id = 1 &&
+f$cc_hist_flop_donk_family_id = 1 &&
+f$cc_hist_flop_donk_source_turn_xc_highair_snapshot &&
+!f$cc_turn_donk_source_native_highair_call_price_proven
+
+// -----------------------------------------------------------------------------
+// TDS.03 — source Donk -> raise -> medium-draw call, defense-gated
+// -----------------------------------------------------------------------------
+
+// Purpose: future defense-owned proof that a native source draw Donk faced the
+// source normal raise class, remained a MEDIUM draw, and called rather than the
+// good-draw 3bet or weak-GS fold.
+// Source: weak GS no OC folds; medium draws call up to ~3x; good draws 3bet.
+// Provenance: P ownership bridge to future T/A Donk-vs-Raise defense marker.
+// Safety: intentionally unset by current attack code.
+##f$cc_turn_donk_source_native_bc_defense_proven##
+user_cc_flop_donk_source_medium_draw_bc_eligible
+
+// Purpose: exact source B/C context once defense eligibility is independently proven.
+// Source/Provenance: T source history + A closed B/C + P defensive bridge.
+##f$cc_turn_donk_source_native_draw_bc_context##
+f$cc_turn_donk_opportunity &&
+f$cc_turn_donk_parent_id = 2 &&
+f$cc_hist_flop_donk_family_id = 1 &&
+user_cc_flop_donk_state_source_draw &&
+f$cc_turn_donk_source_native_bc_defense_proven
+
+// Purpose: source B/C Turn lead.
+// Source/Provenance: T direct 75% action once exact B/C state is proven.
+##f$cc_turn_donk_source_native_draw_bc_action##
+f$cc_turn_donk_source_native_draw_bc_context
+
+// Purpose: exact source B/C size.
+// Source/Provenance: T direct 75% sizing.
+##f$cc_turn_donk_source_native_draw_bc_size_id##
+When f$cc_turn_donk_source_native_draw_bc_action Return f$cc_turn_donk_size_75_id Force
+When Others Return 0 Force
+
+// Purpose: closed native source draw Donk-B/C shape exists but defense provenance
+// is not strong enough to label it the source medium-draw <=3x call branch.
+// Source/Provenance: P fail-closed diagnostic, never an action.
+##f$cc_turn_donk_source_native_bc_needs_defense_provenance##
+f$cc_turn_donk_opportunity &&
+f$cc_turn_donk_parent_id = 2 &&
+f$cc_hist_flop_donk_family_id = 1 &&
+user_cc_flop_donk_state_source_draw &&
+!f$cc_turn_donk_source_native_bc_defense_proven
+
+// -----------------------------------------------------------------------------
+// TDS.04 — direct native dispatcher / reviewed coverage
+// -----------------------------------------------------------------------------
+
+// Purpose: source-owned action dispatcher.
+// Source/Provenance: T exact source branch ordering; unsupported evidence ->false.
+##f$cc_turn_donk_source_native_action##
+When f$cc_turn_donk_source_native_draw_xc_context Return true Force
+When f$cc_turn_donk_source_native_highair_xc_context Return f$cc_turn_donk_source_native_highair_xc_action Force
+When f$cc_turn_donk_source_native_draw_bc_context Return true Force
+When Others Return false Force
+
+// Purpose: paired direct-source size dispatcher.
+// Source/Provenance: T exact source sizes; explicit source checks ->0.
+##f$cc_turn_donk_source_native_size_id##
+When f$cc_turn_donk_source_native_draw_xc_context Return f$cc_turn_donk_source_native_draw_xc_size_id Force
+When f$cc_turn_donk_source_native_highair_xc_context Return f$cc_turn_donk_source_native_highair_xc_size_id Force
+When f$cc_turn_donk_source_native_draw_bc_context Return f$cc_turn_donk_source_native_draw_bc_size_id Force
+When Others Return 0 Force
+
+// Purpose: report only source states whose complete required provenance is known.
+// A proven high-air context is covered even when no pickup means explicit check.
+// Source/Provenance: P coverage metadata over T source states.
+##f$cc_turn_donk_source_native_covered##
+f$cc_turn_donk_source_native_draw_xc_context ||
+f$cc_turn_donk_source_native_highair_xc_context ||
+f$cc_turn_donk_source_native_draw_bc_context
+
+// Purpose: source action/size integrity.
+// Source/Provenance: P invariant over T policy.
+##f$cc_turn_donk_source_native_size_consistent##
+When !f$cc_turn_donk_source_native_action Return f$cc_turn_donk_source_native_size_id = 0 Force
+When f$cc_turn_donk_source_native_action Return f$cc_turn_donk_source_native_size_id >= 1 && f$cc_turn_donk_source_native_size_id <= 4 Force
+When Others Return false Force
+
+// ============================================================================
+// End Gate08B direct native Turn Donk source strategy.
+// ============================================================================
