@@ -1,0 +1,189 @@
+// ============================================================================
+// CashCrusher_River_Float_Source.txt
+// Gate 06B — direct / high-ancestry River Float strategy
+// ============================================================================
+// Purpose:
+//   Implement only River-Float actions supported strongly enough by the supplied
+//   Crusher sources AFTER Gate06A corrected the ownership/history parent.
+//
+// Source findings:
+//   * Crusher Framework 5 leaves f$move_river_floatbet empty.
+//   * CrusherTBP supplies a manually reviewed value baseline: top non-board pair
+//     with top-four kicker OR overpair-or-better -> bet.
+//   * mature DeepCrusher contribution-corrects that value ladder and sizes it:
+//       nuts/nutted class -> 75;
+//       2P+ -> 75, but 50 on super-completed river unless literally nuts;
+//       real OP -> 50;
+//       real TP with <=4 better kickers -> 50.
+//   * the only source-explicit no-made bluff is the exact 3wBBvSB called-2Bar
+//     busted-draw line; mature source uses 25%, not TBP's broad River33 shortcut.
+//   * 3wBTNvSB no-made is an explicit negative source rule.
+//
+// Provenance:
+//   T = Gate06A closed turn-call parent + current River hand/board facts.
+//   A = direct/high-ancestry DeepCrusher/TBP River-Float decisions.
+//   P = only conservative source-translation guards; no six-max bluff/value gap
+//       is added in this file.
+//
+// Safety:
+//   * exact 3wBBvSB bluff stays blocked until its defensive turn-call snapshot
+//     writer proves the source history;
+//   * no BotCalledOnFlop && BotCalledOnTurn shortcut;
+//   * no HandPower/random tail;
+//   * no BetMax/stackoff decision.
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// RFS.01 — current River source hand classes
+// -----------------------------------------------------------------------------
+
+// Purpose: source TBP top-pair threshold: current real TP with at most four
+// better kicker ranks.
+// Source: CrusherTBP `NumberOfBetterKickers <= 4` River-Float value rule.
+// Provenance: A direct source-shaped descriptor over T kicker reconstruction.
+##f$cc_river_float_source_top_pair_top4##
+f$cc_river_top_pair && f$cc_number_better_kickers <= 4
+
+// Purpose: conservative literal-nuts subset used to preserve mature DeepCrusher
+// precedence on super-completed boards.
+// Source: mature DeepCrusher evaluates `CF7_NutClass` before its 2P+ branch.
+// Provenance: A conservative translation using T/OpenPPL `HaveNuts`; this may be
+// narrower than CF7_NutClass and therefore never manufactures extra thin value.
+##f$cc_river_float_source_literal_nuts##
+f$cc_river_float_opportunity && HaveNuts
+
+// Purpose: general source value owner after canonical River-Float history.
+// Source: CrusherTBP broad value rule, contribution-corrected in DeepCrusher.
+// Provenance: A source/manual-review baseline. It is intentionally not HU-only
+// because the audited TBP rule itself was not HU-only.
+##f$cc_river_float_source_general_value_action##
+When !f$cc_river_float_opportunity Return false Force
+When f$cc_river_float_source_literal_nuts Return true Force
+When f$cc_river_two_pair_plus Return true Force
+When f$cc_river_overpair Return true Force
+When f$cc_river_float_source_top_pair_top4 Return true Force
+When Others Return false Force
+
+// Purpose: mature-source sizing for the general River-Float value ladder.
+// Source: DeepCrusher River Float value refinement.
+// Provenance: A direct source sizing; literal nuts are kept 75 before the
+// super-completed 2P+ reduction to 50.
+##f$cc_river_float_source_general_value_size_id##
+When !f$cc_river_float_source_general_value_action Return 0 Force
+When f$cc_river_float_source_literal_nuts Return f$cc_river_size_75_id Force
+When f$cc_river_two_pair_plus && f$cc_river_super_completed Return f$cc_river_size_50_id Force
+When f$cc_river_two_pair_plus Return f$cc_river_size_75_id Force
+When f$cc_river_overpair Return f$cc_river_size_50_id Force
+When f$cc_river_float_source_top_pair_top4 Return f$cc_river_size_50_id Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// RFS.02 — exact 3wBBvSB called-2Bar source branch
+// -----------------------------------------------------------------------------
+
+// Purpose: exact source action after the missing defensive snapshot eventually
+// proves the original high-air/backdoor -> turn real-draw -> called-2Bar history.
+// Source: mature DeepCrusher exact 3wBBvSB River-Float refinement.
+// Provenance: A high-ancestry action + T future exact history marker.
+// Safety: Gate06A defaults `...exact_parent_ready` false until that marker exists.
+##f$cc_river_float_source_bbv_sb_exact_action##
+When !f$cc_river_float_source_bbv_sb_exact_parent_ready Return false Force
+When f$cc_river_two_pair_plus Return true Force
+When f$cc_river_overpair || f$cc_river_top_pair Return true Force
+When f$cc_river_no_made Return true Force
+When Others Return false Force
+
+// Purpose: exact 3wBBvSB source size map.
+// Source: DeepCrusher: 2P+/nut class 75, OP/TP 50, busted no-made 25.
+// Provenance: A direct source sizing.
+##f$cc_river_float_source_bbv_sb_exact_size_id##
+When !f$cc_river_float_source_bbv_sb_exact_action Return 0 Force
+When f$cc_river_two_pair_plus Return f$cc_river_size_75_id Force
+When f$cc_river_overpair || f$cc_river_top_pair Return f$cc_river_size_50_id Force
+When f$cc_river_no_made Return f$cc_river_size_25_id Force
+When Others Return 0 Force
+
+// Purpose: protect the exact 3wBBvSB geometry when the decisive source turn-call
+// snapshot is missing. Future P policy must not guess that provenance.
+// Source/Provenance: A/P source-information quarantine from Gate06A.
+##f$cc_river_float_source_bbv_sb_snapshot_lock##
+f$cc_river_float_source_bbv_sb_waiting_defense_snapshot
+
+// -----------------------------------------------------------------------------
+// RFS.03 — explicit negative source ownership
+// -----------------------------------------------------------------------------
+
+// Purpose: exact 3wBTNvSB no-made River-Float check lock.
+// Source: mature DeepCrusher explicitly returns false for 3wBTNvSB + NoMadeHand.
+// Provenance: A negative source rule + T exact current topology.
+// Safety: ordinary SRP and clean HU-from-HU-flop are required; this is not a
+// generic BTN-v-SB bluff prohibition across unrelated pot families.
+##f$cc_river_float_source_btnv_sb_nomade_lock##
+f$cc_river_float_opportunity &&
+f$cc_river_float_parent_id = 1 &&
+f$cc_river_float_current_hu_from_hu_flop &&
+f$cc_river_float_hu_aggressor_is_current_villain &&
+f$cc_pot_family_id = 2 &&
+f$cc_pf_one_raise_ordinary_srp &&
+f$cc_hero_pos_id = 4 &&
+f$cc_river_float_turn_aggressor_pos_id = 5 &&
+f$cc_river_no_made
+
+// Purpose: union of source-negative/unresolved states that later professional
+// gap fills are forbidden to override.
+// Source/Provenance: A/P branch-level source ownership.
+##f$cc_river_float_source_locked_check##
+f$cc_river_float_source_btnv_sb_nomade_lock ||
+f$cc_river_float_source_bbv_sb_snapshot_lock
+
+// -----------------------------------------------------------------------------
+// RFS.04 — source dispatcher / coverage
+// -----------------------------------------------------------------------------
+
+// Purpose: source/high-ancestry positive action dispatcher.
+// Ordering: exact history-specific BBvSB branch -> explicit lock -> general value.
+// Source/Provenance: A source-fidelity precedence.
+##f$cc_river_float_source_action##
+When !f$cc_river_float_opportunity Return false Force
+When f$cc_river_float_source_bbv_sb_exact_parent_ready Return f$cc_river_float_source_bbv_sb_exact_action Force
+When f$cc_river_float_source_locked_check Return false Force
+When f$cc_river_float_source_general_value_action Return true Force
+When Others Return false Force
+
+// Purpose: paired source strategic size-ID dispatcher.
+// Source/Provenance: A exact owner; check/uncovered ->0.
+##f$cc_river_float_source_size_id##
+When !f$cc_river_float_source_action Return 0 Force
+When f$cc_river_float_source_bbv_sb_exact_parent_ready Return f$cc_river_float_source_bbv_sb_exact_size_id Force
+When f$cc_river_float_source_general_value_action Return f$cc_river_float_source_general_value_size_id Force
+When Others Return 0 Force
+
+// Purpose: branch-level source review coverage, including locked checks.
+// Source/Provenance: A/P coverage metadata. A broad matchup label alone never
+// marks unrelated current hand classes covered.
+##f$cc_river_float_source_covered##
+f$cc_river_float_source_bbv_sb_exact_parent_ready ||
+f$cc_river_float_source_locked_check ||
+f$cc_river_float_source_general_value_action
+
+// Purpose: positive source action must own a positive canonical River size.
+// Source/Provenance: P engineering safety invariant over A source policy.
+##f$cc_river_float_source_size_consistent##
+When !f$cc_river_float_source_action Return f$cc_river_float_source_size_id = 0 Force
+When f$cc_river_float_source_action Return f$cc_river_float_source_size_id >= 1 && f$cc_river_float_source_size_id <= 5 Force
+When Others Return false Force
+
+// Purpose: compact source branch ID for logs/tests.
+// 1=exact BBvSB; 2=BTNvSB no-made lock; 3=BBvSB waiting snapshot;
+// 4=general value; 0=source silent.
+// Source/Provenance: P metadata over A source branches.
+##f$cc_river_float_source_branch_id##
+When f$cc_river_float_source_bbv_sb_exact_parent_ready Return 1 Force
+When f$cc_river_float_source_btnv_sb_nomade_lock Return 2 Force
+When f$cc_river_float_source_bbv_sb_snapshot_lock Return 3 Force
+When f$cc_river_float_source_general_value_action Return 4 Force
+When Others Return 0 Force
+
+// ============================================================================
+// End Gate06B direct/high-ancestry River Float strategy.
+// ============================================================================
