@@ -45,3 +45,7 @@ jobs:
         run: python tools/test_river_cbet_srp_gaps.py
       - name: Test ISO 3BP squeeze 4BP River CBet
         run: python tools/test_river_cbet_other_pots.py
+      - name: Test canonical River CBet coverage boundary
+        run: python tools/test_river_cbet_coverage.py
+      - name: Test River CBet runtime sizing contract
+        run: python tools/test_river_cbet_runtime.py
