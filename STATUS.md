@@ -122,7 +122,7 @@ Canonical audit: `docs/audits/GATE_07_FLOP_DONK_AUDIT.md`.
 
 ### Gate08A ownership/history — PASS
 
-Turn Donk is now structurally separated from Hero-initiative continuation.
+Turn Donk is structurally separated from Hero-initiative continuation.
 
 Approved CLOSED flop parent IDs:
 
@@ -154,17 +154,42 @@ No generic Turn jam, stackoff, `HandPower`, random or commitment threshold was i
 
 Canonical audit: `docs/audits/GATE_08B_TURN_DONK_DIRECT_SOURCE_AUDIT.md`.
 
-The combined source/history/static suite passed GitHub Actions **run #776** on commit `0aff3bcd0385daf5c6711b173d3ce9e9b0217f23`. A documentation commit followed without strategy changes.
+### Gate08C.1 HUBB Turn Donk — PASS
+
+Primary source `11- NOVO CRUSHFEST HUBB` was mapped only to exact BB-v-SB X/C ancestry, not every OOP HU caller.
+
+Reviewed ancestry IDs:
+
+1. true-HU SB open -> BB call;
+2. true-HU SB limp -> BB check;
+3. 3–6h deal reduced preflop to SB-v-BB ordinary SRP, SB open -> BB call (**A/P structural descendant**, not literal T).
+
+Source result:
+
+- TP+/OP/2P+ -> Donk Turn only when Villain's Turn-CBet/2bar stat is <=45%; the source action threshold is **T**, while the >100-hand/nonzero-stat guard and 75% size are **A** from mature detailed implementation;
+- good draws `OESD / FD / 2mOC+GS` -> explicit Turn CHECK/X-C (**T**);
+- weak GS -> Turn Donk25 (**T**);
+- air -> Turn Donk25 (**T**);
+- lower pair + real draw -> explicit CHECK/X-C (**T**);
+- MP/BP after a proven >50% flop CBet: completed Turn -> check/fold branch; non-completed -> source 1–2bb/max20 represented by deterministic **BetMin/MIN ID 5** (**T interval + A resolution**);
+- general flop 2nd/3rd pair with current 2nd/3rd pair, top-three kicker, non-paired board and source runout restrictions -> Turn Donk25 when the called flop sizing is proven <=50%.
+
+The attack layer cannot recover the exact flop bet size Hero called. Two future **Flop-defense-owned** markers therefore separate `gt50` from `le50`. In MP/BP states where action/size truly depends on that boundary, absence of price evidence is not interpreted as a small CBet: the node fails closed.
+
+No generic stackoff/jam/`EffectiveStack`/HandPower/random logic was imported.
+
+Canonical audit: `docs/audits/GATE_08C1_TURN_DONK_HUBB_AUDIT.md`.
+
+The complete static suite, now **52 strategy/history/runtime contracts**, passed GitHub Actions **run #791** on commit `00ede03901e31b3946fb36e1969c7e1aa3b96a98`.
 
 ## Remaining Gate08 source mapping
 
 The next source-first descendants must be audited and mapped one at a time by strategic/range ancestry rather than literal old seat labels:
 
-1. HUBB;
-2. `3wSBvBTN`;
-3. `3wSBvBB`;
-4. `3wBBvBTN`;
-5. only then six-max P-heavy gap families and runtime/history closure.
+1. `3wSBvBTN`;
+2. `3wSBvBB`;
+3. `3wBBvBTN`;
+4. only then six-max P-heavy gap families and Turn-Donk runtime/history closure.
 
 The `3wSBvBB` 75/100 low-SPR rule is explicitly a cash-depth review item: neither automatic deletion nor automatic transplant is allowed.
 
@@ -184,6 +209,6 @@ Unsupported multiway/reversed 4BP and 5bet+ ancestry remains fail-closed unless 
 
 ## Immediate development direction
 
-Next small gate: **Gate08C.1 — HUBB Turn Donk source mapping**.
+Next small gate: **Gate08C.2 — `3wSBvBTN` Turn Donk source mapping**.
 
-Audit the exact HUBB Flop X/C source state and map it to CashCrusher true-HU / reduced-HU ancestry without treating all OOP HU callers as identical. Keep opponent 2Bar exploitation, good-draw checks, weak-GS/air block-donks and MP/BP source conditions as separate subfamilies. Any source sizing gap filled from detailed C++ must remain labeled A, not T.
+Audit the dedicated Starting Strategy and mature DeepCrusher line after exact flop X/C history. Preserve the source Axx TP exception, draw-improvement condition and high-card/backdoor descendants separately. Any missing size filled from detailed C++ remains **A**, and no later-street or defense ownership may leak into the Turn Donk node.
