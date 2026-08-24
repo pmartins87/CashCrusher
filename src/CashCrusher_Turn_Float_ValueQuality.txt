@@ -1,0 +1,39 @@
+// ============================================================================
+// CashCrusher_Turn_Float_ValueQuality.txt
+// Gate 05C — current-value quality guards for P-heavy Turn Float fills
+// ============================================================================
+// Purpose:
+//   Prevent a broad `2P+` label from being treated as equally robust on a turn
+//   where a straight or flush is already possible. This is especially important
+//   in 100bb cash where a made two-pair/set is not automatically a stackoff hand.
+//
+// Source/Provenance:
+//   T = exact current made-hand and public-board possibility symbols.
+//   A = CashCrusher current-strength-first philosophy.
+//   P = conservative value-quality classification for source-silent gaps.
+// ============================================================================
+
+// Purpose: strong made value whose hand class clears the most obvious current
+// public-board completion threat.
+// Source/Provenance: P conservative hierarchy over T exact evaluator facts.
+// Logic: on a possible flush board require flush+; otherwise on straight-possible
+// board require straight+; on an uncompleted board ordinary 2P+ is robust enough.
+##f$cc_turn_float_robust_value##
+When !IsTurn Return false Force
+When FlushPossibleOnTurn Return HaveFlush || HaveFullHouse || HaveQuads || HaveStraightFlush Force
+When StraightPossibleOnTurn Return HaveStraight || HaveFlush || HaveFullHouse || HaveQuads || HaveStraightFlush Force
+When Others Return f$cc_hand_two_pair_or_better Force
+
+// Purpose: two-pair+ that is not robust enough for the completed-board threshold.
+// Source/Provenance: P caution descriptor; does not force a check in every child.
+##f$cc_turn_float_vulnerable_two_pair_plus##
+f$cc_hand_two_pair_or_better && !f$cc_turn_float_robust_value
+
+// Purpose: one-pair value accompanied by a real frontdoor draw.
+// Source/Provenance: T/A mechanical equity overlay; action remains child-specific.
+##f$cc_turn_float_one_pair_plus_draw##
+f$cc_hand_pair_or_better && !f$cc_hand_two_pair_or_better && f$cc_real_frontdoor_draw
+
+// ============================================================================
+// End Turn Float value-quality guards.
+// ============================================================================
