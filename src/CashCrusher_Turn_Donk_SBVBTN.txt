@@ -1,0 +1,324 @@
+// ============================================================================
+// CashCrusher_Turn_Donk_SBVBTN.txt
+// Gate 08C.2 — `3wSBvBTN` Turn Donk source mapping
+// ============================================================================
+// Purpose:
+//   Map the dedicated SB-v-BTN Starting Strategy after an ACTUAL flop X/C while
+//   preserving the old range ancestry instead of treating every OOP HU caller as
+//   the same strategic family.
+//
+// Primary source: `5- CRUSHFEST - SBvBTN`.
+//   * TP+ normally X/R flop; Axx is the explicit exception: X/C flop -> DB Turn.
+//   * MP/BP after X/C has no first-action Turn Donk instruction.
+//   * source non-best draws after X/C: if they IMPROVE on an undercard -> DB ~75%.
+//   * source high-card/backdoor X/C: exact 2HC OESD/FD pickup -> DB 50%; otherwise
+//     no Turn Donk. River follow-through belongs a later street owner.
+//
+// Source/Provenance:
+//   T = direct action/size/history wording from the dedicated Starting Strategy.
+//   A = mature audited DeepCrusher / CrusherTBP ambiguity resolution:
+//       - Axx TP+ Turn size gap -> 100% pot;
+//       - draw "improves" -> made PairOrBetter on an undercard.
+//   A/P = 4-6h BTN-open -> SB-call -> BB-fold structural descendants.
+//   X = mature high-air current TP+/2P+ reclassification is NOT promoted to T;
+//       it remains a visible source-gap/fail-closed state.
+//
+// Evidence boundary:
+//   The current attack layer knows that Hero X/C'd but not the exact flop price
+//   paid. Draw-call eligibility has source ceilings of 50/75%; high-air has 33%.
+//   Those proofs belong future Flop defense, so no-made source branches require
+//   dedicated defense-owned markers before Turn strategy may consume them.
+//
+// Safety:
+//   No TP+/draw stackoff, no Turn jam, no HandPower/random, no generic effective-
+//   stack commitment and no River action is scheduled from this file.
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// TDSB.01 — exact SB-v-BTN strategic/range ancestry
+// -----------------------------------------------------------------------------
+
+// Purpose: literal old three-handed ancestry: BTN opened, SB called, BB folded;
+// exactly BTN+SB reached flop and actual flop X/C produced Gate08A parent 1.
+// Source/Provenance: T old scenario shape + A Gate00/Gate08 reconstruction.
+##f$cc_turn_donk_sbvbtn_threehanded_context##
+f$cc_turn_donk_opportunity &&
+f$cc_turn_donk_parent_id = 1 &&
+f$cc_hist_flop_donk_family_id = 3 &&
+f$cc_deal_size = 3 &&
+f$cc_hu_origin_preflop_reduced &&
+f$cc_flop_entry_count = 2 &&
+f$cc_hu &&
+f$cc_hu_oop &&
+f$cc_hero_pos_id = 5 &&
+f$cc_hu_villain_pos_id = 4 &&
+f$cc_turn_donk_hu_aggressor_is_current_villain &&
+f$cc_turn_donk_flop_aggressor_pos_id = 4 &&
+f$cc_pot_family_id = 2 &&
+f$cc_pf_one_raise_ordinary_srp &&
+f$cc_pf_role_srp_caller &&
+f$cc_pf_single_raiser_pos_id = 4
+
+// Purpose: 4-6 handed cash descendant with the same post-preflop BTN-open/SB-call
+// range topology after all other seats, including BB, are gone before flop.
+// Source/Provenance: A/P structural range adaptation, never literal T.
+##f$cc_turn_donk_sbvbtn_sixmax_descendant_context##
+f$cc_turn_donk_opportunity &&
+f$cc_turn_donk_parent_id = 1 &&
+f$cc_hist_flop_donk_family_id = 3 &&
+f$cc_deal_size >= 4 && f$cc_deal_size <= 6 &&
+f$cc_hu_origin_preflop_reduced &&
+f$cc_flop_entry_count = 2 &&
+f$cc_hu &&
+f$cc_hu_oop &&
+f$cc_hero_pos_id = 5 &&
+f$cc_hu_villain_pos_id = 4 &&
+f$cc_turn_donk_hu_aggressor_is_current_villain &&
+f$cc_turn_donk_flop_aggressor_pos_id = 4 &&
+f$cc_pot_family_id = 2 &&
+f$cc_pf_one_raise_ordinary_srp &&
+f$cc_pf_role_srp_caller &&
+f$cc_pf_single_raiser_pos_id = 4
+
+// Purpose: stable ancestry ID: 1=literal 3h source; 2=4-6h structural descendant.
+// Source/Provenance: P audit metadata over T/A/P exact parents.
+##f$cc_turn_donk_sbvbtn_origin_id##
+When f$cc_turn_donk_sbvbtn_threehanded_context Return 1 Force
+When f$cc_turn_donk_sbvbtn_sixmax_descendant_context Return 2 Force
+When Others Return 0 Force
+
+// Purpose: exact reviewed SB-v-BTN Turn-Donk ancestry only.
+// Source/Provenance: A/P union; arbitrary OOP HU callers are excluded.
+##f$cc_turn_donk_sbvbtn_context##
+f$cc_turn_donk_sbvbtn_origin_id > 0
+
+// Purpose: distinguish direct 3h ancestry from six-max structural adaptation.
+// Source/Provenance: P provenance metadata.
+##f$cc_turn_donk_sbvbtn_is_direct_threehanded_source##
+f$cc_turn_donk_sbvbtn_origin_id = 1
+
+// -----------------------------------------------------------------------------
+// TDSB.02 — FLOP source-state ownership from exact closed history
+// -----------------------------------------------------------------------------
+
+// Purpose: source TP+ class was already present on flop.
+// Source: TP-or-better section; Gate07 family-3 snapshot is contribution-aware.
+// Provenance: T source category + A persisted primary-class decoder.
+##f$cc_turn_donk_sbvbtn_flop_tpplus_snapshot##
+user_cc_flop_donk_state_had_top_pair ||
+user_cc_flop_donk_state_had_overpair ||
+user_cc_flop_donk_state_had_2pplus
+
+// Purpose: explicit source exception: Axx TP+ was called on flop specifically to
+// Donk the Turn instead of allowing BTN a free equity-realization check.
+// Source/Provenance: T direct action/history condition.
+##f$cc_turn_donk_sbvbtn_axx_tpplus_context##
+f$cc_turn_donk_sbvbtn_context &&
+AcePresentOnFlop &&
+f$cc_turn_donk_sbvbtn_flop_tpplus_snapshot
+
+// Purpose: direct source action for the Axx TP+ exception.
+// Source/Provenance: T action; size is separated below because source leaves it open.
+##f$cc_turn_donk_sbvbtn_axx_tpplus_action##
+f$cc_turn_donk_sbvbtn_axx_tpplus_context
+
+// Purpose: source does not specify Axx Turn Donk size; mature detailed source uses
+// Turn100. Keep that as A rather than silently relabeling it T.
+// Source/Provenance: A size-gap resolution from audited mature implementation.
+##f$cc_turn_donk_sbvbtn_axx_tpplus_size_id##
+When f$cc_turn_donk_sbvbtn_axx_tpplus_action Return f$cc_turn_donk_size_100_id Force
+When Others Return 0 Force
+
+// Purpose: non-Axx TP+ that nevertheless reached an actual X/C has no positive
+// Turn-Donk descendant in the dedicated source (`AFTER FLOP X/C: nothing here`).
+// Source/Provenance: T explicit source-silent/check state; no action implied.
+##f$cc_turn_donk_sbvbtn_nonaxx_tpplus_check##
+f$cc_turn_donk_sbvbtn_context &&
+!AcePresentOnFlop &&
+f$cc_turn_donk_sbvbtn_flop_tpplus_snapshot
+
+// Purpose: MP/BP that reached an actual flop X/C has no first-action Turn Donk;
+// source only discusses later fold/call versus a second barrel.
+// Source/Provenance: T ownership boundary; Turn defense is separate.
+##f$cc_turn_donk_sbvbtn_mpbp_check##
+f$cc_turn_donk_sbvbtn_context &&
+user_cc_flop_donk_state_had_lower_pair
+
+// -----------------------------------------------------------------------------
+// TDSB.03 — defense-owned proof for source no-made flop calls
+// -----------------------------------------------------------------------------
+
+// Purpose: future Flop defense proves the source non-best draw was actually
+// eligible to call under its exact 50/75% price ceiling and did so.
+// Source: GS without OC <=50%; remaining non-best draws <=75%.
+// Provenance: P ownership bridge to future T/A defensive execution marker.
+##f$cc_turn_donk_sbvbtn_draw_xc_defense_proven##
+user_cc_flop_donk_sbvbtn_source_draw_xc_eligible
+
+// Purpose: future Flop defense proves source A-high+BDSD or lower BDFD+OC called
+// no more than 33% pot and actually reached the closed X/C parent.
+// Source/Provenance: T 33% ceiling + P defense-owned bridge.
+##f$cc_turn_donk_sbvbtn_highair_xc_defense_proven##
+user_cc_flop_donk_sbvbtn_source_highair_called_le33
+
+// Purpose: source no-made provenance must never claim both draw and high-air.
+// Source/Provenance: P fail-closed integrity.
+##f$cc_turn_donk_sbvbtn_nomade_source_marker_count##
+(f$cc_turn_donk_sbvbtn_draw_xc_defense_proven * 1) +
+(f$cc_turn_donk_sbvbtn_highair_xc_defense_proven * 1)
+
+// Purpose: exact no-made draw X/C descendant once Flop defense proves eligibility.
+// Source/Provenance: T source state + A/P closed execution bridge.
+##f$cc_turn_donk_sbvbtn_draw_xc_context##
+f$cc_turn_donk_sbvbtn_context &&
+user_cc_flop_donk_state_had_no_made &&
+f$cc_turn_donk_sbvbtn_draw_xc_defense_proven &&
+f$cc_turn_donk_sbvbtn_nomade_source_marker_count = 1
+
+// Purpose: exact source high-card/backdoor X/C descendant once <=33% call proof exists.
+// Source/Provenance: T source state + A/P defense execution bridge.
+##f$cc_turn_donk_sbvbtn_highair_xc_context##
+f$cc_turn_donk_sbvbtn_context &&
+user_cc_flop_donk_state_had_no_made &&
+f$cc_turn_donk_sbvbtn_highair_xc_defense_proven &&
+f$cc_turn_donk_sbvbtn_nomade_source_marker_count = 1
+
+// Purpose: source-shaped no-made X/C exists but exact flop-call provenance is absent
+// or contradictory; Turn attack must not guess which old range branch Hero occupied.
+// Source/Provenance: P audit diagnostic, never an action.
+##f$cc_turn_donk_sbvbtn_nomade_needs_defense_provenance##
+f$cc_turn_donk_sbvbtn_context &&
+user_cc_flop_donk_state_had_no_made &&
+f$cc_turn_donk_sbvbtn_nomade_source_marker_count != 1
+
+// -----------------------------------------------------------------------------
+// TDSB.04 — source draw X/C -> improved undercard Donk75
+// -----------------------------------------------------------------------------
+
+// Purpose: resolve source phrase `improve on undercard` as a made PairOrBetter
+// on an undercard, matching the audited CrusherTBP/mature implementation rather
+// than treating a merely persistent/live draw as sufficient improvement.
+// Source/Provenance: T undercard+improvement wording + A ambiguity resolution.
+##f$cc_turn_donk_sbvbtn_draw_improved_undercard##
+f$cc_turn_donk_sbvbtn_draw_xc_context &&
+f$cc_turn_undercard &&
+f$cc_hand_pair_or_better
+
+// Purpose: source Turn Donk after the reviewed draw improvement.
+// Source/Provenance: T direct action after A-defined improvement predicate.
+##f$cc_turn_donk_sbvbtn_draw_action##
+f$cc_turn_donk_sbvbtn_draw_improved_undercard
+
+// Purpose: source says usually 75% to target roughly 1:1 river SPR.
+// CashCrusher retains the authored Turn size but does NOT schedule or force any
+// future River jam; the short-stack future-SPR plan belongs later exact review.
+// Source/Provenance: T direct ~75% size; future commitment implication is X here.
+##f$cc_turn_donk_sbvbtn_draw_size_id##
+When f$cc_turn_donk_sbvbtn_draw_action Return f$cc_turn_donk_size_75_id Force
+When Others Return 0 Force
+
+// Purpose: proven source draw X/C without the exact improved-undercard condition
+// is an explicit no-Donk/check at this first-action Turn node.
+// Source/Provenance: T direct source branch complement after A resolution.
+##f$cc_turn_donk_sbvbtn_draw_check##
+f$cc_turn_donk_sbvbtn_draw_xc_context &&
+!f$cc_turn_donk_sbvbtn_draw_improved_undercard
+
+// -----------------------------------------------------------------------------
+// TDSB.05 — source high-card/backdoor X/C -> exact 2HC draw pickup Donk50
+// -----------------------------------------------------------------------------
+
+// Purpose: exact 2-hole-card OESD/FD pickup while Hero still has no made hand.
+// Source: `If we improve to 2HC OESD or FD`.
+// Provenance: T/A direct source/runtime translation used consistently in Gate08B.
+##f$cc_turn_donk_sbvbtn_highair_2hc_draw_pickup##
+When !f$cc_hand_no_made Return false Force
+When HaveStraightDraw && (nstraightfillcommon - nstraightfill = 2) Return true Force
+When HaveFlushDraw && SuitsInHand = 1 Return true Force
+When Others Return false Force
+
+// Purpose: direct-source high-air Turn Donk action.
+// Source/Provenance: T direct action.
+##f$cc_turn_donk_sbvbtn_highair_action##
+f$cc_turn_donk_sbvbtn_highair_xc_context &&
+f$cc_turn_donk_sbvbtn_highair_2hc_draw_pickup
+
+// Purpose: exact source high-air pickup size.
+// Source/Provenance: T direct 50% sizing.
+##f$cc_turn_donk_sbvbtn_highair_size_id##
+When f$cc_turn_donk_sbvbtn_highair_action Return f$cc_turn_donk_size_50_id Force
+When Others Return 0 Force
+
+// Purpose: proven source high-air lineage that becomes a made hand on Turn is a
+// genuine source gap: mature C++ adds TP+/2P+ leads, but the primary Starting
+// Strategy does not. Do not silently promote that secondary fill to T.
+// Source/Provenance: X as direct-source rule; future P/A review remains possible.
+##f$cc_turn_donk_sbvbtn_highair_made_improvement_source_gap##
+f$cc_turn_donk_sbvbtn_highair_xc_context &&
+!f$cc_hand_no_made &&
+f$cc_hand_pair_or_better
+
+// Purpose: proven high-air lineage with neither exact 2HC pickup nor unsupported
+// made-improvement gap is source-reviewed CHECK/no Turn Donk.
+// Source/Provenance: T direct negative branch.
+##f$cc_turn_donk_sbvbtn_highair_check##
+f$cc_turn_donk_sbvbtn_highair_xc_context &&
+!f$cc_turn_donk_sbvbtn_highair_action &&
+!f$cc_turn_donk_sbvbtn_highair_made_improvement_source_gap
+
+// -----------------------------------------------------------------------------
+// TDSB.06 — dispatcher / reviewed coverage
+// -----------------------------------------------------------------------------
+
+// Purpose: exact SB-v-BTN Turn Donk action dispatcher.
+// Precedence follows the source-specific flop lineage, not current hand strength.
+// Source/Provenance: T/A/P exact range-history owner.
+##f$cc_turn_donk_sbvbtn_action##
+When !f$cc_turn_donk_sbvbtn_context Return false Force
+When f$cc_turn_donk_sbvbtn_axx_tpplus_context Return true Force
+When f$cc_turn_donk_sbvbtn_nonaxx_tpplus_check Return false Force
+When f$cc_turn_donk_sbvbtn_mpbp_check Return false Force
+When f$cc_turn_donk_sbvbtn_draw_xc_context Return f$cc_turn_donk_sbvbtn_draw_action Force
+When f$cc_turn_donk_sbvbtn_highair_xc_context Return f$cc_turn_donk_sbvbtn_highair_action Force
+When Others Return false Force
+
+// Purpose: paired source/adaptation size dispatcher.
+// Source/Provenance: T/A exact owner; explicit checks ->0.
+##f$cc_turn_donk_sbvbtn_size_id##
+When !f$cc_turn_donk_sbvbtn_context Return 0 Force
+When f$cc_turn_donk_sbvbtn_axx_tpplus_context Return f$cc_turn_donk_sbvbtn_axx_tpplus_size_id Force
+When f$cc_turn_donk_sbvbtn_nonaxx_tpplus_check Return 0 Force
+When f$cc_turn_donk_sbvbtn_mpbp_check Return 0 Force
+When f$cc_turn_donk_sbvbtn_draw_xc_context Return f$cc_turn_donk_sbvbtn_draw_size_id Force
+When f$cc_turn_donk_sbvbtn_highair_xc_context Return f$cc_turn_donk_sbvbtn_highair_size_id Force
+When Others Return 0 Force
+
+// Purpose: report only SB-v-BTN states whose primary-source decision is known.
+// Missing no-made call provenance and the mature-only high-air made reclassification
+// remain deliberately uncovered instead of masquerading as a reviewed check.
+// Source/Provenance: P coverage boundary over T/A source descendants.
+##f$cc_turn_donk_sbvbtn_covered##
+f$cc_turn_donk_sbvbtn_context &&
+!f$cc_turn_donk_sbvbtn_nomade_needs_defense_provenance &&
+!f$cc_turn_donk_sbvbtn_highair_made_improvement_source_gap &&
+(f$cc_turn_donk_sbvbtn_flop_tpplus_snapshot ||
+ user_cc_flop_donk_state_had_lower_pair ||
+ f$cc_turn_donk_sbvbtn_draw_xc_context ||
+ f$cc_turn_donk_sbvbtn_highair_xc_context)
+
+// Purpose: source action/size integrity.
+// Source/Provenance: P safety invariant over T/A policy.
+##f$cc_turn_donk_sbvbtn_size_consistent##
+When !f$cc_turn_donk_sbvbtn_action Return f$cc_turn_donk_sbvbtn_size_id = 0 Force
+When f$cc_turn_donk_sbvbtn_action Return f$cc_turn_donk_sbvbtn_size_id >= 1 && f$cc_turn_donk_sbvbtn_size_id <= 5 Force
+When Others Return false Force
+
+// Purpose: exact SB-v-BTN Turn opportunity held closed because primary-source
+// provenance/coverage is incomplete.
+// Source/Provenance: P audit diagnostic.
+##f$cc_turn_donk_sbvbtn_uncovered_context##
+f$cc_turn_donk_sbvbtn_context && !f$cc_turn_donk_sbvbtn_covered
+
+// ============================================================================
+// End Gate08C.2 SB-v-BTN Turn Donk.
+// ============================================================================
