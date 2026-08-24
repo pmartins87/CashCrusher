@@ -1,0 +1,112 @@
+// ============================================================================
+// CashCrusher_Flop_Donk_3BP.txt
+// Gate 07G — plain 3BP / squeeze Flop Donk baseline
+// ============================================================================
+// Purpose:
+//   Review OOP caller first-action Donk opportunities in supported two-raise pots
+//   using repaired `lastraised1` chronology. Plain 3BP and squeeze stay separate;
+//   baseline action is deliberate CHECK.
+//
+// Source boundary:
+//   A = broad reraised/no-initiative router ownership.
+//   A/X = mature DeepCrusher has no positive 3BP/squeeze Flop Donk tree.
+//   P = check-to-final-3bettor deep-cash baseline until exact solver/source leads.
+//
+// Safety:
+//   * actual final 3bettor comes from Gate05 repaired chronology;
+//   * opener-call / pre3bet coldcaller / post3bet coldcaller remain distinct;
+//   * reversed/backraise/limp-reraise history fails closed;
+//   * no positive sizing, BetMax, commitment or CBet-defense action.
+// ============================================================================
+
+// Purpose: supported Hero caller origin ID in a two-raise pot.
+// IDs: 1 opener-call; 2 pre-3bet coldcaller; 3 post-3bet coldcaller; 0 unknown.
+// Source/Provenance: A/T Gate05 repaired caller chronology + P audit metadata.
+##f$cc_flop_donk_3bp_hero_origin_id##
+When f$cc_pf_rt_hero_is_opener_call_3bet Return 1 Force
+When f$cc_pf_rt_hero_is_pre3bet_coldcaller Return 2 Force
+When f$cc_pf_rt_hero_is_post3bet_coldcaller Return 3 Force
+When Others Return 0 Force
+
+// Purpose: supported two-raise subtype ID: 1 plain 3BP, 2 squeeze.
+// Source/Provenance: A/P Gate05 repaired subtype proof.
+##f$cc_flop_donk_3bp_subtype_id##
+When f$cc_pf_rt_plain3bet_proven Return 1 Force
+When f$cc_pf_rt_squeeze_proven Return 2 Force
+When Others Return 0 Force
+
+// Purpose: shared supported OOP caller context before HU/MW split.
+// Source/Provenance: T current action/position + A/P repaired preflop chronology.
+##f$cc_flop_donk_3bp_base_context##
+f$cc_flop_donk_opportunity &&
+f$cc_pot_family_id = 3 &&
+f$cc_pf_rt_3bet_order_supported &&
+f$cc_pf_rt_hero_3bet_origin_consistent &&
+f$cc_flop_donk_3bp_hero_origin_id > 0 &&
+f$cc_flop_donk_3bp_subtype_id > 0 &&
+f$cc_pf_rt_3bettor_live_opponent &&
+!f$cc_pf_rt_final_aggressor_is_hero
+
+// Purpose: HU two-raise caller context where the actual final 3bettor is the sole
+// current Villain and Hero is OOP.
+// Source/Provenance: T exact current HU identity + A/P repaired range owner.
+##f$cc_flop_donk_3bp_hu_context##
+f$cc_flop_donk_3bp_base_context &&
+f$cc_hu &&
+f$cc_flop_entry_count = 2 &&
+f$cc_hu_oop &&
+f$cc_hu_villain_pos_id = f$cc_pf_rt_final_aggressor_pos_id
+
+// Purpose: current multiway two-raise caller context with final 3bettor still live.
+// Source/Provenance: T current field + A/P repaired range owner.
+##f$cc_flop_donk_3bp_multiway_context##
+f$cc_flop_donk_3bp_base_context &&
+f$cc_multiway &&
+f$cc_flop_entry_count >= 3
+
+// Purpose: current field ID: 2 HU, 3+ current multiway count; 0 unsupported.
+// Source/Provenance: P compact audit metadata over T field facts.
+##f$cc_flop_donk_3bp_field_id##
+When f$cc_flop_donk_3bp_hu_context Return 2 Force
+When f$cc_flop_donk_3bp_multiway_context Return nplayersplaying Force
+When Others Return 0 Force
+
+// Purpose: compact parent key retaining subtype, caller origin and current field.
+// Format S*100 + O*10 + F; e.g. 112=plain/opener/HU, 223=squeeze/pre/MW3.
+// Source/Provenance: P audit metadata; action does not depend on numeric ordering.
+##f$cc_flop_donk_3bp_parent_key##
+When f$cc_flop_donk_3bp_field_id <= 0 Return 0 Force
+When Others Return ((f$cc_flop_donk_3bp_subtype_id * 100) + (f$cc_flop_donk_3bp_hero_origin_id * 10) + f$cc_flop_donk_3bp_field_id) Force
+
+// Purpose: all supported plain-3BP/squeeze OOP caller parents deliberately CHECK.
+// Source/Provenance: A source-silent architecture + P range-check baseline.
+##f$cc_flop_donk_3bp_action##
+When f$cc_flop_donk_3bp_parent_key > 0 Return false Force
+When Others Return false Force
+
+// Purpose: check-only two-raise family has no strategic size.
+// Source/Provenance: P paired-size owner.
+##f$cc_flop_donk_3bp_size_id##
+When Others Return 0 Force
+
+// Purpose: recognized supported two-raise Donk state has been reviewed.
+// Source/Provenance: P coverage contract.
+##f$cc_flop_donk_3bp_covered##
+f$cc_flop_donk_3bp_parent_key > 0
+
+// Purpose: visible unresolved two-raise Donk opportunity whose chronology/range
+// could not be proven and therefore must not inherit the check-covered label.
+// Source/Provenance: P fail-closed diagnostic over T raise count.
+##f$cc_flop_donk_3bp_unresolved##
+f$cc_flop_donk_opportunity &&
+f$cc_pot_family_id = 3 &&
+!f$cc_flop_donk_3bp_covered
+
+// Purpose: check-only action/size integrity.
+// Source/Provenance: P engineering invariant.
+##f$cc_flop_donk_3bp_size_consistent##
+!f$cc_flop_donk_3bp_action && f$cc_flop_donk_3bp_size_id = 0
+
+// ============================================================================
+// End Gate07G plain-3BP/squeeze Flop Donk baseline.
+// ============================================================================
