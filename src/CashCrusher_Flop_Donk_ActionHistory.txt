@@ -1,0 +1,284 @@
+// ============================================================================
+// CashCrusher_Flop_Donk_ActionHistory.txt
+// Gate 07K — executed Flop Donk provenance for Turn/River routing
+// ============================================================================
+// Purpose:
+//   Preserve the difference between a Flop Donk opportunity/strategy plan and
+//   what OpenHoldem actually executed. Later Donk nodes must consume CLOSED
+//   round-2 action history, never a pre-action marker by itself.
+//
+// Source:
+//   DeepCrusher's later Turn Donk logic depends on actual prior Donk/call history
+//   (`user_DC7_*`, BotCalledOnFlop), while earlier project audits showed that
+//   intent markers can become stale if written before final action.
+//
+// Provenance:
+//   T = did*round2 + lastraised2 closed runtime history.
+//   A = Gate01N/Gate04H executed-action provenance architecture.
+//   P = exact Gate07 family/source-subtype snapshots needed after flop closes.
+//
+// Safety:
+//   Every user marker below is PRE-ACTION provenance only. Closed predicates are
+//   the sole proof that a Donk/check/call/reraise really occurred.
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// FDH.01 — PRE-ACTION opportunity/family/source-subtype snapshot
+// -----------------------------------------------------------------------------
+
+// Purpose: strategy wrapper for eventual whole-flop composition.
+// Source/Provenance: A final-action repair pattern over exact Gate07 router.
+##f$cc_flop_donk_action_with_history##
+When !f$cc_flop_donk_opportunity Return false Force
+When f$cc_flop_donk_opportunity Set user_cc_flop_donk_opportunity_seen
+When f$cc_flop_donk_opportunity Set user_cc_flop_donk_state_snapshot_recorded
+
+// Exact reviewed family before Hero acts.
+When f$cc_flop_donk_family_id = 1 Set user_cc_flop_donk_state_family_1
+When f$cc_flop_donk_family_id = 2 Set user_cc_flop_donk_state_family_2
+When f$cc_flop_donk_family_id = 3 Set user_cc_flop_donk_state_family_3
+When f$cc_flop_donk_family_id = 4 Set user_cc_flop_donk_state_family_4
+When f$cc_flop_donk_family_id = 5 Set user_cc_flop_donk_state_family_5
+When f$cc_flop_donk_family_id = 6 Set user_cc_flop_donk_state_family_6
+When f$cc_flop_donk_family_id = 7 Set user_cc_flop_donk_state_family_7
+When f$cc_flop_donk_family_id = 8 Set user_cc_flop_donk_state_family_8
+
+// Contribution-aware primary current hand class.
+When f$cc_hand_two_pair_or_better Set user_cc_flop_donk_state_had_2pplus
+When HaveOverPair && !f$cc_hand_two_pair_or_better Set user_cc_flop_donk_state_had_overpair
+When f$cc_hand_just_top_pair Set user_cc_flop_donk_state_had_top_pair
+When f$cc_hand_middle_or_bottom_pair && !f$cc_hand_top_pair_or_better Set user_cc_flop_donk_state_had_lower_pair
+When f$cc_hand_no_made Set user_cc_flop_donk_state_had_no_made
+
+// Exact direct-source positive subtype, needed for source-faithful Turn Donk audit.
+When f$cc_flop_donk_source_value_action Set user_cc_flop_donk_state_source_value
+When f$cc_flop_donk_source_lowpair_action Set user_cc_flop_donk_state_source_lowpair
+When f$cc_flop_donk_source_draw_action Set user_cc_flop_donk_state_source_draw
+
+// Player count/live mask before action.
+When nplayersplaying = 2 Set user_cc_flop_donk_state_players_2
+When nplayersplaying = 3 Set user_cc_flop_donk_state_players_3
+When nplayersplaying = 4 Set user_cc_flop_donk_state_players_4
+When nplayersplaying = 5 Set user_cc_flop_donk_state_players_5
+When nplayersplaying = 6 Set user_cc_flop_donk_state_players_6
+When f$cc_opp_live_utg Set user_cc_flop_donk_state_live_utg
+When f$cc_opp_live_hj Set user_cc_flop_donk_state_live_hj
+When f$cc_opp_live_co Set user_cc_flop_donk_state_live_co
+When f$cc_opp_live_btn Set user_cc_flop_donk_state_live_btn
+When f$cc_opp_live_sb Set user_cc_flop_donk_state_live_sb
+When f$cc_opp_live_bb Set user_cc_flop_donk_state_live_bb
+
+When f$cc_flop_donk_router Set user_cc_flop_donk_plan_bet_seen
+When f$cc_flop_donk_router Return true Force
+When Others Return false Force
+
+// Purpose: count exact family markers.
+// Source/Provenance: P snapshot integrity.
+##f$cc_hist_flop_donk_family_marker_count##
+(user_cc_flop_donk_state_family_1 * 1) +
+(user_cc_flop_donk_state_family_2 * 1) +
+(user_cc_flop_donk_state_family_3 * 1) +
+(user_cc_flop_donk_state_family_4 * 1) +
+(user_cc_flop_donk_state_family_5 * 1) +
+(user_cc_flop_donk_state_family_6 * 1) +
+(user_cc_flop_donk_state_family_7 * 1) +
+(user_cc_flop_donk_state_family_8 * 1)
+
+// Purpose: decode reviewed Gate07 family after flop closes.
+// Source/Provenance: P boolean-marker decoder; contradiction ->0.
+##f$cc_hist_flop_donk_family_id##
+When !f$cc_hist_flop_donk_closed Return 0 Force
+When f$cc_hist_flop_donk_family_marker_count != 1 Return 0 Force
+When user_cc_flop_donk_state_family_1 Return 1 Force
+When user_cc_flop_donk_state_family_2 Return 2 Force
+When user_cc_flop_donk_state_family_3 Return 3 Force
+When user_cc_flop_donk_state_family_4 Return 4 Force
+When user_cc_flop_donk_state_family_5 Return 5 Force
+When user_cc_flop_donk_state_family_6 Return 6 Force
+When user_cc_flop_donk_state_family_7 Return 7 Force
+When user_cc_flop_donk_state_family_8 Return 8 Force
+When Others Return 0 Force
+
+// Purpose: direct-source subtype marker count.
+// Source/Provenance: P integrity over mutually exclusive source positive branches.
+##f$cc_hist_flop_donk_source_subtype_marker_count##
+(user_cc_flop_donk_state_source_value * 1) +
+(user_cc_flop_donk_state_source_lowpair * 1) +
+(user_cc_flop_donk_state_source_draw * 1)
+
+// Purpose: primary hand-class marker count.
+// Source/Provenance: P integrity over T/A hand classes.
+##f$cc_hist_flop_donk_primary_class_marker_count##
+(user_cc_flop_donk_state_had_2pplus * 1) +
+(user_cc_flop_donk_state_had_overpair * 1) +
+(user_cc_flop_donk_state_had_top_pair * 1) +
+(user_cc_flop_donk_state_had_lower_pair * 1) +
+(user_cc_flop_donk_state_had_no_made * 1)
+
+// Purpose: player-count marker count.
+// Source/Provenance: P integrity over T current players snapshot.
+##f$cc_hist_flop_donk_player_count_marker_count##
+(user_cc_flop_donk_state_players_2 * 1) +
+(user_cc_flop_donk_state_players_3 * 1) +
+(user_cc_flop_donk_state_players_4 * 1) +
+(user_cc_flop_donk_state_players_5 * 1) +
+(user_cc_flop_donk_state_players_6 * 1)
+
+// Purpose: decode pre-action player count.
+// Source/Provenance: P decoder over T snapshot.
+##f$cc_hist_flop_donk_player_count##
+When !f$cc_hist_flop_donk_closed Return 0 Force
+When f$cc_hist_flop_donk_player_count_marker_count != 1 Return 0 Force
+When user_cc_flop_donk_state_players_2 Return 2 Force
+When user_cc_flop_donk_state_players_3 Return 3 Force
+When user_cc_flop_donk_state_players_4 Return 4 Force
+When user_cc_flop_donk_state_players_5 Return 5 Force
+When user_cc_flop_donk_state_players_6 Return 6 Force
+When Others Return 0 Force
+
+// Purpose: reconstruct live opponent mask before the Donk/check.
+// Source/Provenance: A/P canonical position-mask decoder.
+##f$cc_hist_flop_donk_live_opp_mask##
+(user_cc_flop_donk_state_live_utg * 1) +
+(user_cc_flop_donk_state_live_hj * 2) +
+(user_cc_flop_donk_state_live_co * 4) +
+(user_cc_flop_donk_state_live_btn * 8) +
+(user_cc_flop_donk_state_live_sb * 16) +
+(user_cc_flop_donk_state_live_bb * 32)
+
+// -----------------------------------------------------------------------------
+// FDH.02 — CLOSED round-2 execution primitives
+// -----------------------------------------------------------------------------
+
+// Purpose: flop has ended and round-2 history is final.
+// Source/Provenance: T betround numbering.
+##f$cc_hist_flop_donk_closed##
+IsTurn || IsRiver
+
+// Purpose: Hero really executed the initial first-action Donk.
+// Source: opportunity marker + no prior Hero check + closed aggressive counters.
+// Provenance: A/T final-action proof.
+##f$cc_hist_flop_donk_initial_bet_executed##
+f$cc_hist_flop_donk_closed &&
+user_cc_flop_donk_opportunity_seen &&
+didchecround2 = 0 &&
+(didbetsizeround2 > 0 || didalliround2 > 0)
+
+// Purpose: initial Donk was a normal sized bet.
+// Source/Provenance: T round-2 counter.
+##f$cc_hist_flop_donk_initial_bet_was_sized##
+f$cc_hist_flop_donk_initial_bet_executed && didbetsizeround2 > 0
+
+// Purpose: initial Donk itself was direct all-in.
+// Source/Provenance: T counters + A initial-action disambiguation.
+##f$cc_hist_flop_donk_initial_bet_was_direct_allin##
+f$cc_hist_flop_donk_initial_bet_executed &&
+didalliround2 > 0 &&
+didbetsizeround2 = 0 &&
+didraisround2 = 0
+
+// Purpose: Hero actually checked the initial Donk opportunity.
+// Source/Provenance: T closed Hero check counter; later call/raise may coexist.
+##f$cc_hist_flop_donk_initial_check_executed##
+f$cc_hist_flop_donk_closed &&
+user_cc_flop_donk_opportunity_seen &&
+didchecround2 > 0
+
+// Purpose: Hero Donked then faced a raise and called.
+// Source/Provenance: T action counters + final aggressor identity.
+##f$cc_hist_flop_donk_then_called_raise##
+f$cc_hist_flop_donk_initial_bet_executed &&
+didcallround2 > 0 &&
+lastraised2 != userchair
+
+// Purpose: Hero Donked then re-aggressed on flop.
+// Source/Provenance: T multiple aggressive action counters.
+##f$cc_hist_flop_donk_then_reaggressed##
+f$cc_hist_flop_donk_initial_bet_executed &&
+(didbetsizeround2 >= 2 || didraisround2 > 0 || (didbetsizeround2 > 0 && didalliround2 > 0))
+
+// Purpose: initial Donk survived to next street with Hero still final flop aggressor.
+// A Turn existing plus this one-bet/no-later-action pattern implies at least one
+// opponent called; otherwise the hand would have ended on flop.
+// Source/Provenance: T closed counters/lastraised2 + A call-survival inference.
+##f$cc_hist_flop_donk_standard_called_parent##
+f$cc_hist_flop_donk_closed &&
+user_cc_flop_donk_opportunity_seen &&
+didchecround2 = 0 &&
+didcallround2 = 0 &&
+didraisround2 = 0 &&
+didbetsizeround2 = 1 &&
+didalliround2 = 0 &&
+lastraised2 = userchair
+
+// Purpose: direct-all-in initial Donk reached a later street (rare runtime edge).
+// Source/Provenance: T/A closed execution diagnostic.
+##f$cc_hist_flop_donk_direct_allin_parent##
+f$cc_hist_flop_donk_initial_bet_was_direct_allin && lastraised2 = userchair
+
+// -----------------------------------------------------------------------------
+// FDH.03 — snapshot/plan integrity and runtime drift
+// -----------------------------------------------------------------------------
+
+// Purpose: validate pre-action Donk snapshot after flop closes.
+// Source/Provenance: P integrity over T/A snapshot facts.
+##f$cc_hist_flop_donk_snapshot_consistent##
+When !f$cc_hist_flop_donk_closed Return false Force
+When !user_cc_flop_donk_opportunity_seen Return !user_cc_flop_donk_state_snapshot_recorded Force
+When !user_cc_flop_donk_state_snapshot_recorded Return false Force
+When f$cc_hist_flop_donk_primary_class_marker_count != 1 Return false Force
+When f$cc_hist_flop_donk_player_count_marker_count != 1 Return false Force
+When BitCount(f$cc_hist_flop_donk_live_opp_mask) != (f$cc_hist_flop_donk_player_count - 1) Return false Force
+When user_cc_flop_donk_plan_bet_seen && f$cc_hist_flop_donk_family_marker_count != 1 Return false Force
+When f$cc_hist_flop_donk_family_id = 1 && user_cc_flop_donk_plan_bet_seen && f$cc_hist_flop_donk_source_subtype_marker_count != 1 Return false Force
+When Others Return true Force
+
+// Purpose: planned Donk but runtime records an initial check.
+// Source/Provenance: P diagnostic over T closed history.
+##f$cc_hist_flop_donk_planned_bet_but_checked##
+f$cc_hist_flop_donk_closed && user_cc_flop_donk_plan_bet_seen && didchecround2 > 0
+
+// Purpose: executed initial Donk without reviewed strategy plan capture.
+// Source/Provenance: P runtime-composition diagnostic.
+##f$cc_hist_flop_donk_executed_without_plan##
+f$cc_hist_flop_donk_initial_bet_executed && !user_cc_flop_donk_plan_bet_seen
+
+// Purpose: planned normal Donk unexpectedly became direct all-in.
+// Source/Provenance: T/P external/global sizing drift diagnostic.
+##f$cc_hist_flop_donk_unexpected_allin_promotion##
+f$cc_hist_flop_donk_closed &&
+user_cc_flop_donk_plan_size_recorded &&
+!user_cc_flop_donk_plan_expected_allin &&
+f$cc_hist_flop_donk_initial_bet_was_direct_allin
+
+// Purpose: local execution expected BetMax but runtime remained normal size.
+// Source/Provenance: T/P mismatch diagnostic.
+##f$cc_hist_flop_donk_expected_allin_not_executed##
+f$cc_hist_flop_donk_closed &&
+user_cc_flop_donk_plan_expected_allin &&
+f$cc_hist_flop_donk_initial_bet_was_sized &&
+didalliround2 = 0
+
+// Purpose: compact Donk runtime mismatch flag.
+// Source/Provenance: P union of T/A plan/snapshot/action inconsistencies.
+##f$cc_hist_flop_donk_runtime_mismatch##
+When !f$cc_hist_flop_donk_closed Return false Force
+When !f$cc_flop_donk_plan_markers_consistent Return true Force
+When !f$cc_hist_flop_donk_snapshot_consistent Return true Force
+When f$cc_hist_flop_donk_planned_bet_but_checked Return true Force
+When f$cc_hist_flop_donk_executed_without_plan Return true Force
+When f$cc_hist_flop_donk_unexpected_allin_promotion Return true Force
+When f$cc_hist_flop_donk_expected_allin_not_executed Return true Force
+When Others Return false Force
+
+// Purpose: trustworthy actual initial Donk parent for later Turn Donk ownership.
+// Source/Provenance: P closed-history gate over T/A execution and integrity.
+##f$cc_hist_flop_donk_valid_parent##
+f$cc_hist_flop_donk_closed &&
+f$cc_hist_flop_donk_initial_bet_executed &&
+f$cc_hist_flop_donk_snapshot_consistent &&
+!f$cc_hist_flop_donk_runtime_mismatch
+
+// ============================================================================
+// End Gate07K Flop Donk action history.
+// ============================================================================
