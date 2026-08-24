@@ -39,3 +39,5 @@ jobs:
         run: python tools/test_turn_cbet_runtime.py
       - name: Test closed Turn action-history contract
         run: python tools/test_turn_action_history.py
+      - name: Test River CBet source/provenance contract
+        run: python tools/test_river_cbet_source_contract.py
