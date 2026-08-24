@@ -63,3 +63,9 @@ jobs:
         run: python tools/test_turn_float_history.py
       - name: Test Turn Float direct-source strategy contract
         run: python tools/test_turn_float_source.py
+      - name: Test Turn Float coverage/provenance contract
+        run: python tools/test_turn_float_coverage.py
+      - name: Test Turn Float runtime sizing contract
+        run: python tools/test_turn_float_runtime.py
+      - name: Test closed Turn Float action-history contract
+        run: python tools/test_turn_float_action_history.py
