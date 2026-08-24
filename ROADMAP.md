@@ -90,7 +90,7 @@ No uncovered pot family may inherit an ordinary-SRP child as fallback.
 - [x] **02A.1** — source-first audit of DeepCrusher + Starting Strategy Turn CBet; separate standard CBet from X/R, CBet-call-raise, donk, probe and delayed histories.
 - [x] **02A.2** — portable turn runout descriptors (`completed`, `super-completed`, new straight/flush completion, OC/mOC, undercard, glued OC, pairing).
 - [x] **02A.3** — current-turn hand/draw tiers plus carried-flop provenance and Turn size-ID palette.
-- [x] **02A.4** — top-level Turn CBet router consumes `f$cc_hist_turn_standard_cbet_parent`; history mismatch fails closed.
+- [x] **02A.4** — top-level Turn CBet router consumes actual executed flop-CBet history; history mismatch fails closed.
 
 ### Ordinary SRP — source-anchored HU descendants
 
@@ -125,25 +125,60 @@ No uncovered pot family may inherit an ordinary-SRP child as fallback.
 - [x] **02J.2C** — source audit of historical Turn `TurnMax`/`TurnShove` and ~50/55/60 promotion. Result: no generic near-all-in cash rule; any future strategic shove must be exact-node owned.
 - [x] **02J.T** — deterministic static Turn coverage + runtime sizing/all-in-equivalence tests run in CI.
 - [ ] **02K** — compose Turn execution adapter into eventual whole-bot `f$BestBetsize` without stealing sizing from Float/Donk/Probe/Delayed/defense nodes.
-- [ ] **02N** — closed round-3 executed-action provenance for River routing: planned Turn CBet vs actual check/bet/all-in/raised-history, plus mismatch diagnostics.
+- [x] **02N** — closed round-3 executed-action provenance for River routing: actual check/bet/all-in/raised-history, plan-v-execution mismatch and turn-state snapshot.
 - [ ] **02V** — deterministic OpenPPL/OpenHoldem Turn-CBet fixtures/replays PASS.
 
-Gate 02 strategic Turn-CBet coverage is frozen enough to start its action-history bridge. It is not release-certified until 02K/02N/02V and the global sizing callbacks are composed safely.
+## Gate 03 — River CBet
 
-## Gate 03+ — post-flop attack order after Turn CBet
+- [x] **03A** — source-first River CBet audit and canonical parent from valid closed Turn-CBet history.
+- [x] **03B** — source-anchored ordinary-SRP descendants (HUSB/HUBB/BTN-v-BB/BTN-v-SB/source-safe SB-v-BB subset).
+- [x] **03C** — P-heavy six-max SRP gaps, including post-multiway-to-HU and current multiway river states.
+- [x] **03D** — ISO River CBet with original-limper versus post-raise-coldcaller provenance retained.
+- [x] **03E** — plain 3BP River CBet with opener-call versus post-3bet-coldcaller separation.
+- [x] **03F** — squeeze River CBet with opener/pre-squeeze/post-squeeze caller origins retained.
+- [x] **03G** — clean supported HU 4BP River CBet; naturally low SPR allowed without generic TP+/OP stackoff.
+- [x] **03H.1** — River size/runtime adapter: 25/33/50/75/100.
+- [x] **03H.2** — natural/mechanical all-in equivalence using Hero/HU/deepest-multiway effective geometry; short sidepot alone cannot promote.
+- [x] **03T** — source, coverage, other-pot, runtime and global lint contracts PASS in CI.
+- [ ] **03V** — whole-bot/OpenHoldem replay certification remains pending.
 
-1. River CBet
-2. Flop Float Bet
-3. Turn Float Bet
-4. River Float Bet
-5. Flop Donk Bet
-6. Turn Donk Bet
-7. River Donk Bet
-8. Turn Probe
-9. River Probe
-10. Delayed CBet / delayed-noaction families
+Last fully certified River-CBet milestone: branch CI was green before Gate04 and remains green in the combined Gate04 run.
 
-Every node is reviewed source-first, then adapted with T/A/P/X provenance and the same deal-size/HU-origin/flop-origin context contract.
+## Gate 04 — Flop Float Bet
+
+### Ownership / source
+
+- [x] **04A** — freeze Float as caller/non-initiator checked-to first-flop action; exact LAST/IP only in first six-max baseline. `MIDDLE` no longer inherits last-to-act Float semantics.
+- [x] **04B.1** — true-HU HUSB limp-call versus BB raise source descendant.
+- [x] **04B.2** — reduced-HU BB caller IP versus SB PFA (`3wBBvSB`) source descendant, preserving dry/wet and pair-delay distinctions without importing XR stackoff.
+- [x] **04C.1** — P-heavy nonblind ordinary-SRP caller-IP versus earlier opener.
+- [x] **04C.2** — current multiway ordinary-SRP exact-LAST checked-to stab; 4+ way strongly tightened and pure-air baseline removed.
+- [x] **04D** — ISO Float with original-limper versus post-raise-coldcaller provenance, HU and multiway.
+- [x] **04E** — plain 3BP and squeeze Float with opener/pre3bet/post3bet caller origins kept separate, HU and multiway.
+- [x] **04F** — conservative clean caller-IP 4BP Float for opener4-versus-Hero3bettor chronology; unresolved/reversed/cold4-caller/5bet+ remain fail-closed.
+
+### Runtime / history / validation
+
+- [x] **04G.1** — 25/33/50/75/100 OpenPPL runtime sizing.
+- [x] **04G.2** — natural all-in equivalence only when reviewed Float size reaches Hero stack, HU effective, or deepest/all-live multiway effective; shortest-sidepot-only reach does not promote.
+- [x] **04H** — closed round-2 Float provenance: actual bet, actual check-back, bet-raised-call/re-aggression, all-in drift, family/hand/texture/live-field snapshot.
+- [x] **04T** — strategy/topology, coverage, runtime, closed-history and global linter tests PASS in GitHub Actions run **#490**.
+- [ ] **04V** — whole-bot `f$flop`/`f$BestBetsize` composition and OpenHoldem replay certification pending.
+
+Important boundary for the next gate: a **standard executed Flop Float is not automatically the parent of Turn Float**. DeepCrusher's Turn Float node is a checked-to-turn ownership family with several distinct histories; Gate05 must audit those histories independently.
+
+## Gate 05+ — remaining post-flop attack order
+
+1. Turn Float Bet
+2. River Float Bet
+3. Flop Donk Bet
+4. Turn Donk Bet
+5. River Donk Bet
+6. Turn Probe
+7. River Probe
+8. Delayed CBet / delayed-noaction families
+
+Every node is reviewed source-first, then adapted with T/A/P/X provenance and the same deal-size/HU-origin/action-history context contract.
 
 ## Defense
 
@@ -162,6 +197,7 @@ A DeepCrusher commitment helper may be retained, adapted or rejected **per exact
 
 - Complete cash-depth betsize architecture.
 - Review/adapt commitment/all-in helpers against actual SPR and range geometry.
+- Compose whole-bot `f$flop` / `f$turn` / `f$river` / `f$BestBetsize` owners without sizing collisions.
 - Static OpenPPL validation.
 - OpenHoldem parser/runtime validation.
 - Scenario/handedness/pot-family coverage audit.
