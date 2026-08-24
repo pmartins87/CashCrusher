@@ -23,6 +23,10 @@ def block(text: str, name: str) -> str:
     return tail if nxt < 0 else tail[:nxt]
 
 
+def executable(text: str) -> str:
+    return "\n".join(line.split("//", 1)[0] for line in text.splitlines())
+
+
 def run_common_contract() -> None:
     first = block(COMMON, "f$cc_flop_float_first_hero_action")
     assert "BotsActionsOnThisRoundIncludingChecks = 0" in first
@@ -64,10 +68,11 @@ def run_source_contract() -> None:
     assert "f$cc_flop_float_air && f$cc_flop_float_dry_parent Return true Force" in bbsb_action
     assert "f$cc_flop_float_air && f$cc_flop_float_wet_parent Return false Force" in bbsb_action
 
-    # The old short-stack XR shove plan must not be smuggled into initial Float.
-    assert "BetMax" not in SOURCE
-    assert "f$Raise_Committed" not in SOURCE
-    assert "StackOffDraws" not in SOURCE
+    # The old short-stack XR shove plan may be documented, but not executable here.
+    source_exec = executable(SOURCE)
+    assert "BetMax" not in source_exec
+    assert "f$Raise_Committed" not in source_exec
+    assert "StackOffDraws" not in source_exec
 
 
 def run_sixmax_contract() -> None:
@@ -119,15 +124,15 @@ def run_other_pots_contract() -> None:
     four_action = block(FOUR, "f$cc_flop_float_4bp_hu_action")
     assert "f$cc_flop_float_air Return false Force" in four_action
     assert "f$cc_flop_float_premium_draw" in four_action
-    assert "BetMax" not in FOUR
+    assert "BetMax" not in executable(FOUR)
 
 
 def run_global_safety() -> None:
     strategy_texts = [COMMON, SOURCE, SRP, ISO, THREE, FOUR, ROUTER]
     for text in strategy_texts:
         # New CashCrusher strategy must not execute through legacy scenario labels.
-        executable = "\n".join(line.split("//", 1)[0] for line in text.splitlines())
-        assert "f$game_" not in executable
+        code = executable(text)
+        assert "f$game_" not in code
 
     router = block(ROUTER, "f$cc_flop_float_router")
     assert "When Others Return false Force" in router
