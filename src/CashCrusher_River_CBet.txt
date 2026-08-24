@@ -8,26 +8,23 @@
 //
 // Current implemented strategic children:
 //   * Gate03B source-anchored ordinary-SRP descendants;
-//   * Gate03C P-heavy six-max SRP gaps, post-multiway HU and current-multiway.
+//   * Gate03C P-heavy six-max SRP gaps, post-multiway HU and current-multiway;
+//   * Gate03D ISO, preserving limper/coldcaller and Turn-field provenance;
+//   * Gate03E plain 3BP, preserving opener/post3bet-coldcaller provenance;
+//   * Gate03F squeeze, preserving opener/pre3bet/post3bet provenance;
+//   * Gate03G clean supported HU 4BP.
 //
-// Deliberately fail-closed pending their own audits:
-//   * ISO;
-//   * plain 3BP;
-//   * squeeze;
-//   * clean HU 4BP;
-//   * unsupported multiway/reversed 4BP and 5bet+ never enter because Turn did
-//     not have a reviewed standard-CBet parent.
+// Unsupported upstream families remain fail-closed automatically because they
+// never acquired a valid reviewed Turn-CBet parent (multiway/reversed 4BP, 5bet+).
 //
 // Source/Provenance:
 //   T = Gate02N valid closed Turn action history.
 //   A = DeepCrusher normal-CBet source-fidelity routing/fail-close architecture.
-//   P = six-max exact-family decomposition.
+//   P = six-max exact-family decomposition and deep-cash gap fills.
 // ============================================================================
 
 // Purpose: ordinary SRP Turn families not matched by a direct source descendant.
-// IDs 1/3 include source descendants; 2/4 are P-heavy Turn range families; 7/8
-// preserve multiway-origin histories. Gate03C owns reviewed residuals.
-// Source/Provenance: P exact residual-family metadata.
+// Source/Provenance: P exact residual-family metadata; Gate03C owns reviewed gaps.
 ##f$cc_river_srp_residual_context##
 f$cc_river_cbet_opportunity &&
 (f$cc_river_turn_family_id = 1 ||
@@ -39,22 +36,22 @@ f$cc_river_cbet_opportunity &&
 !f$cc_river_srp_source_covered
 
 // Purpose: current River descends from ISO Turn-CBet family.
-// Source/Provenance: P exact Gate02 family carry-forward; strategy pending Gate03D.
+// Source/Provenance: P exact Gate02 family carry-forward; Gate03D owns policy.
 ##f$cc_river_iso_context##
 f$cc_river_cbet_opportunity && f$cc_river_turn_family_id = 9
 
 // Purpose: current River descends from plain-3BP Turn-CBet family.
-// Source/Provenance: P exact Gate02 family carry-forward; strategy pending Gate03E.
+// Source/Provenance: P exact Gate02 family carry-forward; Gate03E owns policy.
 ##f$cc_river_plain3bp_context##
 f$cc_river_cbet_opportunity && f$cc_river_turn_family_id = 10
 
 // Purpose: current River descends from squeeze Turn-CBet family.
-// Source/Provenance: P exact Gate02 family carry-forward; strategy pending Gate03F.
+// Source/Provenance: P exact Gate02 family carry-forward; Gate03F owns policy.
 ##f$cc_river_squeeze_context##
 f$cc_river_cbet_opportunity && f$cc_river_turn_family_id = 11
 
 // Purpose: current River descends from clean supported HU 4BP Turn-CBet family.
-// Source/Provenance: P exact Gate02 family carry-forward; strategy pending Gate03G.
+// Source/Provenance: P exact Gate02 family carry-forward; Gate03G owns policy.
 ##f$cc_river_4bp_context##
 f$cc_river_cbet_opportunity && f$cc_river_turn_family_id = 12
 
@@ -66,6 +63,10 @@ f$cc_river_cbet_opportunity && f$cc_river_turn_family_id = 12
 When !f$cc_river_cbet_opportunity Return 0 Force
 When f$cc_river_srp_source_covered Return 1 Force
 When f$cc_river_srp_gap_covered Return 2 Force
+When f$cc_river_iso_covered Return 3 Force
+When f$cc_river_plain3bp_covered Return 4 Force
+When f$cc_river_squeeze_covered Return 5 Force
+When f$cc_river_4bp_covered Return 6 Force
 When f$cc_river_srp_residual_context Return 2 Force
 When f$cc_river_iso_context Return 3 Force
 When f$cc_river_plain3bp_context Return 4 Force
@@ -81,23 +82,36 @@ When Others Return 0 Force
 When !f$cc_river_cbet_opportunity Return false Force
 When f$cc_river_srp_source_covered Return f$cc_river_srp_source_action Force
 When f$cc_river_srp_gap_covered Return f$cc_river_srp_gap_action Force
+When f$cc_river_iso_covered Return f$cc_river_iso_action Force
+When f$cc_river_plain3bp_covered Return f$cc_river_plain3bp_action Force
+When f$cc_river_squeeze_covered Return f$cc_river_squeeze_action Force
+When f$cc_river_4bp_covered Return f$cc_river_4bp_action Force
 When Others Return false Force
 
 // Purpose: paired River strategic size-ID router.
-// Source/Provenance: A/P exact owner; unsupported/check -> 0.
+// Source/Provenance: A/P exact owner; unsupported/check ->0.
 ##f$cc_river_cbet_size_id##
 When !f$cc_river_cbet_opportunity Return 0 Force
 When f$cc_river_srp_source_covered Return f$cc_river_srp_source_size_id Force
 When f$cc_river_srp_gap_covered Return f$cc_river_srp_gap_size_id Force
+When f$cc_river_iso_covered Return f$cc_river_iso_size_id Force
+When f$cc_river_plain3bp_covered Return f$cc_river_plain3bp_size_id Force
+When f$cc_river_squeeze_covered Return f$cc_river_squeeze_size_id Force
+When f$cc_river_4bp_covered Return f$cc_river_4bp_size_id Force
 When Others Return 0 Force
 
 // Purpose: report whether current canonical River-CBet family has implemented
 // strategic coverage rather than merely a recognized topology.
 // Source/Provenance: P engineering coverage contract.
 ##f$cc_river_cbet_strategy_covered##
-f$cc_river_srp_source_covered || f$cc_river_srp_gap_covered
+f$cc_river_srp_source_covered ||
+f$cc_river_srp_gap_covered ||
+f$cc_river_iso_covered ||
+f$cc_river_plain3bp_covered ||
+f$cc_river_squeeze_covered ||
+f$cc_river_4bp_covered
 
-// Purpose: positive action must own positive size; check/uncovered owns size 0.
+// Purpose: positive action must own positive size; check/uncovered owns size0.
 // Source/Provenance: P safety invariant.
 ##f$cc_river_cbet_size_consistent##
 When !f$cc_river_cbet_router Return f$cc_river_cbet_size_id = 0 Force
@@ -105,5 +119,5 @@ When f$cc_river_cbet_router Return f$cc_river_cbet_size_id > 0 Force
 When Others Return false Force
 
 // ============================================================================
-// End current canonical River CBet router.
+// End canonical River CBet strategy router.
 // ============================================================================
