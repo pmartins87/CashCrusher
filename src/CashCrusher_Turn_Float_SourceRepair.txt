@@ -1,0 +1,68 @@
+// ============================================================================
+// CashCrusher_Turn_Float_SourceRepair.txt
+// Gate 05B.R — source-specific unraised BB-v-SB Turn-Float parent repair
+// ============================================================================
+// Purpose:
+//   Restore one source-explicit history that Gate05A's generic missed-2Bar parent
+//   intentionally did not cover: a LIMPED pot with Hero BB checking preflop,
+//   SB betting the flop, Hero calling, and SB checking the turn.
+//
+// Why this repair exists:
+//   The 3wBBvSB Starting Strategy labels its Facing-Bet Q4 Turn-X rule as
+//   applicable to LP/SRP. Gate05A parent 1 requires an ACTUAL final preflop
+//   aggressor, which correctly excludes donks but also excludes an unraised LP.
+//   The source therefore proves one narrow LP exception; it must not be widened
+//   into a generic "any flop bettor who checks turn" family.
+//
+// Source/Provenance:
+//   T = preflop role/call bits + closed flop action/aggressor history + turn facts.
+//   A = direct 3wBBvSB LP Facing-Bet -> call -> Turn-X source ownership.
+//   P = strict reduced-HU/LAST guards preventing this repair from leaking wider.
+//
+// OpenPPL safety:
+//   Every WHEN is complete. No logical scope depends on indentation.
+// ============================================================================
+
+// Purpose: exact unraised preflop shape: SB limped and Hero BB checked option.
+// Source/Provenance: T/A mechanical 3wBBvSB LP reconstruction.
+// Safety: other limpers/callers are not enough; current direct source descendant
+// is only the BB-v-SB two-player flop shape.
+##f$cc_turn_float_source_limped_bbv_sb_preflop##
+f$cc_pot_family_id = 1 &&
+f$cc_pf_role_bb_check &&
+f$cc_hero_pos_id = 6 &&
+f$cc_pf_call_sb
+
+// Purpose: prove Hero only called one flop bet and the sole aggressor was SB.
+// Source/Provenance: T closed round-2 history + A exact source opponent identity.
+##f$cc_turn_float_source_limped_bbv_sb_parent##
+f$cc_turn_float_source_limped_bbv_sb_preflop &&
+f$cc_turn_float_flop_call_only &&
+f$cc_turn_float_single_flop_aggressor &&
+f$cc_turn_float_flop_aggressor_live_opponent &&
+f$cc_turn_float_flop_aggressor_pos_id = 5
+
+// Purpose: exact checked-to-turn opportunity for the repaired LP parent.
+// Source: 3wBBvSB Facing Bet Q4 explicitly covers LP/SRP and says that after
+// Hero calls the flop bet and faces Turn X, the no-made families Float 50%.
+// Provenance: A direct source owner + T current action facts + P LAST-only safety.
+// True-HU note: in a real 2-seat HU deal BB is OOP postflop, so the LAST/IP gates
+// below naturally prevent this 3wBBvSB descendant from stealing HUBB/HU policy.
+##f$cc_turn_float_source_limped_bbv_sb_opportunity##
+When !IsTurn Return false Force
+When !f$cc_context_valid Return false Force
+When balance <= 0 Return false Force
+When !f$cc_turn_float_source_limped_bbv_sb_parent Return false Force
+When !f$cc_turn_float_first_hero_action Return false Force
+When AmountToCall > 0 Return false Force
+When f$cc_relpos_id != 3 Return false Force
+When !f$cc_hu Return false Force
+When !f$cc_hu_ip Return false Force
+When f$cc_flop_entry_count != 2 Return false Force
+When !f$cc_turn_float_flop_aggressor_chair_valid Return false Force
+When lastraised2 != headsupchair Return false Force
+When Others Return true Force
+
+// ============================================================================
+// End Gate05B.R LP source repair.
+// ============================================================================
