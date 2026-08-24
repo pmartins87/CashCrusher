@@ -87,3 +87,5 @@ jobs:
         run: python tools/test_river_float_runtime.py
       - name: Test direct-source Flop Donk contract
         run: python tools/test_flop_donk_source.py
+      - name: Test 4-6h BTN plus blinds Flop Donk adaptation
+        run: python tools/test_flop_donk_6max.py
