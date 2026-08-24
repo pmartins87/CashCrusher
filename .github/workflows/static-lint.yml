@@ -105,3 +105,5 @@ jobs:
         run: python tools/test_flop_donk_runtime.py
       - name: Test closed Flop Donk action-history contract
         run: python tools/test_flop_donk_history.py
+      - name: Test Turn Donk ownership/history contract
+        run: python tools/test_turn_donk_history.py
