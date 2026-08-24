@@ -85,3 +85,5 @@ jobs:
         run: python tools/test_river_float_coverage.py
       - name: Test River Float runtime sizing contract
         run: python tools/test_river_float_runtime.py
+      - name: Test direct-source Flop Donk contract
+        run: python tools/test_flop_donk_source.py
