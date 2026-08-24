@@ -1,0 +1,299 @@
+// ============================================================================
+// CashCrusher_River_CBet_SRP_6MaxGaps.txt
+// Gate 03C — P-heavy ordinary-SRP River CBet gap families
+// ============================================================================
+// Scope:
+//   * Gate02 family 2: UTG/HJ/CO PFA IP vs SB/BB;
+//   * Gate02 family 4: PFA OOP vs later nonblind cold caller;
+//   * Gate02 family 7: flop-multiway -> Turn-HU SRP lineage;
+//   * Gate02 family 8: Turn remained multiway, River HU or still multiway.
+//
+// Source boundary:
+//   No literal Spin range tree exists for these six-max River ranges.
+//   A-level source principles: current-strength first, runout sensitivity,
+//   IP/OOP separation, multiway tightening and normal-CBet fail-close.
+//   Exact actions/sizes are P professional-theory fills.
+//
+// Stack-depth safety:
+//   One-pair value betting is not stack-off permission. Multiway field-wide
+//   low-SPR conditions use deepest-effective River SPR only.
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// RG.00 — Common P-heavy descriptors
+// -----------------------------------------------------------------------------
+
+// Purpose: clean enough River for one-pair thin/value pressure.
+// Source/Provenance: A runout caution + P six-max abstraction.
+##f$cc_river_srp_gap_clean##
+IsRiver && !f$cc_river_completed && !f$cc_river_four_card_completion
+
+// Purpose: clean A/K or otherwise meaningful overcard pressure River.
+// Source/Provenance: P range-advantage/bluff selector, never sufficient alone.
+##f$cc_river_srp_gap_high_pressure##
+f$cc_river_srp_gap_clean &&
+f$cc_river_meaningful_overcard &&
+!f$cc_river_pairs_previous_board
+
+// Purpose: prior Turn size selected the caller materially (75% or pot).
+// Source/Provenance: P range-selection modifier over reviewed Turn plan.
+##f$cc_river_srp_gap_large_turn_barrel##
+f$cc_river_cbet_opportunity && f$cc_river_turn_plan_size_id >= 6
+
+// Purpose: all current River multiway effective relationships have SPR <2.
+// Source/Provenance: T/P deepest-effective geometry fact only.
+##f$cc_river_mw_all_effective_spr_below_2##
+f$cc_river_mw_deep_spr_valid && f$cc_mw_spr_deepest_round_start < 2
+
+// Purpose: all current River multiway effective relationships have SPR <1.
+// Source/Provenance: T/P geometry fact only; no automatic jam semantics.
+##f$cc_river_mw_all_effective_spr_below_1##
+f$cc_river_mw_deep_spr_valid && f$cc_mw_spr_deepest_round_start < 1
+
+// -----------------------------------------------------------------------------
+// RG.01 — UTG/HJ/CO PFA IP versus BB
+// -----------------------------------------------------------------------------
+
+// Purpose: P-heavy River after Gate02 family2 IP-v-BB second barrel.
+// Source: no literal DeepCrusher six-max range family.
+// Provenance: P professional-theory fill over exact Gate02 range/history.
+##f$cc_river_srp_gap_ip_vs_bb_context##
+f$cc_river_turn_hu_still_hu &&
+f$cc_river_turn_family_id = 2 &&
+f$cc_hu_ip &&
+f$cc_hu_villain_pos_id = 6
+
+// Purpose: IP-v-BB third-barrel action.
+// Professional fill: BB continues widest, so clean OP/strong TP retain value;
+// medium TP thin-values only after non-large Turn barrel at manageable SPR;
+// missed Turn draw bluff is narrowly selected by clean pressure + A/K blocker.
+// Provenance: P; no solver-exact frequency claim.
+##f$cc_river_srp_gap_ip_vs_bb_action##
+When !f$cc_river_srp_gap_ip_vs_bb_context Return false Force
+When f$cc_river_two_pair_plus Return true Force
+When f$cc_river_overpair && f$cc_river_srp_gap_clean Return true Force
+When f$cc_river_overpair && f$cc_river_hu_spr_below_1 Return true Force
+When f$cc_river_overpair Return false Force
+When f$cc_river_strong_top_pair && f$cc_river_srp_gap_clean Return true Force
+When f$cc_river_medium_top_pair && f$cc_river_srp_gap_clean && !f$cc_river_srp_gap_large_turn_barrel && !f$cc_river_hu_high_spr Return true Force
+When f$cc_river_top_pair Return false Force
+When f$cc_river_second_pair Return false Force
+When f$cc_river_no_made && f$cc_river_turn_had_draw && f$cc_river_srp_gap_high_pressure && !f$cc_river_srp_gap_large_turn_barrel && (f$cc_hole_has_ace || f$cc_hole_has_king) Return true Force
+When f$cc_river_no_made Return false Force
+When Others Return false Force
+
+// Purpose: IP-v-BB P-heavy River size map.
+// Source/Provenance: P: 75 robust/polar, 50 one-pair value, 33 medium thin value.
+##f$cc_river_srp_gap_ip_vs_bb_size_id##
+When !f$cc_river_srp_gap_ip_vs_bb_action Return 0 Force
+When f$cc_river_two_pair_plus Return f$cc_river_size_75_id Force
+When f$cc_river_overpair Return f$cc_river_size_50_id Force
+When f$cc_river_strong_top_pair Return f$cc_river_size_50_id Force
+When f$cc_river_medium_top_pair Return f$cc_river_size_33_id Force
+When f$cc_river_no_made Return f$cc_river_size_75_id Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// RG.02 — UTG/HJ/CO PFA IP versus SB
+// -----------------------------------------------------------------------------
+
+// Purpose: P-heavy River after Gate02 family2 IP-v-SB second barrel.
+// Source/Provenance: P selected SB cold-call/continue range, no literal source.
+##f$cc_river_srp_gap_ip_vs_sb_context##
+f$cc_river_turn_hu_still_hu &&
+f$cc_river_turn_family_id = 2 &&
+f$cc_hu_ip &&
+f$cc_hu_villain_pos_id = 5
+
+// Purpose: IP-v-SB third-barrel action.
+// Professional fill: tighter than BB; medium/weak TP and generic missed draws
+// check. Robust value bets mainly clean Rivers; 2P+ remains primary value.
+// Provenance: P.
+##f$cc_river_srp_gap_ip_vs_sb_action##
+When !f$cc_river_srp_gap_ip_vs_sb_context Return false Force
+When f$cc_river_two_pair_plus Return true Force
+When f$cc_river_overpair && f$cc_river_srp_gap_clean Return true Force
+When f$cc_river_overpair && f$cc_river_hu_spr_below_1 Return true Force
+When f$cc_river_overpair Return false Force
+When f$cc_river_strong_top_pair && f$cc_river_srp_gap_clean && !f$cc_river_srp_gap_large_turn_barrel Return true Force
+When f$cc_river_strong_top_pair && f$cc_river_srp_gap_clean && f$cc_river_hu_spr_below_2 Return true Force
+When f$cc_river_top_pair Return false Force
+When f$cc_river_second_pair Return false Force
+When f$cc_river_no_made Return false Force
+When Others Return false Force
+
+// Purpose: IP-v-SB P-heavy River sizes.
+// Source/Provenance: P robust 75 / one-pair 50 map.
+##f$cc_river_srp_gap_ip_vs_sb_size_id##
+When !f$cc_river_srp_gap_ip_vs_sb_action Return 0 Force
+When f$cc_river_two_pair_plus Return f$cc_river_size_75_id Force
+When f$cc_river_overpair || f$cc_river_top_pair Return f$cc_river_size_50_id Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// RG.03 — PFA OOP versus later nonblind cold caller
+// -----------------------------------------------------------------------------
+
+// Purpose: Gate02 family4 River lineage.
+// Source: no direct Spin range family; positional shell only.
+// Provenance: P-heavy selected nonblind caller range.
+##f$cc_river_srp_gap_oop_nonblind_context##
+f$cc_river_turn_hu_still_hu &&
+f$cc_river_turn_family_id = 4 &&
+f$cc_hu_oop &&
+f$cc_hu_villain_pos_id >= 2 && f$cc_hu_villain_pos_id <= 4
+
+// Purpose: OOP-v-nonblind third-barrel action.
+// Professional fill: polarized/value-heavy. Medium/weak TP and no-made triple
+// barrels are omitted in first deterministic baseline.
+// Provenance: P.
+##f$cc_river_srp_gap_oop_nonblind_action##
+When !f$cc_river_srp_gap_oop_nonblind_context Return false Force
+When f$cc_river_two_pair_plus && !f$cc_river_super_completed Return true Force
+When f$cc_river_two_pair_plus && f$cc_river_hu_spr_below_1 Return true Force
+When f$cc_river_overpair && f$cc_river_srp_gap_clean && !f$cc_river_hu_high_spr Return true Force
+When f$cc_river_strong_top_pair && f$cc_river_srp_gap_clean && f$cc_river_hu_spr_below_2 Return true Force
+When f$cc_river_top_pair Return false Force
+When f$cc_river_second_pair Return false Force
+When f$cc_river_no_made Return false Force
+When Others Return false Force
+
+// Purpose: OOP-v-nonblind P-heavy River sizing.
+// Source/Provenance: P 75 robust value / 50 selected one-pair.
+##f$cc_river_srp_gap_oop_nonblind_size_id##
+When !f$cc_river_srp_gap_oop_nonblind_action Return 0 Force
+When f$cc_river_two_pair_plus Return f$cc_river_size_75_id Force
+When f$cc_river_overpair || f$cc_river_top_pair Return f$cc_river_size_50_id Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// RG.04 — Flop multiway -> Turn HU -> River HU (Gate02 family7)
+// -----------------------------------------------------------------------------
+
+// Purpose: preserve selected multiway-FLOP origin even though Turn/River are HU.
+// Source: no literal source river range; never ordinary HU fallback.
+// Provenance: P-heavy.
+##f$cc_river_srp_postflopmw_turnhu_context##
+f$cc_river_turn_hu_still_hu && f$cc_river_turn_family_id = 7
+
+// Purpose: value-heavy River after a survivor already passed multiway-flop call
+// selection and then a HU Turn barrel.
+// Provenance: P. No generic missed-draw/air triple barrel.
+##f$cc_river_srp_postflopmw_turnhu_action##
+When !f$cc_river_srp_postflopmw_turnhu_context Return false Force
+When f$cc_river_two_pair_plus && !f$cc_river_super_completed Return true Force
+When f$cc_river_two_pair_plus && f$cc_river_hu_spr_below_1 Return true Force
+When f$cc_river_overpair && f$cc_river_srp_gap_clean && f$cc_river_hu_spr_below_2 Return true Force
+When f$cc_river_strong_top_pair && f$cc_river_srp_gap_clean && f$cc_river_hu_spr_below_15 Return true Force
+When f$cc_river_top_pair Return false Force
+When f$cc_river_no_made Return false Force
+When Others Return false Force
+
+// Purpose: post-multiway-origin HU River sizes.
+// Source/Provenance: P value-heavy 75/50 map.
+##f$cc_river_srp_postflopmw_turnhu_size_id##
+When !f$cc_river_srp_postflopmw_turnhu_action Return 0 Force
+When f$cc_river_two_pair_plus Return f$cc_river_size_75_id Force
+When f$cc_river_overpair || f$cc_river_top_pair Return f$cc_river_size_50_id Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// RG.05 — Turn was MULTIWAY (Gate02 family8)
+// -----------------------------------------------------------------------------
+
+// Purpose: multiway Turn barrel has exactly one survivor on River.
+// Source: no direct source. Current HU must retain multiway-Turn selection.
+// Provenance: P-heavy selected survivor family.
+##f$cc_river_srp_turnmw_nowhu_context##
+f$cc_river_turn_family_id = 8 && f$cc_river_turn_mw_now_hu
+
+// Purpose: value-heavy post-multiway-Turn HU River action.
+// Provenance: P. No bluff baseline; one-pair only clean and naturally low SPR.
+##f$cc_river_srp_turnmw_nowhu_action##
+When !f$cc_river_srp_turnmw_nowhu_context Return false Force
+When f$cc_river_straight_or_better Return true Force
+When f$cc_river_two_pair_plus && !f$cc_river_completed Return true Force
+When f$cc_river_two_pair_plus && f$cc_river_hu_spr_below_1 Return true Force
+When f$cc_river_overpair && f$cc_river_srp_gap_clean && f$cc_river_hu_spr_below_15 Return true Force
+When f$cc_river_strong_top_pair && f$cc_river_srp_gap_clean && f$cc_river_hu_spr_below_1 Return true Force
+When f$cc_river_top_pair Return false Force
+When f$cc_river_no_made Return false Force
+When Others Return false Force
+
+// Purpose: post-multiway-Turn HU River sizing.
+// Source/Provenance: P 75 robust / 50 one-pair map.
+##f$cc_river_srp_turnmw_nowhu_size_id##
+When !f$cc_river_srp_turnmw_nowhu_action Return 0 Force
+When f$cc_river_straight_or_better || f$cc_river_two_pair_plus Return f$cc_river_size_75_id Force
+When f$cc_river_overpair || f$cc_river_top_pair Return f$cc_river_size_50_id Force
+When Others Return 0 Force
+
+// Purpose: Turn was multiway and River still has 2+ opponents.
+// Source: no Spin 4+ River state; legacy multiway philosophy only.
+// Provenance: P-heavy.
+##f$cc_river_srp_turnmw_stillmw_context##
+f$cc_river_turn_family_id = 8 && f$cc_river_turn_mw_still_mw && f$cc_river_mw_deep_spr_valid
+
+// Purpose: most conservative ordinary-SRP third-barrel family.
+// Professional fill: straight+ robust; non-completed 2P+ value; completed 2P
+// needs very low deepest SPR; one-pair only unusually clean/all-low-SPR; no air.
+// Provenance: P.
+##f$cc_river_srp_turnmw_stillmw_action##
+When !f$cc_river_srp_turnmw_stillmw_context Return false Force
+When f$cc_river_straight_or_better && !f$cc_river_super_completed Return true Force
+When f$cc_river_straight_or_better && f$cc_river_mw_all_effective_spr_below_1 Return true Force
+When f$cc_river_two_pair_plus && f$cc_river_srp_gap_clean Return true Force
+When f$cc_river_two_pair_plus && f$cc_river_mw_all_effective_spr_below_1 Return true Force
+When f$cc_river_overpair && f$cc_river_srp_gap_clean && f$cc_river_mw_all_effective_spr_below_1 Return true Force
+When f$cc_river_top_pair Return false Force
+When f$cc_river_no_made Return false Force
+When Others Return false Force
+
+// Purpose: still-multiway River sizes.
+// Source/Provenance: P: 75 robust made value, 50 fragile/low-SPR one-pair.
+##f$cc_river_srp_turnmw_stillmw_size_id##
+When !f$cc_river_srp_turnmw_stillmw_action Return 0 Force
+When f$cc_river_straight_or_better Return f$cc_river_size_75_id Force
+When f$cc_river_two_pair_plus Return f$cc_river_size_75_id Force
+When f$cc_river_overpair Return f$cc_river_size_50_id Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// RG.06 — Dispatch / coverage
+// -----------------------------------------------------------------------------
+
+// Purpose: action dispatcher for P-heavy ordinary-SRP River gaps.
+// Source/Provenance: P exact-family router; no source-family fallback.
+##f$cc_river_srp_gap_action##
+When f$cc_river_srp_gap_ip_vs_bb_context Return f$cc_river_srp_gap_ip_vs_bb_action Force
+When f$cc_river_srp_gap_ip_vs_sb_context Return f$cc_river_srp_gap_ip_vs_sb_action Force
+When f$cc_river_srp_gap_oop_nonblind_context Return f$cc_river_srp_gap_oop_nonblind_action Force
+When f$cc_river_srp_postflopmw_turnhu_context Return f$cc_river_srp_postflopmw_turnhu_action Force
+When f$cc_river_srp_turnmw_nowhu_context Return f$cc_river_srp_turnmw_nowhu_action Force
+When f$cc_river_srp_turnmw_stillmw_context Return f$cc_river_srp_turnmw_stillmw_action Force
+When Others Return false Force
+
+// Purpose: paired P-heavy SRP River size dispatcher.
+// Source/Provenance: P safety router; check/uncovered -> 0.
+##f$cc_river_srp_gap_size_id##
+When f$cc_river_srp_gap_ip_vs_bb_context Return f$cc_river_srp_gap_ip_vs_bb_size_id Force
+When f$cc_river_srp_gap_ip_vs_sb_context Return f$cc_river_srp_gap_ip_vs_sb_size_id Force
+When f$cc_river_srp_gap_oop_nonblind_context Return f$cc_river_srp_gap_oop_nonblind_size_id Force
+When f$cc_river_srp_postflopmw_turnhu_context Return f$cc_river_srp_postflopmw_turnhu_size_id Force
+When f$cc_river_srp_turnmw_nowhu_context Return f$cc_river_srp_turnmw_nowhu_size_id Force
+When f$cc_river_srp_turnmw_stillmw_context Return f$cc_river_srp_turnmw_stillmw_size_id Force
+When Others Return 0 Force
+
+// Purpose: coverage flag for Gate03C SRP P-heavy expansion.
+// Source/Provenance: P engineering metadata.
+##f$cc_river_srp_gap_covered##
+f$cc_river_srp_gap_ip_vs_bb_context ||
+f$cc_river_srp_gap_ip_vs_sb_context ||
+f$cc_river_srp_gap_oop_nonblind_context ||
+f$cc_river_srp_postflopmw_turnhu_context ||
+f$cc_river_srp_turnmw_nowhu_context ||
+f$cc_river_srp_turnmw_stillmw_context
+
+// ============================================================================
+// End Gate03C P-heavy SRP River CBet gaps.
+// ============================================================================
