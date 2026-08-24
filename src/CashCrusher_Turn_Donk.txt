@@ -6,26 +6,33 @@
 //   Route a valid closed-history Turn Donk opportunity only to separately audited
 //   strategy descendants. Broad legacy scenario labels never grant strategy.
 //
-// Current reviewed child:
+// Current reviewed children:
 //   1 = direct native three-handed `(BBorSB)v2pp` source states whose complete
-//       execution/price provenance is available.
+//       execution/price provenance is available;
+//   2 = HUBB BB-v-SB source mapping plus exact 3-6h BvB reduced-HU descendant,
+//       with MP/BP price-sensitive states held closed until Flop defense records
+//       the actual called CBet size class.
 //
 // Still fail-closed at this gate:
 //   * native high-air X/C without <=33% flop-call price proof;
 //   * native draw Donk-B/C without medium-draw/normal-raise defense proof;
-//   * HUBB, 3wSBvBTN, 3wSBvBB, 3wBBvBTN and their six-max descendants;
+//   * HUBB MP/BP price-sensitive states without gt50/le50 defense provenance;
+//   * 3wSBvBTN, 3wSBvBB, 3wBBvBTN and their six-max descendants;
 //   * ISO/3BP/squeeze/4BP P fills not directly supported by source mapping.
 //
 // Source/Provenance:
 //   T/A = Gate08A history owner + Gate08B direct source descendant.
-//   P   = explicit strategy coverage/fail-closed router metadata.
+//   T/A/P = Gate08C.1 HUBB source mapping and exact BvB adaptation.
+//   P = explicit strategy coverage/fail-closed router metadata.
 // ============================================================================
 
 // Purpose: compact reviewed Turn-Donk family ID.
-// Source/Provenance: P routing metadata; 1=native direct source, 0=uncovered.
+// IDs: 1=native `(BBorSB)v2pp`; 2=HUBB/BvB; 0=uncovered.
+// Source/Provenance: P routing metadata over separately audited descendants.
 ##f$cc_turn_donk_family_id##
 When !f$cc_turn_donk_opportunity Return 0 Force
 When f$cc_turn_donk_source_native_covered Return 1 Force
+When f$cc_turn_donk_hubb_covered Return 2 Force
 When Others Return 0 Force
 
 // Purpose: canonical Turn Donk action router.
@@ -33,6 +40,7 @@ When Others Return 0 Force
 ##f$cc_turn_donk_router##
 When !f$cc_turn_donk_opportunity Return false Force
 When f$cc_turn_donk_source_native_covered Return f$cc_turn_donk_source_native_action Force
+When f$cc_turn_donk_hubb_covered Return f$cc_turn_donk_hubb_action Force
 When Others Return false Force
 
 // Purpose: paired strategic size router.
@@ -40,18 +48,19 @@ When Others Return false Force
 ##f$cc_turn_donk_size_id##
 When !f$cc_turn_donk_opportunity Return 0 Force
 When f$cc_turn_donk_source_native_covered Return f$cc_turn_donk_source_native_size_id Force
+When f$cc_turn_donk_hubb_covered Return f$cc_turn_donk_hubb_size_id Force
 When Others Return 0 Force
 
 // Purpose: current Turn Donk opportunity has a fully reviewed strategy owner.
 // Source/Provenance: P coverage contract.
 ##f$cc_turn_donk_strategy_covered##
-f$cc_turn_donk_source_native_covered
+f$cc_turn_donk_source_native_covered || f$cc_turn_donk_hubb_covered
 
-// Purpose: action/size integrity.
+// Purpose: action/size integrity, including source-approved BetMin ID 5.
 // Source/Provenance: P safety invariant.
 ##f$cc_turn_donk_size_consistent##
 When !f$cc_turn_donk_router Return f$cc_turn_donk_size_id = 0 Force
-When f$cc_turn_donk_router Return f$cc_turn_donk_size_id >= 1 && f$cc_turn_donk_size_id <= 4 Force
+When f$cc_turn_donk_router Return f$cc_turn_donk_size_id >= 1 && f$cc_turn_donk_size_id <= 5 Force
 When Others Return false Force
 
 // Purpose: visible Turn Donk opportunity not yet reviewed or lacking necessary
