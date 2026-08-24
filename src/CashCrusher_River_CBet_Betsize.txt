@@ -1,0 +1,74 @@
+// ============================================================================
+// CashCrusher_River_CBet_Betsize.txt
+// Gate 03H.1 — OpenPPL runtime adapter for reviewed River-CBet size IDs
+// ============================================================================
+// Purpose:
+//   Translate the strategic River size ID into the exact OpenPPL initial-bet
+//   action. This module does NOT decide whether to CBet and does NOT decide
+//   strategic stack commitment.
+//
+// Runtime facts:
+//   * BetThirdPot / BetHalfPot / BetThreeFourthPot / BetPot are native actions;
+//   * OpenPPL accepts percentage `RaiseBy X% Force` actions;
+//   * percentage RaiseBy is call + X% of pot-after-call;
+//   * canonical River CBet requires AmountToCall=0, so RaiseBy 25% contributes
+//     exactly the intended quarter-pot initial bet.
+//
+// Source/Provenance:
+//   T = OpenPPL parser/runtime semantics already source-certified in Gate02J.
+//   A = reviewed River size palette 25/33/50/75/100.
+//
+// Safety:
+//   * unknown/check/uncovered -> 0;
+//   * no BetMax is introduced here;
+//   * natural all-in equivalence is a separate Gate03H.3 layer;
+//   * future global f$BestBetsize callbacks remain separately owned/audited.
+// ============================================================================
+
+// Purpose: prove a positive reviewed River CBet owns one canonical runtime size.
+// Source/Provenance: A/P engineering guard over reviewed action/size routers.
+##f$cc_river_cbet_runtime_size_ready##
+When !f$cc_river_cbet_router Return false Force
+When !f$cc_river_cbet_size_consistent Return false Force
+When f$cc_river_cbet_size_id >= 1 && f$cc_river_cbet_size_id <= 5 Return true Force
+When Others Return false Force
+
+// Purpose: convert River strategic size ID to exact pot fraction for stack
+// geometry, tests and mapping validation.
+// Source/Provenance: A exact mapping of the frozen River palette.
+##f$cc_river_cbet_requested_pot_fraction##
+When !f$cc_river_cbet_runtime_size_ready Return 0 Force
+When f$cc_river_cbet_size_id = 1 Return 0.25 Force
+When f$cc_river_cbet_size_id = 2 Return 0.333 Force
+When f$cc_river_cbet_size_id = 3 Return 0.50 Force
+When f$cc_river_cbet_size_id = 4 Return 0.75 Force
+When f$cc_river_cbet_size_id = 5 Return 1.00 Force
+When Others Return 0 Force
+
+// Purpose: translate reviewed River strategic ID into exact OpenPPL bet action.
+// Source: T native betpot actions plus verified percentage RaiseBy semantics.
+// Provenance: T runtime adapter + A River size palette.
+// Safety: 25 uses percentage RaiseBy; 33/50/75/100 use native actions. BetMax
+// can only be introduced later by natural/mechanical equivalence.
+##f$cc_river_cbet_requested_betsize##
+When !f$cc_river_cbet_runtime_size_ready Return 0 Force
+When f$cc_river_cbet_size_id = 1 RaiseBy 25% Force
+When f$cc_river_cbet_size_id = 2 Return BetThirdPot Force
+When f$cc_river_cbet_size_id = 3 Return BetHalfPot Force
+When f$cc_river_cbet_size_id = 4 Return BetThreeFourthPot Force
+When f$cc_river_cbet_size_id = 5 Return BetPot Force
+When Others Return 0 Force
+
+// Purpose: ensure every positive River CBet resolves to exactly one supported
+// strategic size and positive pot fraction before execution ownership is granted.
+// Source/Provenance: P engineering invariant over T/A mapping above.
+##f$cc_river_cbet_runtime_mapping_valid##
+When !f$cc_river_cbet_router Return f$cc_river_cbet_requested_pot_fraction = 0 Force
+When !f$cc_river_cbet_runtime_size_ready Return false Force
+When f$cc_river_cbet_requested_pot_fraction <= 0 Return false Force
+When f$cc_river_cbet_size_id < 1 || f$cc_river_cbet_size_id > 5 Return false Force
+When Others Return true Force
+
+// ============================================================================
+// End Gate03H.1 local River runtime-size adapter.
+// ============================================================================
