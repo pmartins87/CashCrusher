@@ -1,6 +1,6 @@
 // ============================================================================
 // CashCrusher_Flop_Donk_ActionHistory.txt
-// Gate 07K — executed Flop Donk provenance for Turn/River routing
+// Gate 07K / 08B.0 — executed Flop Donk provenance for Turn/River routing
 // ============================================================================
 // Purpose:
 //   Preserve the difference between a Flop Donk opportunity/strategy plan and
@@ -55,6 +55,12 @@ When f$cc_flop_donk_source_value_action Set user_cc_flop_donk_state_source_value
 When f$cc_flop_donk_source_lowpair_action Set user_cc_flop_donk_state_source_lowpair
 When f$cc_flop_donk_source_draw_action Set user_cc_flop_donk_state_source_draw
 
+// Gate08B.0: direct-source CHECK substates that are indistinguishable if only
+// the final false Donk decision is stored. These remain pre-action candidates;
+// the later actual X/C is proved only from closed did*round2 history.
+When f$cc_flop_donk_source_turn_xc_draw_candidate Set user_cc_flop_donk_state_source_turn_xc_draw
+When f$cc_flop_donk_source_turn_xc_highair_candidate Set user_cc_flop_donk_state_source_turn_xc_highair
+
 // Player count/live mask before action.
 When nplayersplaying = 2 Set user_cc_flop_donk_state_players_2
 When nplayersplaying = 3 Set user_cc_flop_donk_state_players_3
@@ -99,12 +105,34 @@ When user_cc_flop_donk_state_family_7 Return 7 Force
 When user_cc_flop_donk_state_family_8 Return 8 Force
 When Others Return 0 Force
 
-// Purpose: direct-source subtype marker count.
+// Purpose: direct-source positive subtype marker count.
 // Source/Provenance: P integrity over mutually exclusive source positive branches.
 ##f$cc_hist_flop_donk_source_subtype_marker_count##
 (user_cc_flop_donk_state_source_value * 1) +
 (user_cc_flop_donk_state_source_lowpair * 1) +
 (user_cc_flop_donk_state_source_draw * 1)
+
+// Purpose: count direct-source CHECK substates needed by Turn Donk.
+// Source/Provenance: P history integrity over T/A source categories.
+##f$cc_hist_flop_donk_source_turn_xc_marker_count##
+(user_cc_flop_donk_state_source_turn_xc_draw * 1) +
+(user_cc_flop_donk_state_source_turn_xc_highair * 1)
+
+// Purpose: closed snapshot proves the direct-source draw CHECK candidate.
+// Source/Provenance: A/P decoder; actual later call is proved separately.
+##f$cc_hist_flop_donk_source_turn_xc_draw_snapshot##
+f$cc_hist_flop_donk_closed &&
+f$cc_hist_flop_donk_family_id = 1 &&
+user_cc_flop_donk_state_source_turn_xc_draw &&
+!user_cc_flop_donk_state_source_turn_xc_highair
+
+// Purpose: closed snapshot proves the direct-source high-card/backdoor CHECK candidate.
+// Source/Provenance: A/P decoder; <=33% call price is NOT implied by this marker.
+##f$cc_hist_flop_donk_source_turn_xc_highair_snapshot##
+f$cc_hist_flop_donk_closed &&
+f$cc_hist_flop_donk_family_id = 1 &&
+user_cc_flop_donk_state_source_turn_xc_highair &&
+!user_cc_flop_donk_state_source_turn_xc_draw
 
 // Purpose: primary hand-class marker count.
 // Source/Provenance: P integrity over T/A hand classes.
@@ -229,6 +257,7 @@ When !user_cc_flop_donk_state_snapshot_recorded Return false Force
 When f$cc_hist_flop_donk_primary_class_marker_count != 1 Return false Force
 When f$cc_hist_flop_donk_player_count_marker_count != 1 Return false Force
 When BitCount(f$cc_hist_flop_donk_live_opp_mask) != (f$cc_hist_flop_donk_player_count - 1) Return false Force
+When f$cc_hist_flop_donk_source_turn_xc_marker_count > 1 Return false Force
 When user_cc_flop_donk_plan_bet_seen && f$cc_hist_flop_donk_family_marker_count != 1 Return false Force
 When f$cc_hist_flop_donk_family_id = 1 && user_cc_flop_donk_plan_bet_seen && f$cc_hist_flop_donk_source_subtype_marker_count != 1 Return false Force
 When Others Return true Force
@@ -280,5 +309,5 @@ f$cc_hist_flop_donk_snapshot_consistent &&
 !f$cc_hist_flop_donk_runtime_mismatch
 
 // ============================================================================
-// End Gate07K Flop Donk action history.
+// End Gate07K / Gate08B.0 Flop Donk action history.
 // ============================================================================
