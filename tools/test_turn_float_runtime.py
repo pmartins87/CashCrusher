@@ -21,6 +21,11 @@ def block(text: str, name: str) -> str:
     return tail if nxt < 0 else tail[:nxt]
 
 
+def executable(text: str) -> str:
+    """Strip // comments so semantic assertions inspect executable OpenPPL only."""
+    return "\n".join(line.split("//", 1)[0] for line in text.splitlines())
+
+
 def natural_allin(*, pot: float, fraction: float, hero: float, hu_eff=None, mw_shallow=None, mw_deep=None):
     bet = pot * fraction
     reaches_hero = bet >= hero
@@ -81,7 +86,7 @@ def source_contract() -> None:
     assert "historical_near_allin" not in natural
     assert "0.50" not in natural and "0.55" not in natural and "0.60" not in natural
 
-    reachall = block(ALLIN, "f$cc_turn_float_requested_reaches_all_live_effective")
+    reachall = executable(block(ALLIN, "f$cc_turn_float_requested_reaches_all_live_effective"))
     assert "f$cc_turn_float_requested_reaches_hu_effective" in reachall
     assert "f$cc_turn_float_requested_reaches_mw_deepest" in reachall
     assert "shallowest" not in reachall
