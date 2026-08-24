@@ -69,3 +69,5 @@ jobs:
         run: python tools/test_turn_float_runtime.py
       - name: Test closed Turn Float action-history contract
         run: python tools/test_turn_float_action_history.py
+      - name: Test River Float history/source ownership contract
+        run: python tools/test_river_float_history.py
