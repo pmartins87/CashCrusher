@@ -1,0 +1,161 @@
+// ============================================================================
+// CashCrusher_Turn_Float_4BP.txt
+// Gate 05F — clean HU four-bet-pot Turn Float gaps
+// ============================================================================
+// Purpose:
+//   Cover only clean supported HU 4BP histories. Multiway 4BP, reversed/backraise/
+//   limp-reraise chronology and 5bet+ remain fail-closed.
+//
+// Source boundary:
+//   DeepCrusher has no dedicated deep-stack 4BP Turn-Float strategy. Exact
+//   chronology is A/T; action policy is P-heavy.
+//
+// Stack-depth contract:
+//   A 100bb 4BP can naturally reach SPR <1-2 by turn. Low SPR therefore affects
+//   one-pair betting thresholds, but does not create a generic TP+/OP stackoff.
+//   This file never returns BetMax.
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// TF4.01 — clean HU contexts
+// -----------------------------------------------------------------------------
+
+// Purpose: clean caller-side opener4-v-Hero3bettor parent1 after flop bet/call.
+// Source/Provenance: A/T Gate05A supported 4BP caller chronology + P policy owner.
+##f$cc_turn_float_4bp_parent1_hu_context##
+f$cc_turn_float_opportunity &&
+f$cc_turn_float_parent_id = 1 &&
+f$cc_turn_float_current_hu_from_hu_flop &&
+f$cc_turn_float_hu_aggressor_is_current_villain &&
+f$cc_pot_family_id = 4 &&
+f$cc_turn_float_pf_fourbet_caller_supported &&
+!f$cc_turn_float_source_exact_covered
+
+// Purpose: clean Hero-4bettor CBet -> XR -> call parent2 in HU 4BP.
+// Source/Provenance: A/T clean 4BP subtype + parent2 history; P policy.
+##f$cc_turn_float_4bp_parent2_hu_context##
+f$cc_turn_float_opportunity &&
+f$cc_turn_float_parent_id = 2 &&
+f$cc_turn_float_current_hu_from_hu_flop &&
+f$cc_turn_float_hu_aggressor_is_current_villain &&
+f$cc_pot_family_id = 4 &&
+f$cc_pf_role_4bettor &&
+f$cc_pf_4bet_subtype_id > 0 &&
+f$cc_pf_rt_final_aggressor_is_hero &&
+!f$cc_turn_float_source_exact_covered
+
+// Purpose: clean caller-side 4BP FlopFloat -> XR -> call parent3.
+// Source/Provenance: A/T Gate04F caller chronology + parent3 history; P policy.
+##f$cc_turn_float_4bp_parent3_hu_context##
+f$cc_turn_float_opportunity &&
+f$cc_turn_float_parent_id = 3 &&
+f$cc_turn_float_current_hu_from_hu_flop &&
+f$cc_turn_float_hu_aggressor_is_current_villain &&
+f$cc_pot_family_id = 4 &&
+f$cc_turn_float_pf_fourbet_caller_supported &&
+!f$cc_turn_float_source_exact_covered
+
+// -----------------------------------------------------------------------------
+// TF4.02 — actions
+// -----------------------------------------------------------------------------
+
+// Purpose: 4BP caller after calling flop CBet and 4bettor checks turn.
+// Provenance: P condensed-range low-SPR policy. Pure air and ordinary good draws
+// are absent; strong TP/OP can bet when SPR is naturally low and runout tolerable.
+##f$cc_turn_float_4bp_parent1_hu_action##
+When !f$cc_turn_float_4bp_parent1_hu_context Return false Force
+When f$cc_turn_float_robust_value Return true Force
+When f$cc_turn_float_vulnerable_two_pair_plus && f$cc_turn_float_calm_runout Return true Force
+When f$cc_turn_float_vulnerable_two_pair_plus Return false Force
+When f$cc_turn_float_overpair && !f$cc_turn_float_hostile_runout && f$cc_turn_float_hu_low_spr Return true Force
+When f$cc_turn_float_overpair && f$cc_turn_float_hu_very_low_spr Return true Force
+When f$cc_turn_float_overpair Return false Force
+When f$cc_turn_float_strong_top_pair && f$cc_turn_float_calm_runout && f$cc_turn_float_hu_low_spr Return true Force
+When f$cc_turn_float_strong_top_pair && f$cc_turn_float_hu_very_low_spr && !f$cc_turn_super_completed Return true Force
+When f$cc_hand_top_pair_or_better Return false Force
+When f$cc_turn_float_premium_draw && !f$cc_turn_super_completed Return true Force
+When f$cc_turn_float_good_draw || f$cc_turn_float_weak_draw Return false Force
+When f$cc_turn_float_current_air Return false Force
+When Others Return false Force
+
+// Purpose: Hero 4bettor after CBet-XR-call. Villain's flop XR creates a very
+// selected range; bet only robust value, low-SPR strong one-pair and premium draw.
+// Source/Provenance: P conservative 4BP parent2 policy.
+##f$cc_turn_float_4bp_parent2_hu_action##
+When !f$cc_turn_float_4bp_parent2_hu_context Return false Force
+When f$cc_turn_float_robust_value Return true Force
+When f$cc_turn_float_vulnerable_two_pair_plus && f$cc_turn_float_calm_runout Return true Force
+When f$cc_turn_float_vulnerable_two_pair_plus Return false Force
+When f$cc_turn_float_overpair && f$cc_turn_float_hu_low_spr && !f$cc_turn_float_hostile_runout Return true Force
+When f$cc_turn_float_overpair && f$cc_turn_float_hu_very_low_spr Return true Force
+When f$cc_turn_float_strong_top_pair && f$cc_turn_float_hu_very_low_spr && !f$cc_turn_float_hostile_runout Return true Force
+When f$cc_hand_top_pair_or_better Return false Force
+When f$cc_turn_float_premium_draw && f$cc_turn_float_hu_low_spr && !f$cc_turn_super_completed Return true Force
+When f$cc_real_frontdoor_draw Return false Force
+When f$cc_turn_float_current_air Return false Force
+When Others Return false Force
+
+// Purpose: caller-side 4BP after checked-to Flop Float was raised and Hero called.
+// Provenance: P strongest-selection policy; no air/good-draw baseline.
+##f$cc_turn_float_4bp_parent3_hu_action##
+When !f$cc_turn_float_4bp_parent3_hu_context Return false Force
+When f$cc_turn_float_robust_value Return true Force
+When f$cc_turn_float_vulnerable_two_pair_plus && f$cc_turn_float_calm_runout && f$cc_turn_float_hu_low_spr Return true Force
+When f$cc_turn_float_vulnerable_two_pair_plus Return false Force
+When f$cc_turn_float_overpair && f$cc_turn_float_hu_very_low_spr && !f$cc_turn_float_hostile_runout Return true Force
+When f$cc_turn_float_strong_top_pair && f$cc_turn_float_hu_very_low_spr && f$cc_turn_float_calm_runout Return true Force
+When f$cc_hand_top_pair_or_better Return false Force
+When f$cc_turn_float_premium_draw && f$cc_turn_float_hu_very_low_spr && !f$cc_turn_super_completed Return true Force
+When f$cc_real_frontdoor_draw Return false Force
+When f$cc_turn_float_current_air Return false Force
+When Others Return false Force
+
+// Purpose: clean 4BP Turn Float size map.
+// Source/Provenance: P 33/50/75 low-SPR map. Runtime may later recognize a natural
+// all-in only if this requested size mechanically reaches the effective stack.
+##f$cc_turn_float_4bp_hu_size_id##
+When f$cc_turn_float_robust_value && f$cc_turn_completed Return f$cc_turn_float_size_75_id Force
+When f$cc_turn_float_robust_value Return f$cc_turn_float_size_50_id Force
+When f$cc_turn_float_vulnerable_two_pair_plus Return f$cc_turn_float_size_50_id Force
+When f$cc_turn_float_overpair || f$cc_turn_float_strong_top_pair Return f$cc_turn_float_size_50_id Force
+When f$cc_turn_float_premium_draw Return f$cc_turn_float_size_50_id Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// TF4.03 — dispatch / coverage / residual diagnostics
+// -----------------------------------------------------------------------------
+
+// Purpose: clean 4BP action dispatcher.
+// Source/Provenance: P exact parent routing.
+##f$cc_turn_float_4bp_gap_action##
+When f$cc_turn_float_4bp_parent1_hu_context Return f$cc_turn_float_4bp_parent1_hu_action Force
+When f$cc_turn_float_4bp_parent2_hu_context Return f$cc_turn_float_4bp_parent2_hu_action Force
+When f$cc_turn_float_4bp_parent3_hu_context Return f$cc_turn_float_4bp_parent3_hu_action Force
+When Others Return false Force
+
+// Purpose: clean 4BP paired size dispatcher.
+// Source/Provenance: P exact owner.
+##f$cc_turn_float_4bp_gap_size_id##
+When f$cc_turn_float_4bp_parent1_hu_context Return f$cc_turn_float_4bp_hu_size_id Force
+When f$cc_turn_float_4bp_parent2_hu_context Return f$cc_turn_float_4bp_hu_size_id Force
+When f$cc_turn_float_4bp_parent3_hu_context Return f$cc_turn_float_4bp_hu_size_id Force
+When Others Return 0 Force
+
+// Purpose: clean HU 4BP gap coverage.
+// Source/Provenance: P engineering metadata.
+##f$cc_turn_float_4bp_gap_covered##
+f$cc_turn_float_4bp_parent1_hu_context ||
+f$cc_turn_float_4bp_parent2_hu_context ||
+f$cc_turn_float_4bp_parent3_hu_context
+
+// Purpose: visible unsupported 4BP Turn-Float topology.
+// Source/Provenance: P fail-closed diagnostic; no fallback strategy.
+##f$cc_turn_float_4bp_uncovered##
+f$cc_turn_float_opportunity &&
+f$cc_pot_family_id = 4 &&
+!f$cc_turn_float_source_exact_covered &&
+!f$cc_turn_float_4bp_gap_covered
+
+// ============================================================================
+// End Gate05F clean HU 4BP Turn Float gaps.
+// ============================================================================
