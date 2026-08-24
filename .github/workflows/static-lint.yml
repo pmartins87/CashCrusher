@@ -83,3 +83,5 @@ jobs:
         run: python tools/test_river_float_4bp.py
       - name: Test canonical River Float coverage boundary
         run: python tools/test_river_float_coverage.py
+      - name: Test River Float runtime sizing contract
+        run: python tools/test_river_float_runtime.py
