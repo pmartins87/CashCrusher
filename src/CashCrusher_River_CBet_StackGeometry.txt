@@ -1,0 +1,158 @@
+// ============================================================================
+// CashCrusher_River_CBet_StackGeometry.txt
+// Gate 03H.2 — mechanical River-CBet stack-sensitive execution geometry
+// ============================================================================
+// Purpose:
+//   Measure the reviewed River bet against Hero balance and exact HU / dual-bound
+//   multiway effective stacks without converting any historical Spin threshold
+//   into strategy.
+//
+// Source findings retained for comparison:
+//   * DeepCrusher contains node-specific RiverMax plus global/size callbacks that
+//     can promote near-all-in sizes around historical ~50/55/60 geometries;
+//   * those mechanisms are NOT one universal deep-cash River rule;
+//   * multiway whole-field equivalence must use the deepest effective live
+//     relationship, never merely the shortest sidepot player.
+//
+// Source/Provenance:
+//   T = OpenHoldem pot/currentbet/balance semantics and reviewed River pot sizes.
+//   A = historical DeepCrusher threshold diagnostics preserved for later audits.
+//   P = review flags / dual-bound sidepot safety only; no BetMax returned here.
+//
+// Safety:
+//   * initial canonical River CBet only (AmountToCall/currentbet/potplayer=0);
+//   * reaching only the shortest MW opponent never means whole-field commitment;
+//   * response to any subsequent River raise remains defense-owned.
+// ============================================================================
+
+// Purpose: prove requested River CBet is a clean initial street bet whose simple
+// fraction*street-start-pot geometry is valid.
+// Source/Provenance: T OpenHoldem currentbet/potplayer/AmountToCall semantics.
+##f$cc_river_cbet_stackgeom_clean##
+f$cc_river_cbet_runtime_size_ready &&
+f$cc_river_cbet_runtime_mapping_valid &&
+AmountToCall = 0 &&
+currentbet = 0 &&
+potplayer = 0 &&
+f$cc_round_start_pot_bb > 0 &&
+f$cc_hero_stack_round_start_bb > 0
+
+// Purpose: requested River CBet contribution in big blinds.
+// Source: T percentage/native initial-bet arithmetic in clean no-call geometry.
+// Provenance: T/A exact runtime arithmetic over reviewed requested fraction.
+##f$cc_river_cbet_requested_bet_bb##
+When !f$cc_river_cbet_stackgeom_clean Return -1 Force
+When f$cc_river_cbet_requested_pot_fraction <= 0 Return -1 Force
+When Others Return (f$cc_river_cbet_requested_pot_fraction * f$cc_round_start_pot_bb) Force
+
+// Purpose: Hero stack remaining after requested River bet before any response.
+// Source/Provenance: T stack arithmetic; negative means request exceeds balance.
+##f$cc_river_cbet_hero_residual_after_bet_bb##
+When f$cc_river_cbet_requested_bet_bb < 0 Return -1 Force
+When Others Return (f$cc_hero_stack_round_start_bb - f$cc_river_cbet_requested_bet_bb) Force
+
+// Purpose: requested River bet / Hero available street-start stack.
+// Source/Provenance: T exact balance ratio in clean initial River-bet context.
+##f$cc_river_cbet_requested_hero_balance_ratio##
+When !f$cc_river_cbet_stackgeom_clean Return -1 Force
+When f$cc_hero_stack_round_start_bb <= 0 Return -1 Force
+When Others Return (f$cc_river_cbet_requested_bet_bb / f$cc_hero_stack_round_start_bb) Force
+
+// Purpose: historical ~50%-of-Hero-stack review signal only.
+// Source/Provenance: A DeepCrusher threshold evidence; NOT CashCrusher action.
+##f$cc_river_cbet_hist_hero_balance_50_trigger##
+f$cc_river_cbet_requested_hero_balance_ratio >= 0.50
+
+// Purpose: historical ~60%-of-Hero-stack review signal only.
+// Source/Provenance: A DeepCrusher sizing-promotion evidence; diagnostic only.
+##f$cc_river_cbet_hist_hero_stack_60_trigger##
+f$cc_river_cbet_requested_hero_balance_ratio >= 0.60
+
+// Purpose: requested River bet / exact current HU effective stack.
+// Source/Provenance: T/A exact HU street-start effective geometry.
+##f$cc_river_cbet_requested_hu_effective_ratio##
+When !f$cc_river_cbet_stackgeom_clean Return -1 Force
+When !f$cc_hu Return -1 Force
+When f$cc_hu_effective_stack_round_start_bb <= 0 Return -1 Force
+When Others Return (f$cc_river_cbet_requested_bet_bb / f$cc_hu_effective_stack_round_start_bb) Force
+
+// Purpose: historical ~50%-effective HU review signal only.
+// Source/Provenance: A DeepCrusher callback ancestry; no action follows here.
+##f$cc_river_cbet_hist_hu_effective_50_trigger##
+f$cc_river_cbet_requested_hu_effective_ratio >= 0.50
+
+// Purpose: requested River bet / shallowest current multiway effective relation.
+// Source/Provenance: T/A exact dual-bound multiway stack geometry.
+// Safety: reaching this relation may only put one short player all-in.
+##f$cc_river_cbet_requested_mw_shallowest_effective_ratio##
+When !f$cc_river_cbet_stackgeom_clean Return -1 Force
+When !f$cc_multiway Return -1 Force
+When !f$cc_mw_stack_geometry_valid Return -1 Force
+When f$cc_mw_shallowest_effective_stack_round_start_bb <= 0 Return -1 Force
+When Others Return (f$cc_river_cbet_requested_bet_bb / f$cc_mw_shallowest_effective_stack_round_start_bb) Force
+
+// Purpose: requested River bet / deepest current multiway effective relation.
+// Source/Provenance: T/A whole-field effective-depth denominator.
+##f$cc_river_cbet_requested_mw_deepest_effective_ratio##
+When !f$cc_river_cbet_stackgeom_clean Return -1 Force
+When !f$cc_multiway Return -1 Force
+When !f$cc_mw_stack_geometry_valid Return -1 Force
+When f$cc_mw_deepest_effective_stack_round_start_bb <= 0 Return -1 Force
+When Others Return (f$cc_river_cbet_requested_bet_bb / f$cc_mw_deepest_effective_stack_round_start_bb) Force
+
+// Purpose: historical ~50%-effective multiway review signal using deepest/all-live
+// relationship instead of the shortest sidepot relation.
+// Source/Provenance: A exact semantic migration diagnostic; no action implied.
+##f$cc_river_cbet_hist_mw_effective_50_trigger##
+f$cc_river_cbet_requested_mw_deepest_effective_ratio >= 0.50
+
+// Purpose: requested River size reaches Hero's entire available stack.
+// Source/Provenance: T mechanical balance geometry, not strategy.
+##f$cc_river_cbet_requested_reaches_hero_stack##
+f$cc_river_cbet_requested_hero_balance_ratio >= 1.00
+
+// Purpose: requested River size reaches exact HU effective relationship.
+// Source/Provenance: T exact HU effective-stack arithmetic.
+##f$cc_river_cbet_requested_reaches_hu_effective##
+f$cc_hu && f$cc_river_cbet_requested_hu_effective_ratio >= 1.00
+
+// Purpose: requested River size reaches at least the shortest MW effective relation.
+// Source/Provenance: T/A sidepot geometry descriptor.
+##f$cc_river_cbet_requested_reaches_mw_shallowest##
+f$cc_multiway && f$cc_river_cbet_requested_mw_shallowest_effective_ratio >= 1.00
+
+// Purpose: requested River size reaches the deepest/all-live MW effective relation.
+// Source/Provenance: T/A whole-field mechanical reach descriptor.
+##f$cc_river_cbet_requested_reaches_mw_deepest##
+f$cc_multiway && f$cc_river_cbet_requested_mw_deepest_effective_ratio >= 1.00
+
+// Purpose: detect shortest-only sidepot reach while a deeper live opponent remains.
+// Source/Provenance: P/T diagnostic; must never trigger local whole-field BetMax.
+##f$cc_river_cbet_mw_sidepot_divergence_candidate##
+f$cc_river_cbet_requested_reaches_mw_shallowest && !f$cc_river_cbet_requested_reaches_mw_deepest
+
+// Purpose: compact visibility flag when historical or natural stack-sensitive
+// geometry is engaged. True means REVIEW, not shove.
+// Source/Provenance: A/P metadata over T geometry.
+##f$cc_river_cbet_stack_sensitive_review_required##
+When !f$cc_river_cbet_stackgeom_clean Return false Force
+When f$cc_river_cbet_hist_hero_balance_50_trigger Return true Force
+When f$cc_hu && f$cc_river_cbet_hist_hu_effective_50_trigger Return true Force
+When f$cc_multiway && f$cc_river_cbet_hist_mw_effective_50_trigger Return true Force
+When f$cc_river_cbet_requested_reaches_hero_stack Return true Force
+When f$cc_hu && f$cc_river_cbet_requested_reaches_hu_effective Return true Force
+When f$cc_multiway && f$cc_river_cbet_requested_reaches_mw_shallowest Return true Force
+When Others Return false Force
+
+// Purpose: bitfield-style diagnostic for source-threshold comparison.
+// Bits: 1 Hero>=50; 2 Hero>=60; 4 HU-effective>=50; 8 reaches HU effective;
+// 16 reaches MW shallowest; 32 MW-deepest>=50; 64 reaches MW deepest;
+// 128 shortest-only sidepot divergence.
+// Source/Provenance: P engineering metadata over A/T diagnostics.
+##f$cc_river_cbet_stack_review_flags_id##
+When !f$cc_river_cbet_stackgeom_clean Return 0 Force
+When Others Return ((f$cc_river_cbet_hist_hero_balance_50_trigger * 1) + (f$cc_river_cbet_hist_hero_stack_60_trigger * 2) + ((f$cc_hu && f$cc_river_cbet_hist_hu_effective_50_trigger) * 4) + ((f$cc_hu && f$cc_river_cbet_requested_reaches_hu_effective) * 8) + ((f$cc_multiway && f$cc_river_cbet_requested_reaches_mw_shallowest) * 16) + ((f$cc_multiway && f$cc_river_cbet_hist_mw_effective_50_trigger) * 32) + ((f$cc_multiway && f$cc_river_cbet_requested_reaches_mw_deepest) * 64) + ((f$cc_multiway && f$cc_river_cbet_mw_sidepot_divergence_candidate) * 128)) Force
+
+// ============================================================================
+// End Gate03H.2 River geometry. No all-in action is encoded here.
+// ============================================================================
