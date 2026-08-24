@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Gate04 deterministic coverage/exclusivity/fail-closed source tests."""
+"""Gate04/04R deterministic coverage/exclusivity/fail-closed source tests."""
 
 from pathlib import Path
 
@@ -11,6 +11,7 @@ SOURCE = (SRC / "CashCrusher_Flop_Float_Source.txt").read_text(encoding="utf-8")
 SRP = (SRC / "CashCrusher_Flop_Float_SRP_6Max.txt").read_text(encoding="utf-8")
 ISO = (SRC / "CashCrusher_Flop_Float_ISO.txt").read_text(encoding="utf-8")
 THREE = (SRC / "CashCrusher_Flop_Float_3BP.txt").read_text(encoding="utf-8")
+REPAIR = (SRC / "CashCrusher_Flop_Float_3BP_CallerRepair.txt").read_text(encoding="utf-8")
 FOUR = (SRC / "CashCrusher_Flop_Float_4BP.txt").read_text(encoding="utf-8")
 
 
@@ -28,8 +29,8 @@ def run_router_contract() -> None:
         "f$cc_flop_float_source_covered",
         "f$cc_flop_float_srp_gap_covered",
         "f$cc_flop_float_iso_covered",
-        "f$cc_flop_float_plain3bp_covered",
-        "f$cc_flop_float_squeeze_covered",
+        "f$cc_flop_float_plain3bp_covered_final",
+        "f$cc_flop_float_squeeze_covered_final",
         "f$cc_flop_float_4bp_covered",
     ]
     offsets = [router.index(x) for x in expected_order]
@@ -56,6 +57,14 @@ def run_router_contract() -> None:
     assert "f$cc_flop_float_size_id = 0" in consistency
     assert "f$cc_flop_float_size_id >= 1 && f$cc_flop_float_size_id <= 5" in consistency
 
+    combined_plain = block(ROUTER, "f$cc_flop_float_plain3bp_covered_final")
+    assert "f$cc_flop_float_plain3bp_covered" in combined_plain
+    assert "f$cc_flop_float_rt3bp_plain_covered" in combined_plain
+
+    combined_squeeze = block(ROUTER, "f$cc_flop_float_squeeze_covered_final")
+    assert "f$cc_flop_float_squeeze_covered" in combined_squeeze
+    assert "f$cc_flop_float_rt3bp_squeeze_covered" in combined_squeeze
+
 
 def run_fail_closed_contract() -> None:
     uncovered = block(ROUTER, "f$cc_flop_float_uncovered_recognized")
@@ -81,6 +90,14 @@ def run_fail_closed_contract() -> None:
     assert "f$cc_hu_origin_preflop_reduced" in iso_hu
     assert "f$cc_pf_iso_proven" in iso_hu
 
+    # Gate04R must use actual-final-aggressor chronology and still fail closed.
+    repaired_plain = block(REPAIR, "f$cc_flop_float_rt3bp_plain_postcold_hu_context")
+    assert "f$cc_pf_rt_plain3bet_proven" in repaired_plain
+    assert "f$cc_pf_rt_hero_is_post3bet_coldcaller" in repaired_plain
+    repaired_mw = block(REPAIR, "f$cc_flop_float_rt3bp_multiway_context")
+    assert "f$cc_pf_rt_3bettor_live_opponent" in repaired_mw
+    assert "f$cc_relpos_id = 3" in repaired_mw
+
     # 4BP coverage is exactly one clean caller chronology.
     covered4 = block(FOUR, "f$cc_flop_float_4bp_covered")
     assert "f$cc_flop_float_4bp_hu_context" in covered4
@@ -103,6 +120,9 @@ def run_strategy_no_broad_tail() -> None:
         (THREE, "f$cc_flop_float_squeeze_opener_hu_action"),
         (THREE, "f$cc_flop_float_squeeze_coldcaller_hu_action"),
         (THREE, "f$cc_flop_float_3bp_multiway_action"),
+        (REPAIR, "f$cc_flop_float_rt3bp_plain_postcold_hu_action"),
+        (REPAIR, "f$cc_flop_float_rt3bp_squeeze_coldcaller_hu_action"),
+        (REPAIR, "f$cc_flop_float_rt3bp_multiway_action"),
         (FOUR, "f$cc_flop_float_4bp_hu_action"),
     ]
     for text, name in action_names:
@@ -111,7 +131,7 @@ def run_strategy_no_broad_tail() -> None:
         assert "HandPower" not in b, f"generic HandPower leaked into {name}"
 
     # Initial strategy modules must not own explicit all-in execution.
-    for text in (SOURCE, SRP, ISO, THREE, FOUR, ROUTER):
+    for text in (SOURCE, SRP, ISO, THREE, REPAIR, FOUR, ROUTER):
         executable = "\n".join(line.split("//", 1)[0] for line in text.splitlines())
         assert "BetMax" not in executable
         assert "Allin" not in executable
@@ -121,4 +141,4 @@ if __name__ == "__main__":
     run_router_contract()
     run_fail_closed_contract()
     run_strategy_no_broad_tail()
-    print("PASS: Gate04 Flop Float coverage/exclusivity/fail-closed contract")
+    print("PASS: Gate04/04R Flop Float coverage/exclusivity/fail-closed contract")
