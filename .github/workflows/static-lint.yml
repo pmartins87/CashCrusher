@@ -43,3 +43,5 @@ jobs:
         run: python tools/test_river_cbet_source_contract.py
       - name: Test six-max SRP River CBet gaps
         run: python tools/test_river_cbet_srp_gaps.py
+      - name: Test ISO 3BP squeeze 4BP River CBet
+        run: python tools/test_river_cbet_other_pots.py
