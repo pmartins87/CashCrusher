@@ -21,6 +21,45 @@ def executable(text: str) -> str:
     return "\n".join(line.split("//", 1)[0] for line in text.splitlines())
 
 
+def reviewed_pot_domain_contract() -> None:
+    one = block(POL, "f$cc_river_float_source_reviewed_one_raise_domain")
+    assert "f$cc_pot_family_id = 2" in one
+    assert "f$cc_pf_one_raise_ordinary_srp" in one
+    assert "f$cc_pf_iso_proven" in one
+    assert "f$cc_pf_hu_limp_raise_proven" in one
+
+    three = block(POL, "f$cc_river_float_source_reviewed_threebet_domain")
+    assert "f$cc_pot_family_id = 3" in three
+    assert "f$cc_pf_rt_plain3bet_proven" in three
+    assert "f$cc_pf_rt_squeeze_proven" in three
+
+    hero4 = block(POL, "f$cc_river_float_source_reviewed_4bp_hero4_domain")
+    for token in (
+        "f$cc_pot_family_id = 4",
+        "f$cc_river_float_current_hu_from_hu_flop",
+        "f$cc_river_float_hu_aggressor_is_current_villain",
+        "f$cc_pf_role_4bettor",
+        "f$cc_pf_4bet_subtype_id > 0",
+        "f$cc_hu_4bp_survivor_consistent",
+        "f$cc_hu_4bp_survivor_type_id >= 1",
+        "f$cc_hu_4bp_survivor_type_id <= 2",
+    ):
+        assert token in hero4
+
+    caller4 = block(POL, "f$cc_river_float_source_reviewed_4bp_caller_domain")
+    assert "f$cc_turn_float_pf_fourbet_caller_supported" in caller4
+    assert "f$cc_hu_villain_pos_id = f$cc_flop_float_4bp_other_raiser_pos_id" in caller4
+
+    domain = block(POL, "f$cc_river_float_source_reviewed_pot_domain")
+    assert "f$cc_river_float_source_reviewed_one_raise_domain" in domain
+    assert "f$cc_river_float_source_reviewed_threebet_domain" in domain
+    assert "f$cc_river_float_source_reviewed_4bp_domain" in domain
+
+    code = executable(domain)
+    assert "f$cc_pot_family_id = 1" not in code
+    assert "f$cc_pot_family_id = 5" not in code
+
+
 def value_source_contract() -> None:
     tp = block(POL, "f$cc_river_float_source_top_pair_top4")
     assert "f$cc_river_top_pair" in tp
@@ -29,6 +68,7 @@ def value_source_contract() -> None:
     domain = block(POL, "f$cc_river_float_source_general_domain_supported")
     for token in (
         "f$cc_river_float_opportunity",
+        "f$cc_river_float_source_reviewed_pot_domain",
         "f$cc_flop_entry_count >= 2",
         "f$cc_flop_entry_count <= 3",
         "nplayersplaying >= 2",
@@ -124,8 +164,9 @@ def precedence_and_safety_contract() -> None:
 
 
 if __name__ == "__main__":
+    reviewed_pot_domain_contract()
     value_source_contract()
     exact_bbv_sb_contract()
     negative_source_contract()
     precedence_and_safety_contract()
-    print("PASS: Gate06B River Float direct/high-ancestry source contract")
+    print("PASS: Gate06B River Float direct/high-ancestry source + pot-domain contract")
