@@ -1,85 +1,133 @@
 // ============================================================================
 // CashCrusher_Turn_Float.txt
-// Gate 05 — canonical Turn Float router (source stage)
+// Gate 05 — canonical Turn Float router
 // ============================================================================
 // Purpose:
-//   Route a reviewed Turn-Float opportunity to an exact strategy owner. At this
-//   stage only Gate05B source/high-ancestry descendants are allowed to act;
-//   source-silent six-max gaps remain visible and fail closed until Gate05C+.
+//   Route a reviewed checked-to-turn opportunity to exactly one source or P-heavy
+//   strategy owner while preserving pot family, flop history and multiway origin.
+//
+// Implemented owners:
+//   1 = exact Gate05B source/high-ancestry state;
+//   2 = ordinary-SRP six-max gap;
+//   3 = ISO / true-HU limp-raised gap;
+//   4 = plain 3BP gap;
+//   5 = squeeze gap;
+//   6 = clean supported HU 4BP gap.
+//
+// Deliberately fail-closed:
+//   * unraised histories other than exact 3wBBvSB LP source repair;
+//   * unresolved/reversed 3BP chronology;
+//   * multiway/reversed/backraise 4BP;
+//   * 5bet+;
+//   * source-locked no-made/live-draw states.
 //
 // Source/Provenance:
 //   T = Gate05A/05B.R action-history opportunity facts.
-//   A = Gate05B direct DeepCrusher/Starting-Strategy descendants.
-//   P = coverage/exclusivity metadata only; no generic betting fallback.
+//   A = Gate05B direct source descendants.
+//   P = Gate05C-F explicit professional six-max gap policies.
 //
 // OpenPPL safety:
-//   Flat complete WHENs. Source locked checks precede every positive branch.
+//   Flat complete WHENs. Exact source coverage and source negative locks always
+//   precede P-heavy gap families. No generic HandPower/random fallback exists.
 // ============================================================================
 
-// Purpose: recognized canonical opportunity not yet owned by an exact source
-// decision. A matchup can have some source rules while a different current hand
-// class remains an intentional future P gap.
-// Source/Provenance: P diagnostic over Gate05B.1 branch-level source coverage.
-##f$cc_turn_float_source_gap_uncovered##
+// Purpose: recognized Turn-Float opportunity not owned by any reviewed family.
+// Source/Provenance: P diagnostic; uncovered states check rather than borrowing
+// an unrelated pot/range policy.
+##f$cc_turn_float_uncovered_recognized##
 f$cc_turn_float_source_any_opportunity &&
-!f$cc_turn_float_source_exact_covered
+!f$cc_turn_float_source_exact_covered &&
+!f$cc_turn_float_srp_gap_covered &&
+!f$cc_turn_float_iso_gap_covered &&
+!f$cc_turn_float_plain3bp_gap_covered &&
+!f$cc_turn_float_squeeze_gap_covered &&
+!f$cc_turn_float_4bp_gap_covered
 
-// Purpose: current source-stage family ID. ID 1 = exact Gate05B source owner.
-// Source/Provenance: P engineering metadata; ID never creates strategy.
+// Purpose: explicit 5bet+ unsupported diagnostic.
+// Source/Provenance: P fail-closed marker; no strategy attached.
+##f$cc_turn_float_5betplus_uncovered##
+f$cc_turn_float_opportunity && f$cc_pot_family_id >= 5
+
+// Purpose: stable family ID for logs/coverage.
+// Source/Provenance: P engineering metadata; ID never chooses a frequency alone.
 ##f$cc_turn_float_family_id##
 When !f$cc_turn_float_source_any_opportunity Return 0 Force
 When f$cc_turn_float_source_exact_covered Return 1 Force
+When f$cc_turn_float_srp_gap_covered Return 2 Force
+When f$cc_turn_float_iso_gap_covered Return 3 Force
+When f$cc_turn_float_plain3bp_gap_covered Return 4 Force
+When f$cc_turn_float_squeeze_gap_covered Return 5 Force
+When f$cc_turn_float_4bp_gap_covered Return 6 Force
 When Others Return 0 Force
 
 // Purpose: canonical Turn Float action router.
-// Source: only exact Gate05B source-owned current states act in this stage.
-// Provenance: A/P fail-closed routing.
+// Source/Provenance: A/P exact owner precedence; negative source check is binding.
 ##f$cc_turn_float_router##
 When !f$cc_turn_float_source_any_opportunity Return false Force
 When !f$cc_turn_float_source_exact_consistent Return false Force
 When f$cc_turn_float_source_exact_locked_check Return false Force
 When f$cc_turn_float_source_exact_positive Return f$cc_turn_float_source_action Force
+When f$cc_turn_float_srp_gap_covered Return f$cc_turn_float_srp_gap_action Force
+When f$cc_turn_float_iso_gap_covered Return f$cc_turn_float_iso_gap_action Force
+When f$cc_turn_float_plain3bp_gap_covered Return f$cc_turn_float_plain3bp_gap_action Force
+When f$cc_turn_float_squeeze_gap_covered Return f$cc_turn_float_squeeze_gap_action Force
+When f$cc_turn_float_4bp_gap_covered Return f$cc_turn_float_4bp_gap_action Force
 When Others Return false Force
 
 // Purpose: paired strategic size-ID router.
-// Source/Provenance: A exact positive source owner; check/uncovered ->0.
+// Source/Provenance: A/P exact owner; check/uncovered ->0.
 ##f$cc_turn_float_size_id##
 When !f$cc_turn_float_router Return 0 Force
 When f$cc_turn_float_source_exact_positive Return f$cc_turn_float_source_size_id Force
+When f$cc_turn_float_srp_gap_covered Return f$cc_turn_float_srp_gap_size_id Force
+When f$cc_turn_float_iso_gap_covered Return f$cc_turn_float_iso_gap_size_id Force
+When f$cc_turn_float_plain3bp_gap_covered Return f$cc_turn_float_plain3bp_gap_size_id Force
+When f$cc_turn_float_squeeze_gap_covered Return f$cc_turn_float_squeeze_gap_size_id Force
+When f$cc_turn_float_4bp_gap_covered Return f$cc_turn_float_4bp_gap_size_id Force
 When Others Return 0 Force
 
-// Purpose: expose source follow-up plan for later action-history capture.
-// IDs currently: 0 none; 1 give-up river; 2 barrel river.
-// Source/Provenance: A source-plan forwarding; pre-action intent only.
+// Purpose: follow-up plan ID. Only direct 3wBBvSB source currently owns a forced
+// River plan; P gap families intentionally leave future River action unresolved.
+// IDs: 0 none; 1 source give-up river; 2 source barrel river.
+// Source/Provenance: A source plan forwarding; pre-action intent only.
 ##f$cc_turn_float_river_plan_id##
 When !f$cc_turn_float_router Return 0 Force
 When f$cc_turn_float_source_exact_positive Return f$cc_turn_float_source_river_plan_id Force
 When Others Return 0 Force
 
-// Purpose: source-stage strategic coverage flag, including reviewed source checks.
-// Source/Provenance: P engineering metadata over exact branch-level coverage.
+// Purpose: any currently reviewed strategic family owns the state.
+// Source/Provenance: P engineering coverage union.
 ##f$cc_turn_float_strategy_covered##
-f$cc_turn_float_source_exact_covered
+f$cc_turn_float_source_exact_covered ||
+f$cc_turn_float_srp_gap_covered ||
+f$cc_turn_float_iso_gap_covered ||
+f$cc_turn_float_plain3bp_gap_covered ||
+f$cc_turn_float_squeeze_gap_covered ||
+f$cc_turn_float_4bp_gap_covered
 
-// Purpose: current owner-count invariant; later Gate05C families will be added
-// explicitly rather than hidden behind a broad fallback.
-// Source/Provenance: P overlap guard.
+// Purpose: count family owners for overlap detection.
+// Source/Provenance: P exact coverage invariant.
 ##f$cc_turn_float_family_owner_count##
-(f$cc_turn_float_source_exact_covered * 1)
+(f$cc_turn_float_source_exact_covered * 1) +
+(f$cc_turn_float_srp_gap_covered * 1) +
+(f$cc_turn_float_iso_gap_covered * 1) +
+(f$cc_turn_float_plain3bp_gap_covered * 1) +
+(f$cc_turn_float_squeeze_gap_covered * 1) +
+(f$cc_turn_float_4bp_gap_covered * 1)
 
-// Purpose: prove source-stage family ownership is internally consistent.
-// Source/Provenance: P fail-closed invariant.
+// Purpose: exactly one reviewed family owns a covered Turn-Float state.
+// Source/Provenance: P fail-closed exclusivity contract.
 ##f$cc_turn_float_family_exclusive##
 When !f$cc_turn_float_strategy_covered Return f$cc_turn_float_family_owner_count = 0 Force
 When Others Return f$cc_turn_float_family_owner_count = 1 Force
 
-// Purpose: positive Turn Float owns one reviewed size; check/uncovered owns 0.
-// Source/Provenance: P action/size integrity over A source policy.
+// Purpose: positive action owns one valid Turn-Float size; check/uncovered owns 0.
+// Source/Provenance: P action/size integrity.
 ##f$cc_turn_float_size_consistent##
 When !f$cc_turn_float_router Return f$cc_turn_float_size_id = 0 Force
 When f$cc_turn_float_router Return f$cc_turn_float_size_id >= 1 && f$cc_turn_float_size_id <= 5 Force
 When Others Return false Force
 
 // ============================================================================
-// End canonical Turn Float router — Gate05B source stage.
+// End canonical Gate05 Turn Float router.
 // ============================================================================
