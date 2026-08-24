@@ -57,3 +57,7 @@ jobs:
         run: python tools/test_flop_float_runtime.py
       - name: Test closed Flop Float action-history contract
         run: python tools/test_flop_float_history.py
+      - name: Test lastraised final-aggressor and 3BP caller repair
+        run: python tools/test_final_aggressor_context.py
+      - name: Test Turn Float history/opportunity contract
+        run: python tools/test_turn_float_history.py
