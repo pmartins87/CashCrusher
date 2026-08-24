@@ -1,0 +1,100 @@
+// ============================================================================
+// CashCrusher_River_3BP_Context.txt
+// Gate 03E.0 — plain 3-bet-pot River-CBet survivor/composition provenance
+// ============================================================================
+// Purpose: carry Gate02 family10 into River, preserving opener-call versus
+// post-3bet-coldcaller range origin and Turn HU/multiway selection history.
+// Source/Provenance: T/A persisted 3BP masks + Gate02N; P River metadata.
+// Safety: squeeze family is separate (Gate02 family11) and cannot enter here.
+// ============================================================================
+
+// Purpose: generic plain3BP River-CBet context.
+// Source/Provenance: T/P exact Gate02 family carry-forward + subtype proof.
+##f$cc_river_plain3bp_base_context##
+f$cc_river_cbet_opportunity && f$cc_river_turn_family_id = 10 && f$cc_pf_3bet_plain_proven && !f$cc_pf_squeeze_proven && f$cc_river_live_mask_subset_of_turn
+
+// Purpose: current HU Villain is original opener-call range.
+// Source/Provenance: T/A existing exact 3BP survivor helper.
+##f$cc_river_plain3bp_hu_vs_opener##
+f$cc_river_plain3bp_base_context && f$cc_hu && f$cc_hu_3bp_villain_is_opener
+
+// Purpose: current HU Villain is post-3bet coldcaller range.
+// Source/Provenance: T/A exact persisted post3bet-caller origin.
+##f$cc_river_plain3bp_hu_vs_coldcaller##
+f$cc_river_plain3bp_base_context && f$cc_hu && f$cc_hu_3bp_villain_is_post3bet_coldcaller
+
+// Purpose: HU River came from Turn that was already HU.
+// Source/Provenance: T/A Gate02N field history.
+##f$cc_river_plain3bp_hu_from_hu_turn##
+f$cc_river_plain3bp_base_context && f$cc_river_turn_hu_still_hu
+
+// Purpose: HU River came from a multiway Turn second barrel.
+// Source/Provenance: T/P selected multiway-Turn survivor history.
+##f$cc_river_plain3bp_hu_from_mw_turn##
+f$cc_river_plain3bp_base_context && f$cc_river_turn_mw_now_hu
+
+// Purpose: stable HU survivor ID: 1 opener | 2 post3bet coldcaller | 0 invalid.
+// Source/Provenance: P metadata over T exact provenance.
+##f$cc_river_plain3bp_hu_survivor_type_id##
+When f$cc_river_plain3bp_hu_vs_opener Return 1 Force
+When f$cc_river_plain3bp_hu_vs_coldcaller Return 2 Force
+When Others Return 0 Force
+
+// Purpose: validate current HU plain3BP River context.
+// Source/Provenance: P fail-closed invariant.
+##f$cc_river_plain3bp_hu_context_consistent##
+When !f$cc_river_plain3bp_base_context || !f$cc_hu Return false Force
+When (f$cc_river_plain3bp_hu_vs_opener + f$cc_river_plain3bp_hu_vs_coldcaller) != 1 Return false Force
+When (f$cc_river_plain3bp_hu_from_hu_turn + f$cc_river_plain3bp_hu_from_mw_turn) != 1 Return false Force
+When f$cc_river_plain3bp_hu_survivor_type_id <= 0 Return false Force
+When Others Return true Force
+
+// Purpose: strong HU 3BP selection after coldcaller origin, multiway Turn or
+// large 75/pot Turn barrel.
+// Source/Provenance: P professional-theory modifier.
+##f$cc_river_plain3bp_hu_strong_selection##
+f$cc_river_plain3bp_hu_context_consistent && (f$cc_river_plain3bp_hu_vs_coldcaller || f$cc_river_plain3bp_hu_from_mw_turn || f$cc_river_turn_plan_size_id >= 6)
+
+// Purpose: current live opener count in multiway plain3BP River.
+// Source/Provenance: T exact existing live opener mask.
+##f$cc_river_plain3bp_mw_live_opener_count##
+When !f$cc_river_plain3bp_base_context || !f$cc_multiway Return 0 Force
+When Others Return BitCount(f$cc_mw_3bp_live_opener_mask) Force
+
+// Purpose: current live post3bet-coldcaller count.
+// Source/Provenance: T exact existing live coldcaller mask.
+##f$cc_river_plain3bp_mw_live_coldcaller_count##
+When !f$cc_river_plain3bp_base_context || !f$cc_multiway Return 0 Force
+When Others Return BitCount(f$cc_mw_3bp_live_post3bet_coldcaller_mask) Force
+
+// Purpose: current multiway plain3BP composition ID: 1 opener+caller(s) |
+// 2 only post3bet-coldcaller(s) | 0 inconsistent.
+// Source/Provenance: P exact composition metadata.
+##f$cc_river_plain3bp_mw_comp_id##
+When !f$cc_river_plain3bp_base_context || !f$cc_multiway Return 0 Force
+When f$cc_river_plain3bp_mw_live_opener_count = 1 && (f$cc_river_plain3bp_mw_live_opener_count + f$cc_river_plain3bp_mw_live_coldcaller_count) = nopponentsplaying Return 1 Force
+When f$cc_river_plain3bp_mw_live_opener_count = 0 && f$cc_river_plain3bp_mw_live_coldcaller_count = nopponentsplaying Return 2 Force
+When Others Return 0 Force
+
+// Purpose: validate multiway plain3BP current field and deepest SPR.
+// Source/Provenance: T/P fail-closed contract.
+##f$cc_river_plain3bp_mw_context_consistent##
+When !f$cc_river_plain3bp_base_context || !f$cc_multiway Return false Force
+When !f$cc_river_mw_deep_spr_valid Return false Force
+When f$cc_river_plain3bp_mw_comp_id <= 0 Return false Force
+When (f$cc_river_plain3bp_mw_live_opener_count + f$cc_river_plain3bp_mw_live_coldcaller_count) != nopponentsplaying Return false Force
+When Others Return true Force
+
+// Purpose: all current multiway plain3BP effective relationships have SPR <2.
+// Source/Provenance: T/P deepest-effective geometry descriptor.
+##f$cc_river_plain3bp_mw_all_effective_spr_below_2##
+f$cc_river_plain3bp_mw_context_consistent && f$cc_mw_spr_deepest_round_start < 2
+
+// Purpose: all current multiway plain3BP effective relationships have SPR <1.
+// Source/Provenance: T/P deepest-effective geometry descriptor; no auto-jam.
+##f$cc_river_plain3bp_mw_all_effective_spr_below_1##
+f$cc_river_plain3bp_mw_context_consistent && f$cc_mw_spr_deepest_round_start < 1
+
+// ============================================================================
+// End Gate03E.0 plain3BP River context.
+// ============================================================================
