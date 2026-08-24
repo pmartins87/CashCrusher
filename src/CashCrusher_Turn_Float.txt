@@ -16,34 +16,36 @@
 //   Flat complete WHENs. Source locked checks precede every positive branch.
 // ============================================================================
 
-// Purpose: recognized canonical opportunity not yet owned by direct source.
-// Source/Provenance: P diagnostic only; this state checks rather than borrowing
-// an unrelated BTN/BB/SB frequency.
+// Purpose: recognized canonical opportunity not yet owned by an exact source
+// decision. A matchup can have some source rules while a different current hand
+// class remains an intentional future P gap.
+// Source/Provenance: P diagnostic over Gate05B.1 branch-level source coverage.
 ##f$cc_turn_float_source_gap_uncovered##
 f$cc_turn_float_source_any_opportunity &&
-!f$cc_turn_float_source_covered
+!f$cc_turn_float_source_exact_covered
 
-// Purpose: current source-stage family ID. ID 1 = Gate05B source owner.
+// Purpose: current source-stage family ID. ID 1 = exact Gate05B source owner.
 // Source/Provenance: P engineering metadata; ID never creates strategy.
 ##f$cc_turn_float_family_id##
 When !f$cc_turn_float_source_any_opportunity Return 0 Force
-When f$cc_turn_float_source_covered Return 1 Force
+When f$cc_turn_float_source_exact_covered Return 1 Force
 When Others Return 0 Force
 
 // Purpose: canonical Turn Float action router.
-// Source: only Gate05B source-owned histories act in this stage.
+// Source: only exact Gate05B source-owned current states act in this stage.
 // Provenance: A/P fail-closed routing.
 ##f$cc_turn_float_router##
 When !f$cc_turn_float_source_any_opportunity Return false Force
-When f$cc_turn_float_source_locked_check Return false Force
-When f$cc_turn_float_source_covered Return f$cc_turn_float_source_action Force
+When !f$cc_turn_float_source_exact_consistent Return false Force
+When f$cc_turn_float_source_exact_locked_check Return false Force
+When f$cc_turn_float_source_exact_positive Return f$cc_turn_float_source_action Force
 When Others Return false Force
 
 // Purpose: paired strategic size-ID router.
-// Source/Provenance: A exact owner; check/uncovered ->0.
+// Source/Provenance: A exact positive source owner; check/uncovered ->0.
 ##f$cc_turn_float_size_id##
 When !f$cc_turn_float_router Return 0 Force
-When f$cc_turn_float_source_covered Return f$cc_turn_float_source_size_id Force
+When f$cc_turn_float_source_exact_positive Return f$cc_turn_float_source_size_id Force
 When Others Return 0 Force
 
 // Purpose: expose source follow-up plan for later action-history capture.
@@ -51,19 +53,19 @@ When Others Return 0 Force
 // Source/Provenance: A source-plan forwarding; pre-action intent only.
 ##f$cc_turn_float_river_plan_id##
 When !f$cc_turn_float_router Return 0 Force
-When f$cc_turn_float_source_covered Return f$cc_turn_float_source_river_plan_id Force
+When f$cc_turn_float_source_exact_positive Return f$cc_turn_float_source_river_plan_id Force
 When Others Return 0 Force
 
-// Purpose: source-stage strategic coverage flag.
-// Source/Provenance: P engineering metadata.
+// Purpose: source-stage strategic coverage flag, including reviewed source checks.
+// Source/Provenance: P engineering metadata over exact branch-level coverage.
 ##f$cc_turn_float_strategy_covered##
-f$cc_turn_float_source_covered
+f$cc_turn_float_source_exact_covered
 
 // Purpose: current owner-count invariant; later Gate05C families will be added
 // explicitly rather than hidden behind a broad fallback.
 // Source/Provenance: P overlap guard.
 ##f$cc_turn_float_family_owner_count##
-(f$cc_turn_float_source_covered * 1)
+(f$cc_turn_float_source_exact_covered * 1)
 
 // Purpose: prove source-stage family ownership is internally consistent.
 // Source/Provenance: P fail-closed invariant.
