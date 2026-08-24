@@ -95,3 +95,5 @@ jobs:
         run: python tools/test_flop_donk_multiway_srp.py
       - name: Test isolation-pot Flop Donk baseline
         run: python tools/test_flop_donk_iso.py
+      - name: Test 3BP and squeeze Flop Donk baseline
+        run: python tools/test_flop_donk_3bp.py
