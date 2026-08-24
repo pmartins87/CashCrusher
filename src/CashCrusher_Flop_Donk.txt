@@ -4,24 +4,28 @@
 // ============================================================================
 // Purpose:
 //   Route a valid first-action OOP/non-initiative flop lead only to explicitly
-//   reviewed Donk families.  Broad legacy router membership never grants strategy.
+//   reviewed Donk families. Broad legacy router membership never grants strategy.
 //
-// Current implemented child:
-//   1 = native three-handed `(BBorSB)v2pp` direct/high-ancestry source strategy.
+// Current implemented children:
+//   1 = native three-handed `(BBorSB)v2pp` direct/high-ancestry source strategy;
+//   2 = 4-6 handed BTN+SB+BB professional adaptation, with limp/SRP and SB/BB
+//       ownership kept separate.
 //
 // Future children remain fail-closed:
-//   4-6h BTN+both-blinds adaptation, HU, other multiway, ISO, 3BP/squeeze, 4BP+.
+//   HU, other multiway shapes, ISO, 3BP/squeeze, 4BP+.
 //
 // Source/Provenance:
 //   T/A = Gate07A ownership + Gate07B direct source strategy.
-//   P = explicit coverage/fail-closed router metadata.
+//   P = Gate07C 4-6h adaptation and explicit fail-closed router metadata.
 // ============================================================================
 
 // Purpose: compact reviewed Flop-Donk family ID.
-// Source/Provenance: P routing metadata over A/T source coverage.
+// IDs: 1 native source; 2 4-6h BTN+both-blinds adaptation; 0 unsupported.
+// Source/Provenance: P routing metadata over A/T/P reviewed coverage.
 ##f$cc_flop_donk_family_id##
 When !f$cc_flop_donk_opportunity Return 0 Force
 When f$cc_flop_donk_source_covered Return 1 Force
+When f$cc_flop_donk_6max_covered Return 2 Force
 When Others Return 0 Force
 
 // Purpose: canonical Flop Donk action router.
@@ -29,6 +33,7 @@ When Others Return 0 Force
 ##f$cc_flop_donk_router##
 When !f$cc_flop_donk_opportunity Return false Force
 When f$cc_flop_donk_source_covered Return f$cc_flop_donk_source_action Force
+When f$cc_flop_donk_6max_covered Return f$cc_flop_donk_6max_action Force
 When Others Return false Force
 
 // Purpose: paired strategic size-ID router.
@@ -36,12 +41,13 @@ When Others Return false Force
 ##f$cc_flop_donk_size_id##
 When !f$cc_flop_donk_opportunity Return 0 Force
 When f$cc_flop_donk_source_covered Return f$cc_flop_donk_source_size_id Force
+When f$cc_flop_donk_6max_covered Return f$cc_flop_donk_6max_size_id Force
 When Others Return 0 Force
 
 // Purpose: current Flop Donk state has a reviewed policy, including explicit check.
-// Source/Provenance: P coverage contract.
+// Source/Provenance: P coverage contract over source + adapted families.
 ##f$cc_flop_donk_strategy_covered##
-f$cc_flop_donk_source_covered
+f$cc_flop_donk_source_covered || f$cc_flop_donk_6max_covered
 
 // Purpose: action/size integrity.
 // Source/Provenance: P safety invariant.
