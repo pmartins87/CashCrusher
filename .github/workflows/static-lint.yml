@@ -61,3 +61,5 @@ jobs:
         run: python tools/test_final_aggressor_context.py
       - name: Test Turn Float history/opportunity contract
         run: python tools/test_turn_float_history.py
+      - name: Test Turn Float direct-source strategy contract
+        run: python tools/test_turn_float_source.py
