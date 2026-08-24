@@ -99,3 +99,5 @@ jobs:
         run: python tools/test_flop_donk_3bp.py
       - name: Test residual unraised multiway Flop Donk policy
         run: python tools/test_flop_donk_unraised_multiway.py
+      - name: Test clean HU caller-side 4BP Flop Donk baseline
+        run: python tools/test_flop_donk_4bp.py
