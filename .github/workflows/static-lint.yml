@@ -109,3 +109,5 @@ jobs:
         run: python tools/test_turn_donk_history.py
       - name: Test direct native Turn Donk source strategy
         run: python tools/test_turn_donk_source.py
+      - name: Test HUBB Turn Donk source/provenance contract
+        run: python tools/test_turn_donk_hubb.py
