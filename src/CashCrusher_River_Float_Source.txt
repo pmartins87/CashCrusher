@@ -22,18 +22,84 @@
 // Provenance:
 //   T = Gate06A closed turn-call parent + current River hand/board facts.
 //   A = direct/high-ancestry DeepCrusher/TBP River-Float decisions.
-//   P = only conservative source-translation guards; no six-max bluff/value gap
-//       is added in this file.
+//   P = conservative source-domain guards; no six-max bluff/value gap is added here.
 //
 // Safety:
 //   * exact 3wBBvSB bluff stays blocked until its defensive turn-call snapshot
 //     writer proves the source history;
+//   * generic source value is allowed only inside a separately reviewed pot domain;
+//   * unraised, 5bet+, unresolved 3BP and unresolved 4BP cannot acquire source
+//     value merely because the current field happens to be 2-3 handed;
 //   * general source value is not projected into 4+ way/origin states that never
 //     existed in the three-player source environment;
 //   * no BotCalledOnFlop && BotCalledOnTurn shortcut;
 //   * no HandPower/random tail;
 //   * no BetMax/stackoff decision.
 // ============================================================================
+
+// -----------------------------------------------------------------------------
+// RFS.00 — reviewed pot-domain ownership for the portable generic value ladder
+// -----------------------------------------------------------------------------
+
+// Purpose: one-raise pot belongs to a River-Float family already reviewed by
+// Gate06C/D: ordinary SRP, multi-handed ISO, or true-HU limp-raised.
+// Source: DeepCrusher River Float can be reached through ordinary no-initiative
+// and GotRaised/Isolated routers, but no unraised generic ownership was certified.
+// Provenance: A source-router ownership + P fail-closed pot-domain guard.
+##f$cc_river_float_source_reviewed_one_raise_domain##
+f$cc_pot_family_id = 2 &&
+(f$cc_pf_one_raise_ordinary_srp || f$cc_pf_iso_proven || f$cc_pf_hu_limp_raise_proven)
+
+// Purpose: two-raise pot has supported repaired plain-3BP or squeeze chronology.
+// Source: GotRaised router may reach River Float after reraised preflop history.
+// Provenance: A ownership + T/P lastraised-based chronology repaired in Gate05A.
+// Safety: reversed/limp-reraise/unknown 3BP chronology remains false.
+##f$cc_river_float_source_reviewed_threebet_domain##
+f$cc_pot_family_id = 3 &&
+(f$cc_pf_rt_plain3bet_proven || f$cc_pf_rt_squeeze_proven)
+
+// Purpose: clean HU 4BP where Hero is the final 4bettor and current Villain is
+// the proven opener or 3bettor, never an unresolved other caller.
+// Source: no dedicated 4BP River-Float table; this only admits the portable
+// generic value ladder after the clean topology itself has been reviewed.
+// Provenance: A generic-source translation + P Gate01I chronology/survivor guard.
+##f$cc_river_float_source_reviewed_4bp_hero4_domain##
+f$cc_pot_family_id = 4 &&
+f$cc_river_float_current_hu_from_hu_flop &&
+f$cc_river_float_hu_aggressor_is_current_villain &&
+f$cc_pf_role_4bettor &&
+f$cc_pf_4bet_subtype_id > 0 &&
+f$cc_hu_4bp_survivor_consistent &&
+f$cc_hu_4bp_survivor_type_id >= 1 &&
+f$cc_hu_4bp_survivor_type_id <= 2
+
+// Purpose: the single caller-side clean 4BP chronology currently provable from
+// aggregate history: opener -> Hero 3bet -> opener 4bet -> Hero call.
+// Source: no dedicated source strategy; portable general River-Float value is
+// admitted only after Gate04F/05A caller chronology proves the exact 4bettor.
+// Provenance: A generic-source translation + P conservative caller proof.
+##f$cc_river_float_source_reviewed_4bp_caller_domain##
+f$cc_pot_family_id = 4 &&
+f$cc_river_float_current_hu_from_hu_flop &&
+f$cc_river_float_hu_aggressor_is_current_villain &&
+f$cc_turn_float_pf_fourbet_caller_supported &&
+f$cc_hu_villain_pos_id = f$cc_flop_float_4bp_other_raiser_pos_id
+
+// Purpose: clean HU 4BP domain allowed to consume only the portable generic
+// River-Float value ladder. Multiway/post-multiway/othercaller 4BP remains false.
+// Source/Provenance: A/P union of the two explicitly reviewed clean 4BP paths.
+##f$cc_river_float_source_reviewed_4bp_domain##
+f$cc_river_float_source_reviewed_4bp_hero4_domain ||
+f$cc_river_float_source_reviewed_4bp_caller_domain
+
+// Purpose: pot topology has been explicitly reviewed before generic source value
+// is allowed to own the current River-Float hand.
+// Source/Provenance: P source-ownership firewall over A/T reviewed families.
+// Safety: pot1/unraised and pot5+/unknown return false by construction.
+##f$cc_river_float_source_reviewed_pot_domain##
+f$cc_river_float_source_reviewed_one_raise_domain ||
+f$cc_river_float_source_reviewed_threebet_domain ||
+f$cc_river_float_source_reviewed_4bp_domain
 
 // -----------------------------------------------------------------------------
 // RFS.01 — current River source hand classes
@@ -54,14 +120,15 @@ f$cc_river_top_pair && f$cc_number_better_kickers <= 4
 ##f$cc_river_float_source_literal_nuts##
 f$cc_river_float_opportunity && HaveNuts
 
-// Purpose: constrain the generic TBP/DeepCrusher value ladder to player-field
-// sizes that existed in the supplied Spin source.
+// Purpose: constrain the generic TBP/DeepCrusher value ladder to both a reviewed
+// pot topology and player-field sizes that existed in the supplied Spin source.
 // Source: Crusher/DeepCrusher environment is at most three players.
-// Provenance: A source-domain guard; six-max 4+ way/origin states move to Gate06C.
-// Safety: a hand that began flop 4+ way is not treated as source-equivalent just
-// because folds later leave two or three players on the river.
+// Provenance: A source-domain guard + P pot-family ownership firewall.
+// Safety: 4+ origin/current fields, unraised, 5bet+ and unresolved reraised pots
+// do not become source-equivalent merely because current River is short-handed.
 ##f$cc_river_float_source_general_domain_supported##
 f$cc_river_float_opportunity &&
+f$cc_river_float_source_reviewed_pot_domain &&
 f$cc_flop_entry_count >= 2 &&
 f$cc_flop_entry_count <= 3 &&
 nplayersplaying >= 2 &&
@@ -69,9 +136,8 @@ nplayersplaying <= 3
 
 // Purpose: general source value owner after canonical River-Float history.
 // Source: CrusherTBP broad value rule, contribution-corrected in DeepCrusher.
-// Provenance: A source/manual-review baseline inside source-sized HU/3way fields.
-// Six-max 4+ origin/current fields are deliberately not claimed by this source
-// function and are reviewed separately in Gate06C.
+// Provenance: A source/manual-review baseline inside reviewed source-sized fields.
+// Six-max 4+ origin/current fields are deliberately not claimed by this source.
 ##f$cc_river_float_source_general_value_action##
 When !f$cc_river_float_source_general_domain_supported Return false Force
 When f$cc_river_float_source_literal_nuts Return true Force
