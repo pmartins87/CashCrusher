@@ -1,0 +1,232 @@
+// ============================================================================
+// CashCrusher_Turn_Donk_History.txt
+// Gate 08A — canonical Turn Donk ownership / closed-flop history bridge
+// ============================================================================
+// Purpose:
+//   Define exactly which CLOSED flop histories may reach Turn Donk before any
+//   hand-strength strategy is added.
+//
+// Audited DeepCrusher meaning:
+//   Turn Donk = Hero is OOP/FIRST-or-MIDDLE, does not own flop initiative, faces
+//   no turn bet, and an exact prior history supports leading. It is NOT the normal
+//   second barrel after Hero Donked/bet flop and remained final aggressor.
+//
+// Supported parent IDs at Gate08A:
+//   1 = Flop Donk opportunity -> Hero CHECK -> one clean CALL versus one later
+//       flop aggressor, who remains live and owns final flop aggression (X/C).
+//   2 = Hero executed Flop Donk -> later opponent RAISE -> Hero CALL, with no Hero
+//       re-aggression; raiser remains live and owns final flop aggression (B/C).
+//
+// Source/Provenance:
+//   T = closed round-2 did* counters, raisbits2, lastraised2, current Turn facts.
+//   A = DeepCrusher no-initiative Turn-Donk router + Gate07 closed Donk history.
+//   P = strict parent exclusivity and fail-closed six-max ownership boundaries.
+//
+// Safety:
+//   This file contains NO Turn betting policy. Source scenario/hand-state mapping
+//   is audited in the next block. A pre-action Flop Donk plan never proves X/C,
+//   B/C or any other executed history.
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// TDH.01 — actual final flop aggressor identity
+// -----------------------------------------------------------------------------
+
+// Purpose: validate closed-flop lastraised2 chair before bit operations.
+// Source/Provenance: T OpenHoldem previous-round aggressor history.
+##f$cc_turn_donk_flop_aggressor_chair_valid##
+When !(IsTurn || IsRiver) Return false Force
+When lastraised2 < 0 Return false Force
+When lastraised2 >= 10 Return false Force
+When Others Return true Force
+
+// Purpose: prove final flop aggressor also appears in persisted raisbits2.
+// Source/Provenance: T independent closed-history cross-check.
+##f$cc_turn_donk_flop_aggressor_history_valid##
+When !f$cc_turn_donk_flop_aggressor_chair_valid Return false Force
+When (((raisbits2 >> lastraised2) BitAnd 1) = 0) Return false Force
+When Others Return true Force
+
+// Purpose: canonical position ID of actual final flop aggressor.
+// Source/Provenance: T chair aliases + A Gate00 2-6h mapping.
+##f$cc_turn_donk_flop_aggressor_pos_id##
+When !f$cc_turn_donk_flop_aggressor_history_valid Return 0 Force
+When f$cc_deal_size = 6 && lastraised2 = utgchair Return 1 Force
+When f$cc_deal_size >= 5 && lastraised2 = mp3chair Return 2 Force
+When f$cc_deal_size >= 4 && lastraised2 = cutoffchair Return 3 Force
+When f$cc_deal_size >= 3 && lastraised2 = dealerchair Return 4 Force
+When lastraised2 = smallblindchair Return 5 Force
+When lastraised2 = bigblindchair Return 6 Force
+When Others Return 0 Force
+
+// Purpose: final flop aggressor remains a live current opponent.
+// Source/Provenance: T playersplayingbits + historical chair identity.
+##f$cc_turn_donk_flop_aggressor_live_opponent##
+When !f$cc_turn_donk_flop_aggressor_chair_valid Return false Force
+When lastraised2 = userchair Return false Force
+When (((playersplayingbits >> lastraised2) BitAnd 1) = 0) Return false Force
+When Others Return true Force
+
+// Purpose: exactly one opponent chair was aggressive on the flop.
+// Source/Provenance: T persisted raisbits2; raised/reraised histories use parent 2.
+##f$cc_turn_donk_single_flop_aggressor##
+(IsTurn || IsRiver) && BitCount(raisbits2) = 1
+
+// Purpose: Hero ended flop as final aggressor and therefore still owns initiative.
+// Source/Provenance: T lastraised2 identity; Turn Donk must reject this state.
+##f$cc_turn_donk_hero_owned_final_flop_aggression##
+f$cc_turn_donk_flop_aggressor_history_valid && lastraised2 = userchair
+
+// -----------------------------------------------------------------------------
+// TDH.02 — parent 1: initial Donk opportunity -> X/C
+// -----------------------------------------------------------------------------
+
+// Purpose: Hero's closed flop line was exactly one CHECK then one CALL, with no
+// Hero bet/raise/all-in contribution.
+// Source: DeepCrusher Turn-Donk source repeatedly uses BotCalledOnFlop after X/C.
+// Provenance: T exact Hero round-2 counters.
+##f$cc_turn_donk_flop_check_call_only##
+When !(IsTurn || IsRiver) Return false Force
+When didchecround2 != 1 Return false Force
+When didcallround2 != 1 Return false Force
+When didraisround2 != 0 Return false Force
+When didbetsizeround2 != 0 Return false Force
+When didalliround2 != 0 Return false Force
+When Others Return true Force
+
+// Purpose: reviewed Flop-Donk opportunity actually became X/C against one later
+// opponent aggressor. The Gate07 snapshot proves Hero first had AmountToCall=0;
+// closed counters prove the later check/call sequence actually occurred.
+// Source/Provenance: A/T exact execution bridge; P requires reviewed family state.
+##f$cc_turn_donk_parent_flop_xc##
+user_cc_flop_donk_opportunity_seen &&
+user_cc_flop_donk_state_snapshot_recorded &&
+f$cc_hist_flop_donk_family_marker_count = 1 &&
+f$cc_hist_flop_donk_snapshot_consistent &&
+f$cc_turn_donk_flop_check_call_only &&
+f$cc_turn_donk_single_flop_aggressor &&
+f$cc_turn_donk_flop_aggressor_live_opponent &&
+f$cc_turn_donk_flop_aggressor_pos_id > 0 &&
+!f$cc_turn_donk_hero_owned_final_flop_aggression
+
+// -----------------------------------------------------------------------------
+// TDH.03 — parent 2: executed Flop Donk -> raise -> call (B/C)
+// -----------------------------------------------------------------------------
+
+// Purpose: clean Donk-B/C parent where opponent's later raise ends flop
+// aggression and Hero did not re-aggress.
+// Source: `(BBorSB)v2pp` Turn source explicitly includes verified draw B/C history.
+// Provenance: A direct source-history shape + T Gate07K executed actions.
+// Safety: exact defensive eligibility (which Flop Donk hands are allowed to call
+// the raise) belongs to the later defensive node and is NOT inferred here.
+##f$cc_turn_donk_parent_flop_donk_raise_call##
+f$cc_hist_flop_donk_then_called_raise &&
+!f$cc_hist_flop_donk_then_reaggressed &&
+f$cc_hist_flop_donk_snapshot_consistent &&
+f$cc_flop_donk_plan_markers_consistent &&
+!f$cc_hist_flop_donk_runtime_mismatch &&
+f$cc_hist_flop_donk_family_marker_count = 1 &&
+f$cc_turn_donk_flop_aggressor_live_opponent &&
+f$cc_turn_donk_flop_aggressor_pos_id > 0 &&
+!f$cc_turn_donk_hero_owned_final_flop_aggression
+
+// Purpose: count mutually exclusive approved Turn-Donk parents.
+// Source/Provenance: P safety invariant over A/T histories.
+##f$cc_turn_donk_parent_count##
+(f$cc_turn_donk_parent_flop_xc * 1) +
+(f$cc_turn_donk_parent_flop_donk_raise_call * 1)
+
+// Purpose: stable parent ID: 1=X/C, 2=Donk-B/C, 0=unknown/contradiction.
+// Source/Provenance: P engineering metadata.
+##f$cc_turn_donk_parent_id##
+When f$cc_turn_donk_parent_count != 1 Return 0 Force
+When f$cc_turn_donk_parent_flop_xc Return 1 Force
+When f$cc_turn_donk_parent_flop_donk_raise_call Return 2 Force
+When Others Return 0 Force
+
+// Purpose: parent histories must never overlap.
+// Source/Provenance: P fail-closed invariant.
+##f$cc_turn_donk_parent_exclusive##
+f$cc_turn_donk_parent_count <= 1
+
+// -----------------------------------------------------------------------------
+// TDH.04 — actual Turn Donk opportunity
+// -----------------------------------------------------------------------------
+
+// Purpose: Hero has not yet acted on Turn, including checks.
+// Source/Provenance: T OpenPPL action-history semantics.
+##f$cc_turn_donk_first_hero_action##
+IsTurn && BotsActionsOnThisRoundIncludingChecks = 0
+
+// Purpose: canonical no-initiative FIRST/MIDDLE Turn Donk opportunity.
+// Source: DeepCrusher no-initiative router sends FIRST/MIDDLE + AmountToCall=0
+// to `f$move_turn_donkbet`, while LAST belongs Float and Hero-initiative belongs
+// Turn CBet/continuation.
+// Provenance: A source ownership + T current facts + P exact-parent requirement.
+##f$cc_turn_donk_opportunity##
+When !IsTurn Return false Force
+When !f$cc_context_valid Return false Force
+When balance <= 0 Return false Force
+When !f$cc_turn_donk_first_hero_action Return false Force
+When AmountToCall > 0 Return false Force
+When f$cc_relpos_id = 3 Return false Force
+When f$cc_hu && !f$cc_hu_oop Return false Force
+When !f$cc_turn_donk_parent_exclusive Return false Force
+When f$cc_turn_donk_parent_id <= 0 Return false Force
+When f$cc_turn_donk_hero_owned_final_flop_aggression Return false Force
+When Others Return true Force
+
+// Purpose: current Turn Donk is HU and exact final flop aggressor is the current
+// sole Villain.
+// Source/Provenance: T chair identity cross-check.
+##f$cc_turn_donk_hu_aggressor_is_current_villain##
+When !f$cc_turn_donk_opportunity Return false Force
+When !f$cc_hu Return false Force
+When !f$cc_turn_donk_flop_aggressor_chair_valid Return false Force
+When lastraised2 = headsupchair Return true Force
+When Others Return false Force
+
+// Purpose: flop began multiway and Turn Donk is now HU.
+// Source/Provenance: A/P Gate00 range-origin preservation.
+##f$cc_turn_donk_postmultiway_to_hu##
+f$cc_turn_donk_opportunity && f$cc_hu_origin_postflop_reduced
+
+// Purpose: Turn Donk decision itself remains multiway.
+// Source/Provenance: T current live-player state.
+##f$cc_turn_donk_current_multiway##
+f$cc_turn_donk_opportunity && f$cc_multiway
+
+// -----------------------------------------------------------------------------
+// TDH.05 — explicit owner separators / discovered coverage dependency
+// -----------------------------------------------------------------------------
+
+// Purpose: Hero's one-size Flop Donk was called and Hero remained final flop
+// aggressor. This is an initiative continuation/second-barrel family, NOT Turn Donk.
+// Source: DeepCrusher routes ordinary Hero-initiative Turn no-bet states to CBet;
+// `(BBorSB)v2pp` value-Donk continuation is also implemented there historically.
+// Provenance: A/T ownership separator; strategy repair is a separate Gate02R task.
+##f$cc_turn_donk_excluded_flop_donk_standard_continuation##
+IsTurn && f$cc_hist_flop_donk_standard_called_parent
+
+// Purpose: ordinary standard Flop CBet continuation belongs existing Turn CBet.
+// Source/Provenance: A Gate02 ownership separator.
+##f$cc_turn_donk_excluded_standard_cbet##
+IsTurn && f$cc_hist_turn_standard_cbet_parent
+
+// Purpose: standard executed Flop Float with Hero final aggressor is not Turn Donk.
+// Source/Provenance: A Gate04/05 ownership separator.
+##f$cc_turn_donk_excluded_standard_flop_float##
+IsTurn && f$cc_hist_flop_float_standard_parent_valid
+
+// Purpose: visible source-state limitation before Gate08B strategy coding.
+// The Gate07 snapshot knows family/primary hand and direct positive source subtype,
+// but an X/C source history still needs exact old-flop draw/high-air/TP substate
+// provenance before source-specific Turn branches may fire.
+// Source/Provenance: P audit flag describing an evidence gap, never an action.
+##f$cc_turn_donk_xc_source_substate_needs_review##
+f$cc_turn_donk_parent_flop_xc &&
+(f$cc_hist_flop_donk_family_id = 1 || f$cc_deal_size <= 3)
+
+// ============================================================================
+// End Gate08A Turn Donk ownership/history bridge.
+// ============================================================================
