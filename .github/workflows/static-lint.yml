@@ -75,5 +75,7 @@ jobs:
         run: python tools/test_river_float_source.py
       - name: Test ordinary-SRP River Float six-max gaps
         run: python tools/test_river_float_srp_gaps.py
+      - name: Test ISO River Float gaps
+        run: python tools/test_river_float_iso.py
       - name: Test canonical River Float coverage boundary
         run: python tools/test_river_float_coverage.py
