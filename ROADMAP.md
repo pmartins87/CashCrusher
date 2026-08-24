@@ -142,8 +142,6 @@ No uncovered pot family may inherit an ordinary-SRP child as fallback.
 - [x] **03T** — source, coverage, other-pot, runtime and global lint contracts PASS in CI.
 - [ ] **03V** — whole-bot/OpenHoldem replay certification remains pending.
 
-Last fully certified River-CBet milestone: branch CI was green before Gate04 and remains green in the combined Gate04 run.
-
 ## Gate 04 — Flop Float Bet
 
 ### Ownership / source
@@ -156,27 +154,60 @@ Last fully certified River-CBet milestone: branch CI was green before Gate04 and
 - [x] **04D** — ISO Float with original-limper versus post-raise-coldcaller provenance, HU and multiway.
 - [x] **04E** — plain 3BP and squeeze Float with opener/pre3bet/post3bet caller origins kept separate, HU and multiway.
 - [x] **04F** — conservative clean caller-IP 4BP Float for opener4-versus-Hero3bettor chronology; unresolved/reversed/cold4-caller/5bet+ remain fail-closed.
+- [x] **04R** — repair pure-coldcall-3bet chronology using actual final preflop aggressor from `lastraised1` + `raisbits1`; preserve Gate04E strategy while making previously unreachable coldcaller branches provable.
 
 ### Runtime / history / validation
 
 - [x] **04G.1** — 25/33/50/75/100 OpenPPL runtime sizing.
 - [x] **04G.2** — natural all-in equivalence only when reviewed Float size reaches Hero stack, HU effective, or deepest/all-live multiway effective; shortest-sidepot-only reach does not promote.
 - [x] **04H** — closed round-2 Float provenance: actual bet, actual check-back, bet-raised-call/re-aggression, all-in drift, family/hand/texture/live-field snapshot.
-- [x] **04T** — strategy/topology, coverage, runtime, closed-history and global linter tests PASS in GitHub Actions run **#490**.
+- [x] **04T** — original Gate04 strategy/topology/coverage/runtime/history suite PASS.
+- [x] **04R.T** — repaired caller-side chronology + complete Gate04 regression PASS in GitHub Actions run **#512**.
 - [ ] **04V** — whole-bot `f$flop`/`f$BestBetsize` composition and OpenHoldem replay certification pending.
 
-Important boundary for the next gate: a **standard executed Flop Float is not automatically the parent of Turn Float**. DeepCrusher's Turn Float node is a checked-to-turn ownership family with several distinct histories; Gate05 must audit those histories independently.
+Important boundary: a **standard executed Flop Float is not automatically the parent of Turn Float**. Turn Float requires its own closed-history ownership proof.
 
-## Gate 05+ — remaining post-flop attack order
+## Gate 05 — Turn Float Bet
 
-1. Turn Float Bet
-2. River Float Bet
-3. Flop Donk Bet
-4. Turn Donk Bet
-5. River Donk Bet
-6. Turn Probe
-7. River Probe
-8. Delayed CBet / delayed-noaction families
+### History / source ownership
+
+- [x] **05A.1** — source-first audit of `f$move_turn_floatbet`; distinguish missed second-barrel Float from Flop-Float continuation, Delayed Float, Turn CBet and Delayed CBet.
+- [x] **05A.2** — audit OpenHoldem `lastraised1/2`, `raisbits1/2`, Hero `did*round2` and `BotsActionsOnThisRoundIncludingChecks` semantics.
+- [x] **05A.3** — canonical parent ID 1: supported preflop caller called exactly one clean flop bet from the actual final preflop aggressor, who then yields a checked-to Turn.
+- [x] **05A.4** — canonical parent ID 2: Hero CBet -> later raise/XR -> Hero call -> final flop aggressor yields checked-to Turn.
+- [x] **05A.5** — canonical parent ID 3: Hero Flop Float -> later raise/XR -> Hero call -> final flop aggressor yields checked-to Turn; strategy still requires separate review.
+- [x] **05A.6** — preserve HU-from-HU-flop, post-multiway-to-HU and current-multiway origins; exact HU aggressor can be checked against `headsupchair`.
+- [x] **05A.T** — final-aggressor repair + Turn-Float history/opportunity contracts PASS in GitHub Actions run **#512**.
+
+### Direct-source strategy descendants
+
+- [ ] **05B.1** — `3wBBvSB` Facing Bet -> Hero call -> Turn check: source Float50, including completed-vs-non-completed river-plan provenance.
+- [ ] **05B.2** — BTN Advanced CBet -> flop raise/XR -> Hero call -> aggressor checks Turn: preserve AIR/A-high source interval 25–40% (current DeepCrusher Turn33) and explicit non-transfer to existing FD/OESD.
+- [ ] **05B.3** — audit whether parent ID 3 (Flop Float -> raise -> call) has a direct source descendant or must remain P-only/fail-closed.
+
+### Six-max expansion / runtime
+
+- [ ] **05C** — ordinary SRP six-max Turn Float gaps after direct descendants are frozen.
+- [ ] **05D** — ISO Turn Float by exact caller/raiser provenance.
+- [ ] **05E** — plain 3BP and squeeze Turn Float, keeping opener/pre3bet/post3bet caller origins separate.
+- [ ] **05F** — clean supported 4BP Turn Float and explicit unsupported chronology boundary.
+- [ ] **05G** — current multiway and post-multiway-to-HU Turn Float policy.
+- [ ] **05H** — sizing, stack geometry, natural all-in equivalence and execution wrapper.
+- [ ] **05N** — closed Turn-Float action provenance for River Float routing.
+- [ ] **05T** — complete static/deterministic strategy/coverage/runtime/history regression.
+- [ ] **05V** — whole-bot/OpenHoldem replay certification.
+
+Gate05A contains **no Turn-Float hand-strength betting policy**. Strategy begins only at 05B.
+
+## Gate 06+ — remaining post-flop attack order
+
+1. River Float Bet
+2. Flop Donk Bet
+3. Turn Donk Bet
+4. River Donk Bet
+5. Turn Probe
+6. River Probe
+7. Delayed CBet / delayed-noaction families
 
 Every node is reviewed source-first, then adapted with T/A/P/X provenance and the same deal-size/HU-origin/action-history context contract.
 
