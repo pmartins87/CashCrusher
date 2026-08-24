@@ -6,13 +6,11 @@
 //   Route only a VALID executed flop+Turn CBet history to the exact River range
 //   family. Current HU/multiway state never erases Turn player-field provenance.
 //
-// Current implemented strategic child:
-//   * Gate03B source-anchored ordinary-SRP descendants only.
+// Current implemented strategic children:
+//   * Gate03B source-anchored ordinary-SRP descendants;
+//   * Gate03C P-heavy six-max SRP gaps, post-multiway HU and current-multiway.
 //
 // Deliberately fail-closed pending their own audits:
-//   * six-max SRP P-heavy range gaps;
-//   * Turn post-multiway-HU SRP;
-//   * Turn multiway -> River HU / still multiway SRP;
 //   * ISO;
 //   * plain 3BP;
 //   * squeeze;
@@ -26,10 +24,10 @@
 //   P = six-max exact-family decomposition.
 // ============================================================================
 
-// Purpose: ordinary SRP Turn families that still need six-max River expansion.
+// Purpose: ordinary SRP Turn families not matched by a direct source descendant.
 // IDs 1/3 include source descendants; 2/4 are P-heavy Turn range families; 7/8
-// preserve post-multiway origins. Exact source descendants are routed first.
-// Source/Provenance: P residual-family metadata.
+// preserve multiway-origin histories. Gate03C owns reviewed residuals.
+// Source/Provenance: P exact residual-family metadata.
 ##f$cc_river_srp_residual_context##
 f$cc_river_cbet_opportunity &&
 (f$cc_river_turn_family_id = 1 ||
@@ -41,32 +39,33 @@ f$cc_river_cbet_opportunity &&
 !f$cc_river_srp_source_covered
 
 // Purpose: current River descends from ISO Turn-CBet family.
-// Source/Provenance: P exact Gate02 family carry-forward; strategy pending.
+// Source/Provenance: P exact Gate02 family carry-forward; strategy pending Gate03D.
 ##f$cc_river_iso_context##
 f$cc_river_cbet_opportunity && f$cc_river_turn_family_id = 9
 
 // Purpose: current River descends from plain-3BP Turn-CBet family.
-// Source/Provenance: P exact Gate02 family carry-forward; strategy pending.
+// Source/Provenance: P exact Gate02 family carry-forward; strategy pending Gate03E.
 ##f$cc_river_plain3bp_context##
 f$cc_river_cbet_opportunity && f$cc_river_turn_family_id = 10
 
 // Purpose: current River descends from squeeze Turn-CBet family.
-// Source/Provenance: P exact Gate02 family carry-forward; strategy pending.
+// Source/Provenance: P exact Gate02 family carry-forward; strategy pending Gate03F.
 ##f$cc_river_squeeze_context##
 f$cc_river_cbet_opportunity && f$cc_river_turn_family_id = 11
 
 // Purpose: current River descends from clean supported HU 4BP Turn-CBet family.
-// Source/Provenance: P exact Gate02 family carry-forward; strategy pending.
+// Source/Provenance: P exact Gate02 family carry-forward; strategy pending Gate03G.
 ##f$cc_river_4bp_context##
 f$cc_river_cbet_opportunity && f$cc_river_turn_family_id = 12
 
 // Purpose: compact River-CBet family ID for logs/coverage.
-// IDs: 1 source-SRP; 2 residual SRP; 3 ISO; 4 plain3BP; 5 squeeze; 6 4BP;
+// IDs: 1 source-SRP; 2 P-heavy SRP; 3 ISO; 4 plain3BP; 5 squeeze; 6 4BP;
 // 0 unknown/invalid.
 // Source/Provenance: P engineering metadata; never strategy alone.
 ##f$cc_river_cbet_family_id##
 When !f$cc_river_cbet_opportunity Return 0 Force
 When f$cc_river_srp_source_covered Return 1 Force
+When f$cc_river_srp_gap_covered Return 2 Force
 When f$cc_river_srp_residual_context Return 2 Force
 When f$cc_river_iso_context Return 3 Force
 When f$cc_river_plain3bp_context Return 4 Force
@@ -81,6 +80,7 @@ When Others Return 0 Force
 ##f$cc_river_cbet_router##
 When !f$cc_river_cbet_opportunity Return false Force
 When f$cc_river_srp_source_covered Return f$cc_river_srp_source_action Force
+When f$cc_river_srp_gap_covered Return f$cc_river_srp_gap_action Force
 When Others Return false Force
 
 // Purpose: paired River strategic size-ID router.
@@ -88,13 +88,14 @@ When Others Return false Force
 ##f$cc_river_cbet_size_id##
 When !f$cc_river_cbet_opportunity Return 0 Force
 When f$cc_river_srp_source_covered Return f$cc_river_srp_source_size_id Force
+When f$cc_river_srp_gap_covered Return f$cc_river_srp_gap_size_id Force
 When Others Return 0 Force
 
 // Purpose: report whether current canonical River-CBet family has implemented
 // strategic coverage rather than merely a recognized topology.
 // Source/Provenance: P engineering coverage contract.
 ##f$cc_river_cbet_strategy_covered##
-f$cc_river_srp_source_covered
+f$cc_river_srp_source_covered || f$cc_river_srp_gap_covered
 
 // Purpose: positive action must own positive size; check/uncovered owns size 0.
 // Source/Provenance: P safety invariant.
@@ -104,5 +105,5 @@ When f$cc_river_cbet_router Return f$cc_river_cbet_size_id > 0 Force
 When Others Return false Force
 
 // ============================================================================
-// End first canonical River CBet router.
+// End current canonical River CBet router.
 // ============================================================================
