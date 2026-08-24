@@ -92,7 +92,10 @@ def run_sixmax_contract() -> None:
 
     mw_action = block(SRP, "f$cc_flop_float_srp_multiway_action")
     assert "f$cc_flop_float_air Return false Force" in mw_action
-    assert "nplayersplaying >= 4 && f$cc_flop_float_premium_draw && f$cc_real_combo_draw" in mw_action
+    # Player-count restriction is intentionally abstracted by a named helper.
+    # Test the semantic owner, not the implementation detail inside that helper.
+    assert "f$cc_flop_float_srp_fourplusway && f$cc_flop_float_premium_draw && f$cc_real_combo_draw" in mw_action
+    assert "!f$cc_flop_monotone Return true Force" in mw_action
 
 
 def run_other_pots_contract() -> None:
