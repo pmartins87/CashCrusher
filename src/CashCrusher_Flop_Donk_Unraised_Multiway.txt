@@ -1,0 +1,178 @@
+// ============================================================================
+// CashCrusher_Flop_Donk_Unraised_Multiway.txt
+// Gate 07H — residual unraised current-multiway Flop Donk
+// ============================================================================
+// Purpose:
+//   Cover limped/no-raise FIRST/MIDDLE states outside the exact BTN+both-blinds
+//   source/adapted families. With no PFA to defer to, selected equity/value leads
+//   are a professional-theory fill rather than a direct source transplant.
+//
+// Source boundary:
+//   A = Framework limped/no-initiative Donk ownership and source multiway-honesty
+//       / A-high / draw-check lessons.
+//   P = exact 3way/4+ action frequencies and six-max range adaptation.
+//   T = current field, Hero unraised role, board/hand/SPR mechanics.
+//
+// Safety:
+//   * no pure-air Donk;
+//   * 4+ way is materially tighter than 3way;
+//   * exact BTN+both-blinds Gate07B/C excluded;
+//   * deepest-effective SPR controls POT-size equivalence;
+//   * no BetMax, Turn-jam, raise-response or commitment rule.
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// FDUM.01 — residual unraised multiway ownership
+// -----------------------------------------------------------------------------
+
+// Purpose: residual unraised multiway FIRST/MIDDLE context not owned by the
+// exact `(BBorSB)v2pp` native or 4-6h BTN+both-blinds families.
+// Source/Provenance: T exact pot/role/field + P coverage boundary.
+##f$cc_flop_donk_unraised_mw_context##
+f$cc_flop_donk_opportunity &&
+f$cc_multiway &&
+f$cc_flop_entry_count >= 3 &&
+f$cc_pot_family_id = 1 &&
+f$cc_pf_raise_count = 0 &&
+(f$cc_pf_role_unraised_caller || f$cc_pf_role_bb_check) &&
+!f$cc_flop_donk_source_covered &&
+!f$cc_flop_donk_6max_covered
+
+// Purpose: exactly three players currently remain in residual unraised pot.
+// Source/Provenance: T current-player count + P separate policy parent.
+##f$cc_flop_donk_unraised_threeway_context##
+f$cc_flop_donk_unraised_mw_context && nplayersplaying = 3
+
+// Purpose: four or more players currently remain in residual unraised pot.
+// Source/Provenance: T current-player count + P tight multiway parent.
+##f$cc_flop_donk_unraised_fourplus_context##
+f$cc_flop_donk_unraised_mw_context && nplayersplaying >= 4
+
+// -----------------------------------------------------------------------------
+// FDUM.02 — strategy selectors
+// -----------------------------------------------------------------------------
+
+// Purpose: robust current value beginning at 2P+.
+// Source ancestry: source TP+ value lesson; P multiway residual tightens to 2P+.
+// Provenance: A/P over T contribution-aware hand class.
+##f$cc_flop_donk_unraised_robust_value##
+f$cc_flop_donk_unraised_mw_context && f$cc_hand_two_pair_or_better
+
+// Purpose: three-way selected overpair lead on low/mid favorable structures.
+// Source/Provenance: A source value/protection principle + P range adaptation.
+##f$cc_flop_donk_unraised_threeway_overpair_lead##
+f$cc_flop_donk_unraised_threeway_context &&
+f$cc_cbet_flop_overpair &&
+!f$cc_flop_ahigh &&
+!f$cc_flop_donk_source_two_plus_bw &&
+f$cc_flop_donk_6max_blind_friendly_parent
+
+// Purpose: three-way selected strong-TP lead; weaker top pair remains check.
+// Source/Provenance: A source protection lesson + P tighter six-max threshold.
+##f$cc_flop_donk_unraised_threeway_strongtp_lead##
+f$cc_flop_donk_unraised_threeway_context &&
+f$cc_cbet_flop_strong_top_pair &&
+!f$cc_flop_ahigh &&
+!f$cc_flop_donk_source_two_plus_bw &&
+f$cc_flop_donk_6max_blind_friendly_parent
+
+// Purpose: source-descended draw-check board parent reused as an A constraint.
+// Source/Provenance: A exact A-high/completed/2+BW lesson.
+##f$cc_flop_donk_unraised_draw_check_parent##
+f$cc_flop_ahigh ||
+f$cc_flop_donk_source_completed ||
+f$cc_flop_donk_source_two_plus_bw
+
+// Purpose: selected three-way premium-draw lead in no-PFA pot.
+// Source/Provenance: A source equity-pressure principle + P residual-unraised fill.
+##f$cc_flop_donk_unraised_threeway_draw_lead##
+f$cc_flop_donk_unraised_threeway_context &&
+f$cc_cbet_flop_premium_draw &&
+!f$cc_flop_donk_unraised_draw_check_parent &&
+f$cc_flop_donk_6max_blind_friendly_parent
+
+// Purpose: four-plus-way no-made pressure requires nut/combo draw and favorable
+// low/mid board. Ordinary draws are excluded.
+// Source/Provenance: P conservative 4+ multiway fill constrained by A source lesson.
+##f$cc_flop_donk_unraised_fourplus_draw_lead##
+f$cc_flop_donk_unraised_fourplus_context &&
+f$cc_nut_or_combo_draw &&
+f$cc_hand_no_made &&
+!f$cc_flop_donk_unraised_draw_check_parent &&
+f$cc_flop_donk_6max_aggressive_lowmid_parent
+
+// Purpose: source-descended draw-heavy low-SPR sizing candidate using deepest
+// all-live effective relationship.
+// Source/Provenance: A source <=1.25 threshold + T corrected MW geometry.
+##f$cc_flop_donk_unraised_drawheavy_low_spr##
+f$cc_flop_donk_unraised_mw_context &&
+f$cc_mw_spr_bounds_valid &&
+f$cc_flop_donk_source_draw_heavy &&
+f$cc_mw_spr_deepest_round_start >= 0 &&
+f$cc_mw_spr_deepest_round_start <= 1.25
+
+// -----------------------------------------------------------------------------
+// FDUM.03 — action policy
+// -----------------------------------------------------------------------------
+
+// Purpose: three-way residual unraised action.
+// Source/Provenance: P professional no-PFA fill anchored by A source constraints.
+##f$cc_flop_donk_unraised_threeway_action##
+When !f$cc_flop_donk_unraised_threeway_context Return false Force
+When f$cc_flop_donk_unraised_robust_value Return true Force
+When f$cc_flop_donk_unraised_threeway_overpair_lead Return true Force
+When f$cc_flop_donk_unraised_threeway_strongtp_lead Return true Force
+When f$cc_hand_top_pair_or_better Return false Force
+When f$cc_hand_middle_or_bottom_pair Return false Force
+When f$cc_flop_donk_unraised_threeway_draw_lead Return true Force
+When f$cc_real_frontdoor_draw Return false Force
+When Others Return false Force
+
+// Purpose: four-plus residual unraised action.
+// Source/Provenance: P tight multiway value/equity-only baseline.
+##f$cc_flop_donk_unraised_fourplus_action##
+When !f$cc_flop_donk_unraised_fourplus_context Return false Force
+When f$cc_flop_donk_unraised_robust_value Return true Force
+When f$cc_hand_top_pair_or_better Return false Force
+When f$cc_hand_middle_or_bottom_pair Return false Force
+When f$cc_flop_donk_unraised_fourplus_draw_lead Return true Force
+When f$cc_real_frontdoor_draw Return false Force
+When Others Return false Force
+
+// Purpose: exact field-count action dispatcher.
+// Source/Provenance: P parent routing.
+##f$cc_flop_donk_unraised_mw_action##
+When f$cc_flop_donk_unraised_threeway_context Return f$cc_flop_donk_unraised_threeway_action Force
+When f$cc_flop_donk_unraised_fourplus_context Return f$cc_flop_donk_unraised_fourplus_action Force
+When Others Return false Force
+
+// -----------------------------------------------------------------------------
+// FDUM.04 — strategic sizing
+// -----------------------------------------------------------------------------
+
+// Purpose: 50/75/POT adapted sizing. POT survives only for robust 2P+ whose
+// requested source-descended size is justified by draw-heavy deepest SPR<=1.25.
+// Source/Provenance: A source sizing ancestry + P cash restriction.
+##f$cc_flop_donk_unraised_mw_size_id##
+When !f$cc_flop_donk_unraised_mw_action Return 0 Force
+When f$cc_flop_donk_unraised_robust_value && f$cc_flop_donk_unraised_drawheavy_low_spr Return f$cc_flop_donk_size_100_id Force
+When f$cc_flop_donk_unraised_robust_value Return f$cc_flop_donk_size_75_id Force
+When f$cc_flop_donk_unraised_threeway_overpair_lead || f$cc_flop_donk_unraised_threeway_strongtp_lead Return f$cc_flop_donk_size_50_id Force
+When f$cc_flop_donk_unraised_threeway_draw_lead || f$cc_flop_donk_unraised_fourplus_draw_lead Return f$cc_flop_donk_size_75_id Force
+When Others Return 0 Force
+
+// Purpose: reviewed residual unraised multiway coverage.
+// Source/Provenance: P coverage contract.
+##f$cc_flop_donk_unraised_mw_covered##
+f$cc_flop_donk_unraised_threeway_context || f$cc_flop_donk_unraised_fourplus_context
+
+// Purpose: action/size consistency.
+// Source/Provenance: P engineering invariant.
+##f$cc_flop_donk_unraised_mw_size_consistent##
+When !f$cc_flop_donk_unraised_mw_action Return f$cc_flop_donk_unraised_mw_size_id = 0 Force
+When f$cc_flop_donk_unraised_mw_action Return f$cc_flop_donk_unraised_mw_size_id >= 1 && f$cc_flop_donk_unraised_mw_size_id <= 3 Force
+When Others Return false Force
+
+// ============================================================================
+// End Gate07H residual unraised multiway Flop Donk.
+// ============================================================================
