@@ -1,0 +1,60 @@
+// ============================================================================
+// CashCrusher_Flop_Donk.txt
+// Gate 07 — canonical Flop Donk routing contract
+// ============================================================================
+// Purpose:
+//   Route a valid first-action OOP/non-initiative flop lead only to explicitly
+//   reviewed Donk families.  Broad legacy router membership never grants strategy.
+//
+// Current implemented child:
+//   1 = native three-handed `(BBorSB)v2pp` direct/high-ancestry source strategy.
+//
+// Future children remain fail-closed:
+//   4-6h BTN+both-blinds adaptation, HU, other multiway, ISO, 3BP/squeeze, 4BP+.
+//
+// Source/Provenance:
+//   T/A = Gate07A ownership + Gate07B direct source strategy.
+//   P = explicit coverage/fail-closed router metadata.
+// ============================================================================
+
+// Purpose: compact reviewed Flop-Donk family ID.
+// Source/Provenance: P routing metadata over A/T source coverage.
+##f$cc_flop_donk_family_id##
+When !f$cc_flop_donk_opportunity Return 0 Force
+When f$cc_flop_donk_source_covered Return 1 Force
+When Others Return 0 Force
+
+// Purpose: canonical Flop Donk action router.
+// Source/Provenance: A/P source-first exact-family router; unknown ->check.
+##f$cc_flop_donk_router##
+When !f$cc_flop_donk_opportunity Return false Force
+When f$cc_flop_donk_source_covered Return f$cc_flop_donk_source_action Force
+When Others Return false Force
+
+// Purpose: paired strategic size-ID router.
+// Source/Provenance: A/P exact owner; check/uncovered ->0.
+##f$cc_flop_donk_size_id##
+When !f$cc_flop_donk_opportunity Return 0 Force
+When f$cc_flop_donk_source_covered Return f$cc_flop_donk_source_size_id Force
+When Others Return 0 Force
+
+// Purpose: current Flop Donk state has a reviewed policy, including explicit check.
+// Source/Provenance: P coverage contract.
+##f$cc_flop_donk_strategy_covered##
+f$cc_flop_donk_source_covered
+
+// Purpose: action/size integrity.
+// Source/Provenance: P safety invariant.
+##f$cc_flop_donk_size_consistent##
+When !f$cc_flop_donk_router Return f$cc_flop_donk_size_id = 0 Force
+When f$cc_flop_donk_router Return f$cc_flop_donk_size_id >= 1 && f$cc_flop_donk_size_id <= 3 Force
+When Others Return false Force
+
+// Purpose: visible Donk opportunity not yet reviewed by any child.
+// Source/Provenance: P fail-closed audit metadata.
+##f$cc_flop_donk_uncovered_context##
+f$cc_flop_donk_opportunity && !f$cc_flop_donk_strategy_covered
+
+// ============================================================================
+// End current Flop Donk router.
+// ============================================================================
