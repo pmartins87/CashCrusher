@@ -1,0 +1,95 @@
+// ============================================================================
+// CashCrusher_Flop_Donk_Context.txt
+// Gate 07A — canonical Flop Donk ownership + direct source topology
+// ============================================================================
+// Purpose:
+//   Define a first-action flop lead by a non-initiative Hero and isolate the
+//   literal three-handed `(BBorSB)v2pp` source shapes before any strategy fires.
+//
+// Source/Provenance:
+//   T = current street/action/player masks + persisted preflop call/raise history.
+//   A = DeepCrusher no-initiative FIRST/MIDDLE Donk router ownership.
+//   P = exact source-domain narrowing and six-max ancestry separation.
+//
+// Safety:
+//   This context file contains no betting policy.  Broad OOP/no-initiative router
+//   ancestry is not enough to consume the `(BBorSB)v2pp` source strategy.
+// ============================================================================
+
+// Purpose: Hero has not yet acted on flop; checks count as actions.
+// Source/Provenance: T OpenPPL action-history semantics.
+##f$cc_flop_donk_first_hero_action##
+IsFlop && BotsActionsOnThisRoundIncludingChecks = 0
+
+// Purpose: generic initial Flop Donk opportunity: first Hero action, nothing to
+// call, Hero not exact LAST, and Hero is not the proven final preflop aggressor.
+// Source: DeepCrusher no-initiative FIRST/MIDDLE router sends no-action to Donk.
+// Provenance: A/T ownership guard; exact strategy remains child-specific.
+// Safety: final preflop aggressor belongs to CBet ownership, not Donk.
+##f$cc_flop_donk_opportunity##
+When !IsFlop Return false Force
+When !f$cc_context_valid Return false Force
+When balance <= 0 Return false Force
+When !f$cc_flop_donk_first_hero_action Return false Force
+When AmountToCall > 0 Return false Force
+When f$cc_relpos_id = 3 Return false Force
+When f$cc_pf_rt_final_aggressor_is_hero Return false Force
+When Others Return true Force
+
+// Purpose: source strategic geometry: Hero is SB or BB and current opponents are
+// exactly BTN plus the other blind.
+// Source: dedicated Starting Strategy `(BBorSB)v2pp`.
+// Provenance: T exact canonical live mask + A source scenario translation.
+##f$cc_flop_donk_btn_both_blinds_live_shape##
+When !f$cc_flop_donk_opportunity Return false Force
+When nplayersplaying != 3 Return false Force
+When f$cc_flop_entry_count != 3 Return false Force
+When f$cc_hero_pos_id = 5 && f$cc_opp_live_mask = 40 Return true Force
+When f$cc_hero_pos_id = 6 && f$cc_opp_live_mask = 24 Return true Force
+When Others Return false Force
+
+// Purpose: exact source preflop shape #1: BTN limp, SB call, BB check.
+// Source: Starting Strategy range description.
+// Provenance: T/A aggregate no-raise/call evidence in the native three-handed deal.
+// Safety: this proves only the explicitly described shape, not every limped pot.
+##f$cc_flop_donk_source_btn_limp_shape##
+f$cc_flop_donk_btn_both_blinds_live_shape &&
+f$cc_deal_size = 3 &&
+f$cc_pot_family_id = 1 &&
+f$cc_pf_raise_count = 0 &&
+f$cc_pf_call_btn &&
+f$cc_pf_call_sb
+
+// Purpose: exact source preflop shape #2: BTN raises, SB calls, BB calls.
+// Source: Starting Strategy range description.
+// Provenance: T/A ordinary-SRP single-raiser/call evidence in native 3-handed deal.
+##f$cc_flop_donk_source_btn_raise_shape##
+f$cc_flop_donk_btn_both_blinds_live_shape &&
+f$cc_deal_size = 3 &&
+f$cc_pot_family_id = 2 &&
+f$cc_pf_one_raise_ordinary_srp &&
+f$cc_pf_single_raiser_pos_id = 4 &&
+f$cc_pf_call_sb &&
+f$cc_pf_call_bb
+
+// Purpose: direct/high-ancestry Starting Strategy domain for Gate07B.
+// Source/Provenance: A exact union of the two explicit source range descriptions.
+##f$cc_flop_donk_source_native_context##
+f$cc_flop_donk_source_btn_limp_shape || f$cc_flop_donk_source_btn_raise_shape
+
+// Purpose: same BTN+both-blinds current shape reached from a 4-6 handed deal.
+// Source: strategic shell resembles `(BBorSB)v2pp`, but preflop ranges differ.
+// Provenance: P/A future six-max adaptation marker, NOT direct source coverage.
+##f$cc_flop_donk_sixmax_btn_blinds_ancestry_context##
+f$cc_flop_donk_btn_both_blinds_live_shape &&
+f$cc_deal_size >= 4 && f$cc_deal_size <= 6
+
+// Purpose: visible source-shaped context that is not the native three-player
+// source domain and therefore still requires professional adaptation.
+// Source/Provenance: P audit metadata.
+##f$cc_flop_donk_source_shape_but_not_native##
+f$cc_flop_donk_sixmax_btn_blinds_ancestry_context && !f$cc_flop_donk_source_native_context
+
+// ============================================================================
+// End Gate07A ownership/source topology.
+// ============================================================================
