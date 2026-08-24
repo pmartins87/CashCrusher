@@ -26,8 +26,19 @@ def value_source_contract() -> None:
     assert "f$cc_river_top_pair" in tp
     assert "f$cc_number_better_kickers <= 4" in tp
 
+    domain = block(POL, "f$cc_river_float_source_general_domain_supported")
+    for token in (
+        "f$cc_river_float_opportunity",
+        "f$cc_flop_entry_count >= 2",
+        "f$cc_flop_entry_count <= 3",
+        "nplayersplaying >= 2",
+        "nplayersplaying <= 3",
+    ):
+        assert token in domain
+
     action = block(POL, "f$cc_river_float_source_general_value_action")
     for token in (
+        "!f$cc_river_float_source_general_domain_supported Return false Force",
         "f$cc_river_float_source_literal_nuts Return true Force",
         "f$cc_river_two_pair_plus Return true Force",
         "f$cc_river_overpair Return true Force",
