@@ -8,293 +8,204 @@ Working branch: `gate-00-context-engine`
 
 ## Project contract
 
-- Target: six-max cash post-flop AI in OpenPPL/OpenHoldem.
-- Runtime supports hands dealt 2h, 3h, 4h, 5h or 6h as seats empty/sit out.
-- Preflop is used to reconstruct post-flop context/ranges, not to decide current project preflop strategy.
-- Strategic provenance is mandatory: T / A / P / X.
-- Source-derived and professional-theory rules remain explicitly distinguishable.
-- Unknown/unsupported strategic context fails closed.
-- OpenPPL strategy code uses flat complete `WHEN` rules; indentation is never logical scope.
-- Every `f$cc_*` function requires nearby Source/Provenance documentation in CI.
+- Target: six-max cash post-flop AI in OpenPPL/OpenHoldem, with 2–6 dealt-player runtime support.
+- Preflop is reconstructed to identify post-flop pot/range/history context; this project is not currently replacing the preflop strategy.
+- Strategic provenance is mandatory: **T / A / P / X**.
+- Source-derived and professional-theory rules remain visibly distinguishable.
+- Unsupported strategy fails closed instead of leaking from neighboring pot families.
+- OpenPPL code uses flat complete `WHEN` rules; indentation is never logical scope.
+- Positive betting decisions own only that street action; later barrels, response to raises and stackoff are separate owners.
 
-## Stack-depth migration rule
+## Binding stack-depth migration rule
 
 DeepCrusher short-stack logic is a **review flag, not an automatic deletion/zeroing rule**.
 
-For every stack-sensitive inherited rule:
+For each stack-sensitive inherited rule:
 
-- do not assume it transfers unchanged to ordinary 100bb cash;
-- do not assume it becomes invalid merely because CashCrusher starts deeper;
-- review exact pot/range/board/action/effective-stack/SPR context;
-- classify locally as T, A, P or X.
+- do not assume it transfers unchanged to 100bb cash;
+- do not assume it becomes invalid merely because the target starts deeper;
+- review the exact pot/range/board/action/effective-stack/SPR node;
+- retain, adapt or reject locally with T/A/P/X provenance.
 
-This applies to TP+/draw commitment lines, `f$Raise_Committed`, `f$hand_StackOffDraws`, `f$allin_on_betsize_balance_ratio`, `BetMax` and related mechanisms.
+This applies to TP+/draw commitment, `f$Raise_Committed`, `f$hand_StackOffDraws`, `f$allin_on_betsize_balance_ratio`, historical ~50/55/60% thresholds, `BetMax` and related mechanisms.
 
-## Context / stack foundation
+## Foundation — Gate00
 
-Gate00 design/code is implemented. Release certification still needs OpenHoldem parser/runtime fixtures.
+Implemented mechanically:
 
-Frozen rules:
+- dynamic 2–6 handed deal size;
+- true-HU, preflop-reduced HU and postflop-reduced HU distinction;
+- canonical UTG/HJ/CO/BTN/SB/BB positions;
+- flop-entry and current-live masks;
+- exact HU Villain identity/matchup;
+- pot-family and Hero-role taxonomy;
+- ordinary SRP / ISO / plain3BP / squeeze / clean 4BP chronology helpers;
+- final-aggressor reconstruction using stable persisted history;
+- shallowest + deepest multiway effective geometry;
+- context/history consistency guards.
 
-- HU uses exact Hero-v-Villain effective stack;
-- multiway preserves both shallowest and deepest effective relationships;
-- a short sidepot player never collapses the whole multiway decision into short-stack policy;
-- true-HU deal, preflop-reduced HU and postflop-reduced HU remain distinct range origins;
-- pot family, Hero role, exact position, opponent provenance and action history are first-class routing inputs.
+HU uses exact effective stack. Multiway keeps shallowest and deepest relationships separately; a short sidepot player never turns the whole decision into short-stack strategy.
 
-## Flop CBet — Gate01
+OpenHoldem parser/runtime certification for Gate00 is still pending.
 
-Strategic baseline is implemented for ordinary SRP, HU/multiway ISO, plain 3BP+squeeze, true-threeway and 4/5/6-way SRP, and clean supported HU 4BP.
+## Gate01 — Flop CBet
 
-Still fail-closed: multiway 4BP, unresolved/reversed/backraise/limp-reraise 4BP chronology and 5bet+.
+Static/deterministic baseline implemented for:
 
-Execution/history rules:
-
-- local `BetMax` only for natural/mechanical equivalence;
-- historical ~50% effective / ~60% Hero-stack promotion is diagnostic, not generic cash strategy;
-- closed round-2 history distinguishes actual CBet, check-through, check-call/XR and CBet-raised histories;
-- pre-action plan markers never prove execution.
-
-Whole-bot `f$flop` / `f$BestBetsize` composition and replay certification remain pending.
-
-## Turn CBet — Gate02
-
-Strategic coverage is implemented for all currently supported Flop-CBet parents:
-
-- source-anchored true/reduced HU ordinary SRP;
-- six-max EP/MP/CO SRP range gaps;
-- flop multiway -> turn HU and turn-still-multiway;
-- ISO;
+- ordinary HU/reduced-HU SRP IP/OOP;
+- true-HU limp-raised PFA;
+- HU/multiway ISO;
 - plain 3BP;
 - squeeze;
+- true-threeway and exact 4/5/6-way ordinary SRP;
 - clean supported HU 4BP.
 
-Runtime size palette: **25 / 33 / 40 / 50 / 62.5 / 75 / 100%**.
+Still fail-closed: multiway 4BP, unresolved/reversed/backraise/limp-reraise 4BP and 5bet+.
 
-Natural `BetMax` conversion is limited to the reviewed requested size already reaching Hero stack, exact HU effective stack, or deepest/all-live multiway effective relation. A shortest-only sidepot does not promote the action.
+Local `BetMax` is only natural/mechanical equivalence. Historical near-all-in thresholds are retained as diagnostics/exact-node review evidence. Closed round-2 history distinguishes actual CBet from check and later flop responses.
 
-### Gate02N complete
+## Gate02 — Turn CBet
 
-Closed round-3 history now proves what actually happened on Turn before River routing:
+Static/deterministic coverage implemented across all currently supported Flop-CBet parents, including ordinary SRP, post-multiway HU/current multiway, ISO, plain3BP, squeeze and clean HU4BP.
 
-- standard one-size Turn CBet;
-- actual check-through;
-- check-call / check-aggression;
-- CBet -> raise -> call;
-- CBet -> Hero re-aggression;
-- direct all-in versus sized execution;
-- plan-v-runtime mismatch;
-- exact Turn family/hand/runout/player-count/live-opponent snapshot.
+Runtime palette: **25 / 33 / 40 / 50 / 62.5 / 75 / 100%**.
 
-River CBet consumes actual executed Turn history, not `f$cc_turn_cbet_router = true` alone.
+Closed round-3 history proves actual Turn bet/check/call/re-aggression/direct-all-in before River routing.
 
-## River CBet — Gate03 complete at static/deterministic level
+## Gate03 — River CBet
 
-Implemented:
+Complete at static/deterministic level for the currently supported SRP/ISO/plain3BP/squeeze/clean-HU4BP domain.
 
-- source-anchored ordinary SRP descendants;
-- P-heavy six-max SRP gaps;
-- post-multiway HU and current-multiway river states;
-- ISO with limper/coldcaller provenance;
-- plain 3BP with opener/coldcaller provenance;
-- squeeze with opener/pre-squeeze/post-squeeze caller provenance;
-- clean supported HU 4BP.
+Runtime palette: **25 / 33 / 50 / 75 / 100%** with natural Hero/HU/deepest-all-live `BetMax` equivalence only.
 
-Runtime size palette: **25 / 33 / 50 / 75 / 100%**.
+## Gate04 — Flop Float
 
-Natural all-in equivalence follows the same Hero/HU/deepest-multiway rule. TP/OP in naturally low-SPR 4BP can remain aggressive where the exact node supports it, but there is no generic `TP+ -> stackoff` rule.
+Complete at static/deterministic level.
 
-River source, six-max gap, other-pot, coverage and runtime contracts remain green in the combined CI suite.
+Canonical ownership is first flop action, `AmountToCall=0`, exact LAST/IP, preflop caller/non-initiator, with the expected PFA having skipped CBet.
 
-## Flop Float — Gate04 complete at static/deterministic level
+Coverage includes source-anchored HUSB / `3wBBvSB`, six-max ordinary SRP, multiway, ISO, plain3BP/squeeze and one conservative clean caller-IP 4BP topology.
 
-### Canonical ownership
+Gate04R repaired pure-coldcaller 3BP reachability using `lastraised1` final-aggressor reconstruction.
 
-Flop Float has a deliberately narrow meaning:
+Closed history proves actual Float, check-back, raise-call, re-aggression and runtime drift.
 
-- Hero is a preflop caller/non-initiator;
-- no bet faces Hero;
-- it is Hero's first flop action;
-- Hero is exact **LAST/IP** in the reviewed baseline;
-- expected preflop aggressor has skipped CBet.
+## Gate05 — Turn Float
 
-`BotsActionsOnThisRoundIncludingChecks = 0` is used so an earlier Hero check cannot be mislabeled as an initial Float. Relative `MIDDLE` is explicitly excluded because a live player remains behind.
+Complete at static/deterministic level.
 
-### Implemented descendants
+Closed flop parents distinguish:
 
-Direct/high-ancestry source descendants:
+1. call versus the actual final-preflop-aggressor flop bet;
+2. CBet -> raise/XR -> Hero call;
+3. Flop Float -> raise/XR -> Hero call;
+4. narrow source-repaired unraised `3wBBvSB` parent.
 
-1. true-HU HUSB: SB/Button limp-call versus BB raise, BB checks;
-2. reduced-HU BB caller IP versus SB PFA (`3wBBvSB`).
+Coverage spans ordinary SRP, post-multiway/current multiway, ISO, plain3BP, squeeze and clean HU4BP. Runtime palette is **25 / 33 / 50 / 75 / 100%**. Closed Turn-Float history provides the safe River-parent bridge.
 
-Six-max/P-heavy fills:
+Canonical audit: `docs/audits/GATE_05_TURN_FLOAT_AUDIT.md`.
 
-- nonblind ordinary-SRP caller IP versus earlier opener;
-- exact-LAST multiway ordinary SRP checked-to stab;
-- ISO, preserving original limper versus post-raise coldcaller;
-- plain 3BP and squeeze, preserving caller origin;
-- one conservative clean caller-IP 4BP topology: opener -> Hero 3bet -> opener 4bet -> Hero call -> opener checks.
+## Gate06 — River Float
 
-Multiway Float is substantially tighter: pure-air baseline disappears and 4+ way generally requires robust value or combo-draw quality.
+**Complete at static/deterministic level.**
 
-Runtime size palette: **25 / 33 / 50 / 75 / 100%**. Natural all-in equivalence can promote only when the selected size already reaches Hero stack, exact HU effective stack, or deepest/all-live multiway effective relation.
+Major ownership correction: the generic/source River-Float value ladder now has an explicit pot-domain firewall, so it cannot leak into unraised, 5bet+ or unresolved 4BP merely because the current river is HU/3-handed.
 
-Closed round-2 Float history distinguishes actual bet, check-back, Float->raise->call, re-aggression, direct all-in, plan/runtime drift, family, hand, texture and live-field snapshot.
+Implemented families:
 
-## Gate04R — 3BP pure-coldcaller chronology repair
+- source/high-ancestry River Float descendants;
+- ordinary SRP six-max gaps;
+- ISO with caller provenance;
+- plain3BP;
+- squeeze;
+- clean supported HU4BP.
 
-Gate05A exposed a real reachability defect in the earlier Gate04E 3BP/squeeze context.
+Runtime palette: **25 / 33 / 50 / 75 / 100%**. Natural all-in equivalence follows Hero / exact HU / deepest-all-live multiway geometry. A shortest-only sidepot does not promote the action.
 
-The older `f$cc_pf_3bet_first_raiser_pos_id` / `f$cc_pf_3bet_final_raiser_pos_id` chain depends on `f$cc_pf_other_raiser_pos_id`, and that helper requires `f$cc_pf_hero_ever_raised`. Therefore Hero with `f$cc_pf_role_cold_call_3bet` could not obtain a final-3bettor position from that path. Several pure-coldcaller Flop-Float branches had valid strategy bodies but unreachable chronology proof.
+Canonical audit: `docs/audits/GATE_06_RIVER_FLOAT_AUDIT.md`.
 
-The repair is now implemented through `CashCrusher_FinalAggressor_Context.txt`:
+## Gate07 — Flop Donk
 
-- actual final preflop aggressor comes from stable `lastraised1`;
-- `raisbits1` independently validates that chair as a raiser;
-- the other unique raiser reconstructs the opener in supported two-raise/two-raiser histories;
-- first-orbit order distinguishes plain 3BP versus squeeze;
-- Hero is classified as opener-call, pre-3bet coldcaller, or post-3bet coldcaller without requiring Hero to have raised.
+**Complete at static/deterministic level for the supported chronology domain.**
 
-`CashCrusher_Flop_Float_3BP_CallerRepair.txt` applies this stronger evidence only to the previously unreachable pure-coldcaller descendants. Their poker policy/sizing was not broadened; Gate04E's conservative action maps were preserved.
+### Source boundary
 
-The canonical Flop Float router now combines the original and repaired coverage while keeping plain3BP/squeeze as the same strategic family IDs.
+The dedicated positive source belongs to `(BBorSB)v2pp` only:
 
-## Turn Float — Gate05 complete at static/deterministic level
+- BTN limp -> SB call -> BB check;
+- BTN raise -> SB call -> BB call.
 
-### Canonical ownership and history
+Broad legacy Donk-router membership does not grant that strategy to neighboring pot/range families.
 
-Turn Float means a checked-to-Turn no-initiative opportunity after Villain owned the relevant previous aggression. It is not equivalent to “Hero Float-bet flop, therefore bet turn again.”
+Direct source retains:
 
-Three canonical closed-flop parents are implemented:
+- TP/OP/2P+ non-Axx leads with 50/75/POT sizing by board structure;
+- draw-heavy/completed POT only when corrected **deepest/all-live SPR <=1.25**;
+- <=7 lower-pair Donk50 only on non-completed boards;
+- selected draw Donk75, with Axx/completed/2+BW check precedence;
+- no generic air/backdoor Donk.
 
-1. **Called final-preflop-aggressor flop bet** — Hero was a supported preflop caller, called exactly one clean flop bet, and the actual flop aggressor equals the actual final preflop aggressor.
-2. **CBet -> raise/XR -> Hero call** — Villain ended flop as aggressor and then gives Hero a checked-to Turn opportunity.
-3. **Flop Float -> later raise/XR -> Hero call** — separate selected-range history, never merged with parent 1 or 2.
+The <=1.25 source threshold was reviewed and retained rather than automatically deleted as short-stack logic. The future Turn-jam plan remains outside Flop ownership.
 
-A narrow source repair also supports the explicit unraised `3wBBvSB` line:
+### Reviewed Flop Donk families
 
-`SB limp -> BB check -> SB bet flop -> BB call -> SB check Turn`.
+1. native three-handed `(BBorSB)v2pp` source strategy;
+2. 4–6h BTN+both-blinds A/P adaptation;
+3. HU ordinary-SRP caller reviewed CHECK baseline;
+4. residual current-multiway ordinary-SRP caller CHECK baseline;
+5. proven ISO OOP caller CHECK baseline;
+6. supported plain3BP/squeeze OOP caller CHECK baseline;
+7. residual unraised current-multiway professional value/equity lead policy;
+8. clean caller-side HU4BP reviewed CHECK baseline.
 
-The repair does not create a generic called-bettor fallback.
+Still fail-closed: multiway/unresolved 4BP, 5bet+ and reversed/backraise/limp-reraise histories.
 
-Before Turn Float can act:
+### Runtime / history
 
-- it must be Turn;
-- context must be valid and Hero must have chips;
-- it must be Hero's first Turn action, including checks;
-- `AmountToCall = 0`;
-- Hero must be exact LAST;
-- HU requires Hero IP;
-- the relevant parent/source-repair history must be proven and internally consistent.
+Runtime palette: **50 / 75 / 100%** via native `BetHalfPot`, `BetThreeFourthPot`, `BetPot`.
 
-HU-from-HU-flop, post-multiway-to-HU and current-multiway origins remain distinct.
+Local `BetMax` is allowed only when the requested Donk already reaches Hero stack, exact HU effective stack or deepest/all-live multiway effective stack. Shortest-only sidepot reach cannot promote the whole action.
 
-### Direct/high-ancestry source decisions
+Closed round-2 Donk history now records actual initial Donk versus initial check, direct-all-in versus sized execution, Donk->raise->call, re-aggression, exact family, direct-source value/low-pair/draw subtype, player count/live mask and plan/runtime drift.
 
-`3wBBvSB` Facing Bet -> call -> Turn check preserves the explicit LP/SRP source behavior:
+Future Turn Donk must consume CLOSED history rather than a pre-action Donk intention.
 
-- current no-made real draw -> Float50;
-- current no-made air/high-card -> Float50;
-- broad source `turn_Completed` -> barrel-river plan;
-- otherwise -> give-up-river plan.
+Canonical audit: `docs/audits/GATE_07_FLOP_DONK_AUDIT.md`.
 
-BTN Advanced CBet -> flop XR/raise -> call -> Turn check preserves:
+## Latest validation
 
-- AIR/A-high-like miss -> 33% inside the source 25–40% interval;
-- still-live FD/OESD/Gutshot+ does **not** inherit the AIR instruction;
-- audited current-DeepCrusher made improvement -> 50%, explicitly classified as A rather than primary-source exact.
+GitHub Actions **run #748** completed **SUCCESS** on commit `9f77647687af6d45165ebe137c064c3e00c40c56`.
 
-The `3wBTNvSB` no-made check philosophy remains an explicit negative source lock and cannot be overwritten by a P bluff rule.
+The combined job passed 49 numbered lint/strategy steps, including all prior CBet/Float gates plus:
 
-Source coverage is branch-level. A matchup having source ancestry does not mean every current hand class is source-decided.
+- direct-source Flop Donk;
+- 4–6h BTN+blinds adaptation;
+- HU/MW-SRP/ISO/plain3BP+squeeze reviewed baselines;
+- residual unraised multiway Donk policy;
+- clean HU caller-side 4BP baseline;
+- Flop Donk runtime sizing/all-in equivalence;
+- closed Flop Donk action-history contract.
 
-### Six-max/P-heavy expansion
-
-Implemented separate owners for:
-
-- ordinary SRP simple flop-call -> missed 2Bar;
-- ordinary SRP CBet-XR-call;
-- ordinary SRP FlopFloat-XR-call;
-- ordinary SRP flop-multiway -> Turn-HU;
-- ordinary SRP current multiway;
-- ISO with original-limper versus post-raise-coldcaller provenance;
-- true-HU limp-raised ancestry;
-- plain 3BP with opener/pre3bet/post3bet caller origin retained;
-- squeeze kept separate from plain 3BP;
-- clean supported HU 4BP.
-
-Current-multiway policy is sharply tightened. At 4+ players pure air is absent; positive no-made action is essentially restricted to the strongest reviewed combo-draw class. Multiway low-SPR exceptions use **deepest/all-live effective SPR**, not the short sidepot player.
-
-### Deep-stack commitment boundary
-
-Gate05 does not recreate DeepCrusher's short-stack `TP+ -> stackoff` behavior.
-
-- TP and OP remain one-pair value/SDV classes, not global stack-off classes.
-- 2P+ is re-evaluated against completed/dynamic Turn topology rather than treated as an unconditional shove class.
-- low SPR can modify an exact node but is never a standalone commitment action.
-- strategy files contain no `f$Raise_Committed` or `f$hand_StackOffDraws` action implication.
-- strategic policy files do not directly issue `BetMax`.
-
-Runtime palette is **25 / 33 / 50 / 75 / 100%**.
-
-Natural `BetMax` conversion is only mechanical: the already selected size must reach Hero stack, exact HU effective stack, or deepest/all-live multiway effective relation. Reaching only a shallow sidepot stack does not promote the whole action.
-
-Historical 50/55/60% near-all-in logic remains diagnostic only.
-
-### Gate05N closed execution history
-
-Closed Turn-Float history proves what actually happened before River Float routing:
-
-- actual initial Float bet;
-- actual check-back;
-- sized execution versus direct all-in;
-- Float -> raise -> Hero call;
-- Float -> Hero re-aggression;
-- final aggressor identity;
-- exact parent/family/state snapshot;
-- plan-v-runtime mismatch;
-- source give-up-river versus barrel-river plan only after valid executed history.
-
-`f$cc_hist_river_float_standard_parent_valid` is now the safe bridge for Gate06 River Float. Pre-action `user_*` markers alone never prove execution.
-
-The canonical audit is `docs/audits/GATE_05_TURN_FLOAT_AUDIT.md`.
-
-## Validation
-
-GitHub Actions **run #570** completed successfully on the Gate05 audit head. The strategy-closing run **#568** was also green after the final runtime-test correction.
-
-The combined suite now passes through:
-
-- global dependency / flat-WHEN / provenance / safety lint;
-- all Flop/Turn/River CBet tests;
-- all Flop Float strategy/coverage/runtime/history tests;
-- `lastraised1` final-aggressor + Gate04R caller-side 3BP repair;
-- Gate05A Turn-Float history/opportunity;
-- Gate05B direct-source strategy;
-- Gate05C-F six-max coverage/provenance/fail-closed policy;
-- Gate05 runtime sizing + natural all-in equivalence;
-- Gate05 closed Turn-Float action history + River-parent contract.
-
-The last test-only correction made the runtime assertion strip `//` comments before checking that executable all-live-effective logic never uses the shallowest multiway relationship. No poker strategy changed in that correction.
+The Gate07 audit document was committed after that strategy-validation head; documentation-only commits do not change the tested strategy.
 
 ## Remaining release blockers
 
 No table-ready claim before:
 
-1. Gate00 parser/runtime context validation;
+1. Gate00 OpenHoldem parser/runtime context validation;
 2. whole-bot history-aware `f$flop` / `f$turn` / `f$river` / `f$BestBetsize` composition;
 3. deterministic OpenHoldem policy replays;
-4. River Float, Donk, Probe and Delayed/no-action attack gates;
+4. Turn/River Donk, Probe and Delayed/no-action attack gates;
 5. all 32 defensive nodes;
 6. exact-node commitment and final global callback audit;
-7. full regression / unknown-state fail-closed review.
+7. complete regression / unknown-state fail-closed review.
 
-Unsupported multiway/reversed 4BP and 5bet+ ancestry from earlier gates remain fail-closed rather than being patched with neighboring strategy.
+Unsupported multiway/reversed 4BP and 5bet+ ancestry remains fail-closed unless stronger chronology/provenance is added.
 
 ## Immediate development direction
 
-Next small gate: **Gate06A — River Float source/history ownership audit only**.
+Next small gate: **Gate08A — Turn Donk ownership + source/history map**.
 
-Begin from the newly certified `f$cc_hist_river_float_standard_parent_valid` bridge and audit DeepCrusher/Crusher Starting Strategy for explicit River Float descendants before adding any six-max P policy. Preserve any source give-up/barrel plan only when the closed Turn-Float execution history proves the parent that created it.
+Start from `f$cc_hist_flop_donk_valid_parent`, `f$cc_hist_flop_donk_standard_called_parent` and the exact direct-source Flop Donk subtype snapshots. Audit DeepCrusher/Crusher Starting Strategy Turn-Donk descendants before adding six-max P fills.
 
-Do not yet jump to Donk/Probe/Delayed or defensive nodes until River Float ownership/source boundaries are frozen.
+Do not infer a Turn Donk from a Flop Donk plan alone, and do not import the source Turn-jam plan until the exact executed flop size/history/SPR node proves that it belongs.
