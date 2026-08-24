@@ -1,0 +1,323 @@
+// ============================================================================
+// CashCrusher_River_CBet_Common.txt
+// Gate 03A.2 — canonical River-CBet context / current strength / history helpers
+// ============================================================================
+// Purpose:
+//   Build River CBet only from a VALID closed Turn CBet parent, current River
+//   hand strength and exact Turn-origin/current-player provenance.
+//
+// Source boundary:
+//   T = Gate02N closed round-3 action history + current OpenPPL River symbols.
+//   A = DeepCrusher current-strength-first / source-fidelity River architecture.
+//   P = cash-depth, selected-range and exact routing metadata.
+//
+// Critical contract:
+//   `f$cc_river_cbet_opportunity` consumes
+//   `f$cc_hist_river_standard_cbet_parent_valid`. A Turn plan marker alone can
+//   never preserve initiative. Turn check/call/XR/reaggression histories belong
+//   to other owners.
+//
+// Stack-depth contract:
+//   River TP/OP/2P+ are value classes, not automatic stack-off classes. Raw River
+//   SPR is an input to exact strategy; historical `RiverMax` is reviewed locally.
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// RC.01 — Canonical River CBet opportunity
+// -----------------------------------------------------------------------------
+
+// Purpose: prove current decision legally belongs to STANDARD River CBet.
+// Source: DeepCrusher normal-CBet ownership corrected by Gate02N actual history.
+// Provenance: A/T.
+// Safety: no bet facing Hero; plan/runtime/snapshot mismatch already fail-closes
+// inside the strict parent.
+##f$cc_river_cbet_opportunity##
+When !IsRiver Return false Force
+When !f$cc_context_valid Return false Force
+When AmountToCall > 0 Return false Force
+When !f$cc_hist_river_standard_cbet_parent_valid Return false Force
+When Others Return true Force
+
+// Purpose: River CBet opportunity currently heads-up.
+// Source/Provenance: T/A handedness split over canonical opportunity.
+##f$cc_river_cbet_hu_opportunity##
+f$cc_river_cbet_opportunity && f$cc_hu
+
+// Purpose: River CBet opportunity currently multiway.
+// Source/Provenance: T/A handedness split; Turn origin remains snapshotted.
+##f$cc_river_cbet_multiway_opportunity##
+f$cc_river_cbet_opportunity && f$cc_multiway
+
+// -----------------------------------------------------------------------------
+// RC.02 — Current RIVER made-hand classes
+// -----------------------------------------------------------------------------
+
+// Purpose: current River two-pair-or-better value class.
+// Source/Provenance: T/A portable current-strength ladder.
+##f$cc_river_two_pair_plus##
+IsRiver && f$cc_hand_two_pair_or_better
+
+// Purpose: current River overpair exactly, excluding 2P+.
+// Source/Provenance: T/A current hand evaluator.
+##f$cc_river_overpair##
+IsRiver && HaveOverPair && !f$cc_hand_two_pair_or_better
+
+// Purpose: current River top pair exactly, excluding OP/2P+.
+// Source/Provenance: T/A portable hand evaluator.
+##f$cc_river_top_pair##
+IsRiver && f$cc_hand_just_top_pair
+
+// Purpose: source TPGK-or-better threshold for BTN-v-BB River table.
+// Source: DeepCrusher `f$hand_TPGKOrBetter` uses `NumberOfBetterKickers <= 3`.
+// Provenance: A exact source-shaped threshold for this descriptor only.
+##f$cc_river_tpgk_source##
+f$cc_river_top_pair && f$cc_number_better_kickers <= 3
+
+// Purpose: strongest CashCrusher TP band, at most two better kicker ranks.
+// Source/Provenance: A/P same deterministic kicker band used earlier streets.
+##f$cc_river_strong_top_pair##
+f$cc_river_top_pair && f$cc_number_better_kickers <= 2
+
+// Purpose: medium River TP band.
+// Source/Provenance: A/P deterministic cash split, not solver-exact.
+##f$cc_river_medium_top_pair##
+f$cc_river_top_pair && f$cc_number_better_kickers > 2 && f$cc_number_better_kickers <= 4
+
+// Purpose: weakest River TP band.
+// Source/Provenance: A/P deterministic cash split.
+##f$cc_river_weak_top_pair##
+f$cc_river_top_pair && f$cc_number_better_kickers > 4
+
+// Purpose: current River second pair / pocket-pair class below TP.
+// Source/Provenance: T/A portable pair-tier reconstruction.
+##f$cc_river_second_pair##
+IsRiver && f$cc_hand_second_pair_or_pocket && !f$cc_hand_top_pair_or_better
+
+// Purpose: current River third-or-worse pair showdown-value family.
+// Source/Provenance: T/A pair-tier aggregation.
+##f$cc_river_third_or_worse_pair##
+IsRiver && !f$cc_hand_top_pair_or_better && (f$cc_hand_third_pair_or_pocket || f$cc_hand_fourth_pair_or_pocket || f$cc_hand_fifth_pair_or_pocket || HaveUnderPair)
+
+// Purpose: current River no-made-hand class.
+// Source/Provenance: T/A portable no-made evaluator. No future draw equity exists.
+##f$cc_river_no_made##
+IsRiver && f$cc_hand_no_made
+
+// Purpose: current TP or OP exactly.
+// Source/Provenance: A convenience union used by source River tables.
+##f$cc_river_tp_or_op##
+f$cc_river_top_pair || f$cc_river_overpair
+
+// Purpose: current TP+ including overpair and 2P+.
+// Source/Provenance: A current-value union.
+##f$cc_river_top_pair_plus##
+f$cc_river_two_pair_plus || f$cc_river_overpair || f$cc_river_top_pair
+
+// Purpose: current made straight-or-better class for completed-board source lines.
+// Source: DeepCrusher `f$hand_StraightOrBetter`.
+// Provenance: T/A direct current made-hand composition.
+##f$cc_river_straight_or_better##
+IsRiver && (HaveStraight || HaveFlush || HaveFullHouse || HaveQuads || HaveStraightFlush)
+
+// Purpose: source BTN-v-BB blocker exception: Hero hole cards include the board's
+// current top-pair rank while current hand is 2P+.
+// Source: exact Retro03 condition on `rankhiplayer/rankloplayer`.
+// Provenance: T/A source-shaped blocker descriptor.
+##f$cc_river_2pplus_blocks_top_pair_rank##
+f$cc_river_two_pair_plus && (rankhiplayer = RankOfTopPairOnBoard || rankloplayer = RankOfTopPairOnBoard)
+
+// -----------------------------------------------------------------------------
+// RC.03 — TURN provenance decoded from Gate02N snapshot
+// -----------------------------------------------------------------------------
+
+// Purpose: Turn CBet family ID that actually preceded this River opportunity.
+// Source/Provenance: P decoder over Gate02N boolean snapshot, valid only with
+// canonical River parent.
+##f$cc_river_turn_family_id##
+When !f$cc_river_cbet_opportunity Return 0 Force
+When Others Return f$cc_hist_turn_state_family_id Force
+
+// Purpose: reviewed Turn strategic size ID that was planned/executed normally.
+// Source/Provenance: A/P Gate02J plan decoder plus Gate02N valid-parent proof.
+##f$cc_river_turn_plan_size_id##
+When !f$cc_river_cbet_opportunity Return 0 Force
+When Others Return f$cc_hist_turn_cbet_plan_size_id Force
+
+// Purpose: Turn began current River line with 2P+.
+// Source/Provenance: A historical class snapshot; current River strength wins.
+##f$cc_river_turn_had_2pplus##
+f$cc_river_cbet_opportunity && user_cc_turn_state_had_2pplus
+
+// Purpose: Turn began current River line with overpair.
+// Source/Provenance: A Gate02N provenance marker.
+##f$cc_river_turn_had_overpair##
+f$cc_river_cbet_opportunity && user_cc_turn_state_had_overpair
+
+// Purpose: Turn began current River line with top pair.
+// Source/Provenance: A Gate02N provenance marker.
+##f$cc_river_turn_had_top_pair##
+f$cc_river_cbet_opportunity && user_cc_turn_state_had_top_pair
+
+// Purpose: Turn began current River line with second pair.
+// Source/Provenance: A Gate02N provenance marker.
+##f$cc_river_turn_had_second_pair##
+f$cc_river_cbet_opportunity && user_cc_turn_state_had_second_pair
+
+// Purpose: Turn began current River line with third-or-worse pair.
+// Source/Provenance: A Gate02N provenance marker.
+##f$cc_river_turn_had_third_or_worse_pair##
+f$cc_river_cbet_opportunity && user_cc_turn_state_had_third_or_worse_pair
+
+// Purpose: Turn was no-made at CBet decision.
+// Source/Provenance: A Gate02N historical class marker.
+##f$cc_river_turn_had_no_made##
+f$cc_river_cbet_opportunity && user_cc_turn_state_had_no_made
+
+// Purpose: Turn carried any real premium/good/weak draw provenance.
+// Source/Provenance: A/P union over Gate02N draw tier markers.
+##f$cc_river_turn_had_draw##
+f$cc_river_cbet_opportunity && (user_cc_turn_state_had_premium_draw || user_cc_turn_state_had_good_draw || user_cc_turn_state_had_weak_draw)
+
+// Purpose: Turn CBet originated from no-draw air.
+// Source/Provenance: A/P exact Gate02N air provenance marker.
+##f$cc_river_turn_had_air##
+f$cc_river_cbet_opportunity && user_cc_turn_state_had_air
+
+// Purpose: Turn one-pair value class at time of CBet.
+// Source/Provenance: A historical union; current River class still controls value.
+##f$cc_river_turn_had_tp_or_op##
+f$cc_river_turn_had_top_pair || f$cc_river_turn_had_overpair
+
+// Purpose: Turn lower-pair barrel origin.
+// Source/Provenance: A historical union used by HUSB source table.
+##f$cc_river_turn_had_lower_pair##
+f$cc_river_turn_had_second_pair || f$cc_river_turn_had_third_or_worse_pair
+
+// -----------------------------------------------------------------------------
+// RC.04 — Turn-player-field -> River-player-field provenance
+// -----------------------------------------------------------------------------
+
+// Purpose: exact opponent mask that faced Hero's Turn CBet decision.
+// Source/Provenance: T/A Gate02N persistent canonical mask.
+##f$cc_river_turn_live_opp_mask##
+When !f$cc_river_cbet_opportunity Return 0 Force
+When Others Return f$cc_hist_turn_state_live_opp_mask Force
+
+// Purpose: number of players alive at Hero's Turn CBet decision.
+// Source/Provenance: T/P Gate02N snapshot decoder.
+##f$cc_river_turn_player_count##
+When !f$cc_river_cbet_opportunity Return 0 Force
+When Others Return f$cc_hist_turn_state_player_count Force
+
+// Purpose: current River opponent set is a subset of the Turn CBet field.
+// Source/Provenance: T/P cross-street live-mask invariant.
+##f$cc_river_live_mask_subset_of_turn##
+When !f$cc_river_cbet_opportunity Return false Force
+When f$cc_river_turn_live_opp_mask <= 0 Return false Force
+When (f$cc_opp_live_mask BitAnd f$cc_river_turn_live_opp_mask) != f$cc_opp_live_mask Return false Force
+When Others Return true Force
+
+// Purpose: number of Turn opponents who disappeared before the River decision.
+// Source/Provenance: T/P set subtraction after subset proof.
+##f$cc_river_folded_since_turn_count##
+When !f$cc_river_live_mask_subset_of_turn Return 0 Force
+When Others Return (BitCount(f$cc_river_turn_live_opp_mask) - BitCount(f$cc_opp_live_mask)) Force
+
+// Purpose: Turn CBet was heads-up and current River remains the same HU matchup.
+// Source/Provenance: T/A exact history; a normal called Turn CBet cannot invent a
+// different opponent on River.
+##f$cc_river_turn_hu_still_hu##
+f$cc_river_cbet_hu_opportunity &&
+user_cc_turn_state_was_hu &&
+f$cc_river_turn_player_count = 2 &&
+f$cc_river_folded_since_turn_count = 0 &&
+f$cc_opp_live_mask = f$cc_river_turn_live_opp_mask
+
+// Purpose: Turn CBet was multiway but only one opponent survives to River.
+// Source/Provenance: T/P selected-range family; NEVER ordinary HU source ancestry.
+##f$cc_river_turn_mw_now_hu##
+f$cc_river_cbet_hu_opportunity &&
+user_cc_turn_state_was_multiway &&
+f$cc_river_turn_player_count >= 3 &&
+f$cc_river_live_mask_subset_of_turn &&
+BitCount(f$cc_opp_live_mask) = 1 &&
+f$cc_river_folded_since_turn_count = (f$cc_river_turn_player_count - 2)
+
+// Purpose: Turn CBet was multiway and River remains multiway.
+// Source/Provenance: T/P current-multiway selected-range family.
+##f$cc_river_turn_mw_still_mw##
+f$cc_river_cbet_multiway_opportunity &&
+user_cc_turn_state_was_multiway &&
+f$cc_river_turn_player_count >= 3 &&
+f$cc_river_live_mask_subset_of_turn &&
+BitCount(f$cc_opp_live_mask) >= 2
+
+// -----------------------------------------------------------------------------
+// RC.05 — River stack/SPR descriptors
+// -----------------------------------------------------------------------------
+
+// Purpose: exact current HU River SPR is valid.
+// Source/Provenance: T/A Gate00 effective-stack geometry.
+##f$cc_river_hu_spr_valid##
+f$cc_hu && f$cc_spr_round_start >= 0
+
+// Purpose: current River HU SPR below 1.
+// Source/Provenance: T/P geometry descriptor only; no automatic all-in.
+##f$cc_river_hu_spr_below_1##
+f$cc_river_hu_spr_valid && f$cc_spr_round_start < 1
+
+// Purpose: current River HU SPR below 1.5.
+// Source/Provenance: T/P geometry descriptor, not a global jam threshold.
+##f$cc_river_hu_spr_below_15##
+f$cc_river_hu_spr_valid && f$cc_spr_round_start < 1.5
+
+// Purpose: current River HU SPR below 2.
+// Source/Provenance: T/P geometry descriptor only.
+##f$cc_river_hu_spr_below_2##
+f$cc_river_hu_spr_valid && f$cc_spr_round_start < 2
+
+// Purpose: materially deep River geometry for one-pair thin-value caution.
+// Source: no Spin stack threshold transfers literally.
+// Provenance: P cash boundary at SPR >=4; raw SPR remains canonical.
+##f$cc_river_hu_high_spr##
+f$cc_river_hu_spr_valid && f$cc_spr_round_start >= 4
+
+// Purpose: valid current multiway deepest-effective River SPR.
+// Source/Provenance: T/A corrected dual-bound geometry.
+##f$cc_river_mw_deep_spr_valid##
+f$cc_multiway && f$cc_mw_stack_geometry_valid && f$cc_mw_spr_deepest_round_start >= 0
+
+// -----------------------------------------------------------------------------
+// RC.06 — River strategic size IDs
+// -----------------------------------------------------------------------------
+// Source normal-CBet tables use 25/33/50/75/100 plus historical Max. Max is not
+// a size ID: exact-node strategic jam and mechanical all-in are audited separately.
+
+// Purpose: River 25% pot size ID.
+// Source/Provenance: A source small/block family.
+##f$cc_river_size_25_id##
+1
+
+// Purpose: River 33% pot size ID.
+// Source/Provenance: A source block/thin-value family.
+##f$cc_river_size_33_id##
+2
+
+// Purpose: River 50% pot size ID.
+// Source/Provenance: A common source thin/value/bluff family.
+##f$cc_river_size_50_id##
+3
+
+// Purpose: River 75% pot size ID.
+// Source/Provenance: A common source robust-value/polar family.
+##f$cc_river_size_75_id##
+4
+
+// Purpose: River 100% pot size ID.
+// Source/Provenance: A source polar/value family; not synonymous with all-in.
+##f$cc_river_size_100_id##
+5
+
+// ============================================================================
+// End Gate03A.2 River CBet common layer.
+// ============================================================================
