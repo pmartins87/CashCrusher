@@ -1,0 +1,155 @@
+// ============================================================================
+// CashCrusher_Flop_Float_SRP_6Max.txt
+// Gate 04C — P-heavy six-max ordinary-SRP checked-to Float expansion
+// ============================================================================
+// Purpose:
+//   Fill caller-IP SRP states with no literal Spin range ancestor, plus true
+//   multiway LAST checked-to stabs. These rules are professional-theory fills,
+//   not renamed BTN/blind source frequencies.
+//
+// Provenance:
+//   T/A = exact CashCrusher pot/role/position/hand/texture mechanics.
+//   P   = deterministic six-max cash betting selection.
+//
+// Safety:
+//   PFA check range is not assumed to be surrender. Medium showdown value retains
+//   checks; dynamic low/mid air is not auto-stabbed; multiway is much tighter.
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// FG.01 — HU nonblind caller IP versus earlier opener
+// -----------------------------------------------------------------------------
+
+// Purpose: ordinary SRP HU Float gap after a multi-handed deal reached flop HU,
+// Hero cold-called an earlier opener and acts last after PFA checks.
+// Source: no literal 3w source range family for HJ-v-UTG / CO-v-UTG,HJ /
+// BTN-v-UTG,HJ,CO cold-call topology.
+// Provenance: P exact six-max range family over T/A context.
+// Safety: direct BB-v-SB source descendant is excluded explicitly.
+##f$cc_flop_float_srp_6max_hu_context##
+f$cc_flop_float_hu_opportunity &&
+f$cc_hu_origin_preflop_reduced &&
+f$cc_pot_family_id = 2 &&
+f$cc_pf_one_raise_ordinary_srp &&
+f$cc_pf_role_srp_caller &&
+f$cc_hu_ip &&
+f$cc_hero_pos_id >= 2 &&
+f$cc_hero_pos_id <= 4 &&
+f$cc_hu_villain_pos_id >= 1 &&
+f$cc_hu_villain_pos_id < f$cc_hero_pos_id &&
+!f$cc_flop_float_bb_vs_sb_context
+
+// Purpose: P-heavy HU ordinary-SRP caller-IP Float action.
+// Source/Provenance: P professional cash fill constrained by A source principles:
+// value/equity-first, protected PFA checks, wider pressure only on calm boards.
+##f$cc_flop_float_srp_6max_hu_action##
+When !f$cc_flop_float_srp_6max_hu_context Return false Force
+When f$cc_hand_two_pair_or_better Return true Force
+When HaveOverPair && !f$cc_hand_two_pair_or_better Return true Force
+When f$cc_cbet_flop_strong_top_pair Return true Force
+When f$cc_cbet_flop_medium_top_pair && (f$cc_flop_static_high_parent || f$cc_flop_paired_parent) Return true Force
+When f$cc_cbet_flop_medium_top_pair Return false Force
+When f$cc_cbet_flop_weak_top_pair Return false Force
+When f$cc_hand_middle_or_bottom_pair Return false Force
+When f$cc_flop_float_premium_draw Return true Force
+When f$cc_flop_float_good_draw && !f$cc_flop_dynamic_lowmid_parent Return true Force
+When f$cc_flop_float_good_draw && f$cc_flop_dynamic_lowmid_parent Return false Force
+When f$cc_flop_float_air && (f$cc_flop_static_high_parent || f$cc_flop_paired_parent) && f$cc_cbet_flop_quality_air Return true Force
+When f$cc_flop_float_air && f$cc_flop_static_lowmid_parent && f$cc_combo_backdoors Return true Force
+When f$cc_flop_float_air Return false Force
+When Others Return false Force
+
+// Purpose: paired P-heavy HU SRP Float sizing.
+// Source/Provenance: P deterministic deep-cash 33/50/75 map; no solver-exact claim.
+##f$cc_flop_float_srp_6max_hu_size_id##
+When !f$cc_flop_float_srp_6max_hu_action Return 0 Force
+When f$cc_hand_two_pair_or_better && (f$cc_flop_dynamic_high_parent || f$cc_flop_dynamic_lowmid_parent || f$cc_flop_monotone) Return f$cc_flop_float_size_75_id Force
+When f$cc_hand_two_pair_or_better Return f$cc_flop_float_size_50_id Force
+When HaveOverPair && !f$cc_hand_two_pair_or_better Return f$cc_flop_float_size_50_id Force
+When f$cc_cbet_flop_strong_top_pair Return f$cc_flop_float_size_50_id Force
+When f$cc_cbet_flop_medium_top_pair Return f$cc_flop_float_size_33_id Force
+When f$cc_flop_float_premium_draw Return f$cc_flop_float_size_50_id Force
+When f$cc_flop_float_good_draw Return f$cc_flop_float_size_50_id Force
+When f$cc_flop_float_air Return f$cc_flop_float_size_33_id Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// FG.02 — Ordinary SRP current multiway, Hero exact LAST
+// -----------------------------------------------------------------------------
+
+// Purpose: true multiway ordinary-SRP checked-to stab opportunity.
+// Source: legacy Middle/Last Float routing is not sufficient for six-max ranges.
+// Provenance: T exact current LAST/no-bet state + P dedicated multiway family.
+// Safety: Hero MIDDLE never enters; this is not HU Float.
+##f$cc_flop_float_srp_multiway_context##
+f$cc_flop_float_multiway_opportunity &&
+f$cc_pot_family_id = 2 &&
+f$cc_pf_one_raise_ordinary_srp &&
+f$cc_pf_role_srp_caller &&
+f$cc_relpos_id = 3 &&
+nplayersplaying >= 3
+
+// Purpose: selected three-way pressure parent for one-pair/equity bets.
+// Source/Provenance: P. At 3 players PFA+other caller checks still select ranges,
+// but less severely than 4/5/6-way.
+##f$cc_flop_float_srp_exact_threeway##
+f$cc_flop_float_srp_multiway_context && nplayersplaying = 3
+
+// Purpose: four-or-more-way checked-to state requiring very high selectivity.
+// Source/Provenance: P player-count tightening principle.
+##f$cc_flop_float_srp_fourplusway##
+f$cc_flop_float_srp_multiway_context && nplayersplaying >= 4
+
+// Purpose: multiway SRP checked-to action.
+// Source/Provenance: P professional multiway fill. Robust value remains active;
+// one-pair/draw pressure contracts sharply with player count; pure air is absent.
+##f$cc_flop_float_srp_multiway_action##
+When !f$cc_flop_float_srp_multiway_context Return false Force
+When f$cc_hand_two_pair_or_better Return true Force
+When f$cc_flop_float_srp_exact_threeway && HaveOverPair && !f$cc_hand_two_pair_or_better && !f$cc_flop_dynamic_lowmid_parent Return true Force
+When f$cc_flop_float_srp_exact_threeway && f$cc_cbet_flop_strong_top_pair && (f$cc_flop_static_high_parent || f$cc_flop_static_lowmid_parent || f$cc_flop_paired_parent) Return true Force
+When f$cc_hand_top_pair_or_better Return false Force
+When f$cc_hand_middle_or_bottom_pair Return false Force
+When f$cc_flop_float_srp_exact_threeway && f$cc_flop_float_premium_draw && !f$cc_flop_monotone Return true Force
+When f$cc_flop_float_srp_fourplusway && f$cc_flop_float_premium_draw && f$cc_real_combo_draw && !f$cc_flop_monotone Return true Force
+When f$cc_flop_float_real_gutshot_plus Return false Force
+When f$cc_flop_float_air Return false Force
+When Others Return false Force
+
+// Purpose: multiway SRP Float size map.
+// Source/Provenance: P value/equity 50/75 map. No all-in or short-sidepot rule.
+##f$cc_flop_float_srp_multiway_size_id##
+When !f$cc_flop_float_srp_multiway_action Return 0 Force
+When f$cc_hand_two_pair_or_better && (f$cc_flop_dynamic_high_parent || f$cc_flop_dynamic_lowmid_parent || f$cc_flop_monotone) Return f$cc_flop_float_size_75_id Force
+When f$cc_hand_two_pair_or_better Return f$cc_flop_float_size_50_id Force
+When HaveOverPair && !f$cc_hand_two_pair_or_better Return f$cc_flop_float_size_50_id Force
+When f$cc_cbet_flop_strong_top_pair Return f$cc_flop_float_size_50_id Force
+When f$cc_flop_float_premium_draw Return f$cc_flop_float_size_50_id Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// FG.03 — Dispatch / coverage
+// -----------------------------------------------------------------------------
+
+// Purpose: dispatch six-max ordinary-SRP gap families.
+// Source/Provenance: P exact-family router.
+##f$cc_flop_float_srp_gap_action##
+When f$cc_flop_float_srp_6max_hu_context Return f$cc_flop_float_srp_6max_hu_action Force
+When f$cc_flop_float_srp_multiway_context Return f$cc_flop_float_srp_multiway_action Force
+When Others Return false Force
+
+// Purpose: paired SRP gap size dispatcher.
+// Source/Provenance: P exact owner; check/uncovered ->0.
+##f$cc_flop_float_srp_gap_size_id##
+When f$cc_flop_float_srp_6max_hu_context Return f$cc_flop_float_srp_6max_hu_size_id Force
+When f$cc_flop_float_srp_multiway_context Return f$cc_flop_float_srp_multiway_size_id Force
+When Others Return 0 Force
+
+// Purpose: report implemented six-max SRP Float gap coverage.
+// Source/Provenance: P engineering metadata.
+##f$cc_flop_float_srp_gap_covered##
+f$cc_flop_float_srp_6max_hu_context || f$cc_flop_float_srp_multiway_context
+
+// ============================================================================
+// End Gate04C ordinary-SRP Float expansion.
+// ============================================================================
