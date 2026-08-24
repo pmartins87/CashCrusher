@@ -1,0 +1,141 @@
+// ============================================================================
+// CashCrusher_River_CBet_4BP.txt
+// Gate 03G — clean HU four-bet-pot River CBet
+// ============================================================================
+// Source boundary: no dedicated deep-stack 4BP River source. Exact policy is P,
+// constrained by A current-strength/runout/check-range architecture.
+// Natural low River SPR is retained; TP/OP are not automatic stack-off classes.
+// No BetMax/global historical promotion is owned here.
+// ============================================================================
+
+// Purpose: clean enough 4BP River for one-pair value.
+// Source/Provenance: A runout caution + P 4BP abstraction.
+##f$cc_river_4bp_clean##
+IsRiver && !f$cc_river_completed && !f$cc_river_four_card_completion
+
+// -----------------------------------------------------------------------------
+// R4.01 — OPENER4 versus original 3BETTOR
+// -----------------------------------------------------------------------------
+
+// Purpose: clean true/reduced opener4-v-3bettor River action.
+// Source: no literal source 4BP tree.
+// Provenance: P professional low-SPR 4BP fill.
+// Logic: robust value broad; OP/strong TP can value at natural low SPR or clean
+// runouts. Medium TP only at very low SPR IP; no pure-air baseline yet.
+##f$cc_river_4bp_opener4_action##
+When !f$cc_river_4bp_context_consistent Return false Force
+When !(f$cc_river_4bp_truehu_opener4_vs_threebettor || f$cc_river_4bp_opener4_vs_threebettor) Return false Force
+When f$cc_river_straight_or_better Return true Force
+When f$cc_river_two_pair_plus && !f$cc_river_super_completed Return true Force
+When f$cc_river_two_pair_plus && f$cc_river_hu_spr_below_1 Return true Force
+When f$cc_river_overpair && f$cc_river_4bp_clean Return true Force
+When f$cc_river_overpair && f$cc_river_hu_spr_below_1 Return true Force
+When f$cc_river_overpair Return false Force
+When f$cc_river_strong_top_pair && f$cc_river_4bp_clean && f$cc_river_hu_spr_below_2 Return true Force
+When f$cc_river_strong_top_pair && f$cc_river_hu_spr_below_1 Return true Force
+When f$cc_river_medium_top_pair && f$cc_hu_ip && f$cc_river_4bp_clean && f$cc_river_hu_spr_below_1 Return true Force
+When f$cc_river_top_pair Return false Force
+When f$cc_river_second_pair Return false Force
+When f$cc_river_no_made Return false Force
+When Others Return false Force
+
+// Purpose: requested opener4-v-3bettor River size.
+// Source/Provenance: P lower-SPR 50/75/100 map. A 100% request is pot, not BetMax;
+// later natural-all-in execution may convert when it actually reaches the stack.
+##f$cc_river_4bp_opener4_size_id##
+When !f$cc_river_4bp_opener4_action Return 0 Force
+When (f$cc_river_straight_or_better || f$cc_river_two_pair_plus) && f$cc_river_hu_spr_below_1 Return f$cc_river_size_100_id Force
+When f$cc_river_straight_or_better || f$cc_river_two_pair_plus Return f$cc_river_size_75_id Force
+When f$cc_river_overpair && f$cc_river_hu_spr_below_1 Return f$cc_river_size_75_id Force
+When f$cc_river_overpair Return f$cc_river_size_50_id Force
+When f$cc_river_top_pair Return f$cc_river_size_50_id Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// R4.02 — COLD4 versus original OPENER
+// -----------------------------------------------------------------------------
+
+// Purpose: River action versus strongly condensed opener continuation after cold4.
+// Source/Provenance: P-heavy; no pure-air baseline.
+##f$cc_river_4bp_cold4_vs_opener_action##
+When !f$cc_river_4bp_context_consistent Return false Force
+When !f$cc_river_4bp_cold4_vs_opener Return false Force
+When f$cc_river_straight_or_better Return true Force
+When f$cc_river_two_pair_plus && !f$cc_river_super_completed Return true Force
+When f$cc_river_two_pair_plus && f$cc_river_hu_spr_below_1 Return true Force
+When f$cc_river_overpair && f$cc_river_4bp_clean && f$cc_river_hu_spr_below_15 Return true Force
+When f$cc_river_overpair && f$cc_river_hu_spr_below_1 Return true Force
+When f$cc_river_overpair Return false Force
+When f$cc_river_strong_top_pair && f$cc_river_4bp_clean && f$cc_river_hu_spr_below_1 Return true Force
+When f$cc_river_top_pair Return false Force
+When f$cc_river_no_made Return false Force
+When Others Return false Force
+
+// Purpose: cold4-v-opener River sizes.
+// Source/Provenance: P low-SPR 50/75/100 value map.
+##f$cc_river_4bp_cold4_vs_opener_size_id##
+When !f$cc_river_4bp_cold4_vs_opener_action Return 0 Force
+When (f$cc_river_straight_or_better || f$cc_river_two_pair_plus) && f$cc_river_hu_spr_below_1 Return f$cc_river_size_100_id Force
+When f$cc_river_straight_or_better || f$cc_river_two_pair_plus Return f$cc_river_size_75_id Force
+When f$cc_river_overpair || f$cc_river_top_pair Return f$cc_river_size_50_id Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// R4.03 — COLD4 versus original 3BETTOR
+// -----------------------------------------------------------------------------
+
+// Purpose: River action versus selected original-3bettor continuation.
+// Source/Provenance: P-heavy; slightly broader clean strong-TP value than
+// cold4-v-opener, still no pure-air baseline.
+##f$cc_river_4bp_cold4_vs_threebettor_action##
+When !f$cc_river_4bp_context_consistent Return false Force
+When !f$cc_river_4bp_cold4_vs_threebettor Return false Force
+When f$cc_river_straight_or_better Return true Force
+When f$cc_river_two_pair_plus && !f$cc_river_super_completed Return true Force
+When f$cc_river_two_pair_plus && f$cc_river_hu_spr_below_1 Return true Force
+When f$cc_river_overpair && f$cc_river_4bp_clean Return true Force
+When f$cc_river_overpair && f$cc_river_hu_spr_below_1 Return true Force
+When f$cc_river_overpair Return false Force
+When f$cc_river_strong_top_pair && f$cc_river_4bp_clean && f$cc_river_hu_spr_below_15 Return true Force
+When f$cc_river_strong_top_pair && f$cc_river_hu_spr_below_1 Return true Force
+When f$cc_river_top_pair Return false Force
+When f$cc_river_no_made Return false Force
+When Others Return false Force
+
+// Purpose: cold4-v-3bettor River sizes.
+// Source/Provenance: P low-SPR 50/75/100 value map.
+##f$cc_river_4bp_cold4_vs_threebettor_size_id##
+When !f$cc_river_4bp_cold4_vs_threebettor_action Return 0 Force
+When (f$cc_river_straight_or_better || f$cc_river_two_pair_plus) && f$cc_river_hu_spr_below_1 Return f$cc_river_size_100_id Force
+When f$cc_river_straight_or_better || f$cc_river_two_pair_plus Return f$cc_river_size_75_id Force
+When f$cc_river_overpair || f$cc_river_top_pair Return f$cc_river_size_50_id Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// R4.04 — Dispatch / coverage
+// -----------------------------------------------------------------------------
+
+// Purpose: exact clean HU 4BP River action dispatcher.
+// Source/Provenance: P/A range router; unsupported 4BP histories fail closed.
+##f$cc_river_4bp_action##
+When (f$cc_river_4bp_truehu_opener4_vs_threebettor || f$cc_river_4bp_opener4_vs_threebettor) && f$cc_river_4bp_context_consistent Return f$cc_river_4bp_opener4_action Force
+When f$cc_river_4bp_cold4_vs_opener && f$cc_river_4bp_context_consistent Return f$cc_river_4bp_cold4_vs_opener_action Force
+When f$cc_river_4bp_cold4_vs_threebettor && f$cc_river_4bp_context_consistent Return f$cc_river_4bp_cold4_vs_threebettor_action Force
+When Others Return false Force
+
+// Purpose: paired clean HU 4BP River size dispatcher.
+// Source/Provenance: P/A safety router; check/uncovered ->0.
+##f$cc_river_4bp_size_id##
+When (f$cc_river_4bp_truehu_opener4_vs_threebettor || f$cc_river_4bp_opener4_vs_threebettor) && f$cc_river_4bp_context_consistent Return f$cc_river_4bp_opener4_size_id Force
+When f$cc_river_4bp_cold4_vs_opener && f$cc_river_4bp_context_consistent Return f$cc_river_4bp_cold4_vs_opener_size_id Force
+When f$cc_river_4bp_cold4_vs_threebettor && f$cc_river_4bp_context_consistent Return f$cc_river_4bp_cold4_vs_threebettor_size_id Force
+When Others Return 0 Force
+
+// Purpose: Gate03G clean HU 4BP River coverage flag.
+// Source/Provenance: P engineering metadata.
+##f$cc_river_4bp_covered##
+f$cc_river_4bp_context_consistent && f$cc_river_4bp_family_id > 0
+
+// ============================================================================
+// End Gate03G clean HU 4BP River CBet.
+// ============================================================================
