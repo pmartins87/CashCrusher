@@ -41,3 +41,5 @@ jobs:
         run: python tools/test_turn_action_history.py
       - name: Test River CBet source/provenance contract
         run: python tools/test_river_cbet_source_contract.py
+      - name: Test six-max SRP River CBet gaps
+        run: python tools/test_river_cbet_srp_gaps.py
