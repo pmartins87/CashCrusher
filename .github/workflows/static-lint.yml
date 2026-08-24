@@ -49,3 +49,11 @@ jobs:
         run: python tools/test_river_cbet_coverage.py
       - name: Test River CBet runtime sizing contract
         run: python tools/test_river_cbet_runtime.py
+      - name: Test Flop Float source and topology contract
+        run: python tools/test_flop_float_contract.py
+      - name: Test Flop Float coverage boundary
+        run: python tools/test_flop_float_coverage.py
+      - name: Test Flop Float runtime sizing contract
+        run: python tools/test_flop_float_runtime.py
+      - name: Test closed Flop Float action-history contract
+        run: python tools/test_flop_float_history.py
