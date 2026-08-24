@@ -1,0 +1,198 @@
+// ============================================================================
+// CashCrusher_Flop_Float_3BP_CallerRepair.txt
+// Gate 04R — caller-side 3BP/squeeze chronology repair
+// ============================================================================
+// Purpose:
+//   Repair a latent Gate04E reachability gap: the older 3bet chronology helper
+//   reconstructs first/final raisers only when Hero himself was one of the raisers.
+//   Therefore pure Hero cold-call-3bet branches could never prove their final
+//   3bettor.  Gate05A source audit exposed this before Turn Float reused it.
+//
+// Evidence repair:
+//   `CashCrusher_FinalAggressor_Context.txt` uses stable OpenHoldem `lastraised1`
+//   plus `raisbits1`, so Hero no longer needs to have raised for final-aggressor
+//   identity.  This file repairs ONLY pure cold-caller descendants. Existing
+//   opener-call branches remain owned by Gate04E.
+//
+// Provenance:
+//   T = OpenHoldem final-raiser/current-live history.
+//   A = Gate04E hand/size policy copied without strategic expansion.
+//   P = caller-stage topology proof and fail-closed chronology repair.
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// F3R.01 — exact repaired cold-caller contexts
+// -----------------------------------------------------------------------------
+
+// Purpose: plain 3BP post-3bet coldcaller is HU/IP versus actual final 3bettor.
+// Source/Provenance: P repaired chronology over T/A checked-to Float opportunity.
+##f$cc_flop_float_rt3bp_plain_postcold_hu_context##
+f$cc_flop_float_hu_opportunity &&
+f$cc_pot_family_id = 3 &&
+f$cc_pf_rt_plain3bet_proven &&
+f$cc_pf_rt_hero_is_post3bet_coldcaller &&
+f$cc_pf_rt_hero_3bet_origin_consistent &&
+f$cc_hu_villain_pos_id = f$cc_pf_rt_final_aggressor_pos_id &&
+f$cc_hu_ip
+
+// Purpose: squeeze pre-3bet coldcaller is HU/IP versus actual final squeezer.
+// Source/Provenance: P repaired caller-stage chronology.
+##f$cc_flop_float_rt3bp_squeeze_precold_hu_context##
+f$cc_flop_float_hu_opportunity &&
+f$cc_pot_family_id = 3 &&
+f$cc_pf_rt_squeeze_proven &&
+f$cc_pf_rt_hero_is_pre3bet_coldcaller &&
+f$cc_pf_rt_hero_3bet_origin_consistent &&
+f$cc_hu_villain_pos_id = f$cc_pf_rt_final_aggressor_pos_id &&
+f$cc_hu_ip
+
+// Purpose: squeeze post-3bet coldcaller is HU/IP versus actual final squeezer.
+// Source/Provenance: P repaired caller-stage chronology.
+##f$cc_flop_float_rt3bp_squeeze_postcold_hu_context##
+f$cc_flop_float_hu_opportunity &&
+f$cc_pot_family_id = 3 &&
+f$cc_pf_rt_squeeze_proven &&
+f$cc_pf_rt_hero_is_post3bet_coldcaller &&
+f$cc_pf_rt_hero_3bet_origin_consistent &&
+f$cc_hu_villain_pos_id = f$cc_pf_rt_final_aggressor_pos_id &&
+f$cc_hu_ip
+
+// Purpose: pure-coldcaller multiway 3BP/squeeze checked-to context; Hero is exact
+// LAST and the actual final 3bettor remains live.
+// Source/Provenance: T live/history facts + P repaired range owner.
+##f$cc_flop_float_rt3bp_multiway_context##
+f$cc_flop_float_multiway_opportunity &&
+f$cc_pot_family_id = 3 &&
+f$cc_pf_role_cold_call_3bet &&
+f$cc_pf_rt_hero_3bet_origin_consistent &&
+f$cc_pf_rt_3bettor_live_opponent &&
+f$cc_relpos_id = 3
+
+// -----------------------------------------------------------------------------
+// F3R.02 — preserve Gate04E policies exactly for repaired descendants
+// -----------------------------------------------------------------------------
+
+// Purpose: repaired plain post-3bet coldcaller action.
+// Source/Provenance: A exact Gate04E policy transplant; chronology only was fixed.
+##f$cc_flop_float_rt3bp_plain_postcold_hu_action##
+When !f$cc_flop_float_rt3bp_plain_postcold_hu_context Return false Force
+When f$cc_hand_two_pair_or_better Return true Force
+When HaveOverPair && !f$cc_hand_two_pair_or_better Return true Force
+When f$cc_cbet_flop_strong_top_pair Return true Force
+When f$cc_hand_top_pair_or_better Return false Force
+When f$cc_hand_middle_or_bottom_pair Return false Force
+When f$cc_flop_float_premium_draw Return true Force
+When f$cc_flop_float_good_draw && f$cc_flop_float_dry_parent Return true Force
+When f$cc_flop_float_air Return false Force
+When Others Return false Force
+
+// Purpose: repaired plain post-coldcaller size map.
+// Source/Provenance: A exact Gate04E 50/75 map.
+##f$cc_flop_float_rt3bp_plain_postcold_hu_size_id##
+When !f$cc_flop_float_rt3bp_plain_postcold_hu_action Return 0 Force
+When f$cc_hand_two_pair_or_better && f$cc_flop_float_wet_parent Return f$cc_flop_float_size_75_id Force
+When f$cc_hand_two_pair_or_better Return f$cc_flop_float_size_50_id Force
+When HaveOverPair && !f$cc_hand_two_pair_or_better Return f$cc_flop_float_size_50_id Force
+When f$cc_cbet_flop_strong_top_pair Return f$cc_flop_float_size_50_id Force
+When f$cc_flop_float_premium_draw || f$cc_flop_float_good_draw Return f$cc_flop_float_size_50_id Force
+When Others Return 0 Force
+
+// Purpose: repaired squeeze coldcaller action shared by pre/post coldcaller HU.
+// Source/Provenance: A exact Gate04E selected-range policy; no new pure-air stab.
+##f$cc_flop_float_rt3bp_squeeze_coldcaller_hu_action##
+When !(f$cc_flop_float_rt3bp_squeeze_precold_hu_context || f$cc_flop_float_rt3bp_squeeze_postcold_hu_context) Return false Force
+When f$cc_hand_two_pair_or_better Return true Force
+When HaveOverPair && !f$cc_hand_two_pair_or_better Return true Force
+When f$cc_cbet_flop_strong_top_pair && f$cc_flop_float_dry_parent Return true Force
+When f$cc_hand_top_pair_or_better Return false Force
+When f$cc_hand_middle_or_bottom_pair Return false Force
+When f$cc_flop_float_premium_draw Return true Force
+When f$cc_flop_float_good_draw Return false Force
+When f$cc_flop_float_air Return false Force
+When Others Return false Force
+
+// Purpose: repaired squeeze coldcaller size map.
+// Source/Provenance: A exact Gate04E 50/75 map.
+##f$cc_flop_float_rt3bp_squeeze_coldcaller_hu_size_id##
+When !f$cc_flop_float_rt3bp_squeeze_coldcaller_hu_action Return 0 Force
+When f$cc_hand_two_pair_or_better && f$cc_flop_float_wet_parent Return f$cc_flop_float_size_75_id Force
+When f$cc_hand_two_pair_or_better Return f$cc_flop_float_size_50_id Force
+When HaveOverPair && !f$cc_hand_two_pair_or_better Return f$cc_flop_float_size_50_id Force
+When f$cc_cbet_flop_strong_top_pair Return f$cc_flop_float_size_50_id Force
+When f$cc_flop_float_premium_draw Return f$cc_flop_float_size_50_id Force
+When Others Return 0 Force
+
+// Purpose: repaired pure-coldcaller multiway action.
+// Source/Provenance: A exact Gate04E multiway policy; chronology only is repaired.
+##f$cc_flop_float_rt3bp_multiway_action##
+When !f$cc_flop_float_rt3bp_multiway_context Return false Force
+When f$cc_hand_two_pair_or_better Return true Force
+When nplayersplaying = 3 && HaveOverPair && !f$cc_hand_two_pair_or_better && f$cc_flop_float_dry_parent Return true Force
+When nplayersplaying = 3 && f$cc_cbet_flop_strong_top_pair && f$cc_flop_static_high_parent Return true Force
+When f$cc_hand_top_pair_or_better Return false Force
+When f$cc_hand_middle_or_bottom_pair Return false Force
+When nplayersplaying = 3 && f$cc_flop_float_premium_draw Return true Force
+When nplayersplaying >= 4 && f$cc_hand_no_made && f$cc_real_combo_draw Return true Force
+When f$cc_flop_float_real_gutshot_plus Return false Force
+When f$cc_flop_float_air Return false Force
+When Others Return false Force
+
+// Purpose: repaired pure-coldcaller multiway size map.
+// Source/Provenance: A exact Gate04E 50/75 map.
+##f$cc_flop_float_rt3bp_multiway_size_id##
+When !f$cc_flop_float_rt3bp_multiway_action Return 0 Force
+When f$cc_hand_two_pair_or_better && f$cc_flop_float_wet_parent Return f$cc_flop_float_size_75_id Force
+When f$cc_hand_two_pair_or_better Return f$cc_flop_float_size_50_id Force
+When HaveOverPair && !f$cc_hand_two_pair_or_better Return f$cc_flop_float_size_50_id Force
+When f$cc_cbet_flop_strong_top_pair Return f$cc_flop_float_size_50_id Force
+When f$cc_flop_float_premium_draw || (f$cc_hand_no_made && f$cc_real_combo_draw) Return f$cc_flop_float_size_50_id Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// F3R.03 — dispatch / coverage for top-level Gate04 router
+// -----------------------------------------------------------------------------
+
+// Purpose: repaired plain-3BP action owner for pure coldcaller descendants.
+// Source/Provenance: P dispatcher over repaired exact contexts.
+##f$cc_flop_float_rt3bp_plain_action##
+When f$cc_flop_float_rt3bp_plain_postcold_hu_context Return f$cc_flop_float_rt3bp_plain_postcold_hu_action Force
+When f$cc_flop_float_rt3bp_multiway_context && f$cc_pf_rt_plain3bet_proven Return f$cc_flop_float_rt3bp_multiway_action Force
+When Others Return false Force
+
+// Purpose: repaired plain-3BP size owner.
+// Source/Provenance: P exact paired dispatcher.
+##f$cc_flop_float_rt3bp_plain_size_id##
+When f$cc_flop_float_rt3bp_plain_postcold_hu_context Return f$cc_flop_float_rt3bp_plain_postcold_hu_size_id Force
+When f$cc_flop_float_rt3bp_multiway_context && f$cc_pf_rt_plain3bet_proven Return f$cc_flop_float_rt3bp_multiway_size_id Force
+When Others Return 0 Force
+
+// Purpose: repaired squeeze action owner for pure coldcaller descendants.
+// Source/Provenance: P exact paired dispatcher.
+##f$cc_flop_float_rt3bp_squeeze_action##
+When f$cc_flop_float_rt3bp_squeeze_precold_hu_context || f$cc_flop_float_rt3bp_squeeze_postcold_hu_context Return f$cc_flop_float_rt3bp_squeeze_coldcaller_hu_action Force
+When f$cc_flop_float_rt3bp_multiway_context && f$cc_pf_rt_squeeze_proven Return f$cc_flop_float_rt3bp_multiway_action Force
+When Others Return false Force
+
+// Purpose: repaired squeeze size owner.
+// Source/Provenance: P exact paired dispatcher.
+##f$cc_flop_float_rt3bp_squeeze_size_id##
+When f$cc_flop_float_rt3bp_squeeze_precold_hu_context || f$cc_flop_float_rt3bp_squeeze_postcold_hu_context Return f$cc_flop_float_rt3bp_squeeze_coldcaller_hu_size_id Force
+When f$cc_flop_float_rt3bp_multiway_context && f$cc_pf_rt_squeeze_proven Return f$cc_flop_float_rt3bp_multiway_size_id Force
+When Others Return 0 Force
+
+// Purpose: repaired plain coverage metadata.
+// Source/Provenance: P exact context union.
+##f$cc_flop_float_rt3bp_plain_covered##
+f$cc_flop_float_rt3bp_plain_postcold_hu_context ||
+(f$cc_flop_float_rt3bp_multiway_context && f$cc_pf_rt_plain3bet_proven)
+
+// Purpose: repaired squeeze coverage metadata.
+// Source/Provenance: P exact context union.
+##f$cc_flop_float_rt3bp_squeeze_covered##
+f$cc_flop_float_rt3bp_squeeze_precold_hu_context ||
+f$cc_flop_float_rt3bp_squeeze_postcold_hu_context ||
+(f$cc_flop_float_rt3bp_multiway_context && f$cc_pf_rt_squeeze_proven)
+
+// ============================================================================
+// End Gate04R caller-side 3BP/squeeze repair.
+// ============================================================================
