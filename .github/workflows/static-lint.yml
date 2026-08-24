@@ -91,3 +91,5 @@ jobs:
         run: python tools/test_flop_donk_6max.py
       - name: Test HU Flop Donk reviewed-check baseline
         run: python tools/test_flop_donk_hu.py
+      - name: Test residual multiway SRP Flop Donk baseline
+        run: python tools/test_flop_donk_multiway_srp.py
