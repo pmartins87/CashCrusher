@@ -1,0 +1,198 @@
+// ============================================================================
+// CashCrusher_River_Float_SRP_Gaps.txt
+// Gate 06C — ordinary-SRP River Float six-max adaptation
+// ============================================================================
+// Purpose:
+//   Review ordinary one-raise SRP River-Float states that are source-silent or
+//   outside the three-player source domain. This file deliberately distinguishes
+//   a reviewed CHECK from an unknown/unimplemented topology.
+//
+// Professional-theory boundary:
+//   River Float arrives after Hero CALLED turn aggression and Villain checked.
+//   In deep cash, weak one-pair hands normally retain showdown value rather than
+//   create automatic thin-value bets, and missed draws are useful bluff classes
+//   only when their turn-call provenance/blockers are actually known.
+//
+// Provenance:
+//   T = Gate06A exact turn-call parent + Gate00 pot/role/player history.
+//   A = source-sized HU/3way River-Float value remains owned by Gate06B.
+//   P = six-max field-size adaptation and conservative source-silent baseline.
+//
+// Safety:
+//   * no generic no-made bluff without a turn-call draw snapshot;
+//   * no weak-TP/second-pair thin-value invention from current hand alone;
+//   * 4+ way/origin positive action is restricted to robust current value;
+//   * no BetMax/commitment rule lives here.
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// RF-SRP.01 — ordinary-SRP topology ownership
+// -----------------------------------------------------------------------------
+
+// Purpose: current River-Float parent belongs to an ordinary one-raise SRP and
+// Hero has one of the two normal HU/SRP preflop roles.
+// Source/Provenance: T/A Gate00 pot/role reconstruction + Gate06A parent.
+// Safety: ISO, true-HU limp-raised, 3BP/squeeze/4BP remain separate later gates.
+##f$cc_river_float_srp_context##
+f$cc_river_float_opportunity &&
+f$cc_pot_family_id = 2 &&
+f$cc_pf_one_raise_ordinary_srp &&
+(f$cc_pf_role_srp_caller || f$cc_pf_role_pfa)
+
+// Purpose: clean HU-from-HU-flop ordinary SRP where Hero was the preflop caller
+// and the same sole Villain was both final preflop aggressor and turn aggressor.
+// Source/Provenance: T exact identities + P selected-range parent.
+##f$cc_river_float_srp_clean_hu_caller_vs_pfa##
+f$cc_river_float_srp_context &&
+f$cc_river_float_current_hu_from_hu_flop &&
+f$cc_pf_role_srp_caller &&
+f$cc_river_float_hu_aggressor_is_current_villain &&
+f$cc_pf_rt_final_aggressor_pos_id = f$cc_river_float_turn_aggressor_pos_id
+
+// Purpose: clean HU-from-HU-flop ordinary SRP where Hero was PFA but Villain
+// later seized turn aggression and Hero called.
+// Source/Provenance: T exact role/history + P separate lost-initiative range.
+// Safety: this is not treated as equivalent to caller-vs-PFA Float ranges.
+##f$cc_river_float_srp_clean_hu_pfa_lost_initiative##
+f$cc_river_float_srp_context &&
+f$cc_river_float_current_hu_from_hu_flop &&
+f$cc_pf_role_pfa &&
+f$cc_river_float_hu_aggressor_is_current_villain
+
+// Purpose: River remains exactly three-way after a <=3-player flop-entry SRP.
+// Source/Provenance: T player counts + A source-sized field boundary.
+##f$cc_river_float_srp_current_threeway##
+f$cc_river_float_srp_context &&
+nplayersplaying = 3 &&
+f$cc_flop_entry_count <= 3
+
+// Purpose: flop entered three-way but River is HU; Gate06A cannot prove whether
+// the actual turn call happened HU or multiway.
+// Source/Provenance: T current/flop counts + P explicit information-gap owner.
+// Safety: source-silent P bluffs/thin value remain checked until a turn snapshot
+// can distinguish the selected ranges.
+##f$cc_river_float_srp_threeway_origin_now_hu_unresolved##
+f$cc_river_float_srp_context &&
+f$cc_river_float_hu_multiway_origin_unresolved &&
+f$cc_flop_entry_count = 3
+
+// Purpose: any ordinary SRP River Float whose flop began with four or more
+// players. This range origin never existed in the supplied 3-max source.
+// Source/Provenance: T flop-entry count + P six-max domain boundary.
+##f$cc_river_float_srp_fourplus_origin##
+f$cc_river_float_srp_context && f$cc_flop_entry_count >= 4
+
+// Purpose: compact reviewed ordinary-SRP gap topology ID.
+// 1 clean HU caller-v-PFA; 2 clean HU PFA-lost-initiative; 3 current 3way;
+// 4 threeway-origin now HU unresolved; 5 four-plus flop origin; 0 unsupported.
+// Source/Provenance: P audit metadata over T/A topology facts.
+##f$cc_river_float_srp_gap_topology_id##
+When !f$cc_river_float_srp_context Return 0 Force
+When f$cc_river_float_srp_fourplus_origin Return 5 Force
+When f$cc_river_float_srp_threeway_origin_now_hu_unresolved Return 4 Force
+When f$cc_river_float_srp_current_threeway Return 3 Force
+When f$cc_river_float_srp_clean_hu_caller_vs_pfa Return 1 Force
+When f$cc_river_float_srp_clean_hu_pfa_lost_initiative Return 2 Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// RF-SRP.02 — source-silent bluff/thin-value information boundary
+// -----------------------------------------------------------------------------
+
+// Purpose: current ordinary-SRP River hand is no-made but no general turn-call
+// draw snapshot exists to prove which missed-draw combo reached River.
+// Source: DeepCrusher's only explicit River-Float bluff needs exact prior draw
+// provenance; it is not merely `current no-made`.
+// Provenance: A source lesson + P deep-cash bluff-selection safety.
+##f$cc_river_float_srp_nomade_snapshot_missing##
+f$cc_river_float_srp_context &&
+f$cc_river_no_made &&
+!f$cc_river_float_source_bbv_sb_exact_parent_ready
+
+// Purpose: source-silent weak showdown-value class that should normally realize
+// showdown rather than be promoted to an automatic River thin-value bet.
+// Source/Provenance: P professional cash baseline; exact exploit/node can later
+// override only with stronger range/sizing evidence.
+##f$cc_river_float_srp_weak_showdown_value##
+f$cc_river_float_srp_context &&
+((f$cc_river_top_pair && f$cc_number_better_kickers > 4) ||
+ f$cc_river_second_pair ||
+ f$cc_river_third_or_worse_pair)
+
+// -----------------------------------------------------------------------------
+// RF-SRP.03 — 4+ way/origin robust-value adaptation
+// -----------------------------------------------------------------------------
+
+// Purpose: robust River value threshold for a hand that began flop four-plus
+// way. Selection is much stronger than ordinary HU/3way source ranges.
+// Source: no direct Crusher source exists for 4+ players.
+// Provenance: P conservative professional-theory fill.
+// Logic:
+//   * literal nuts always qualify;
+//   * on one-card four-to-straight/flush public structures, only literal nuts or
+//     full-house+ survive this generic baseline;
+//   * on ordinary completed straight/flush boards, require straight-or-better;
+//   * on non-completed boards, 2P+ is the baseline robust value class.
+// Safety: this is a value-BET threshold only, never a stack-off threshold.
+##f$cc_river_float_srp_fourplus_robust_value##
+When !f$cc_river_float_srp_fourplus_origin Return false Force
+When f$cc_river_float_source_literal_nuts Return true Force
+When f$cc_river_four_card_completion && (HaveFullHouse || HaveQuads || HaveStraightFlush) Return true Force
+When f$cc_river_four_card_completion Return false Force
+When f$cc_river_completed && f$cc_river_straight_or_better Return true Force
+When f$cc_river_completed Return false Force
+When f$cc_river_two_pair_plus Return true Force
+When Others Return false Force
+
+// Purpose: reviewed 4+ origin value sizing.
+// Source/Provenance: P cash adaptation: 75% for literal nuts, otherwise 50% to
+// value-bet robust selected-range holdings without importing Spin stack geometry.
+##f$cc_river_float_srp_fourplus_size_id##
+When !f$cc_river_float_srp_fourplus_robust_value Return 0 Force
+When f$cc_river_float_source_literal_nuts Return f$cc_river_size_75_id Force
+When Others Return f$cc_river_size_50_id Force
+
+// -----------------------------------------------------------------------------
+// RF-SRP.04 — reviewed gap action / coverage
+// -----------------------------------------------------------------------------
+
+// Purpose: identify source-silent ordinary-SRP states whose topology has been
+// reviewed by Gate06C rather than remaining unknown.
+// Source/Provenance: P coverage contract over the five topology IDs above.
+##f$cc_river_float_srp_gap_covered##
+f$cc_river_float_srp_context &&
+!f$cc_river_float_source_covered &&
+f$cc_river_float_srp_gap_topology_id > 0
+
+// Purpose: ordinary-SRP professional gap action.
+// Source/Provenance: P conservative deep-cash policy.
+// Positive gap action exists only for robust 4+ origin value. Clean HU/3way
+// source-silent weak TP/lower pair/no-made intentionally CHECK until exact turn
+// call/bluff provenance is available.
+##f$cc_river_float_srp_gap_action##
+When !f$cc_river_float_srp_gap_covered Return false Force
+When f$cc_river_float_srp_fourplus_robust_value Return true Force
+When Others Return false Force
+
+// Purpose: paired ordinary-SRP gap size-ID owner.
+// Source/Provenance: P exact owner; reviewed checks return 0.
+##f$cc_river_float_srp_gap_size_id##
+When !f$cc_river_float_srp_gap_action Return 0 Force
+When f$cc_river_float_srp_fourplus_robust_value Return f$cc_river_float_srp_fourplus_size_id Force
+When Others Return 0 Force
+
+// Purpose: distinguish a deliberate source-silent CHECK from unsupported state.
+// Source/Provenance: P strategy audit metadata.
+##f$cc_river_float_srp_reviewed_check##
+f$cc_river_float_srp_gap_covered && !f$cc_river_float_srp_gap_action
+
+// Purpose: positive SRP gap action must own one canonical River size.
+// Source/Provenance: P engineering invariant.
+##f$cc_river_float_srp_gap_size_consistent##
+When !f$cc_river_float_srp_gap_action Return f$cc_river_float_srp_gap_size_id = 0 Force
+When f$cc_river_float_srp_gap_action Return f$cc_river_float_srp_gap_size_id >= 1 && f$cc_river_float_srp_gap_size_id <= 5 Force
+When Others Return false Force
+
+// ============================================================================
+// End Gate06C ordinary-SRP River Float adaptation.
+// ============================================================================
