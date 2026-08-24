@@ -1,0 +1,148 @@
+// ============================================================================
+// CashCrusher_River_CBet_ISO.txt
+// Gate 03D — isolation-pot River CBet
+// ============================================================================
+// Source boundary:
+//   No dedicated deep-stack ISO three-barrel tree exists in DeepCrusher. Exact
+//   policy is P-heavy, constrained by A current-strength/runout/multiway logic.
+//
+// Range provenance:
+//   original limper != post-raise coldcaller; Turn-HU != Turn-MW survivor.
+//
+// Stack-depth contract:
+//   River value betting does not authorize response versus a raise. No BetMax or
+//   inherited commitment shortcut appears here.
+// ============================================================================
+
+// Purpose: clean enough ISO River for one-pair value.
+// Source/Provenance: A runout caution + P ISO abstraction.
+##f$cc_river_iso_clean##
+IsRiver && !f$cc_river_completed && !f$cc_river_four_card_completion
+
+// Purpose: clean meaningful-OC pressure River for narrow bluff selection.
+// Source/Provenance: P range-advantage selector; never sufficient alone.
+##f$cc_river_iso_high_pressure##
+f$cc_river_iso_clean && f$cc_river_meaningful_overcard && !f$cc_river_pairs_previous_board
+
+// -----------------------------------------------------------------------------
+// RI.01 — HU versus ORIGINAL LIMPER
+// -----------------------------------------------------------------------------
+
+// Purpose: River value/bluff baseline versus original limp-caller.
+// Source: no literal ISO River source.
+// Provenance: P professional-theory fill.
+// Logic: widest ISO survivor permits broader clean one-pair value. Medium TP and
+// missed-draw bluff require Turn already HU/IP and low selection. Multiway-Turn
+// survivor automatically tightens.
+##f$cc_river_iso_hu_limper_action##
+When !f$cc_river_iso_hu_context_consistent Return false Force
+When !f$cc_river_iso_hu_villain_is_limper Return false Force
+When f$cc_river_two_pair_plus Return true Force
+When f$cc_river_overpair && f$cc_river_iso_clean Return true Force
+When f$cc_river_overpair && f$cc_river_hu_spr_below_1 Return true Force
+When f$cc_river_overpair Return false Force
+When f$cc_river_strong_top_pair && f$cc_river_iso_clean Return true Force
+When f$cc_river_medium_top_pair && f$cc_hu_ip && f$cc_river_iso_hu_from_hu_turn && !f$cc_river_iso_hu_strong_selection && f$cc_river_iso_clean && !f$cc_river_hu_high_spr Return true Force
+When f$cc_river_top_pair Return false Force
+When f$cc_river_second_pair Return false Force
+When f$cc_river_no_made && user_cc_turn_state_had_premium_draw && f$cc_hu_ip && f$cc_river_iso_hu_from_hu_turn && !f$cc_river_iso_hu_strong_selection && f$cc_river_turn_plan_size_id <= 4 && f$cc_river_iso_high_pressure && (f$cc_hole_has_ace || f$cc_hole_has_king) Return true Force
+When f$cc_river_no_made Return false Force
+When Others Return false Force
+
+// Purpose: HU limper-origin ISO River sizes.
+// Source/Provenance: P: 75 robust/polar, 50 strong one-pair, 33 medium thin value.
+##f$cc_river_iso_hu_limper_size_id##
+When !f$cc_river_iso_hu_limper_action Return 0 Force
+When f$cc_river_two_pair_plus Return f$cc_river_size_75_id Force
+When f$cc_river_overpair || f$cc_river_strong_top_pair Return f$cc_river_size_50_id Force
+When f$cc_river_medium_top_pair Return f$cc_river_size_33_id Force
+When f$cc_river_no_made Return f$cc_river_size_75_id Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// RI.02 — HU versus POST-RAISE COLD CALLER
+// -----------------------------------------------------------------------------
+
+// Purpose: River baseline versus selected post-raise coldcaller.
+// Source/Provenance: P-heavy; intentionally tighter than limp-caller family.
+// Logic: robust value active; one-pair requires clean runout/SPR support; no
+// pure-air baseline after selected preflop + flop + Turn continuation.
+##f$cc_river_iso_hu_coldcaller_action##
+When !f$cc_river_iso_hu_context_consistent Return false Force
+When !f$cc_river_iso_hu_villain_is_coldcaller Return false Force
+When f$cc_river_straight_or_better Return true Force
+When f$cc_river_two_pair_plus && !f$cc_river_super_completed Return true Force
+When f$cc_river_two_pair_plus && f$cc_river_hu_spr_below_1 Return true Force
+When f$cc_river_overpair && f$cc_river_iso_clean && !f$cc_river_hu_high_spr Return true Force
+When f$cc_river_strong_top_pair && f$cc_river_iso_clean && f$cc_river_hu_spr_below_2 Return true Force
+When f$cc_river_top_pair Return false Force
+When f$cc_river_second_pair Return false Force
+When f$cc_river_no_made Return false Force
+When Others Return false Force
+
+// Purpose: HU coldcaller-origin ISO River sizes.
+// Source/Provenance: P 75 robust value / 50 selected one-pair.
+##f$cc_river_iso_hu_coldcaller_size_id##
+When !f$cc_river_iso_hu_coldcaller_action Return 0 Force
+When f$cc_river_straight_or_better || f$cc_river_two_pair_plus Return f$cc_river_size_75_id Force
+When f$cc_river_overpair || f$cc_river_top_pair Return f$cc_river_size_50_id Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// RI.03 — Current MULTIWAY ISO River
+// -----------------------------------------------------------------------------
+
+// Purpose: value-heavy multiway ISO third barrel.
+// Source: no dedicated source; mature DeepCrusher multiway selectivity is A only.
+// Provenance: P-heavy.
+// Logic: straight+/clean 2P+ primary value; completed 2P+ only at very low
+// deepest SPR; OP only clean all-limper low-SPR; no TP/air baseline.
+// Safety: shortest sidepot opponent never controls the field-wide SPR condition.
+##f$cc_river_iso_mw_action##
+When !f$cc_river_iso_mw_context_consistent Return false Force
+When f$cc_river_straight_or_better && !f$cc_river_super_completed Return true Force
+When f$cc_river_straight_or_better && f$cc_river_iso_mw_all_effective_spr_below_1 Return true Force
+When f$cc_river_two_pair_plus && f$cc_river_iso_clean Return true Force
+When f$cc_river_two_pair_plus && f$cc_river_iso_mw_all_effective_spr_below_1 Return true Force
+When f$cc_river_overpair && f$cc_river_iso_mw_comp_id = 1 && f$cc_river_iso_clean && f$cc_river_iso_mw_all_effective_spr_below_1 Return true Force
+When f$cc_river_top_pair Return false Force
+When f$cc_river_second_pair Return false Force
+When f$cc_river_no_made Return false Force
+When Others Return false Force
+
+// Purpose: multiway ISO River size map.
+// Source/Provenance: P value-heavy 75 / fragile one-pair 50.
+##f$cc_river_iso_mw_size_id##
+When !f$cc_river_iso_mw_action Return 0 Force
+When f$cc_river_straight_or_better || f$cc_river_two_pair_plus Return f$cc_river_size_75_id Force
+When f$cc_river_overpair Return f$cc_river_size_50_id Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// RI.04 — Dispatch / coverage
+// -----------------------------------------------------------------------------
+
+// Purpose: exact ISO River action dispatcher.
+// Source/Provenance: P/A range-provenance router; inconsistent origin checks.
+##f$cc_river_iso_action##
+When f$cc_river_iso_hu_villain_is_limper && f$cc_river_iso_hu_context_consistent Return f$cc_river_iso_hu_limper_action Force
+When f$cc_river_iso_hu_villain_is_coldcaller && f$cc_river_iso_hu_context_consistent Return f$cc_river_iso_hu_coldcaller_action Force
+When f$cc_river_iso_mw_context_consistent Return f$cc_river_iso_mw_action Force
+When Others Return false Force
+
+// Purpose: paired ISO River size dispatcher.
+// Source/Provenance: P/A safety router; check/uncovered ->0.
+##f$cc_river_iso_size_id##
+When f$cc_river_iso_hu_villain_is_limper && f$cc_river_iso_hu_context_consistent Return f$cc_river_iso_hu_limper_size_id Force
+When f$cc_river_iso_hu_villain_is_coldcaller && f$cc_river_iso_hu_context_consistent Return f$cc_river_iso_hu_coldcaller_size_id Force
+When f$cc_river_iso_mw_context_consistent Return f$cc_river_iso_mw_size_id Force
+When Others Return 0 Force
+
+// Purpose: Gate03D ISO River coverage flag.
+// Source/Provenance: P engineering metadata.
+##f$cc_river_iso_covered##
+(f$cc_river_iso_hu_context_consistent && f$cc_river_iso_hu_survivor_type_id > 0) || f$cc_river_iso_mw_context_consistent
+
+// ============================================================================
+// End Gate03D ISO River CBet.
+// ============================================================================
