@@ -79,5 +79,7 @@ jobs:
         run: python tools/test_river_float_iso.py
       - name: Test plain 3BP and squeeze River Float gaps
         run: python tools/test_river_float_3bp.py
+      - name: Test clean HU 4BP River Float gaps
+        run: python tools/test_river_float_4bp.py
       - name: Test canonical River Float coverage boundary
         run: python tools/test_river_float_coverage.py
