@@ -28,6 +28,8 @@
 // Safety:
 //   * exact 3wBBvSB bluff stays blocked until its defensive turn-call snapshot
 //     writer proves the source history;
+//   * general source value is not projected into 4+ way/origin states that never
+//     existed in the three-player source environment;
 //   * no BotCalledOnFlop && BotCalledOnTurn shortcut;
 //   * no HandPower/random tail;
 //   * no BetMax/stackoff decision.
@@ -52,12 +54,26 @@ f$cc_river_top_pair && f$cc_number_better_kickers <= 4
 ##f$cc_river_float_source_literal_nuts##
 f$cc_river_float_opportunity && HaveNuts
 
+// Purpose: constrain the generic TBP/DeepCrusher value ladder to player-field
+// sizes that existed in the supplied Spin source.
+// Source: Crusher/DeepCrusher environment is at most three players.
+// Provenance: A source-domain guard; six-max 4+ way/origin states move to Gate06C.
+// Safety: a hand that began flop 4+ way is not treated as source-equivalent just
+// because folds later leave two or three players on the river.
+##f$cc_river_float_source_general_domain_supported##
+f$cc_river_float_opportunity &&
+f$cc_flop_entry_count >= 2 &&
+f$cc_flop_entry_count <= 3 &&
+nplayersplaying >= 2 &&
+nplayersplaying <= 3
+
 // Purpose: general source value owner after canonical River-Float history.
 // Source: CrusherTBP broad value rule, contribution-corrected in DeepCrusher.
-// Provenance: A source/manual-review baseline. It is intentionally not HU-only
-// because the audited TBP rule itself was not HU-only.
+// Provenance: A source/manual-review baseline inside source-sized HU/3way fields.
+// Six-max 4+ origin/current fields are deliberately not claimed by this source
+// function and are reviewed separately in Gate06C.
 ##f$cc_river_float_source_general_value_action##
-When !f$cc_river_float_opportunity Return false Force
+When !f$cc_river_float_source_general_domain_supported Return false Force
 When f$cc_river_float_source_literal_nuts Return true Force
 When f$cc_river_two_pair_plus Return true Force
 When f$cc_river_overpair Return true Force
