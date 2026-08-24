@@ -1,0 +1,184 @@
+// ============================================================================
+// CashCrusher_Flop_Float_ISO.txt
+// Gate 04D — multi-handed isolation-pot Flop Float
+// ============================================================================
+// Purpose:
+//   Handle caller-IP checked-to stabs in proven ISO pots while preserving whether
+//   Hero was an original limper or a post-raise cold caller.
+//
+// Source boundary:
+//   Direct true-HU SB-limp/BB-raise ancestry is already Gate04B HUSB and is NOT
+//   duplicated here. Multi-handed ISO caller ranges have no literal Spin tree.
+//
+// Provenance:
+//   A/T = persisted ISO masks and current position/hand mechanics.
+//   P   = six-max cash Float policy for original-limper vs coldcaller ranges.
+// ============================================================================
+
+// Purpose: canonical bit for Hero's six-max-equivalent position.
+// Source/Provenance: T Gate00 position-bit mapping, local Float adapter.
+##f$cc_flop_float_hero_pos_bit##
+When f$cc_hero_pos_id = 1 Return 1 Force
+When f$cc_hero_pos_id = 2 Return 2 Force
+When f$cc_hero_pos_id = 3 Return 4 Force
+When f$cc_hero_pos_id = 4 Return 8 Force
+When f$cc_hero_pos_id = 5 Return 16 Force
+When f$cc_hero_pos_id = 6 Return 32 Force
+When Others Return 0 Force
+
+// Purpose: Hero is proven original limper before the isolation raise.
+// Source/Provenance: A exact intersection with Gate01E pre-raise-limper mask.
+##f$cc_flop_float_iso_hero_was_limper##
+f$cc_pf_iso_proven &&
+f$cc_flop_float_hero_pos_bit > 0 &&
+((f$cc_pf_pre_raise_limper_mask BitAnd f$cc_flop_float_hero_pos_bit) > 0)
+
+// Purpose: Hero is proven post-raise cold caller in the isolation pot.
+// Source/Provenance: A exact intersection with Gate01E post-raise mask.
+##f$cc_flop_float_iso_hero_was_postraise_coldcaller##
+f$cc_pf_iso_proven &&
+f$cc_flop_float_hero_pos_bit > 0 &&
+((f$cc_pf_post_raise_coldcaller_mask BitAnd f$cc_flop_float_hero_pos_bit) > 0)
+
+// Purpose: reject overlap/unknown Hero ISO caller provenance.
+// Source: aggregate callbits can otherwise blur which stage Hero called.
+// Provenance: P fail-closed safety over A exact masks.
+##f$cc_flop_float_iso_hero_provenance_consistent##
+When !f$cc_pf_iso_proven Return false Force
+When f$cc_flop_float_iso_hero_was_limper && f$cc_flop_float_iso_hero_was_postraise_coldcaller Return false Force
+When f$cc_flop_float_iso_hero_was_limper || f$cc_flop_float_iso_hero_was_postraise_coldcaller Return true Force
+When Others Return false Force
+
+// Purpose: HU multi-handed ISO Float versus the actual isolation raiser.
+// Source/Provenance: A/T exact final-aggressor identity + P range policy owner.
+// Safety: true HU excluded; if sole Villain is not sole raiser, fail closed.
+##f$cc_flop_float_iso_hu_context##
+f$cc_flop_float_hu_opportunity &&
+f$cc_hu_origin_preflop_reduced &&
+f$cc_pot_family_id = 2 &&
+f$cc_pf_iso_proven &&
+f$cc_pf_role_srp_caller &&
+f$cc_hu_villain_pos_id = f$cc_pf_single_raiser_pos_id &&
+f$cc_flop_float_iso_hero_provenance_consistent
+
+// Purpose: current multiway ISO, Hero exact LAST after isolator and every other
+// live player checked.
+// Source/Provenance: T checked-to LAST topology + P dedicated multiway ISO owner.
+##f$cc_flop_float_iso_multiway_context##
+f$cc_flop_float_multiway_opportunity &&
+f$cc_pot_family_id = 2 &&
+f$cc_pf_iso_proven &&
+f$cc_pf_role_srp_caller &&
+f$cc_flop_float_iso_hero_provenance_consistent &&
+f$cc_relpos_id = 3
+
+// Purpose: HU Float when Hero is original limper facing missed isolation CBet.
+// Source: HUSB direct family shows the qualitative pressure principle, but this
+// exact multi-handed range is not literal source.
+// Provenance: A principle + P six-max range fill.
+##f$cc_flop_float_iso_hu_limper_action##
+When !f$cc_flop_float_iso_hu_context Return false Force
+When !f$cc_flop_float_iso_hero_was_limper Return false Force
+When f$cc_hand_two_pair_or_better Return true Force
+When f$cc_hand_top_pair_or_better Return true Force
+When f$cc_hand_middle_or_bottom_pair && f$cc_flop_float_dry_parent Return true Force
+When f$cc_hand_middle_or_bottom_pair Return false Force
+When f$cc_flop_float_premium_draw Return true Force
+When f$cc_flop_float_good_draw Return true Force
+When f$cc_flop_float_air && f$cc_flop_float_dry_parent && (f$cc_cbet_flop_quality_air || f$cc_hole_has_ace || f$cc_hole_has_king) Return true Force
+When f$cc_flop_float_air Return false Force
+When Others Return false Force
+
+// Purpose: HU original-limper Float size map.
+// Source/Provenance: P 33/50/75 normalization constrained by HUSB 50-75 ancestry.
+##f$cc_flop_float_iso_hu_limper_size_id##
+When !f$cc_flop_float_iso_hu_limper_action Return 0 Force
+When f$cc_hand_two_pair_or_better && f$cc_flop_float_wet_parent Return f$cc_flop_float_size_75_id Force
+When f$cc_hand_two_pair_or_better Return f$cc_flop_float_size_50_id Force
+When f$cc_hand_top_pair_or_better Return f$cc_flop_float_size_50_id Force
+When f$cc_hand_middle_or_bottom_pair Return f$cc_flop_float_size_33_id Force
+When f$cc_flop_float_premium_draw Return f$cc_flop_float_size_75_id Force
+When f$cc_flop_float_good_draw Return f$cc_flop_float_size_50_id Force
+When f$cc_flop_float_air Return f$cc_flop_float_size_33_id Force
+When Others Return 0 Force
+
+// Purpose: HU Float as post-raise cold caller versus isolator.
+// Source: no direct Spin range family; selected cold-call range warrants fewer
+// arbitrary air stabs than original limp-call range.
+// Provenance: P-heavy.
+##f$cc_flop_float_iso_hu_coldcaller_action##
+When !f$cc_flop_float_iso_hu_context Return false Force
+When !f$cc_flop_float_iso_hero_was_postraise_coldcaller Return false Force
+When f$cc_hand_two_pair_or_better Return true Force
+When HaveOverPair && !f$cc_hand_two_pair_or_better Return true Force
+When f$cc_cbet_flop_strong_top_pair Return true Force
+When f$cc_cbet_flop_medium_top_pair && f$cc_flop_static_high_parent Return true Force
+When f$cc_hand_top_pair_or_better Return false Force
+When f$cc_hand_middle_or_bottom_pair Return false Force
+When f$cc_flop_float_premium_draw Return true Force
+When f$cc_flop_float_good_draw && f$cc_flop_float_dry_parent Return true Force
+When f$cc_flop_float_air Return false Force
+When Others Return false Force
+
+// Purpose: post-raise-coldcaller HU ISO size map.
+// Source/Provenance: P selected-range 33/50/75 deterministic fill.
+##f$cc_flop_float_iso_hu_coldcaller_size_id##
+When !f$cc_flop_float_iso_hu_coldcaller_action Return 0 Force
+When f$cc_hand_two_pair_or_better && f$cc_flop_float_wet_parent Return f$cc_flop_float_size_75_id Force
+When f$cc_hand_two_pair_or_better Return f$cc_flop_float_size_50_id Force
+When HaveOverPair && !f$cc_hand_two_pair_or_better Return f$cc_flop_float_size_50_id Force
+When f$cc_cbet_flop_strong_top_pair Return f$cc_flop_float_size_50_id Force
+When f$cc_cbet_flop_medium_top_pair Return f$cc_flop_float_size_33_id Force
+When f$cc_flop_float_premium_draw Return f$cc_flop_float_size_50_id Force
+When f$cc_flop_float_good_draw Return f$cc_flop_float_size_50_id Force
+When Others Return 0 Force
+
+// Purpose: multiway ISO checked-to action, independently of limper/coldcaller Hero
+// subtype once the field remains multiway.
+// Source/Provenance: P multiway tightening. Pure-air Float is absent.
+##f$cc_flop_float_iso_multiway_action##
+When !f$cc_flop_float_iso_multiway_context Return false Force
+When f$cc_hand_two_pair_or_better Return true Force
+When nplayersplaying = 3 && f$cc_cbet_flop_strong_top_pair && f$cc_flop_float_dry_parent Return true Force
+When f$cc_hand_top_pair_or_better Return false Force
+When f$cc_hand_middle_or_bottom_pair Return false Force
+When nplayersplaying = 3 && f$cc_flop_float_premium_draw Return true Force
+When nplayersplaying >= 4 && f$cc_real_combo_draw && f$cc_hand_no_made Return true Force
+When f$cc_flop_float_real_gutshot_plus Return false Force
+When f$cc_flop_float_air Return false Force
+When Others Return false Force
+
+// Purpose: multiway ISO Float size map.
+// Source/Provenance: P robust-value/equity 50/75 sizing.
+##f$cc_flop_float_iso_multiway_size_id##
+When !f$cc_flop_float_iso_multiway_action Return 0 Force
+When f$cc_hand_two_pair_or_better && f$cc_flop_float_wet_parent Return f$cc_flop_float_size_75_id Force
+When f$cc_hand_two_pair_or_better Return f$cc_flop_float_size_50_id Force
+When f$cc_cbet_flop_strong_top_pair Return f$cc_flop_float_size_50_id Force
+When f$cc_flop_float_premium_draw || (f$cc_real_combo_draw && f$cc_hand_no_made) Return f$cc_flop_float_size_50_id Force
+When Others Return 0 Force
+
+// Purpose: ISO Float action dispatcher.
+// Source/Provenance: P exact caller-origin owner.
+##f$cc_flop_float_iso_action##
+When f$cc_flop_float_iso_hu_context && f$cc_flop_float_iso_hero_was_limper Return f$cc_flop_float_iso_hu_limper_action Force
+When f$cc_flop_float_iso_hu_context && f$cc_flop_float_iso_hero_was_postraise_coldcaller Return f$cc_flop_float_iso_hu_coldcaller_action Force
+When f$cc_flop_float_iso_multiway_context Return f$cc_flop_float_iso_multiway_action Force
+When Others Return false Force
+
+// Purpose: ISO Float paired size dispatcher.
+// Source/Provenance: P exact owner; check/uncovered ->0.
+##f$cc_flop_float_iso_size_id##
+When f$cc_flop_float_iso_hu_context && f$cc_flop_float_iso_hero_was_limper Return f$cc_flop_float_iso_hu_limper_size_id Force
+When f$cc_flop_float_iso_hu_context && f$cc_flop_float_iso_hero_was_postraise_coldcaller Return f$cc_flop_float_iso_hu_coldcaller_size_id Force
+When f$cc_flop_float_iso_multiway_context Return f$cc_flop_float_iso_multiway_size_id Force
+When Others Return 0 Force
+
+// Purpose: report implemented ISO Float coverage.
+// Source/Provenance: P engineering metadata.
+##f$cc_flop_float_iso_covered##
+f$cc_flop_float_iso_hu_context || f$cc_flop_float_iso_multiway_context
+
+// ============================================================================
+// End Gate04D ISO Float.
+// ============================================================================
