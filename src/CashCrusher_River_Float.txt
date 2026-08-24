@@ -4,37 +4,41 @@
 // ============================================================================
 // Purpose:
 //   Route only a valid Gate06A River-Float opportunity to reviewed source or
-//   six-max gap policy without letting unrelated pot families inherit SRP logic.
+//   exact pot-family gap policy without letting unrelated families inherit SRP.
 //
 // Current implemented children:
 //   * Gate06B direct/high-ancestry source actions and source locks;
-//   * Gate06C ordinary-SRP six-max adaptation.
+//   * Gate06C ordinary-SRP six-max adaptation;
+//   * Gate06D ISO / true-HU limp-raised adaptation.
 //
 // Future children remain fail-closed:
-//   ISO, plain 3BP, squeeze and clean supported 4BP are not yet routed here.
+//   plain 3BP, squeeze and clean supported 4BP are not yet routed here.
 //
 // Source/Provenance:
 //   T = Gate06A exact closed-turn-call parent.
 //   A = Gate06B source/high-ancestry ownership.
-//   P = exact family decomposition and reviewed six-max SRP gaps.
+//   P = exact family decomposition and reviewed six-max SRP/ISO gaps.
 // ============================================================================
 
 // Purpose: compact River-Float family ID.
-// IDs: 1 source/high-ancestry; 2 ordinary-SRP P gap; 0 unsupported/unreviewed.
+// IDs: 1 source/high-ancestry; 2 ordinary-SRP P gap; 3 ISO/trueHU-limp-raised;
+// 0 unsupported/unreviewed.
 // Source/Provenance: P routing metadata over A/P child coverage.
 ##f$cc_river_float_family_id##
 When !f$cc_river_float_opportunity Return 0 Force
 When f$cc_river_float_source_covered Return 1 Force
 When f$cc_river_float_srp_gap_covered Return 2 Force
+When f$cc_river_float_iso_covered Return 3 Force
 When Others Return 0 Force
 
 // Purpose: canonical River-Float action router.
-// Source/Provenance: A/P exact-family precedence: source branch first, then only
-// the reviewed ordinary-SRP gap. Unknown other pot families check/fail closed.
+// Source/Provenance: A/P exact-family precedence: source first, then reviewed
+// ordinary-SRP and ISO gaps. Unknown 3BP/squeeze/4BP states fail closed.
 ##f$cc_river_float_router##
 When !f$cc_river_float_opportunity Return false Force
 When f$cc_river_float_source_covered Return f$cc_river_float_source_action Force
 When f$cc_river_float_srp_gap_covered Return f$cc_river_float_srp_gap_action Force
+When f$cc_river_float_iso_covered Return f$cc_river_float_iso_action Force
 When Others Return false Force
 
 // Purpose: paired strategic size-ID router.
@@ -43,13 +47,16 @@ When Others Return false Force
 When !f$cc_river_float_opportunity Return 0 Force
 When f$cc_river_float_source_covered Return f$cc_river_float_source_size_id Force
 When f$cc_river_float_srp_gap_covered Return f$cc_river_float_srp_gap_size_id Force
+When f$cc_river_float_iso_covered Return f$cc_river_float_iso_size_id Force
 When Others Return 0 Force
 
 // Purpose: report whether current River-Float state has been reviewed, including
 // explicit check policies as well as positive betting actions.
 // Source/Provenance: P coverage contract.
 ##f$cc_river_float_strategy_covered##
-f$cc_river_float_source_covered || f$cc_river_float_srp_gap_covered
+f$cc_river_float_source_covered ||
+f$cc_river_float_srp_gap_covered ||
+f$cc_river_float_iso_covered
 
 // Purpose: positive action must own positive size; every check/uncovered state
 // must own size0.
