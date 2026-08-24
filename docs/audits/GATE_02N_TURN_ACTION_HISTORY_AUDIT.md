@@ -1,6 +1,6 @@
 # Gate 02N — closed Turn action provenance for River routing
 
-Status: **source/runtime boundary audited; implementation required before River CBet strategy**.
+Status: **implemented and CI-validated; OpenHoldem replay certification remains separate**.
 
 ## Why this gate exists
 
@@ -20,13 +20,13 @@ Source audit of the project OpenHoldem repository establishes:
 - `BetMax` is registered as `k_autoplayer_function_allin`, therefore a direct all-in is represented by `didalliround3` rather than by a normal size marker;
 - `lastraised3` is the stable previous-street final aggressor signal once the river is reached. OpenHoldem contains explicit previous-round repair logic that writes Hero as the prior last raiser when Hero's turn aggression closed the street and the new round begins.
 
-These are T-level runtime facts. River routing must not infer them from `user_*` plan variables.
+These are T-level runtime facts. River routing does not infer them from `user_*` plan variables.
 
-## Canonical histories to distinguish
+## Implemented canonical histories
 
-Gate02N must classify at least:
+`src/CashCrusher_Turn_ActionHistory.txt` now distinguishes:
 
-1. standard executed Turn CBet: one normal betsize, no check/call/re-raise afterwards, Hero final turn aggressor;
+1. standard executed Turn CBet: one normal betsize, no Hero check/call/re-raise afterwards, Hero final turn aggressor;
 2. direct Turn CBet all-in;
 3. Turn CBet then Villain raise then Hero call;
 4. Turn CBet then Hero re-aggression;
@@ -40,22 +40,39 @@ Gate02N must classify at least:
 
 Only case 1 is the normal `River CBet` parent. Raised-turn continuations and check histories belong to separate later nodes.
 
-## Turn-state snapshot required before River
+The canonical River parent is deliberately strict: exactly one `didbetsizeround3`, zero Hero checks/calls/generic raises/all-ins and `lastraised3 = userchair`.
 
-Several DeepCrusher river contracts depend on how Hero arrived at the river, not merely on current river hand strength. The current turn-only helpers are guarded by `IsTurn`, so those facts disappear on the river unless captured while the turn exists.
+## Turn-state snapshot preserved for River
 
-Gate02N therefore snapshots **provenance**, not future action:
+Several DeepCrusher river contracts depend on how Hero arrived at the river, not merely on current river hand strength. Current turn-only helpers are guarded by `IsTurn`, so those facts disappear on the river unless captured while the turn exists.
 
-- primary turn hand class: 2P+, overpair, top pair, lower pair, no-made;
+Gate02N snapshots **provenance**, not future action:
+
+- primary turn hand class: 2P+, overpair, top pair, second pair, third-or-worse pair, no-made;
 - TP kicker band;
 - premium/good/weak draw and air provenance;
 - turn runout class (`super-completed`, newly completed, paired-flop-rank, glued overcard, other overcard, undercard, neutral);
 - exact Turn-CBet family ID;
 - whether the turn decision was HU or multiway;
 - relative position FIRST/MIDDLE/LAST;
-- exact canonical live-opponent mask at the turn decision.
+- exact player count and canonical live-opponent mask at the turn decision.
 
-Current river strength always supersedes the stored turn hand class. The snapshot only answers historical questions such as "was this a draw-origin second barrel?" or "did this river begin from a multiway turn that later reduced to HU?".
+Current river strength always supersedes stored turn hand class. The snapshot only answers historical questions such as "was this a draw-origin second barrel?" or "did this river begin from a multiway turn that later reduced to HU?".
+
+The player-count/live-mask snapshot is especially important because a multiway Turn barrel can reduce to HU on River. The surviving player then carries a selected **multiway-Turn-call** range and cannot be routed as though the Turn had been HU from the start.
+
+## Plan-versus-execution diagnostics
+
+`f$cc_hist_turn_cbet_runtime_mismatch` catches:
+
+- inconsistent plan-size markers;
+- corrupt/incomplete strategic Turn snapshot;
+- planned bet but actual check;
+- executed CBet without plan capture;
+- unexpected direct-all-in promotion;
+- expected local natural-all-in that was not executed.
+
+`f$cc_hist_river_standard_cbet_parent_valid` requires the raw closed-round parent plus valid plan/snapshot metadata and zero mismatch.
 
 ## OpenPPL safety contract
 
@@ -67,4 +84,12 @@ Current river strength always supersedes the stored turn hand class. The snapsho
 
 ## Stack-depth contract
 
-Gate02N does not create any new strategic all-in threshold. It only records whether the local Turn execution adapter expected a mechanically natural all-in and compares that plan with `didalliround3` after the street closes. Historical DeepCrusher ~50/55/60% commitment thresholds remain separate exact-node/global-callback audit material.
+Gate02N creates no strategic all-in threshold. It only records whether the local Turn execution adapter expected a mechanically natural all-in and compares that plan with `didalliround3` after the street closes. Historical DeepCrusher ~50/55/60% commitment thresholds remain separate exact-node/global-callback audit material.
+
+## Validation
+
+`tools/test_turn_action_history.py` covers the deterministic closed-turn truth table and the required source contract. The test is part of `.github/workflows/static-lint.yml`.
+
+GitHub Actions run **#382** passed after the Gate02N CI step was added.
+
+OpenHoldem parser/replay fixtures remain required by Gate02V before any table-ready claim.
