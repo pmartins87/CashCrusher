@@ -17,7 +17,7 @@
 //
 // Provenance:
 //   T/A = direct source categories assembled from existing CashCrusher flop
-//         hand/backdoor primitives.
+//         hand/backdoor primitives and OpenPPL hole-card ranks.
 //   P   = helper naming / history-only separation.
 //
 // Safety:
@@ -34,15 +34,16 @@ f$cc_flop_donk_source_draw_check_parent
 
 // Purpose: direct-source high-card/backdoor candidate before Hero checks flop.
 // Source: A-high requires BDSD; lower high-card requires BDFD + at least one OC.
-// Provenance: T/A direct `(BBorSB)v2pp` source translation.
+// Provenance: T/A direct `(BBorSB)v2pp` source translation. `rankhiplayer=ace`
+// mechanically means Hero holds at least one Ace and avoids inventing a helper.
 // Safety: price <=33% is NOT inferable before the later bet arrives and therefore
 // is intentionally not encoded here.
 ##f$cc_flop_donk_source_turn_xc_highair_candidate##
 When !f$cc_flop_donk_source_native_context Return false Force
 When !f$cc_hand_no_made Return false Force
 When f$cc_real_frontdoor_draw Return false Force
-When f$cc_hole_has_ace && f$cc_backdoor_sd Return true Force
-When !f$cc_hole_has_ace && f$cc_backdoor_fd && Overcards > 0 Return true Force
+When rankhiplayer = ace && f$cc_backdoor_sd Return true Force
+When rankhiplayer != ace && f$cc_backdoor_fd && Overcards > 0 Return true Force
 When Others Return false Force
 
 // Purpose: source-positive draw Donk whose future B/C Turn branch needs later
