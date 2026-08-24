@@ -37,3 +37,5 @@ jobs:
         run: python tools/test_turn_cbet_coverage.py
       - name: Test Turn CBet runtime sizing contract
         run: python tools/test_turn_cbet_runtime.py
+      - name: Test closed Turn action-history contract
+        run: python tools/test_turn_action_history.py
