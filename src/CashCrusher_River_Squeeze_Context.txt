@@ -1,0 +1,117 @@
+// ============================================================================
+// CashCrusher_River_Squeeze_Context.txt
+// Gate 03F.0 — squeeze-pot River-CBet survivor/composition provenance
+// ============================================================================
+// Purpose: preserve opener / pre3bet-coldcaller / post3bet-coldcaller origin on
+// River and whether the Turn barrel itself was HU or multiway.
+// Source/Provenance: T/A persisted squeeze masks + Gate02N; P River metadata.
+// ============================================================================
+
+// Purpose: generic squeeze River-CBet context.
+// Source/Provenance: T/P exact Gate02 family carry-forward + subtype proof.
+##f$cc_river_squeeze_base_context##
+f$cc_river_cbet_opportunity && f$cc_river_turn_family_id = 11 && f$cc_pf_squeeze_proven && !f$cc_pf_3bet_plain_proven && f$cc_river_live_mask_subset_of_turn
+
+// Purpose: current HU survivor is original opener.
+// Source/Provenance: T/A exact 3BP/squeeze survivor helper.
+##f$cc_river_squeeze_hu_vs_opener##
+f$cc_river_squeeze_base_context && f$cc_hu && f$cc_hu_3bp_villain_is_opener
+
+// Purpose: current HU survivor is pre3bet coldcaller that continued versus squeeze.
+// Source/Provenance: T/A exact persisted mask helper.
+##f$cc_river_squeeze_hu_vs_pre3bet##
+f$cc_river_squeeze_base_context && f$cc_hu && f$cc_hu_3bp_villain_is_pre3bet_coldcaller
+
+// Purpose: current HU survivor is post3bet coldcaller.
+// Source/Provenance: T/A exact persisted mask helper.
+##f$cc_river_squeeze_hu_vs_post3bet##
+f$cc_river_squeeze_base_context && f$cc_hu && f$cc_hu_3bp_villain_is_post3bet_coldcaller
+
+// Purpose: current HU River came from HU Turn.
+// Source/Provenance: T/A Gate02N field history.
+##f$cc_river_squeeze_hu_from_hu_turn##
+f$cc_river_squeeze_base_context && f$cc_river_turn_hu_still_hu
+
+// Purpose: current HU River came from multiway Turn barrel.
+// Source/Provenance: T/P selected multiway-Turn survivor history.
+##f$cc_river_squeeze_hu_from_mw_turn##
+f$cc_river_squeeze_base_context && f$cc_river_turn_mw_now_hu
+
+// Purpose: stable HU squeeze survivor ID: 1 opener | 2 pre3bet | 3 post3bet.
+// Source/Provenance: P routing metadata over T exact origins.
+##f$cc_river_squeeze_hu_survivor_type_id##
+When f$cc_river_squeeze_hu_vs_opener Return 1 Force
+When f$cc_river_squeeze_hu_vs_pre3bet Return 2 Force
+When f$cc_river_squeeze_hu_vs_post3bet Return 3 Force
+When Others Return 0 Force
+
+// Purpose: validate current HU squeeze River lineage.
+// Source/Provenance: P fail-closed invariant.
+##f$cc_river_squeeze_hu_context_consistent##
+When !f$cc_river_squeeze_base_context || !f$cc_hu Return false Force
+When (f$cc_river_squeeze_hu_vs_opener + f$cc_river_squeeze_hu_vs_pre3bet + f$cc_river_squeeze_hu_vs_post3bet) != 1 Return false Force
+When (f$cc_river_squeeze_hu_from_hu_turn + f$cc_river_squeeze_hu_from_mw_turn) != 1 Return false Force
+When f$cc_river_squeeze_hu_survivor_type_id <= 0 Return false Force
+When Others Return true Force
+
+// Purpose: selected HU squeeze range after coldcaller origin, MW Turn or large barrel.
+// Source/Provenance: P professional-theory selection modifier.
+##f$cc_river_squeeze_hu_strong_selection##
+f$cc_river_squeeze_hu_context_consistent && (f$cc_river_squeeze_hu_survivor_type_id >= 2 || f$cc_river_squeeze_hu_from_mw_turn || f$cc_river_turn_plan_size_id >= 6)
+
+// Purpose: current live original opener count in multiway squeeze River.
+// Source/Provenance: T exact live mask.
+##f$cc_river_squeeze_mw_live_opener_count##
+When !f$cc_river_squeeze_base_context || !f$cc_multiway Return 0 Force
+When Others Return BitCount(f$cc_mw_3bp_live_opener_mask) Force
+
+// Purpose: current live pre3bet-coldcaller count.
+// Source/Provenance: T exact live mask.
+##f$cc_river_squeeze_mw_live_pre3bet_count##
+When !f$cc_river_squeeze_base_context || !f$cc_multiway Return 0 Force
+When Others Return BitCount(f$cc_mw_3bp_live_pre3bet_coldcaller_mask) Force
+
+// Purpose: current live post3bet-coldcaller count.
+// Source/Provenance: T exact live mask.
+##f$cc_river_squeeze_mw_live_post3bet_count##
+When !f$cc_river_squeeze_base_context || !f$cc_multiway Return 0 Force
+When Others Return BitCount(f$cc_mw_3bp_live_post3bet_coldcaller_mask) Force
+
+// Purpose: total current opponents with exact squeeze origin.
+// Source/Provenance: T/P exact-count aggregation.
+##f$cc_river_squeeze_mw_classified_count##
+When !f$cc_river_squeeze_base_context || !f$cc_multiway Return 0 Force
+When Others Return (f$cc_river_squeeze_mw_live_opener_count + f$cc_river_squeeze_mw_live_pre3bet_count + f$cc_river_squeeze_mw_live_post3bet_count) Force
+
+// Purpose: current multiway squeeze composition ID: 1 opener-only field |
+// 2 opener + coldcaller-origin | 3 coldcaller-origin without opener | 0 invalid.
+// Source/Provenance: P exact range-composition metadata.
+##f$cc_river_squeeze_mw_comp_id##
+When !f$cc_river_squeeze_base_context || !f$cc_multiway Return 0 Force
+When f$cc_river_squeeze_mw_live_opener_count = 1 && f$cc_river_squeeze_mw_live_pre3bet_count = 0 && f$cc_river_squeeze_mw_live_post3bet_count = 0 && f$cc_river_squeeze_mw_classified_count = nopponentsplaying Return 1 Force
+When f$cc_river_squeeze_mw_live_opener_count = 1 && (f$cc_river_squeeze_mw_live_pre3bet_count + f$cc_river_squeeze_mw_live_post3bet_count) > 0 && f$cc_river_squeeze_mw_classified_count = nopponentsplaying Return 2 Force
+When f$cc_river_squeeze_mw_live_opener_count = 0 && (f$cc_river_squeeze_mw_live_pre3bet_count + f$cc_river_squeeze_mw_live_post3bet_count) = nopponentsplaying Return 3 Force
+When Others Return 0 Force
+
+// Purpose: validate current multiway squeeze River field/deepest SPR.
+// Source/Provenance: T/P fail-closed contract.
+##f$cc_river_squeeze_mw_context_consistent##
+When !f$cc_river_squeeze_base_context || !f$cc_multiway Return false Force
+When !f$cc_river_mw_deep_spr_valid Return false Force
+When f$cc_river_squeeze_mw_comp_id <= 0 Return false Force
+When f$cc_river_squeeze_mw_classified_count != nopponentsplaying Return false Force
+When Others Return true Force
+
+// Purpose: all current multiway squeeze effective relationships have SPR <2.
+// Source/Provenance: T/P deepest-effective geometry descriptor.
+##f$cc_river_squeeze_mw_all_effective_spr_below_2##
+f$cc_river_squeeze_mw_context_consistent && f$cc_mw_spr_deepest_round_start < 2
+
+// Purpose: all current multiway squeeze effective relationships have SPR <1.
+// Source/Provenance: T/P deepest-effective geometry descriptor; no auto-jam.
+##f$cc_river_squeeze_mw_all_effective_spr_below_1##
+f$cc_river_squeeze_mw_context_consistent && f$cc_mw_spr_deepest_round_start < 1
+
+// ============================================================================
+// End Gate03F.0 squeeze River context.
+// ============================================================================
