@@ -15,21 +15,22 @@
 //   5 = proven multi-handed ISO OOP caller reviewed CHECK baseline with original-
 //       limper versus post-raise-coldcaller provenance retained;
 //   6 = supported plain-3BP / squeeze OOP caller reviewed CHECK baseline with
-//       opener/pre3bet/post3bet caller provenance retained.
+//       opener/pre3bet/post3bet caller provenance retained;
+//   7 = residual unraised current-multiway professional value/equity lead policy.
 //
 // Future children remain fail-closed:
-//   unraised residual multiway, 4BP+ and unresolved/reversed reraised histories.
+//   4BP+ and unresolved/reversed reraised histories.
 //
 // Source/Provenance:
 //   T/A = Gate07A ownership + Gate07B direct source strategy.
-//   P = Gate07C 4-6h adaptation, Gate07D/E/F/G reviewed check baselines and
-//       explicit fail-closed router metadata.
+//   P = Gate07C 4-6h adaptation, Gate07D/E/F/G reviewed check baselines,
+//       Gate07H residual-unraised fill and explicit fail-closed metadata.
 // ============================================================================
 
 // Purpose: compact reviewed Flop-Donk family ID.
 // IDs: 1 native source; 2 4-6h BTN+both-blinds adaptation; 3 HU check;
 // 4 residual multiway ordinary-SRP check; 5 ISO check; 6 plain3BP/squeeze check;
-// 0 unsupported.
+// 7 residual unraised multiway; 0 unsupported.
 // Source/Provenance: P routing metadata over A/T/P reviewed coverage.
 ##f$cc_flop_donk_family_id##
 When !f$cc_flop_donk_opportunity Return 0 Force
@@ -39,6 +40,7 @@ When f$cc_flop_donk_hu_covered Return 3 Force
 When f$cc_flop_donk_mw_srp_covered Return 4 Force
 When f$cc_flop_donk_iso_covered Return 5 Force
 When f$cc_flop_donk_3bp_covered Return 6 Force
+When f$cc_flop_donk_unraised_mw_covered Return 7 Force
 When Others Return 0 Force
 
 // Purpose: canonical Flop Donk action router.
@@ -51,6 +53,7 @@ When f$cc_flop_donk_hu_covered Return f$cc_flop_donk_hu_action Force
 When f$cc_flop_donk_mw_srp_covered Return f$cc_flop_donk_mw_srp_action Force
 When f$cc_flop_donk_iso_covered Return f$cc_flop_donk_iso_action Force
 When f$cc_flop_donk_3bp_covered Return f$cc_flop_donk_3bp_action Force
+When f$cc_flop_donk_unraised_mw_covered Return f$cc_flop_donk_unraised_mw_action Force
 When Others Return false Force
 
 // Purpose: paired strategic size-ID router.
@@ -63,6 +66,7 @@ When f$cc_flop_donk_hu_covered Return f$cc_flop_donk_hu_size_id Force
 When f$cc_flop_donk_mw_srp_covered Return f$cc_flop_donk_mw_srp_size_id Force
 When f$cc_flop_donk_iso_covered Return f$cc_flop_donk_iso_size_id Force
 When f$cc_flop_donk_3bp_covered Return f$cc_flop_donk_3bp_size_id Force
+When f$cc_flop_donk_unraised_mw_covered Return f$cc_flop_donk_unraised_mw_size_id Force
 When Others Return 0 Force
 
 // Purpose: current Flop Donk state has a reviewed policy, including explicit check.
@@ -73,7 +77,8 @@ f$cc_flop_donk_6max_covered ||
 f$cc_flop_donk_hu_covered ||
 f$cc_flop_donk_mw_srp_covered ||
 f$cc_flop_donk_iso_covered ||
-f$cc_flop_donk_3bp_covered
+f$cc_flop_donk_3bp_covered ||
+f$cc_flop_donk_unraised_mw_covered
 
 // Purpose: action/size integrity.
 // Source/Provenance: P safety invariant.
