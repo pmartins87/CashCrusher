@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Gate07K closed Flop Donk action-history contracts."""
+"""Gate07K / Gate08B.0 closed Flop Donk action-history contracts."""
 
 from pathlib import Path
 
@@ -26,6 +26,8 @@ def wrapper_contract() -> None:
         "f$cc_flop_donk_source_value_action Set user_cc_flop_donk_state_source_value",
         "f$cc_flop_donk_source_lowpair_action Set user_cc_flop_donk_state_source_lowpair",
         "f$cc_flop_donk_source_draw_action Set user_cc_flop_donk_state_source_draw",
+        "f$cc_flop_donk_source_turn_xc_draw_candidate Set user_cc_flop_donk_state_source_turn_xc_draw",
+        "f$cc_flop_donk_source_turn_xc_highair_candidate Set user_cc_flop_donk_state_source_turn_xc_highair",
         "f$cc_flop_donk_router Set user_cc_flop_donk_plan_bet_seen",
         "f$cc_flop_donk_router Return true Force",
     ):
@@ -66,10 +68,25 @@ def snapshot_contract() -> None:
     for i in range(1, 9):
         assert f"user_cc_flop_donk_state_family_{i} Return {i} Force" in fam
 
+    xc_count = block(HIST, "f$cc_hist_flop_donk_source_turn_xc_marker_count")
+    assert "user_cc_flop_donk_state_source_turn_xc_draw" in xc_count
+    assert "user_cc_flop_donk_state_source_turn_xc_highair" in xc_count
+
+    draw = block(HIST, "f$cc_hist_flop_donk_source_turn_xc_draw_snapshot")
+    assert "f$cc_hist_flop_donk_family_id = 1" in draw
+    assert "user_cc_flop_donk_state_source_turn_xc_draw" in draw
+    assert "!user_cc_flop_donk_state_source_turn_xc_highair" in draw
+
+    highair = block(HIST, "f$cc_hist_flop_donk_source_turn_xc_highair_snapshot")
+    assert "f$cc_hist_flop_donk_family_id = 1" in highair
+    assert "user_cc_flop_donk_state_source_turn_xc_highair" in highair
+    assert "!user_cc_flop_donk_state_source_turn_xc_draw" in highair
+
     snap = block(HIST, "f$cc_hist_flop_donk_snapshot_consistent")
     assert "f$cc_hist_flop_donk_primary_class_marker_count != 1 Return false Force" in snap
     assert "f$cc_hist_flop_donk_player_count_marker_count != 1 Return false Force" in snap
     assert "BitCount(f$cc_hist_flop_donk_live_opp_mask) != (f$cc_hist_flop_donk_player_count - 1)" in snap
+    assert "f$cc_hist_flop_donk_source_turn_xc_marker_count > 1 Return false Force" in snap
     assert "f$cc_hist_flop_donk_family_id = 1" in snap
     assert "f$cc_hist_flop_donk_source_subtype_marker_count != 1" in snap
 
@@ -97,4 +114,4 @@ if __name__ == "__main__":
     closed_execution_contract()
     snapshot_contract()
     mismatch_and_parent_contract()
-    print("PASS: Gate07K closed Flop Donk action-history contract")
+    print("PASS: Gate07K/08B.0 closed Flop Donk action-history contract")
