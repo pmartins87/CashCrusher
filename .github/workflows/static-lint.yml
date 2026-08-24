@@ -107,3 +107,5 @@ jobs:
         run: python tools/test_flop_donk_history.py
       - name: Test Turn Donk ownership/history contract
         run: python tools/test_turn_donk_history.py
+      - name: Test direct native Turn Donk source strategy
+        run: python tools/test_turn_donk_source.py
