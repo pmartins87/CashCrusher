@@ -1,0 +1,68 @@
+// ============================================================================
+// CashCrusher_River_4BP_Context.txt
+// Gate 03G.0 — clean HU four-bet-pot River-CBet provenance
+// ============================================================================
+// Purpose: carry Gate02 family12 into River while preserving exact clean 4BP
+// subtype and original opener/3bettor survivor.
+// Source/Provenance: T/A Gate01 4BP reconstruction + Gate02N; P River metadata.
+// Safety: Turn family12 was HU-only; River must remain the same HU matchup.
+// ============================================================================
+
+// Purpose: generic clean HU 4BP River-CBet context.
+// Source/Provenance: T/P exact Gate02 family carry-forward + current 4BP proof.
+##f$cc_river_4bp_base_context##
+f$cc_river_cbet_opportunity &&
+f$cc_river_turn_family_id = 12 &&
+f$cc_river_turn_hu_still_hu &&
+f$cc_pf_4bet_subtype_id > 0 &&
+f$cc_hu_4bp_survivor_consistent &&
+f$cc_hu_4bp_survivor_type_id > 0 &&
+f$cc_hu_4bp_survivor_type_id < 3 &&
+f$cc_river_hu_spr_valid
+
+// Purpose: true-HU opener4 versus original 3bettor-call.
+// Source/Provenance: T/A exact clean true-HU topology.
+##f$cc_river_4bp_truehu_opener4_vs_threebettor##
+f$cc_river_4bp_base_context && f$cc_true_hu && f$cc_pf_4bet_standard_opener4_proven && f$cc_hu_4bp_villain_is_threebettor && f$cc_hu_ip
+
+// Purpose: reduced-HU opener4 versus original 3bettor-call.
+// Source/Provenance: P exact six-max clean family over A mechanics.
+##f$cc_river_4bp_opener4_vs_threebettor##
+f$cc_river_4bp_base_context && f$cc_hu_origin_preflop_reduced && f$cc_pf_4bet_standard_opener4_proven && f$cc_hu_4bp_villain_is_threebettor
+
+// Purpose: reduced-HU cold4 versus original opener-call.
+// Source/Provenance: P strong/condensed opener continuation family.
+##f$cc_river_4bp_cold4_vs_opener##
+f$cc_river_4bp_base_context && f$cc_hu_origin_preflop_reduced && f$cc_pf_4bet_standard_cold4_proven && f$cc_hu_4bp_villain_is_opener
+
+// Purpose: reduced-HU cold4 versus original 3bettor-call.
+// Source/Provenance: P selected 3bettor continuation family.
+##f$cc_river_4bp_cold4_vs_threebettor##
+f$cc_river_4bp_base_context && f$cc_hu_origin_preflop_reduced && f$cc_pf_4bet_standard_cold4_proven && f$cc_hu_4bp_villain_is_threebettor
+
+// Purpose: stable clean River 4BP family ID: 1 trueHU opener4-v-3bettor |
+// 2 reduced opener4-v-3bettor | 3 cold4-v-opener | 4 cold4-v-3bettor.
+// Source/Provenance: P routing metadata over exact contexts.
+##f$cc_river_4bp_family_id##
+When f$cc_river_4bp_truehu_opener4_vs_threebettor Return 1 Force
+When f$cc_river_4bp_opener4_vs_threebettor Return 2 Force
+When f$cc_river_4bp_cold4_vs_opener Return 3 Force
+When f$cc_river_4bp_cold4_vs_threebettor Return 4 Force
+When Others Return 0 Force
+
+// Purpose: selected clean 4BP continuation after cold4 origin or large Turn barrel.
+// Source/Provenance: P professional-theory selection modifier.
+##f$cc_river_4bp_strong_selection##
+f$cc_river_4bp_base_context && (f$cc_pf_4bet_standard_cold4_proven || f$cc_river_turn_plan_size_id >= 6)
+
+// Purpose: final clean River 4BP context consistency.
+// Source/Provenance: P fail-closed invariant.
+##f$cc_river_4bp_context_consistent##
+When !f$cc_river_4bp_base_context Return false Force
+When (f$cc_river_4bp_truehu_opener4_vs_threebettor + f$cc_river_4bp_opener4_vs_threebettor + f$cc_river_4bp_cold4_vs_opener + f$cc_river_4bp_cold4_vs_threebettor) != 1 Return false Force
+When f$cc_river_4bp_family_id <= 0 Return false Force
+When Others Return true Force
+
+// ============================================================================
+// End Gate03G.0 clean 4BP River context.
+// ============================================================================
