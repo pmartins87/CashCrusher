@@ -9,36 +9,41 @@
 // Current implemented children:
 //   * Gate06B direct/high-ancestry source actions and source locks;
 //   * Gate06C ordinary-SRP six-max adaptation;
-//   * Gate06D ISO / true-HU limp-raised adaptation.
+//   * Gate06D ISO / true-HU limp-raised adaptation;
+//   * Gate06E plain 3BP and squeeze adaptation with distinct range provenance.
 //
-// Future children remain fail-closed:
-//   plain 3BP, squeeze and clean supported 4BP are not yet routed here.
+// Future child remains fail-closed:
+//   clean supported 4BP River Float is not yet routed here.
 //
 // Source/Provenance:
 //   T = Gate06A exact closed-turn-call parent.
 //   A = Gate06B source/high-ancestry ownership.
-//   P = exact family decomposition and reviewed six-max SRP/ISO gaps.
+//   P = exact family decomposition and reviewed SRP/ISO/3BP/squeeze gaps.
 // ============================================================================
 
 // Purpose: compact River-Float family ID.
 // IDs: 1 source/high-ancestry; 2 ordinary-SRP P gap; 3 ISO/trueHU-limp-raised;
-// 0 unsupported/unreviewed.
+// 4 plain 3BP; 5 squeeze; 0 unsupported/unreviewed.
 // Source/Provenance: P routing metadata over A/P child coverage.
 ##f$cc_river_float_family_id##
 When !f$cc_river_float_opportunity Return 0 Force
 When f$cc_river_float_source_covered Return 1 Force
 When f$cc_river_float_srp_gap_covered Return 2 Force
 When f$cc_river_float_iso_covered Return 3 Force
+When f$cc_river_float_plain3bp_covered Return 4 Force
+When f$cc_river_float_squeeze_covered Return 5 Force
 When Others Return 0 Force
 
 // Purpose: canonical River-Float action router.
 // Source/Provenance: A/P exact-family precedence: source first, then reviewed
-// ordinary-SRP and ISO gaps. Unknown 3BP/squeeze/4BP states fail closed.
+// ordinary-SRP, ISO, plain3BP and squeeze gaps. Unknown 4BP states fail closed.
 ##f$cc_river_float_router##
 When !f$cc_river_float_opportunity Return false Force
 When f$cc_river_float_source_covered Return f$cc_river_float_source_action Force
 When f$cc_river_float_srp_gap_covered Return f$cc_river_float_srp_gap_action Force
 When f$cc_river_float_iso_covered Return f$cc_river_float_iso_action Force
+When f$cc_river_float_plain3bp_covered Return f$cc_river_float_plain3bp_action Force
+When f$cc_river_float_squeeze_covered Return f$cc_river_float_squeeze_action Force
 When Others Return false Force
 
 // Purpose: paired strategic size-ID router.
@@ -48,6 +53,8 @@ When !f$cc_river_float_opportunity Return 0 Force
 When f$cc_river_float_source_covered Return f$cc_river_float_source_size_id Force
 When f$cc_river_float_srp_gap_covered Return f$cc_river_float_srp_gap_size_id Force
 When f$cc_river_float_iso_covered Return f$cc_river_float_iso_size_id Force
+When f$cc_river_float_plain3bp_covered Return f$cc_river_float_plain3bp_size_id Force
+When f$cc_river_float_squeeze_covered Return f$cc_river_float_squeeze_size_id Force
 When Others Return 0 Force
 
 // Purpose: report whether current River-Float state has been reviewed, including
@@ -56,7 +63,9 @@ When Others Return 0 Force
 ##f$cc_river_float_strategy_covered##
 f$cc_river_float_source_covered ||
 f$cc_river_float_srp_gap_covered ||
-f$cc_river_float_iso_covered
+f$cc_river_float_iso_covered ||
+f$cc_river_float_plain3bp_covered ||
+f$cc_river_float_squeeze_covered
 
 // Purpose: positive action must own positive size; every check/uncovered state
 // must own size0.
