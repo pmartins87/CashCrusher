@@ -1,0 +1,281 @@
+// ============================================================================
+// CashCrusher_Turn_Float_History.txt
+// Gate 05A — canonical Turn Float history/opportunity bridge
+// ============================================================================
+// Purpose:
+//   Define exactly WHICH closed-flop histories are allowed to reach Turn Float.
+//   This file contains no hand-strength betting policy yet.
+//
+// Audited DeepCrusher meaning:
+//   Turn Float is a no-current-bet, IP/LAST response after Villain owned the
+//   relevant flop aggression and then declines to continue on the turn.
+//   It is NOT automatically:
+//     * Flop Float -> Villain call -> Turn;
+//     * Flop Float opportunity -> Hero check-back -> Turn (Delayed Float);
+//     * ordinary CBet -> Villain call -> Turn (Turn CBet);
+//     * flop check-through by preflop aggressor (Delayed CBet).
+//
+// Supported parent IDs:
+//   1 = Hero called one clean flop bet from the ACTUAL final preflop aggressor;
+//   2 = Hero CBet flop -> faced X/R/raise -> called -> raiser checks turn;
+//   3 = Hero Flop-Float bet -> faced X/R/raise -> called -> raiser checks turn.
+//
+// Source/Provenance:
+//   T = closed OpenHoldem round-2 action counters, `raisbits2`, `lastraised2`,
+//       current turn action/position facts.
+//   A = DeepCrusher `f$move_turn_floatbet` / no-initiative router ownership.
+//   P = six-max exact-parent decomposition and multiway fail-closed constraints.
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// TFH.01 — actual final flop aggressor identity
+// -----------------------------------------------------------------------------
+
+// Purpose: validate closed-flop `lastraised2` chair before any bit operation.
+// Source/Provenance: T OpenHoldem previous-round aggressor history.
+##f$cc_turn_float_flop_aggressor_chair_valid##
+When !(IsTurn || IsRiver) Return false Force
+When lastraised2 < 0 Return false Force
+When lastraised2 >= 10 Return false Force
+When Others Return true Force
+
+// Purpose: prove the last flop aggressor chair also appears in persisted raisbits2.
+// Source/Provenance: T independent history cross-check.
+##f$cc_turn_float_flop_aggressor_history_valid##
+When !f$cc_turn_float_flop_aggressor_chair_valid Return false Force
+When (((raisbits2 >> lastraised2) BitAnd 1) = 0) Return false Force
+When Others Return true Force
+
+// Purpose: canonical six-max position ID of the actual final flop aggressor.
+// Source/Provenance: T chair aliases + A Gate00 2-6h canonical mapping.
+// True-HU safety: dealer=SB, so 2h SB is mapped as position 5, never BTN 4.
+##f$cc_turn_float_flop_aggressor_pos_id##
+When !f$cc_turn_float_flop_aggressor_history_valid Return 0 Force
+When f$cc_deal_size = 6 && lastraised2 = utgchair Return 1 Force
+When f$cc_deal_size >= 5 && lastraised2 = mp3chair Return 2 Force
+When f$cc_deal_size >= 4 && lastraised2 = cutoffchair Return 3 Force
+When f$cc_deal_size >= 3 && lastraised2 = dealerchair Return 4 Force
+When lastraised2 = smallblindchair Return 5 Force
+When lastraised2 = bigblindchair Return 6 Force
+When Others Return 0 Force
+
+// Purpose: final flop aggressor is still live as a current opponent.
+// Source/Provenance: T current `playersplayingbits` + historical chair identity.
+##f$cc_turn_float_flop_aggressor_live_opponent##
+When !f$cc_turn_float_flop_aggressor_chair_valid Return false Force
+When lastraised2 = userchair Return false Force
+When (((playersplayingbits >> lastraised2) BitAnd 1) = 0) Return false Force
+When Others Return true Force
+
+// Purpose: clean flop contained exactly one aggressive chair.
+// Source/Provenance: T BitCount over persisted `raisbits2`.
+// Safety: raised/reraised flops use dedicated parent IDs instead.
+##f$cc_turn_float_single_flop_aggressor##
+(IsTurn || IsRiver) && BitCount(raisbits2) = 1
+
+// -----------------------------------------------------------------------------
+// TFH.02 — preflop caller family allowed for ordinary missed-2Bar parent
+// -----------------------------------------------------------------------------
+
+// Purpose: one-raise caller family (ordinary SRP, ISO or true-HU limp-raised).
+// Source/Provenance: A caller role + T actual final preflop aggressor identity.
+##f$cc_turn_float_pf_one_raise_caller_supported##
+f$cc_pot_family_id = 2 &&
+f$cc_pf_role_srp_caller &&
+f$cc_pf_rt_final_aggressor_history_valid &&
+!f$cc_pf_rt_final_aggressor_is_hero
+
+// Purpose: caller-side supported two-raise family using actual lastraised1-based
+// chronology; works for opener-call and pure cold-call-3bet roles.
+// Source/Provenance: P repaired chronology + A caller-role taxonomy.
+##f$cc_turn_float_pf_threebet_caller_supported##
+f$cc_pot_family_id = 3 &&
+(f$cc_pf_role_open_call_3bet || f$cc_pf_role_cold_call_3bet) &&
+f$cc_pf_rt_3bet_order_supported &&
+f$cc_pf_rt_hero_3bet_origin_consistent &&
+!f$cc_pf_rt_final_aggressor_is_hero
+
+// Purpose: single clean caller-side 4BP chronology currently supportable from
+// aggregate history: opener -> Hero 3bet -> opener 4bet -> Hero call.
+// Source/Provenance: A Gate04F conservative proof + T actual final raiser check.
+##f$cc_turn_float_pf_fourbet_caller_supported##
+f$cc_pot_family_id = 4 &&
+f$cc_pf_role_call_4bet &&
+f$cc_flop_float_4bp_opener4_vs_hero3bettor_proven &&
+f$cc_pf_rt_final_aggressor_pos_id = f$cc_flop_float_4bp_other_raiser_pos_id &&
+!f$cc_pf_rt_final_aggressor_is_hero
+
+// Purpose: caller preflop family allowed to own the ordinary called-flop-bet parent.
+// Source/Provenance: A/P exact union; 5bet+ and unresolved chronology fail closed.
+##f$cc_turn_float_pf_caller_family_supported##
+f$cc_turn_float_pf_one_raise_caller_supported ||
+f$cc_turn_float_pf_threebet_caller_supported ||
+f$cc_turn_float_pf_fourbet_caller_supported
+
+// -----------------------------------------------------------------------------
+// TFH.03 — parent 1: called clean flop bet from actual preflop aggressor
+// -----------------------------------------------------------------------------
+
+// Purpose: Hero's closed flop action was exactly one call and no check/aggression.
+// Source/Provenance: T OpenHoldem Hero round-2 action counters.
+##f$cc_turn_float_flop_call_only##
+When !(IsTurn || IsRiver) Return false Force
+When didcallround2 != 1 Return false Force
+When didchecround2 != 0 Return false Force
+When didraisround2 != 0 Return false Force
+When didbetsizeround2 != 0 Return false Force
+When didalliround2 != 0 Return false Force
+When Others Return true Force
+
+// Purpose: clean ordinary parent where the one flop bettor was the ACTUAL final
+// preflop aggressor and remains live.
+// Source: DeepCrusher Facing Bet -> call -> Villain X turn / skipped 2Bar family.
+// Provenance: A source ownership + T exact raiser identity + P strict six-max gate.
+// Safety: donk-led flops, multiple flop aggressors and unknown 3BP chronology fail.
+##f$cc_turn_float_parent_called_pf_aggressor##
+f$cc_turn_float_pf_caller_family_supported &&
+f$cc_turn_float_flop_call_only &&
+f$cc_turn_float_single_flop_aggressor &&
+f$cc_turn_float_flop_aggressor_live_opponent &&
+f$cc_turn_float_flop_aggressor_pos_id > 0 &&
+f$cc_turn_float_flop_aggressor_pos_id = f$cc_pf_rt_final_aggressor_pos_id
+
+// -----------------------------------------------------------------------------
+// TFH.04 — parents 2/3: Hero bet flop, called a later raise, raiser owns initiative
+// -----------------------------------------------------------------------------
+
+// Purpose: clean CBet -> later flop raise -> Hero call parent.
+// Source: Advanced BTN source has a distinct called-X/R Turn Float branch.
+// Provenance: A source/history family + T Gate01N closed action evidence.
+// Safety: any Hero re-aggression after the initial CBet is excluded.
+##f$cc_turn_float_parent_cbet_xr_call##
+f$cc_hist_flop_cbet_then_called_raise &&
+!f$cc_hist_flop_cbet_then_reaggressed &&
+f$cc_hist_flop_cbet_snapshot_consistent &&
+f$cc_hist_flop_cbet_plan_markers_consistent &&
+!f$cc_hist_flop_cbet_runtime_mismatch &&
+f$cc_turn_float_flop_aggressor_live_opponent
+
+// Purpose: clean initial Flop Float -> later raise -> Hero call parent.
+// Source/Provenance: A analogous executed-history owner; strategy treatment is
+// intentionally separate from source-explicit CBet-X/R-call until Gate05 policy.
+##f$cc_turn_float_parent_flopfloat_xr_call##
+f$cc_hist_flop_float_then_called_raise &&
+!f$cc_hist_flop_float_then_reaggressed &&
+f$cc_hist_flop_float_snapshot_consistent &&
+!f$cc_hist_flop_float_runtime_mismatch &&
+f$cc_turn_float_flop_aggressor_live_opponent
+
+// Purpose: count mutually exclusive Turn-Float history parents.
+// Source/Provenance: P safety invariant over A/T closed histories.
+##f$cc_turn_float_parent_count##
+(f$cc_turn_float_parent_called_pf_aggressor * 1) +
+(f$cc_turn_float_parent_cbet_xr_call * 1) +
+(f$cc_turn_float_parent_flopfloat_xr_call * 1)
+
+// Purpose: stable parent ID for strategy/logging.
+// Source/Provenance: P engineering metadata; contradiction ->0.
+##f$cc_turn_float_parent_id##
+When f$cc_turn_float_parent_count != 1 Return 0 Force
+When f$cc_turn_float_parent_called_pf_aggressor Return 1 Force
+When f$cc_turn_float_parent_cbet_xr_call Return 2 Force
+When f$cc_turn_float_parent_flopfloat_xr_call Return 3 Force
+When Others Return 0 Force
+
+// Purpose: prove parent histories are exclusive before any strategy fires.
+// Source/Provenance: P fail-closed invariant.
+##f$cc_turn_float_parent_exclusive##
+f$cc_turn_float_parent_count <= 1
+
+// -----------------------------------------------------------------------------
+// TFH.05 — actual Turn checked-to opportunity
+// -----------------------------------------------------------------------------
+
+// Purpose: Hero has not yet acted on turn; checks count, so use IncludingChecks.
+// Source/Provenance: T OpenPPL action-history semantics.
+##f$cc_turn_float_first_hero_action##
+IsTurn && BotsActionsOnThisRoundIncludingChecks = 0
+
+// Purpose: canonical Turn Float opportunity after a valid parent history.
+// Source: DeepCrusher no-initiative LAST/MIDDLE router sends AmountToCall=0 to
+// `f$move_turn_floatbet`; CashCrusher narrows this to exact LAST for six-max.
+// Provenance: A source role + T current turn facts + P LAST-only safety.
+// Logic: when it is Hero's first turn action, Hero is exact LAST and AmountToCall
+// is zero, all currently live opponents before Hero have declined to bet.
+##f$cc_turn_float_opportunity##
+When !IsTurn Return false Force
+When !f$cc_context_valid Return false Force
+When balance <= 0 Return false Force
+When !f$cc_turn_float_first_hero_action Return false Force
+When AmountToCall > 0 Return false Force
+When f$cc_relpos_id != 3 Return false Force
+When f$cc_hu && !f$cc_hu_ip Return false Force
+When !f$cc_turn_float_parent_exclusive Return false Force
+When f$cc_turn_float_parent_id <= 0 Return false Force
+When Others Return true Force
+
+// -----------------------------------------------------------------------------
+// TFH.06 — provenance retained for later strategy
+// -----------------------------------------------------------------------------
+
+// Purpose: Turn Float is currently HU after a HU flop-entry history.
+// Source/Provenance: T/A current/origin handedness descriptor.
+##f$cc_turn_float_current_hu_from_hu_flop##
+f$cc_turn_float_opportunity && f$cc_hu && f$cc_flop_entry_count = 2
+
+// Purpose: flop began multiway but is HU by the Turn Float decision.
+// Source/Provenance: A/P Gate00 multiway-origin preservation.
+##f$cc_turn_float_postmultiway_to_hu##
+f$cc_turn_float_opportunity && f$cc_hu_origin_postflop_reduced
+
+// Purpose: Turn Float decision itself remains multiway.
+// Source/Provenance: T live-player state; later policy must tighten separately.
+##f$cc_turn_float_current_multiway##
+f$cc_turn_float_opportunity && f$cc_multiway
+
+// Purpose: exact HU Turn villain is the same chair that ended flop aggression.
+// Source/Provenance: T chair identity cross-check.
+##f$cc_turn_float_hu_aggressor_is_current_villain##
+When !f$cc_turn_float_opportunity Return false Force
+When !f$cc_hu Return false Force
+When !f$cc_turn_float_flop_aggressor_chair_valid Return false Force
+When lastraised2 = headsupchair Return true Force
+When Others Return false Force
+
+// -----------------------------------------------------------------------------
+// TFH.07 — explicit exclusions / future owners
+// -----------------------------------------------------------------------------
+
+// Purpose: Hero executed ordinary Flop Float and remained final aggressor; this
+// is a continuation-of-Hero-aggression family, not canonical Turn Float.
+// Source/Provenance: A ownership separator over Gate04H exact history.
+##f$cc_turn_float_excluded_flop_float_standard##
+IsTurn && f$cc_hist_flop_float_standard_parent_valid
+
+// Purpose: Hero declined Flop Float and checked back; future Delayed Float owns it.
+// Source/Provenance: A Gate04H / DeepCrusher delayed-float separation.
+##f$cc_turn_float_excluded_flop_float_checkback##
+IsTurn && f$cc_hist_flop_float_checkback_parent_valid
+
+// Purpose: ordinary CBet retained Hero aggression; Turn CBet owns it.
+// Source/Provenance: A Gate01N ownership separator.
+##f$cc_turn_float_excluded_standard_cbet##
+IsTurn && f$cc_hist_turn_standard_cbet_parent
+
+// Purpose: skipped flop CBet/check-through belongs to Delayed CBet.
+// Source/Provenance: A Gate01N ownership separator.
+##f$cc_turn_float_excluded_delayed_cbet##
+IsTurn && f$cc_hist_turn_delayed_cbet_parent
+
+// Purpose: diagnostic union of reviewed histories that must never be rescued by
+// a generic Turn-Float fallback.
+// Source/Provenance: P explicit anti-leak guard.
+##f$cc_turn_float_excluded_other_owner##
+f$cc_turn_float_excluded_flop_float_standard ||
+f$cc_turn_float_excluded_flop_float_checkback ||
+f$cc_turn_float_excluded_standard_cbet ||
+f$cc_turn_float_excluded_delayed_cbet
+
+// ============================================================================
+// End Gate05A Turn Float history/opportunity bridge.
+// ============================================================================
