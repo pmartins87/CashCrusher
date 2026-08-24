@@ -8,8 +8,9 @@ SRC = ROOT / "src"
 COMMON = (SRC / "CashCrusher_Turn_Float_Common.txt").read_text(encoding="utf-8")
 REPAIR = (SRC / "CashCrusher_Turn_Float_SourceRepair.txt").read_text(encoding="utf-8")
 SOURCE = (SRC / "CashCrusher_Turn_Float_Source.txt").read_text(encoding="utf-8")
+COVERAGE = (SRC / "CashCrusher_Turn_Float_SourceCoverageRepair.txt").read_text(encoding="utf-8")
 ROUTER = (SRC / "CashCrusher_Turn_Float.txt").read_text(encoding="utf-8")
-TEXTS = (COMMON, REPAIR, SOURCE, ROUTER)
+TEXTS = (COMMON, REPAIR, SOURCE, COVERAGE, ROUTER)
 
 
 def block(text: str, name: str) -> str:
@@ -69,8 +70,7 @@ def bbv_sb_source_contract() -> None:
     river = block(SOURCE, "f$cc_turn_float_source_bbv_sb_river_plan_id")
     assert "When f$cc_turn_completed Return 2 Force" in river
     assert "When Others Return 1 Force" in river
-    # Critical semantic guard: source uses broad turn_Completed, not only a NEW
-    # completion created by the turn card.
+    # Source uses broad turn_Completed, not only a new completion by Turn card.
     assert "f$cc_turn_new_completion" not in river
 
 
@@ -102,8 +102,6 @@ def btn_advanced_contract() -> None:
     assert "f$cc_turn_float_source_btnadv_air_action Return f$cc_turn_float_size_33_id" in size
     assert "f$cc_turn_float_source_btnadv_made_action Return f$cc_turn_float_size_50_id" in size
 
-    # The source marker is reconstructed from carried state; legacy user variable
-    # must not be imported as hidden runtime dependency.
     assert "user_AirCalledRaiseOTF" not in "\n".join(
         line.split("//", 1)[0] for line in SOURCE.splitlines()
     )
@@ -119,6 +117,17 @@ def negative_source_contract() -> None:
     assert "f$cc_turn_float_source_btnv_sb_nomade_lock" in global_lock
     assert "f$cc_turn_float_source_btnadv_live_draw_lock" in global_lock
 
+    exact = block(COVERAGE, "f$cc_turn_float_source_exact_covered")
+    # BB-v-SB source owns only the exact positive no-made action, not every
+    # made-hand state in the same matchup.
+    assert "f$cc_turn_float_source_bbv_sb_action" in exact
+    assert "f$cc_turn_float_source_bbv_sb_context" not in exact
+    assert "f$cc_turn_float_source_btnadv_context" in exact
+    assert "f$cc_turn_float_source_btnv_sb_nomade_lock" in exact
+
+    consistent = block(COVERAGE, "f$cc_turn_float_source_exact_consistent")
+    assert "f$cc_turn_float_source_exact_locked_check && f$cc_turn_float_source_exact_positive Return false Force" in consistent
+
     dispatcher = block(SOURCE, "f$cc_turn_float_source_action")
     assert dispatcher.index("f$cc_turn_float_source_locked_check") < dispatcher.index(
         "f$cc_turn_float_source_bbv_sb_context"
@@ -127,25 +136,35 @@ def negative_source_contract() -> None:
 
 def router_and_safety_contract() -> None:
     router = block(ROUTER, "f$cc_turn_float_router")
-    assert "f$cc_turn_float_source_locked_check Return false Force" in router
-    assert "f$cc_turn_float_source_covered Return f$cc_turn_float_source_action Force" in router
+    assert "f$cc_turn_float_source_exact_locked_check Return false Force" in router
+    assert "f$cc_turn_float_source_exact_positive Return f$cc_turn_float_source_action Force" in router
+    # Direct source must precede every professional gap family.
+    source_offset = router.index("f$cc_turn_float_source_exact_positive")
+    for gap in (
+        "f$cc_turn_float_srp_gap_covered",
+        "f$cc_turn_float_iso_gap_covered",
+        "f$cc_turn_float_plain3bp_gap_covered",
+        "f$cc_turn_float_squeeze_gap_covered",
+        "f$cc_turn_float_4bp_gap_covered",
+    ):
+        assert source_offset < router.index(gap)
     assert "When Others Return false Force" in router
 
     size = block(ROUTER, "f$cc_turn_float_size_consistent")
     assert "f$cc_turn_float_size_id = 0" in size
     assert "f$cc_turn_float_size_id >= 1 && f$cc_turn_float_size_id <= 5" in size
 
-    uncovered = block(ROUTER, "f$cc_turn_float_source_gap_uncovered")
-    assert "!f$cc_turn_float_source_covered" in uncovered
+    uncovered = block(ROUTER, "f$cc_turn_float_uncovered_recognized")
+    assert "!f$cc_turn_float_source_exact_covered" in uncovered
 
     executable = "\n".join(
         line.split("//", 1)[0] for text in TEXTS for line in text.splitlines()
     )
     assert "HandPower" not in executable
+    # Source strategy itself does not own BetMax; canonical full router can only
+    # request a strategic size and runtime equivalence is a separate file.
     assert "BetMax" not in executable
     assert "random" not in executable.lower()
-    # Gate05B only requests first checked-to Turn bet/check + size, never response
-    # to a later check-raise or a commitment helper.
     assert "Raise_Committed" not in executable
     assert "StackOffDraws" not in executable
 
