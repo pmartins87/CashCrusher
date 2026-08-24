@@ -1,0 +1,47 @@
+// ============================================================================
+// CashCrusher_Turn_Float_SourceCoverageRepair.txt
+// Gate 05B.1 — exact source-coverage boundary repair
+// ============================================================================
+// Purpose:
+//   Distinguish "this matchup has a source branch" from "this exact current hand
+//   state is actually decided by the source". The first Gate05B source metadata
+//   marked the entire BB-v-SB context covered even though its direct source rule
+//   only decides NO-MADE hands. That would incorrectly block later made-hand fills.
+//
+// Source/Provenance:
+//   A = exact positive/negative Gate05B source branches.
+//   P = coverage bookkeeping correction only; no poker action is changed here.
+// ============================================================================
+
+// Purpose: exact Gate05B source ownership at the current state.
+// Source/Provenance: A branch-level coverage. BB-v-SB counts only when its no-made
+// source action is actually applicable; BTN Advanced context is fully partitioned
+// into AIR, live-draw lock or made improvement; BTNvSB no-made is an explicit lock.
+##f$cc_turn_float_source_exact_covered##
+f$cc_turn_float_source_bbv_sb_action ||
+f$cc_turn_float_source_btnadv_context ||
+f$cc_turn_float_source_btnv_sb_nomade_lock
+
+// Purpose: exact reviewed source check state.
+// Source/Provenance: A alias retained separately so P children cannot override it.
+##f$cc_turn_float_source_exact_locked_check##
+f$cc_turn_float_source_locked_check
+
+// Purpose: exact source positive action state.
+// Source/Provenance: A branch-level positive coverage.
+##f$cc_turn_float_source_exact_positive##
+f$cc_turn_float_source_bbv_sb_action ||
+f$cc_turn_float_source_btnadv_air_action ||
+f$cc_turn_float_source_btnadv_made_action
+
+// Purpose: exact action/coverage integrity for later routers.
+// Source/Provenance: P invariant over A source branches.
+##f$cc_turn_float_source_exact_consistent##
+When f$cc_turn_float_source_exact_locked_check && f$cc_turn_float_source_exact_positive Return false Force
+When f$cc_turn_float_source_exact_positive && !f$cc_turn_float_source_exact_covered Return false Force
+When f$cc_turn_float_source_exact_locked_check && !f$cc_turn_float_source_exact_covered Return false Force
+When Others Return true Force
+
+// ============================================================================
+// End Gate05B.1 exact source coverage repair.
+// ============================================================================
