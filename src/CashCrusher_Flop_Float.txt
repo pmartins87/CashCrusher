@@ -15,6 +15,12 @@
 //   5 squeeze caller Float;
 //   6 clean caller-IP opener4-v-3bettor 4BP Float.
 //
+// Gate04R chronology repair:
+//   Pure cold-call-3bet descendants are additionally routed through the
+//   `lastraised1`-based evidence layer.  Existing opener-call branches remain
+//   untouched; repaired branches only fill states that older Hero-participation
+//   chronology could not prove.
+//
 // Deliberately fail-closed:
 //   * unraised/no-initiative pots (not Float ownership);
 //   * Hero MIDDLE with player(s) behind;
@@ -28,22 +34,66 @@
 //   P = exact six-max pot/range decomposition + professional gap fills.
 // ============================================================================
 
+// -----------------------------------------------------------------------------
+// FFROUTER.01 — final 3BP/squeeze ownership after Gate04R repair
+// -----------------------------------------------------------------------------
+
+// Purpose: combined plain-3BP coverage from original opener-call descendants and
+// repaired pure-coldcaller descendants.
+// Source/Provenance: P engineering union; the two paths have distinct Hero roles.
+##f$cc_flop_float_plain3bp_covered_final##
+f$cc_flop_float_plain3bp_covered || f$cc_flop_float_rt3bp_plain_covered
+
+// Purpose: combined squeeze coverage after caller-side chronology repair.
+// Source/Provenance: P engineering union over non-overlapping caller origins.
+##f$cc_flop_float_squeeze_covered_final##
+f$cc_flop_float_squeeze_covered || f$cc_flop_float_rt3bp_squeeze_covered
+
+// Purpose: final plain-3BP action owner; original source path wins if available,
+// otherwise the repaired pure-coldcaller path owns the decision.
+// Source/Provenance: P/A exact dispatcher with no cross-family fallback.
+##f$cc_flop_float_plain3bp_action_final##
+When f$cc_flop_float_plain3bp_covered Return f$cc_flop_float_plain3bp_action Force
+When f$cc_flop_float_rt3bp_plain_covered Return f$cc_flop_float_rt3bp_plain_action Force
+When Others Return false Force
+
+// Purpose: final plain-3BP size owner paired with action ownership.
+// Source/Provenance: P/A deterministic dispatcher.
+##f$cc_flop_float_plain3bp_size_id_final##
+When f$cc_flop_float_plain3bp_covered Return f$cc_flop_float_plain3bp_size_id Force
+When f$cc_flop_float_rt3bp_plain_covered Return f$cc_flop_float_rt3bp_plain_size_id Force
+When Others Return 0 Force
+
+// Purpose: final squeeze action owner after Gate04R repair.
+// Source/Provenance: P/A deterministic dispatcher.
+##f$cc_flop_float_squeeze_action_final##
+When f$cc_flop_float_squeeze_covered Return f$cc_flop_float_squeeze_action Force
+When f$cc_flop_float_rt3bp_squeeze_covered Return f$cc_flop_float_rt3bp_squeeze_action Force
+When Others Return false Force
+
+// Purpose: final squeeze size owner paired with action ownership.
+// Source/Provenance: P/A deterministic dispatcher.
+##f$cc_flop_float_squeeze_size_id_final##
+When f$cc_flop_float_squeeze_covered Return f$cc_flop_float_squeeze_size_id Force
+When f$cc_flop_float_rt3bp_squeeze_covered Return f$cc_flop_float_rt3bp_squeeze_size_id Force
+When Others Return 0 Force
+
 // Purpose: plain 3BP recognized Float topology not currently mapped to a safe
 // caller-origin child; retained only for diagnostics and fail-close.
 // Source/Provenance: P residual-state detector.
 ##f$cc_flop_float_plain3bp_uncovered##
 f$cc_flop_float_opportunity &&
 f$cc_pot_family_id = 3 &&
-f$cc_pf_3bet_plain_proven &&
-!f$cc_flop_float_plain3bp_covered
+(f$cc_pf_3bet_plain_proven || f$cc_pf_rt_plain3bet_proven) &&
+!f$cc_flop_float_plain3bp_covered_final
 
 // Purpose: squeeze recognized Float topology not mapped to a supported child.
 // Source/Provenance: P residual-state detector.
 ##f$cc_flop_float_squeeze_uncovered##
 f$cc_flop_float_opportunity &&
 f$cc_pot_family_id = 3 &&
-f$cc_pf_squeeze_proven &&
-!f$cc_flop_float_squeeze_covered
+(f$cc_pf_squeeze_proven || f$cc_pf_rt_squeeze_proven) &&
+!f$cc_flop_float_squeeze_covered_final
 
 // Purpose: 4BP caller checked-to opportunity outside the single clean audited
 // opener4-v-Hero3bettor context.
@@ -62,8 +112,8 @@ When !f$cc_flop_float_opportunity Return 0 Force
 When f$cc_flop_float_source_covered Return 1 Force
 When f$cc_flop_float_srp_gap_covered Return 2 Force
 When f$cc_flop_float_iso_covered Return 3 Force
-When f$cc_flop_float_plain3bp_covered Return 4 Force
-When f$cc_flop_float_squeeze_covered Return 5 Force
+When f$cc_flop_float_plain3bp_covered_final Return 4 Force
+When f$cc_flop_float_squeeze_covered_final Return 5 Force
 When f$cc_flop_float_4bp_covered Return 6 Force
 When Others Return 0 Force
 
@@ -76,8 +126,8 @@ When !f$cc_flop_float_opportunity Return false Force
 When f$cc_flop_float_source_covered Return f$cc_flop_float_source_action Force
 When f$cc_flop_float_srp_gap_covered Return f$cc_flop_float_srp_gap_action Force
 When f$cc_flop_float_iso_covered Return f$cc_flop_float_iso_action Force
-When f$cc_flop_float_plain3bp_covered Return f$cc_flop_float_plain3bp_action Force
-When f$cc_flop_float_squeeze_covered Return f$cc_flop_float_squeeze_action Force
+When f$cc_flop_float_plain3bp_covered_final Return f$cc_flop_float_plain3bp_action_final Force
+When f$cc_flop_float_squeeze_covered_final Return f$cc_flop_float_squeeze_action_final Force
 When f$cc_flop_float_4bp_covered Return f$cc_flop_float_4bp_action Force
 When Others Return false Force
 
@@ -88,8 +138,8 @@ When !f$cc_flop_float_opportunity Return 0 Force
 When f$cc_flop_float_source_covered Return f$cc_flop_float_source_size_id Force
 When f$cc_flop_float_srp_gap_covered Return f$cc_flop_float_srp_gap_size_id Force
 When f$cc_flop_float_iso_covered Return f$cc_flop_float_iso_size_id Force
-When f$cc_flop_float_plain3bp_covered Return f$cc_flop_float_plain3bp_size_id Force
-When f$cc_flop_float_squeeze_covered Return f$cc_flop_float_squeeze_size_id Force
+When f$cc_flop_float_plain3bp_covered_final Return f$cc_flop_float_plain3bp_size_id_final Force
+When f$cc_flop_float_squeeze_covered_final Return f$cc_flop_float_squeeze_size_id_final Force
 When f$cc_flop_float_4bp_covered Return f$cc_flop_float_4bp_size_id Force
 When Others Return 0 Force
 
@@ -99,8 +149,8 @@ When Others Return 0 Force
 f$cc_flop_float_source_covered ||
 f$cc_flop_float_srp_gap_covered ||
 f$cc_flop_float_iso_covered ||
-f$cc_flop_float_plain3bp_covered ||
-f$cc_flop_float_squeeze_covered ||
+f$cc_flop_float_plain3bp_covered_final ||
+f$cc_flop_float_squeeze_covered_final ||
 f$cc_flop_float_4bp_covered
 
 // Purpose: prove one and only one family owns a recognized Float context.
@@ -109,8 +159,8 @@ f$cc_flop_float_4bp_covered
 (f$cc_flop_float_source_covered * 1) +
 (f$cc_flop_float_srp_gap_covered * 1) +
 (f$cc_flop_float_iso_covered * 1) +
-(f$cc_flop_float_plain3bp_covered * 1) +
-(f$cc_flop_float_squeeze_covered * 1) +
+(f$cc_flop_float_plain3bp_covered_final * 1) +
+(f$cc_flop_float_squeeze_covered_final * 1) +
 (f$cc_flop_float_4bp_covered * 1)
 
 // Purpose: family ownership integrity.
