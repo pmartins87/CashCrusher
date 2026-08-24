@@ -21,6 +21,8 @@ def family_contract() -> None:
     assert "f$cc_river_float_source_covered Return 1 Force" in family
     assert "f$cc_river_float_srp_gap_covered Return 2 Force" in family
     assert "f$cc_river_float_iso_covered Return 3 Force" in family
+    assert "f$cc_river_float_plain3bp_covered Return 4 Force" in family
+    assert "f$cc_river_float_squeeze_covered Return 5 Force" in family
     assert "When Others Return 0 Force" in family
 
 
@@ -29,22 +31,31 @@ def router_contract() -> None:
     source = "f$cc_river_float_source_covered Return f$cc_river_float_source_action Force"
     srp = "f$cc_river_float_srp_gap_covered Return f$cc_river_float_srp_gap_action Force"
     iso = "f$cc_river_float_iso_covered Return f$cc_river_float_iso_action Force"
-    assert source in router and srp in router and iso in router
-    assert router.index(source) < router.index(srp) < router.index(iso)
+    plain = "f$cc_river_float_plain3bp_covered Return f$cc_river_float_plain3bp_action Force"
+    squeeze = "f$cc_river_float_squeeze_covered Return f$cc_river_float_squeeze_action Force"
+    assert source in router and srp in router and iso in router and plain in router and squeeze in router
+    assert router.index(source) < router.index(srp) < router.index(iso) < router.index(plain) < router.index(squeeze)
     assert "When Others Return false Force" in router
 
     size = block("f$cc_river_float_size_id")
     assert "f$cc_river_float_source_covered Return f$cc_river_float_source_size_id Force" in size
     assert "f$cc_river_float_srp_gap_covered Return f$cc_river_float_srp_gap_size_id Force" in size
     assert "f$cc_river_float_iso_covered Return f$cc_river_float_iso_size_id Force" in size
+    assert "f$cc_river_float_plain3bp_covered Return f$cc_river_float_plain3bp_size_id Force" in size
+    assert "f$cc_river_float_squeeze_covered Return f$cc_river_float_squeeze_size_id Force" in size
     assert "When Others Return 0 Force" in size
 
 
 def coverage_contract() -> None:
     covered = block("f$cc_river_float_strategy_covered")
-    assert "f$cc_river_float_source_covered" in covered
-    assert "f$cc_river_float_srp_gap_covered" in covered
-    assert "f$cc_river_float_iso_covered" in covered
+    for token in (
+        "f$cc_river_float_source_covered",
+        "f$cc_river_float_srp_gap_covered",
+        "f$cc_river_float_iso_covered",
+        "f$cc_river_float_plain3bp_covered",
+        "f$cc_river_float_squeeze_covered",
+    ):
+        assert token in covered
 
     consistency = block("f$cc_river_float_size_consistent")
     assert "!f$cc_river_float_router Return f$cc_river_float_size_id = 0 Force" in consistency
@@ -56,13 +67,8 @@ def coverage_contract() -> None:
 
 def future_family_fail_closed_contract() -> None:
     code = "\n".join(line.split("//", 1)[0] for line in POL.splitlines())
-    # Gate06D must not silently route future 3BP/squeeze/4BP families.
-    for forbidden in (
-        "river_float_plain3bp_covered",
-        "river_float_squeeze_covered",
-        "river_float_4bp_covered",
-    ):
-        assert forbidden not in code
+    # Gate06E must not silently route unsupported clean/multiway 4BP River Float.
+    assert "river_float_4bp_covered" not in code
 
 
 if __name__ == "__main__":
@@ -70,4 +76,4 @@ if __name__ == "__main__":
     router_contract()
     coverage_contract()
     future_family_fail_closed_contract()
-    print("PASS: Gate06 canonical River Float source/SRP/ISO coverage contract")
+    print("PASS: Gate06 canonical River Float source/SRP/ISO/3BP/squeeze coverage contract")
