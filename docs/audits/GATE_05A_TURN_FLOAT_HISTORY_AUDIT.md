@@ -1,6 +1,8 @@
 # Gate 05A — Turn Float history/source audit
 
-Status: **IMPLEMENTED / STATIC-RUNTIME CONTRACT PENDING CI**
+Status: **IMPLEMENTED / STATIC-RUNTIME CONTRACT PASS**
+
+Code-changing Gate04R/Gate05A regression: GitHub Actions run **#512 — PASS**. The subsequent documentation-only combined branch run **#516 — PASS** also retained the complete suite green.
 
 ## Scope
 
