@@ -1,0 +1,360 @@
+// ============================================================================
+// CashCrusher_Turn_Float_3BP.txt
+// Gate 05E — plain 3BP and squeeze Turn Float gaps
+// ============================================================================
+// Purpose:
+//   Cover supported two-raise Turn-Float histories while preserving range origin:
+//   original opener-call, pre-squeeze caller and post-3bet coldcaller. Plain 3BP
+//   and squeeze remain separate strategic families.
+//
+// Source boundary:
+//   DeepCrusher has no dedicated deep-stack 3BP/squeeze Turn-Float tree.
+//   Exact topology comes from T/A history reconstruction; policy is P-heavy.
+//
+// Cash-depth contract:
+//   3BP SPR can be low naturally, but one pair is never declared committed solely
+//   by class. This file chooses only bet/check and strategic size ID.
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// TF3.01 — parent1 caller origins
+// -----------------------------------------------------------------------------
+
+// Purpose: parent1 simple flop call in supported plain 3BP, HU since flop entry.
+// Source/Provenance: T/A actual final-3bettor history + P range policy owner.
+##f$cc_turn_float_plain3bp_parent1_hu_context##
+f$cc_turn_float_opportunity &&
+f$cc_turn_float_parent_id = 1 &&
+f$cc_turn_float_current_hu_from_hu_flop &&
+f$cc_turn_float_hu_aggressor_is_current_villain &&
+f$cc_pot_family_id = 3 &&
+f$cc_pf_rt_plain3bet_proven &&
+f$cc_turn_float_pf_threebet_caller_supported &&
+!f$cc_turn_float_source_exact_covered
+
+// Purpose: parent1 simple flop call in supported squeeze, HU since flop entry.
+// Source/Provenance: T/A repaired squeeze chronology + P range owner.
+##f$cc_turn_float_squeeze_parent1_hu_context##
+f$cc_turn_float_opportunity &&
+f$cc_turn_float_parent_id = 1 &&
+f$cc_turn_float_current_hu_from_hu_flop &&
+f$cc_turn_float_hu_aggressor_is_current_villain &&
+f$cc_pot_family_id = 3 &&
+f$cc_pf_rt_squeeze_proven &&
+f$cc_turn_float_pf_threebet_caller_supported &&
+!f$cc_turn_float_source_exact_covered
+
+// Purpose: opener-call origin in either plain3BP or squeeze.
+// Source/Provenance: A/T actual caller-origin reconstruction.
+##f$cc_turn_float_3bp_parent1_opener_origin##
+f$cc_pf_rt_hero_is_opener_call_3bet
+
+// Purpose: pre-squeeze coldcaller origin.
+// Source/Provenance: A/T actual caller-origin reconstruction.
+##f$cc_turn_float_3bp_parent1_precold_origin##
+f$cc_pf_rt_hero_is_pre3bet_coldcaller
+
+// Purpose: post-3bet coldcaller origin.
+// Source/Provenance: A/T actual caller-origin reconstruction.
+##f$cc_turn_float_3bp_parent1_postcold_origin##
+f$cc_pf_rt_hero_is_post3bet_coldcaller
+
+// -----------------------------------------------------------------------------
+// TF3.02 — parent1 HU policies
+// -----------------------------------------------------------------------------
+
+// Purpose: original opener-call after calling flop CBet and 3bettor checks Turn.
+// Provenance: P-heavy. Opener retains broader high-card/draw coverage than coldcaller
+// branches, so one narrow quality-air stab survives; ordinary air does not.
+##f$cc_turn_float_3bp_parent1_opener_hu_action##
+When !(f$cc_turn_float_plain3bp_parent1_hu_context || f$cc_turn_float_squeeze_parent1_hu_context) Return false Force
+When !f$cc_turn_float_3bp_parent1_opener_origin Return false Force
+When f$cc_turn_float_robust_value Return true Force
+When f$cc_turn_float_vulnerable_two_pair_plus && f$cc_turn_float_calm_runout Return true Force
+When f$cc_turn_float_vulnerable_two_pair_plus Return false Force
+When f$cc_turn_float_overpair && (f$cc_turn_float_calm_runout || f$cc_turn_float_hu_low_spr) Return true Force
+When f$cc_turn_float_overpair Return false Force
+When f$cc_turn_float_strong_top_pair && (f$cc_turn_float_calm_runout || (f$cc_turn_float_hu_low_spr && !f$cc_turn_float_hostile_runout)) Return true Force
+When f$cc_turn_float_strong_top_pair Return false Force
+When f$cc_turn_float_medium_top_pair || f$cc_turn_float_weak_top_pair Return false Force
+When f$cc_turn_float_second_pair || f$cc_turn_float_third_or_worse_pair Return false Force
+When f$cc_turn_float_premium_draw && !f$cc_turn_super_completed Return true Force
+When f$cc_turn_float_good_draw && f$cc_turn_float_calm_runout Return true Force
+When f$cc_turn_float_weak_draw Return false Force
+When f$cc_turn_float_quality_air_hu && f$cc_turn_float_calm_runout Return true Force
+When f$cc_turn_float_current_air Return false Force
+When Others Return false Force
+
+// Purpose: selected coldcaller parent1 policy, shared pre/post-coldcall origins.
+// Provenance: P-heavy. Zero pure-air baseline; good draw only on calm runout.
+##f$cc_turn_float_3bp_parent1_coldcaller_hu_action##
+When !(f$cc_turn_float_plain3bp_parent1_hu_context || f$cc_turn_float_squeeze_parent1_hu_context) Return false Force
+When !(f$cc_turn_float_3bp_parent1_precold_origin || f$cc_turn_float_3bp_parent1_postcold_origin) Return false Force
+When f$cc_turn_float_robust_value Return true Force
+When f$cc_turn_float_vulnerable_two_pair_plus && f$cc_turn_float_calm_runout Return true Force
+When f$cc_turn_float_vulnerable_two_pair_plus Return false Force
+When f$cc_turn_float_overpair && (f$cc_turn_float_calm_runout || f$cc_turn_float_hu_low_spr) Return true Force
+When f$cc_turn_float_overpair Return false Force
+When f$cc_turn_float_strong_top_pair && f$cc_turn_float_calm_runout Return true Force
+When f$cc_turn_float_strong_top_pair Return false Force
+When f$cc_hand_top_pair_or_better Return false Force
+When f$cc_turn_float_premium_draw && !f$cc_turn_super_completed Return true Force
+When f$cc_turn_float_good_draw && f$cc_turn_float_calm_runout Return true Force
+When f$cc_turn_float_weak_draw Return false Force
+When f$cc_turn_float_current_air Return false Force
+When Others Return false Force
+
+// Purpose: parent1 3BP/squeeze HU size map.
+// Source/Provenance: P lower-SPR 33/50/75 deterministic sizing.
+##f$cc_turn_float_3bp_parent1_hu_size_id##
+When f$cc_turn_float_robust_value && f$cc_turn_completed Return f$cc_turn_float_size_75_id Force
+When f$cc_turn_float_robust_value Return f$cc_turn_float_size_50_id Force
+When f$cc_turn_float_vulnerable_two_pair_plus Return f$cc_turn_float_size_50_id Force
+When f$cc_turn_float_overpair || f$cc_turn_float_strong_top_pair Return f$cc_turn_float_size_50_id Force
+When f$cc_turn_float_premium_draw Return f$cc_turn_float_size_50_id Force
+When f$cc_turn_float_good_draw Return f$cc_turn_float_size_33_id Force
+When f$cc_turn_float_quality_air_hu Return f$cc_turn_float_size_33_id Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// TF3.03 — parent2 Hero 3bettor CBet-XR-call
+// -----------------------------------------------------------------------------
+
+// Purpose: plain 3BP Hero final 3bettor, CBet -> XR -> call, now HU checked-to.
+// Source/Provenance: T/A parent2 + P selected lower-SPR policy.
+##f$cc_turn_float_plain3bp_parent2_hu_context##
+f$cc_turn_float_opportunity &&
+f$cc_turn_float_parent_id = 2 &&
+f$cc_turn_float_current_hu_from_hu_flop &&
+f$cc_turn_float_hu_aggressor_is_current_villain &&
+f$cc_pot_family_id = 3 &&
+f$cc_pf_rt_plain3bet_proven &&
+f$cc_pf_role_3bettor &&
+f$cc_pf_rt_final_aggressor_is_hero &&
+!f$cc_turn_float_source_exact_covered
+
+// Purpose: squeeze Hero final 3bettor, CBet -> XR -> call, now HU checked-to.
+// Source/Provenance: T/A parent2 + P squeeze policy.
+##f$cc_turn_float_squeeze_parent2_hu_context##
+f$cc_turn_float_opportunity &&
+f$cc_turn_float_parent_id = 2 &&
+f$cc_turn_float_current_hu_from_hu_flop &&
+f$cc_turn_float_hu_aggressor_is_current_villain &&
+f$cc_pot_family_id = 3 &&
+f$cc_pf_rt_squeeze_proven &&
+f$cc_pf_role_3bettor &&
+f$cc_pf_rt_final_aggressor_is_hero &&
+!f$cc_turn_float_source_exact_covered
+
+// Purpose: parent2 3bettor action shared plain/squeeze; no pure-air baseline.
+// Source/Provenance: P selected range after facing flop XR.
+##f$cc_turn_float_3bp_parent2_hu_action##
+When !(f$cc_turn_float_plain3bp_parent2_hu_context || f$cc_turn_float_squeeze_parent2_hu_context) Return false Force
+When f$cc_turn_float_robust_value Return true Force
+When f$cc_turn_float_vulnerable_two_pair_plus && f$cc_turn_float_calm_runout Return true Force
+When f$cc_turn_float_vulnerable_two_pair_plus Return false Force
+When f$cc_turn_float_overpair && (f$cc_turn_float_calm_runout || f$cc_turn_float_hu_low_spr) Return true Force
+When f$cc_turn_float_strong_top_pair && f$cc_turn_float_calm_runout Return true Force
+When f$cc_hand_top_pair_or_better Return false Force
+When f$cc_turn_float_premium_draw && !f$cc_turn_super_completed Return true Force
+When f$cc_turn_float_good_draw || f$cc_turn_float_weak_draw Return false Force
+When f$cc_turn_float_current_air Return false Force
+When Others Return false Force
+
+// Purpose: parent2 size map.
+// Source/Provenance: P 50/75 selected lower-SPR sizing.
+##f$cc_turn_float_3bp_parent2_hu_size_id##
+When !f$cc_turn_float_3bp_parent2_hu_action Return 0 Force
+When f$cc_turn_float_robust_value && f$cc_turn_completed Return f$cc_turn_float_size_75_id Force
+When f$cc_turn_float_robust_value Return f$cc_turn_float_size_50_id Force
+When f$cc_turn_float_vulnerable_two_pair_plus Return f$cc_turn_float_size_50_id Force
+When f$cc_turn_float_overpair || f$cc_turn_float_strong_top_pair Return f$cc_turn_float_size_50_id Force
+When f$cc_turn_float_premium_draw Return f$cc_turn_float_size_50_id Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// TF3.04 — parent3 caller FlopFloat-XR-call
+// -----------------------------------------------------------------------------
+
+// Purpose: supported plain3BP parent3 HU context.
+// Source/Provenance: T/A exact history + P strongly selected caller policy.
+##f$cc_turn_float_plain3bp_parent3_hu_context##
+f$cc_turn_float_opportunity &&
+f$cc_turn_float_parent_id = 3 &&
+f$cc_turn_float_current_hu_from_hu_flop &&
+f$cc_turn_float_hu_aggressor_is_current_villain &&
+f$cc_pot_family_id = 3 &&
+f$cc_pf_rt_plain3bet_proven &&
+f$cc_turn_float_pf_threebet_caller_supported &&
+!f$cc_turn_float_source_exact_covered
+
+// Purpose: supported squeeze parent3 HU context.
+// Source/Provenance: T/A exact history + P selected squeeze caller policy.
+##f$cc_turn_float_squeeze_parent3_hu_context##
+f$cc_turn_float_opportunity &&
+f$cc_turn_float_parent_id = 3 &&
+f$cc_turn_float_current_hu_from_hu_flop &&
+f$cc_turn_float_hu_aggressor_is_current_villain &&
+f$cc_pot_family_id = 3 &&
+f$cc_pf_rt_squeeze_proven &&
+f$cc_turn_float_pf_threebet_caller_supported &&
+!f$cc_turn_float_source_exact_covered
+
+// Purpose: parent3 selected caller action. Only robust value, calm selected one-pair
+// at low SPR, and premium draw pressure; no air/good-draw baseline.
+// Source/Provenance: P conservative lower-SPR continuation.
+##f$cc_turn_float_3bp_parent3_hu_action##
+When !(f$cc_turn_float_plain3bp_parent3_hu_context || f$cc_turn_float_squeeze_parent3_hu_context) Return false Force
+When f$cc_turn_float_robust_value Return true Force
+When f$cc_turn_float_vulnerable_two_pair_plus && f$cc_turn_float_calm_runout Return true Force
+When f$cc_turn_float_vulnerable_two_pair_plus Return false Force
+When f$cc_turn_float_overpair && f$cc_turn_float_calm_runout Return true Force
+When f$cc_turn_float_strong_top_pair && f$cc_turn_float_calm_runout && f$cc_turn_float_hu_low_spr Return true Force
+When f$cc_hand_top_pair_or_better Return false Force
+When f$cc_turn_float_premium_draw && !f$cc_turn_super_completed Return true Force
+When f$cc_real_frontdoor_draw Return false Force
+When f$cc_turn_float_current_air Return false Force
+When Others Return false Force
+
+// Purpose: parent3 size map.
+// Source/Provenance: P 50/75 robust selection.
+##f$cc_turn_float_3bp_parent3_hu_size_id##
+When !f$cc_turn_float_3bp_parent3_hu_action Return 0 Force
+When f$cc_turn_float_robust_value && f$cc_turn_completed Return f$cc_turn_float_size_75_id Force
+When f$cc_turn_float_robust_value Return f$cc_turn_float_size_50_id Force
+When f$cc_turn_float_vulnerable_two_pair_plus Return f$cc_turn_float_size_50_id Force
+When f$cc_turn_float_overpair || f$cc_turn_float_strong_top_pair Return f$cc_turn_float_size_50_id Force
+When f$cc_turn_float_premium_draw Return f$cc_turn_float_size_50_id Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// TF3.05 — post-multiway HU and current multiway
+// -----------------------------------------------------------------------------
+
+// Purpose: supported 3BP that began flop multiway but becomes HU by turn.
+// Source/Provenance: A/T origin preservation + P selected-survivor policy.
+##f$cc_turn_float_3bp_postmultiway_hu_context##
+f$cc_turn_float_opportunity &&
+f$cc_turn_float_postmultiway_to_hu &&
+f$cc_turn_float_hu_aggressor_is_current_villain &&
+f$cc_pot_family_id = 3 &&
+f$cc_pf_rt_3bet_order_supported &&
+!f$cc_turn_float_source_exact_covered
+
+// Purpose: current multiway supported 3BP/squeeze Turn Float.
+// Source/Provenance: T/A topology + P multiway tightening.
+##f$cc_turn_float_3bp_multiway_context##
+f$cc_turn_float_opportunity &&
+f$cc_turn_float_current_multiway &&
+f$cc_pot_family_id = 3 &&
+f$cc_pf_rt_3bet_order_supported &&
+!f$cc_turn_float_source_exact_covered
+
+// Purpose: post-multiway HU 3BP action.
+// Source/Provenance: P robust value/premium-equity only; zero air baseline.
+##f$cc_turn_float_3bp_postmultiway_hu_action##
+When !f$cc_turn_float_3bp_postmultiway_hu_context Return false Force
+When f$cc_turn_float_robust_value Return true Force
+When f$cc_turn_float_vulnerable_two_pair_plus && f$cc_turn_float_calm_runout Return true Force
+When f$cc_turn_float_vulnerable_two_pair_plus Return false Force
+When f$cc_turn_float_overpair && f$cc_turn_float_calm_runout && f$cc_turn_float_hu_low_spr Return true Force
+When f$cc_turn_float_strong_top_pair && f$cc_turn_float_calm_runout && f$cc_turn_float_hu_very_low_spr Return true Force
+When f$cc_hand_top_pair_or_better Return false Force
+When f$cc_turn_float_premium_draw && !f$cc_turn_super_completed Return true Force
+When f$cc_real_frontdoor_draw Return false Force
+When f$cc_turn_float_current_air Return false Force
+When Others Return false Force
+
+// Purpose: current multiway 3BP/squeeze action; 4+ way requires robust value or
+// strongest combo draw, while 3-way can add selected low-SPR overpair/premium draw.
+// Source/Provenance: P multiway lower-SPR policy + T deepest SPR.
+##f$cc_turn_float_3bp_multiway_action##
+When !f$cc_turn_float_3bp_multiway_context Return false Force
+When f$cc_turn_float_robust_value Return true Force
+When nplayersplaying = 3 && f$cc_turn_float_vulnerable_two_pair_plus && f$cc_turn_float_calm_runout Return true Force
+When f$cc_turn_float_vulnerable_two_pair_plus Return false Force
+When nplayersplaying = 3 && f$cc_turn_float_mw_deep_spr_valid && f$cc_mw_spr_deepest_round_start < 2 && f$cc_turn_float_overpair && f$cc_turn_float_calm_runout Return true Force
+When f$cc_hand_top_pair_or_better Return false Force
+When nplayersplaying = 3 && f$cc_turn_float_premium_draw && !f$cc_turn_super_completed Return true Force
+When nplayersplaying >= 4 && f$cc_hand_no_made && f$cc_real_combo_draw && !f$cc_turn_super_completed Return true Force
+When f$cc_real_frontdoor_draw Return false Force
+When f$cc_turn_float_current_air Return false Force
+When Others Return false Force
+
+// Purpose: shared selected multiway/post-multiway size map.
+// Source/Provenance: P 50/75 robust sizing.
+##f$cc_turn_float_3bp_multiway_size_id##
+When f$cc_turn_float_robust_value && f$cc_turn_completed Return f$cc_turn_float_size_75_id Force
+When f$cc_turn_float_robust_value Return f$cc_turn_float_size_50_id Force
+When f$cc_turn_float_vulnerable_two_pair_plus Return f$cc_turn_float_size_50_id Force
+When f$cc_turn_float_overpair || f$cc_turn_float_strong_top_pair Return f$cc_turn_float_size_50_id Force
+When f$cc_turn_float_premium_draw || (f$cc_hand_no_made && f$cc_real_combo_draw) Return f$cc_turn_float_size_50_id Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// TF3.06 — family dispatch / coverage
+// -----------------------------------------------------------------------------
+
+// Purpose: plain 3BP action dispatcher.
+// Source/Provenance: P exact parent/origin routing.
+##f$cc_turn_float_plain3bp_gap_action##
+When f$cc_turn_float_plain3bp_parent1_hu_context && f$cc_turn_float_3bp_parent1_opener_origin Return f$cc_turn_float_3bp_parent1_opener_hu_action Force
+When f$cc_turn_float_plain3bp_parent1_hu_context && f$cc_turn_float_3bp_parent1_postcold_origin Return f$cc_turn_float_3bp_parent1_coldcaller_hu_action Force
+When f$cc_turn_float_plain3bp_parent2_hu_context Return f$cc_turn_float_3bp_parent2_hu_action Force
+When f$cc_turn_float_plain3bp_parent3_hu_context Return f$cc_turn_float_3bp_parent3_hu_action Force
+When f$cc_turn_float_3bp_postmultiway_hu_context && f$cc_pf_rt_plain3bet_proven Return f$cc_turn_float_3bp_postmultiway_hu_action Force
+When f$cc_turn_float_3bp_multiway_context && f$cc_pf_rt_plain3bet_proven Return f$cc_turn_float_3bp_multiway_action Force
+When Others Return false Force
+
+// Purpose: plain 3BP size dispatcher.
+// Source/Provenance: P exact context pairing.
+##f$cc_turn_float_plain3bp_gap_size_id##
+When f$cc_turn_float_plain3bp_parent1_hu_context Return f$cc_turn_float_3bp_parent1_hu_size_id Force
+When f$cc_turn_float_plain3bp_parent2_hu_context Return f$cc_turn_float_3bp_parent2_hu_size_id Force
+When f$cc_turn_float_plain3bp_parent3_hu_context Return f$cc_turn_float_3bp_parent3_hu_size_id Force
+When f$cc_turn_float_3bp_postmultiway_hu_context && f$cc_pf_rt_plain3bet_proven Return f$cc_turn_float_3bp_multiway_size_id Force
+When f$cc_turn_float_3bp_multiway_context && f$cc_pf_rt_plain3bet_proven Return f$cc_turn_float_3bp_multiway_size_id Force
+When Others Return 0 Force
+
+// Purpose: squeeze action dispatcher, keeping all three caller origins explicit.
+// Source/Provenance: P exact squeeze origin routing.
+##f$cc_turn_float_squeeze_gap_action##
+When f$cc_turn_float_squeeze_parent1_hu_context && f$cc_turn_float_3bp_parent1_opener_origin Return f$cc_turn_float_3bp_parent1_opener_hu_action Force
+When f$cc_turn_float_squeeze_parent1_hu_context && (f$cc_turn_float_3bp_parent1_precold_origin || f$cc_turn_float_3bp_parent1_postcold_origin) Return f$cc_turn_float_3bp_parent1_coldcaller_hu_action Force
+When f$cc_turn_float_squeeze_parent2_hu_context Return f$cc_turn_float_3bp_parent2_hu_action Force
+When f$cc_turn_float_squeeze_parent3_hu_context Return f$cc_turn_float_3bp_parent3_hu_action Force
+When f$cc_turn_float_3bp_postmultiway_hu_context && f$cc_pf_rt_squeeze_proven Return f$cc_turn_float_3bp_postmultiway_hu_action Force
+When f$cc_turn_float_3bp_multiway_context && f$cc_pf_rt_squeeze_proven Return f$cc_turn_float_3bp_multiway_action Force
+When Others Return false Force
+
+// Purpose: squeeze size dispatcher.
+// Source/Provenance: P exact context pairing.
+##f$cc_turn_float_squeeze_gap_size_id##
+When f$cc_turn_float_squeeze_parent1_hu_context Return f$cc_turn_float_3bp_parent1_hu_size_id Force
+When f$cc_turn_float_squeeze_parent2_hu_context Return f$cc_turn_float_3bp_parent2_hu_size_id Force
+When f$cc_turn_float_squeeze_parent3_hu_context Return f$cc_turn_float_3bp_parent3_hu_size_id Force
+When f$cc_turn_float_3bp_postmultiway_hu_context && f$cc_pf_rt_squeeze_proven Return f$cc_turn_float_3bp_multiway_size_id Force
+When f$cc_turn_float_3bp_multiway_context && f$cc_pf_rt_squeeze_proven Return f$cc_turn_float_3bp_multiway_size_id Force
+When Others Return 0 Force
+
+// Purpose: plain-3BP gap coverage.
+// Source/Provenance: P engineering metadata.
+##f$cc_turn_float_plain3bp_gap_covered##
+f$cc_turn_float_plain3bp_parent1_hu_context ||
+f$cc_turn_float_plain3bp_parent2_hu_context ||
+f$cc_turn_float_plain3bp_parent3_hu_context ||
+(f$cc_turn_float_3bp_postmultiway_hu_context && f$cc_pf_rt_plain3bet_proven) ||
+(f$cc_turn_float_3bp_multiway_context && f$cc_pf_rt_plain3bet_proven)
+
+// Purpose: squeeze gap coverage.
+// Source/Provenance: P engineering metadata.
+##f$cc_turn_float_squeeze_gap_covered##
+f$cc_turn_float_squeeze_parent1_hu_context ||
+f$cc_turn_float_squeeze_parent2_hu_context ||
+f$cc_turn_float_squeeze_parent3_hu_context ||
+(f$cc_turn_float_3bp_postmultiway_hu_context && f$cc_pf_rt_squeeze_proven) ||
+(f$cc_turn_float_3bp_multiway_context && f$cc_pf_rt_squeeze_proven)
+
+// ============================================================================
+// End Gate05E 3BP / squeeze Turn Float gaps.
+// ============================================================================
