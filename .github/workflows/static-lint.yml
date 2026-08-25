@@ -163,3 +163,5 @@ jobs:
         run: python tools/test_river_probe_iso.py
       - name: Test plain-3BP and squeeze River Probe contract
         run: python tools/test_river_probe_3bp.py
+      - name: Test clean-HU 4BP River Probe contract
+        run: python tools/test_river_probe_4bp.py
