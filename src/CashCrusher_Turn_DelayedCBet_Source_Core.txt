@@ -1,0 +1,243 @@
+// ============================================================================
+// CashCrusher_Turn_DelayedCBet_Source_Core.txt
+// Gate 12A.4 — core native source trees: HUSB / HUBB / 3wBTNvBB
+// ============================================================================
+// Purpose:
+//   Translate only the mechanically portable Delayed-CBet source trees after an
+//   ACTUAL flop X/X. Current Turn strength reclassifies first exactly where the
+//   mature source does so; historical flop class is read from Gate12A.3 snapshot.
+//
+// Source hierarchy:
+//   T = mature `f$move_turn_DelayedCB` source branches.
+//   A = native positional reconstruction + contribution-aware CF7 translation.
+//   P = normalized size IDs / coverage metadata only.
+//
+// Safety:
+//   No generic HUSB/HUBB/BTN fallback bets. Snapshot-valid native contexts with no
+//   positive source branch are explicit checks. No random/HandPower/stackoff.
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// DC12A-S.01 — exact native Turn contexts
+// -----------------------------------------------------------------------------
+
+// Purpose: true-HU HUSB Turn after exact initiative flop check-through.
+// Source/Provenance: A exact native geometry + T closed history/snapshot.
+##f$cc_turn_delayed_cbet_husb_source_context##
+f$cc_turn_delayed_cbet_snapshot_valid &&
+f$cc_true_hu && f$cc_hu && f$cc_flop_entry_count = 2 &&
+f$cc_hero_pos_id = 5 && f$cc_hu_villain_pos_id = 6
+
+// Purpose: true-HU HUBB Turn after exact initiative flop check-through.
+// Source/Provenance: A exact native geometry + T closed history/snapshot.
+##f$cc_turn_delayed_cbet_hubb_source_context##
+f$cc_turn_delayed_cbet_snapshot_valid &&
+f$cc_true_hu && f$cc_hu && f$cc_flop_entry_count = 2 &&
+f$cc_hero_pos_id = 6 && f$cc_hu_villain_pos_id = 5
+
+// Purpose: native 3-handed BTN-v-BB Turn; SB folded before flop.
+// Source/Provenance: A exact legacy `game_3wBTNvBB` reconstruction.
+##f$cc_turn_delayed_cbet_3w_btnvbb_source_context##
+f$cc_turn_delayed_cbet_snapshot_valid &&
+f$cc_deal_size = 3 && f$cc_flop_entry_count = 2 && f$cc_hu &&
+f$cc_hero_pos_id = 4 && f$cc_hu_villain_pos_id = 6
+
+// -----------------------------------------------------------------------------
+// DC12A-S.02 — HUSB direct source
+// -----------------------------------------------------------------------------
+
+// Purpose: HUSB delayed action. Special TP/OP slowplay and straight-possible air
+// are the only Gate12A source-marker families captured here.
+// Source/Provenance: T direct mature source ordering.
+##f$cc_turn_delayed_cbet_husb_source_action##
+When !f$cc_turn_delayed_cbet_husb_source_context Return false Force
+When user_cc_turn_delayed_cbet_husb_flop_tpcheck_candidate && f$cc_turn_delayed_cbet_two_pair_plus_real Return true Force
+When user_cc_turn_delayed_cbet_husb_flop_tpcheck_candidate && f$cc_turn_delayed_cbet_tpop_real Return true Force
+When user_cc_turn_delayed_cbet_husb_flop_tpcheck_candidate && f$cc_turn_probe_second_pair Return true Force
+When user_cc_turn_delayed_cbet_husb_flop_tpcheck_candidate Return false Force
+When user_cc_turn_delayed_cbet_husb_flop_air_straight_candidate && f$cc_turn_delayed_cbet_two_pair_plus_real Return true Force
+When user_cc_turn_delayed_cbet_husb_flop_air_straight_candidate && (f$cc_turn_delayed_cbet_tpop_real || f$cc_turn_probe_second_pair) Return true Force
+When user_cc_turn_delayed_cbet_husb_flop_air_straight_candidate && f$cc_turn_delayed_cbet_no_made Return true Force
+When Others Return false Force
+
+// Purpose: exact HUSB source size: TP-check 2P+75; TP/OP completed75 else50;
+// second pair50. Air-check: 2P+75, TP/OP/second50, no-made75.
+// Source/Provenance: T direct `Turn50/Turn75` mapping.
+##f$cc_turn_delayed_cbet_husb_source_size_id##
+When !f$cc_turn_delayed_cbet_husb_source_action Return 0 Force
+When user_cc_turn_delayed_cbet_husb_flop_tpcheck_candidate && f$cc_turn_delayed_cbet_two_pair_plus_real Return f$cc_turn_delayed_cbet_size_75_id Force
+When user_cc_turn_delayed_cbet_husb_flop_tpcheck_candidate && f$cc_turn_delayed_cbet_tpop_real && f$cc_turn_delayed_cbet_turn_completed Return f$cc_turn_delayed_cbet_size_75_id Force
+When user_cc_turn_delayed_cbet_husb_flop_tpcheck_candidate Return f$cc_turn_delayed_cbet_size_50_id Force
+When user_cc_turn_delayed_cbet_husb_flop_air_straight_candidate && f$cc_turn_delayed_cbet_two_pair_plus_real Return f$cc_turn_delayed_cbet_size_75_id Force
+When user_cc_turn_delayed_cbet_husb_flop_air_straight_candidate && (f$cc_turn_delayed_cbet_tpop_real || f$cc_turn_probe_second_pair) Return f$cc_turn_delayed_cbet_size_50_id Force
+When user_cc_turn_delayed_cbet_husb_flop_air_straight_candidate && f$cc_turn_delayed_cbet_no_made Return f$cc_turn_delayed_cbet_size_75_id Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// DC12A-S.03 — HUBB direct source
+// -----------------------------------------------------------------------------
+
+// Purpose: HUBB third-pair historical line. Source ordering is material: current
+// value first, then third-pair+undercard MIN, then 7..K Del-Del check.
+// Source/Provenance: T exact newest HUBB delayed source.
+##f$cc_turn_delayed_cbet_hubb_thirdpair_action##
+When !f$cc_turn_delayed_cbet_hubb_source_context Return false Force
+When !user_cc_turn_delayed_cbet_hubb_flop_thirdpair_candidate Return false Force
+When f$cc_turn_delayed_cbet_two_pair_plus_real Return true Force
+When f$cc_turn_delayed_cbet_tpop_real Return true Force
+When f$cc_turn_delayed_cbet_third_pair && f$cc_turn_delayed_cbet_turn_under Return true Force
+When user_cc_turn_delayed_cbet_hubb_flop_thirdpair_deldel_candidate && f$cc_turn_delayed_cbet_third_pair Return false Force
+When Others Return false Force
+
+// Purpose: HUBB third-pair source sizes 75/50/MIN.
+// Source/Provenance: T exact source sizes.
+##f$cc_turn_delayed_cbet_hubb_thirdpair_size_id##
+When !f$cc_turn_delayed_cbet_hubb_thirdpair_action Return 0 Force
+When f$cc_turn_delayed_cbet_two_pair_plus_real Return f$cc_turn_delayed_cbet_size_75_id Force
+When f$cc_turn_delayed_cbet_tpop_real Return f$cc_turn_delayed_cbet_size_50_id Force
+When f$cc_turn_delayed_cbet_third_pair && f$cc_turn_delayed_cbet_turn_under Return f$cc_turn_delayed_cbet_size_min_id Force
+When Others Return 0 Force
+
+// Purpose: preserve HUBB Del-Del River-pending state instead of inventing a Turn bet.
+// Source/Provenance: T direct source plan marker semantics.
+##f$cc_turn_delayed_cbet_hubb_thirdpair_deldel_plan##
+f$cc_turn_delayed_cbet_hubb_source_context &&
+user_cc_turn_delayed_cbet_hubb_flop_thirdpair_deldel_candidate &&
+f$cc_turn_delayed_cbet_third_pair &&
+!f$cc_turn_delayed_cbet_turn_under
+
+// Purpose: HUBB wet-air delayed line. Completed+three8toK checks again; ordinary
+// current no-made delays 50. Current value reclassifies first.
+// Source/Provenance: T exact source ordering.
+##f$cc_turn_delayed_cbet_hubb_air_action##
+When !f$cc_turn_delayed_cbet_hubb_source_context Return false Force
+When !user_cc_turn_delayed_cbet_hubb_flop_air_candidate Return false Force
+When f$cc_turn_delayed_cbet_two_pair_plus_real Return true Force
+When f$cc_turn_delayed_cbet_tpop_real Return true Force
+When f$cc_turn_delayed_cbet_turn_completed && f$cc_turn_delayed_cbet_turn_three_8toK Return false Force
+When f$cc_turn_delayed_cbet_no_made Return true Force
+When Others Return false Force
+
+// Purpose: HUBB wet-air sizes 75 value / 50 TP-OP or no-made.
+// Source/Provenance: T exact source sizes.
+##f$cc_turn_delayed_cbet_hubb_air_size_id##
+When !f$cc_turn_delayed_cbet_hubb_air_action Return 0 Force
+When f$cc_turn_delayed_cbet_two_pair_plus_real Return f$cc_turn_delayed_cbet_size_75_id Force
+When f$cc_turn_delayed_cbet_tpop_real Return f$cc_turn_delayed_cbet_size_50_id Force
+When f$cc_turn_delayed_cbet_no_made Return f$cc_turn_delayed_cbet_size_50_id Force
+When Others Return 0 Force
+
+// Purpose: preserve HUBB completed 8..K Del-Del River-pending state.
+// Source/Provenance: T direct source plan marker semantics.
+##f$cc_turn_delayed_cbet_hubb_air_deldel_plan##
+f$cc_turn_delayed_cbet_hubb_source_context &&
+user_cc_turn_delayed_cbet_hubb_flop_air_candidate &&
+!f$cc_turn_delayed_cbet_two_pair_plus_real &&
+!f$cc_turn_delayed_cbet_tpop_real &&
+f$cc_turn_delayed_cbet_turn_completed &&
+f$cc_turn_delayed_cbet_turn_three_8toK
+
+// Purpose: HUBB dispatcher; third-pair history has source precedence over air.
+// Source/Provenance: T/A exact source-family dispatcher.
+##f$cc_turn_delayed_cbet_hubb_source_action##
+When f$cc_turn_delayed_cbet_hubb_thirdpair_action Return true Force
+When f$cc_turn_delayed_cbet_hubb_air_action Return true Force
+When Others Return false Force
+
+// Purpose: HUBB paired size dispatcher.
+// Source/Provenance: T/A exact source-family mapping.
+##f$cc_turn_delayed_cbet_hubb_source_size_id##
+When f$cc_turn_delayed_cbet_hubb_thirdpair_action Return f$cc_turn_delayed_cbet_hubb_thirdpair_size_id Force
+When f$cc_turn_delayed_cbet_hubb_air_action Return f$cc_turn_delayed_cbet_hubb_air_size_id Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// DC12A-S.04 — 3wBTNvBB direct source
+// -----------------------------------------------------------------------------
+
+// Purpose: 3wBTNvBB source action partition by saved flop class.
+// Source/Provenance: T direct mature source tree.
+##f$cc_turn_delayed_cbet_3w_btnvbb_source_action##
+When !f$cc_turn_delayed_cbet_3w_btnvbb_source_context Return false Force
+// Flop TP+ check -> only current 2P+/TP/OP delay75.
+When user_cc_turn_delayed_cbet_3w_btnvbb_flop_tpplus_candidate && (f$cc_turn_delayed_cbet_two_pair_plus_real || f$cc_turn_delayed_cbet_tpop_real) Return true Force
+When user_cc_turn_delayed_cbet_3w_btnvbb_flop_tpplus_candidate Return false Force
+// Flop MP -> current value first; four-card completion check; remaining 2nd/3rd pair bets.
+When user_cc_turn_delayed_cbet_3w_btnvbb_flop_mp_candidate && f$cc_turn_delayed_cbet_two_pair_plus_real Return true Force
+When user_cc_turn_delayed_cbet_3w_btnvbb_flop_mp_candidate && f$cc_turn_delayed_cbet_tpop_real Return true Force
+When user_cc_turn_delayed_cbet_3w_btnvbb_flop_mp_candidate && (nstraightcommon >= 4 || nsuitedcommon >= 4) Return false Force
+When user_cc_turn_delayed_cbet_3w_btnvbb_flop_mp_candidate && f$cc_turn_delayed_cbet_second_or_third_pair Return true Force
+When user_cc_turn_delayed_cbet_3w_btnvbb_flop_mp_candidate Return false Force
+// Flop BP -> only current 2P+/TP/OP delays.
+When user_cc_turn_delayed_cbet_3w_btnvbb_flop_bp_candidate && (f$cc_turn_delayed_cbet_two_pair_plus_real || f$cc_turn_delayed_cbet_tpop_real) Return true Force
+When user_cc_turn_delayed_cbet_3w_btnvbb_flop_bp_candidate Return false Force
+// Flop no-made -> value reclassification, 2nd pair50, no-made/3rd pair exact62.5.
+When user_cc_turn_delayed_cbet_3w_btnvbb_flop_nomade_candidate && f$cc_turn_delayed_cbet_two_pair_plus_real Return true Force
+When user_cc_turn_delayed_cbet_3w_btnvbb_flop_nomade_candidate && f$cc_turn_delayed_cbet_tpop_real Return true Force
+When user_cc_turn_delayed_cbet_3w_btnvbb_flop_nomade_candidate && f$cc_turn_probe_second_pair Return true Force
+When user_cc_turn_delayed_cbet_3w_btnvbb_flop_nomade_candidate && (f$cc_turn_delayed_cbet_no_made || f$cc_turn_delayed_cbet_third_pair) Return true Force
+When Others Return false Force
+
+// Purpose: exact 3wBTNvBB source size map, including 62.5% unrounded.
+// Source/Provenance: T direct Turn50/Turn625/Turn75 mapping.
+##f$cc_turn_delayed_cbet_3w_btnvbb_source_size_id##
+When !f$cc_turn_delayed_cbet_3w_btnvbb_source_action Return 0 Force
+When user_cc_turn_delayed_cbet_3w_btnvbb_flop_tpplus_candidate Return f$cc_turn_delayed_cbet_size_75_id Force
+When user_cc_turn_delayed_cbet_3w_btnvbb_flop_mp_candidate && f$cc_turn_delayed_cbet_two_pair_plus_real Return f$cc_turn_delayed_cbet_size_75_id Force
+When user_cc_turn_delayed_cbet_3w_btnvbb_flop_mp_candidate && f$cc_turn_delayed_cbet_tpop_real Return f$cc_turn_delayed_cbet_size_50_id Force
+When user_cc_turn_delayed_cbet_3w_btnvbb_flop_mp_candidate && f$cc_turn_delayed_cbet_second_or_third_pair && rankhiplayer >= 10 Return f$cc_turn_delayed_cbet_size_75_id Force
+When user_cc_turn_delayed_cbet_3w_btnvbb_flop_mp_candidate Return f$cc_turn_delayed_cbet_size_50_id Force
+When user_cc_turn_delayed_cbet_3w_btnvbb_flop_bp_candidate && f$cc_turn_delayed_cbet_two_pair_plus_real Return f$cc_turn_delayed_cbet_size_75_id Force
+When user_cc_turn_delayed_cbet_3w_btnvbb_flop_bp_candidate && f$cc_turn_delayed_cbet_tpop_real Return f$cc_turn_delayed_cbet_size_50_id Force
+When user_cc_turn_delayed_cbet_3w_btnvbb_flop_nomade_candidate && (f$cc_turn_delayed_cbet_two_pair_plus_real || f$cc_turn_delayed_cbet_tpop_real) Return f$cc_turn_delayed_cbet_size_75_id Force
+When user_cc_turn_delayed_cbet_3w_btnvbb_flop_nomade_candidate && f$cc_turn_probe_second_pair Return f$cc_turn_delayed_cbet_size_50_id Force
+When user_cc_turn_delayed_cbet_3w_btnvbb_flop_nomade_candidate && (f$cc_turn_delayed_cbet_no_made || f$cc_turn_delayed_cbet_third_pair) Return f$cc_turn_delayed_cbet_size_625_id Force
+When Others Return 0 Force
+
+// Purpose: preserve source River repeat plan for the exact no-made/third-pair
+// 62.5 branch. It is metadata only; Gate13 owns any River action.
+// Source/Provenance: T direct `Delay625_River625` ancestry.
+##f$cc_turn_delayed_cbet_3w_btnvbb_plan_river625##
+f$cc_turn_delayed_cbet_3w_btnvbb_source_context &&
+user_cc_turn_delayed_cbet_3w_btnvbb_flop_nomade_candidate &&
+(f$cc_turn_delayed_cbet_no_made || f$cc_turn_delayed_cbet_third_pair)
+
+// -----------------------------------------------------------------------------
+// DC12A-S.05 — source coverage / dispatcher
+// -----------------------------------------------------------------------------
+
+// Purpose: native source context is reviewed if its exact pre-action snapshot was
+// captured and CLOSED history proves the flop check-through. A no-marker state is
+// an explicit source check because each native source section ends generic false.
+// Source/Provenance: T direct source fallback + A snapshot validity.
+##f$cc_turn_delayed_cbet_core_source_covered##
+f$cc_turn_delayed_cbet_husb_source_context ||
+f$cc_turn_delayed_cbet_hubb_source_context ||
+f$cc_turn_delayed_cbet_3w_btnvbb_source_context
+
+// Purpose: source-first action dispatcher.
+// Source/Provenance: T/A exact native family order.
+##f$cc_turn_delayed_cbet_core_source_action##
+When f$cc_turn_delayed_cbet_husb_source_context Return f$cc_turn_delayed_cbet_husb_source_action Force
+When f$cc_turn_delayed_cbet_hubb_source_context Return f$cc_turn_delayed_cbet_hubb_source_action Force
+When f$cc_turn_delayed_cbet_3w_btnvbb_source_context Return f$cc_turn_delayed_cbet_3w_btnvbb_source_action Force
+When Others Return false Force
+
+// Purpose: paired direct-source size dispatcher.
+// Source/Provenance: T/A exact native family mapping.
+##f$cc_turn_delayed_cbet_core_source_size_id##
+When f$cc_turn_delayed_cbet_husb_source_context Return f$cc_turn_delayed_cbet_husb_source_size_id Force
+When f$cc_turn_delayed_cbet_hubb_source_context Return f$cc_turn_delayed_cbet_hubb_source_size_id Force
+When f$cc_turn_delayed_cbet_3w_btnvbb_source_context Return f$cc_turn_delayed_cbet_3w_btnvbb_source_size_id Force
+When Others Return 0 Force
+
+// Purpose: action/size integrity for core direct source.
+// Source/Provenance: P safety invariant.
+##f$cc_turn_delayed_cbet_core_source_size_consistent##
+When !f$cc_turn_delayed_cbet_core_source_action Return f$cc_turn_delayed_cbet_core_source_size_id = 0 Force
+When f$cc_turn_delayed_cbet_core_source_action Return f$cc_turn_delayed_cbet_core_source_size_id >= 1 && f$cc_turn_delayed_cbet_core_source_size_id <= 5 Force
+When Others Return false Force
+
+// ============================================================================
+// End Gate12A.4 core native source trees.
+// ============================================================================
