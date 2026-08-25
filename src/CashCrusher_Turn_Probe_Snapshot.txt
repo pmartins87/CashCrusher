@@ -1,0 +1,133 @@
+// ============================================================================
+// CashCrusher_Turn_Probe_Snapshot.txt
+// Gate 10A.5 — pre-action flop provenance needed by source Turn-Probe branches
+// ============================================================================
+// Purpose:
+//   Persist ONLY flop facts that cannot be reconstructed once Turn arrives.
+//   This writer is evaluated at the canonical Flop-Donk/no-initiative decision,
+//   before Hero checks or leads. A later Turn Probe may consume the snapshot only
+//   if Gate10A CLOSED history independently proves the flop actually checked through.
+//
+// Why this is necessary:
+//   Source branches such as 3wSBvBTN and 3wBBvBTN distinguish what Hero held on
+//   FLOP (TP+ versus air) rather than merely current Turn strength. Reconstructing
+//   that state from Turn cards would create false provenance.
+//
+// Source/Provenance:
+//   T/A = portable hand/draw/texture descriptors evaluated while IsFlop is true.
+//   A = exact DeepCrusher historical-state requirement.
+//   P = generic six-max snapshot naming/validation.
+//
+// Safety:
+//   Snapshot = historical observation, NOT proof of executed check. Positive Turn
+//   strategy requires `f$cc_turn_probe_snapshot_valid`, which also requires the
+//   closed check-through parent from Gate10A.
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// TPS.01 — capture eligibility
+// -----------------------------------------------------------------------------
+
+// Purpose: capture only the first Hero action in a Flop Donk/no-initiative owner
+// with no bet currently facing. FIRST/MIDDLE are the future Turn-Probe positions.
+// Source/Provenance: T/A current flop ownership facts.
+##f$cc_turn_probe_snapshot_capture_eligible##
+IsFlop &&
+f$cc_context_valid &&
+f$cc_flop_donk_opportunity &&
+BotsActionsOnThisRoundIncludingChecks = 0 &&
+AmountToCall = 0 &&
+(f$cc_relpos_id = 1 || f$cc_relpos_id = 2) &&
+!f$cc_pf_role_pfa &&
+!f$cc_pf_role_3bettor &&
+!f$cc_pf_role_4bettor
+
+// Purpose: no-made/no-frontdoor source-compatible air on flop.
+// Source: DeepCrusher `f$hand_Air` = NoMadeHand without Gutshot-or-better draw.
+// Provenance: T/A using portable CashCrusher draw primitives.
+##f$cc_turn_probe_snapshot_flop_air##
+f$cc_turn_probe_snapshot_capture_eligible && f$cc_air_no_frontdoor
+
+// Purpose: lower pair family used by HUBB source histories.
+// Source/Provenance: A exact 3rd/4th/5th pair union from source Probe tree.
+##f$cc_turn_probe_snapshot_flop_low_pair##
+f$cc_turn_probe_snapshot_capture_eligible &&
+(f$cc_hand_third_pair_or_pocket || f$cc_hand_fourth_pair_or_pocket || f$cc_hand_fifth_pair_or_pocket)
+
+// -----------------------------------------------------------------------------
+// TPS.02 — side-effect writer
+// -----------------------------------------------------------------------------
+// This function intentionally RETURNS FALSE after performing Set operations. It
+// exists only to persist provenance. The Flop Donk router invokes it before its
+// actual action-selection Returns; therefore it cannot steal the flop decision.
+
+// Purpose: persist the source-relevant flop class/texture snapshot.
+// Source/Provenance: T/A exact current facts; P generic persistence wrapper.
+##f$cc_turn_probe_snapshot_writer##
+When !f$cc_turn_probe_snapshot_capture_eligible Return false Force
+When f$cc_turn_probe_snapshot_capture_eligible Set user_cc_turn_probe_flop_snapshot_seen
+When f$cc_hand_top_pair_or_better Set user_cc_turn_probe_flop_had_tpplus
+When f$cc_hand_second_pair_or_pocket && !f$cc_hand_top_pair_or_better Set user_cc_turn_probe_flop_had_second_pair
+When f$cc_turn_probe_snapshot_flop_low_pair Set user_cc_turn_probe_flop_had_low_pair
+When f$cc_hand_no_made Set user_cc_turn_probe_flop_had_no_made
+When f$cc_real_fd Set user_cc_turn_probe_flop_had_real_fd
+When f$cc_real_oesd Set user_cc_turn_probe_flop_had_real_oesd
+When f$cc_real_gutshot Set user_cc_turn_probe_flop_had_real_gutshot
+When f$cc_backdoor_fd Set user_cc_turn_probe_flop_had_bdfd
+When f$cc_backdoor_sd Set user_cc_turn_probe_flop_had_bdsd
+When f$cc_turn_probe_snapshot_flop_air Set user_cc_turn_probe_flop_had_air
+When f$cc_flop_paired Set user_cc_turn_probe_flop_was_paired
+When f$cc_flop_ahigh Set user_cc_turn_probe_flop_was_ahigh
+When f$cc_flop_1bw Set user_cc_turn_probe_flop_had_1bw
+When (f$cc_flop_2bw || f$cc_flop_3bw) Set user_cc_turn_probe_flop_had_2plusbw
+When f$cc_flop_9low Set user_cc_turn_probe_flop_was_9low
+When f$cc_flop_straight_possible Set user_cc_turn_probe_flop_straight_possible
+When Others Return false Force
+
+// -----------------------------------------------------------------------------
+// TPS.03 — Turn-side validation/decoders
+// -----------------------------------------------------------------------------
+
+// Purpose: snapshot becomes trustworthy for Probe only after CLOSED flop history
+// proves Hero's planned/check-capable node actually ended in full check-through.
+// Source/Provenance: A/T cross-street provenance contract.
+##f$cc_turn_probe_snapshot_valid##
+IsTurn &&
+f$cc_hist_turn_probe_flop_checkthrough_clean &&
+user_cc_turn_probe_flop_snapshot_seen
+
+// Purpose: source historical TP+ flop class.
+// Source/Provenance: A decoder over valid persisted T/A snapshot.
+##f$cc_turn_probe_flop_had_tpplus##
+f$cc_turn_probe_snapshot_valid && user_cc_turn_probe_flop_had_tpplus
+
+// Purpose: source historical second pair flop class.
+// Source/Provenance: A decoder.
+##f$cc_turn_probe_flop_had_second_pair##
+f$cc_turn_probe_snapshot_valid && user_cc_turn_probe_flop_had_second_pair
+
+// Purpose: source historical low-pair flop class.
+// Source/Provenance: A decoder.
+##f$cc_turn_probe_flop_had_low_pair##
+f$cc_turn_probe_snapshot_valid && user_cc_turn_probe_flop_had_low_pair
+
+// Purpose: source historical air class used by 3wBBvBTN.
+// Source/Provenance: A decoder; current Turn hand is still reclassified separately.
+##f$cc_turn_probe_flop_had_air##
+f$cc_turn_probe_snapshot_valid && user_cc_turn_probe_flop_had_air
+
+// Purpose: any real source frontdoor draw existed on flop.
+// Source/Provenance: A decoder over exact saved components.
+##f$cc_turn_probe_flop_had_frontdoor_draw##
+f$cc_turn_probe_snapshot_valid &&
+(user_cc_turn_probe_flop_had_real_fd || user_cc_turn_probe_flop_had_real_oesd || user_cc_turn_probe_flop_had_real_gutshot)
+
+// Purpose: any saved backdoor component existed on flop.
+// Source/Provenance: A decoder.
+##f$cc_turn_probe_flop_had_backdoor##
+f$cc_turn_probe_snapshot_valid &&
+(user_cc_turn_probe_flop_had_bdfd || user_cc_turn_probe_flop_had_bdsd)
+
+// ============================================================================
+// End Gate10A.5 snapshot contract.
+// ============================================================================
