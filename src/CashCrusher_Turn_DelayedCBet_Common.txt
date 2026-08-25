@@ -1,0 +1,126 @@
+// ============================================================================
+// CashCrusher_Turn_DelayedCBet_Common.txt
+// Gate 12A.2 — shared Delayed-CBet current-strength / source-size vocabulary
+// ============================================================================
+// Purpose:
+//   Give Gate12A source children one contribution-aware Turn strength vocabulary
+//   and preserve exact source sizes, especially the 62.5% BTNvBB instruction.
+//
+// Source/Provenance:
+//   T/A = portable hand hierarchy + mature DeepCrusher CF7 meaning.
+//   A = exact Delayed-CBet source sizes MIN/50/62.5/75/100.
+//   P = normalized numeric IDs only.
+// ============================================================================
+
+// Purpose: real current Turn top pair, excluding board-only two-pair promotion.
+// Source/Provenance: T/A CF7 TopPairReal reconstruction.
+##f$cc_turn_delayed_cbet_top_pair_real##
+IsTurn && f$cc_hand_just_top_pair && !TwoPairOnBoard && npcbits > 0
+
+// Purpose: contribution-aware current overpair.
+// Source/Provenance: T/A CF7 OverPairReal reconstruction.
+##f$cc_turn_delayed_cbet_overpair_real##
+IsTurn && HaveOverPair && PairInHand && npcbits > 0
+
+// Purpose: portable contribution-aware 2P+ source region.
+// Non-nut straight/flush require Hero contribution; board-only classes do not
+// silently become source value.
+// Source/Provenance: T/A compact CF7 TwoPairPlus/NutClass-safe reconstruction.
+##f$cc_turn_delayed_cbet_two_pair_plus_real##
+When !IsTurn Return false Force
+When HaveNuts Return true Force
+When HaveStraightFlush && pokerval > pokervalcommon Return true Force
+When HaveQuads && pokerval > pokervalcommon Return true Force
+When HaveFullHouse && pokerval > pokervalcommon Return true Force
+When HaveFlush && npcbits > 0 && pokerval > pokervalcommon Return true Force
+When HaveStraight && npcbits > 0 && pokerval > pokervalcommon Return true Force
+When HaveTrips && !TripsOnBoard && npcbits > 0 Return true Force
+When HaveTwoPair && !TwoPairOnBoard && npcbits > 0 Return true Force
+When Others Return false Force
+
+// Purpose: source current TP/OP union below 2P+.
+// Source/Provenance: T/A exact portable current value tier.
+##f$cc_turn_delayed_cbet_tpop_real##
+(f$cc_turn_delayed_cbet_top_pair_real || f$cc_turn_delayed_cbet_overpair_real) &&
+!f$cc_turn_delayed_cbet_two_pair_plus_real
+
+// Purpose: source current second/third pair union below TP.
+// Source/Provenance: T/A portable pair ladder.
+##f$cc_turn_delayed_cbet_second_or_third_pair##
+IsTurn &&
+!f$cc_hand_top_pair_or_better &&
+(f$cc_hand_second_pair_or_pocket || f$cc_hand_third_pair_or_pocket)
+
+// Purpose: exact current third-pair tier.
+// Source/Provenance: T/A portable pair ladder.
+##f$cc_turn_delayed_cbet_third_pair##
+IsTurn && !f$cc_hand_top_pair_or_better &&
+!f$cc_hand_second_pair_or_pocket && f$cc_hand_third_pair_or_pocket
+
+// Purpose: source-compatible current no-made state.
+// Source/Provenance: T portable hand hierarchy.
+##f$cc_turn_delayed_cbet_no_made##
+IsTurn && f$cc_hand_no_made
+
+// Purpose: source Turn completion = straight possible OR flush possible on Turn.
+// Source/Provenance: T direct `f$turn_Completed` mechanical translation.
+##f$cc_turn_delayed_cbet_turn_completed##
+IsTurn && (StraightPossibleOnTurn || FlushPossibleOnTurn)
+
+// Purpose: Turn is lower than every flop card.
+// Source/Provenance: T direct `f$turn_Under = TurnCard < LowestFlopCard`.
+##f$cc_turn_delayed_cbet_turn_under##
+IsTurn && TurnCard < LowestFlopCard
+
+// Purpose: at least two flop cards are ranks 7..K.
+// Source/Provenance: T direct `f$flop_2Cards_7_to_K` translation.
+##f$cc_turn_delayed_cbet_flop_two_7toK##
+((FirstFlopCard >= 7 && FirstFlopCard <= 13) && (SecondFlopCard >= 7 && SecondFlopCard <= 13)) ||
+((FirstFlopCard >= 7 && FirstFlopCard <= 13) && (ThirdFlopCard >= 7 && ThirdFlopCard <= 13)) ||
+((SecondFlopCard >= 7 && SecondFlopCard <= 13) && (ThirdFlopCard >= 7 && ThirdFlopCard <= 13))
+
+// Purpose: source `turn_3Cards_8_to_K`: either flop already has all three 8..K,
+// or at least two flop 8..K plus Turn 8..K.
+// Source/Provenance: T direct rank-structure translation.
+##f$cc_turn_delayed_cbet_turn_three_8toK##
+(((FirstFlopCard >= 8 && FirstFlopCard <= 13) && (SecondFlopCard >= 8 && SecondFlopCard <= 13)) ||
+ ((FirstFlopCard >= 8 && FirstFlopCard <= 13) && (ThirdFlopCard >= 8 && ThirdFlopCard <= 13)) ||
+ ((SecondFlopCard >= 8 && SecondFlopCard <= 13) && (ThirdFlopCard >= 8 && ThirdFlopCard <= 13))) &&
+(TurnCard >= 8 && TurnCard <= 13) ||
+((FirstFlopCard >= 8 && FirstFlopCard <= 13) &&
+ (SecondFlopCard >= 8 && SecondFlopCard <= 13) &&
+ (ThirdFlopCard >= 8 && ThirdFlopCard <= 13))
+
+// -----------------------------------------------------------------------------
+// Normalized Gate12A size IDs
+// 1 MIN | 2 50% | 3 exact 62.5% | 4 75% | 5 100%
+// -----------------------------------------------------------------------------
+
+// Purpose: exact source minimum-bet size.
+// Source/Provenance: A DeepCrusher `user_TurnMin`.
+##f$cc_turn_delayed_cbet_size_min_id##
+1
+
+// Purpose: exact source half-pot size.
+// Source/Provenance: A DeepCrusher `user_Turn50`.
+##f$cc_turn_delayed_cbet_size_50_id##
+2
+
+// Purpose: exact source 62.5%-pot size; must not be rounded to 50/66.
+// Source/Provenance: T/A `user_Turn625 -> RaiseBy 62.5%`.
+##f$cc_turn_delayed_cbet_size_625_id##
+3
+
+// Purpose: exact source three-quarter-pot size.
+// Source/Provenance: A DeepCrusher `user_Turn75`.
+##f$cc_turn_delayed_cbet_size_75_id##
+4
+
+// Purpose: exact source pot-size instruction.
+// Source/Provenance: A DeepCrusher `user_Turn100`.
+##f$cc_turn_delayed_cbet_size_100_id##
+5
+
+// ============================================================================
+// End Gate12A.2 common vocabulary.
+// ============================================================================
