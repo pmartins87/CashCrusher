@@ -44,12 +44,15 @@ When Others Return false Force
 (f$cc_turn_delayed_cbet_top_pair_real || f$cc_turn_delayed_cbet_overpair_real) &&
 !f$cc_turn_delayed_cbet_two_pair_plus_real
 
+// Purpose: exact current second-pair/pocket tier below TP.
+// Source/Provenance: T/A portable pair ladder.
+##f$cc_turn_delayed_cbet_second_pair##
+IsTurn && !f$cc_hand_top_pair_or_better && f$cc_hand_second_pair_or_pocket
+
 // Purpose: source current second/third pair union below TP.
 // Source/Provenance: T/A portable pair ladder.
 ##f$cc_turn_delayed_cbet_second_or_third_pair##
-IsTurn &&
-!f$cc_hand_top_pair_or_better &&
-(f$cc_hand_second_pair_or_pocket || f$cc_hand_third_pair_or_pocket)
+f$cc_turn_delayed_cbet_second_pair || f$cc_turn_delayed_cbet_third_pair
 
 // Purpose: exact current third-pair tier.
 // Source/Provenance: T/A portable pair ladder.
@@ -83,13 +86,18 @@ IsTurn && TurnCard < LowestFlopCard
 // or at least two flop 8..K plus Turn 8..K.
 // Source/Provenance: T direct rank-structure translation.
 ##f$cc_turn_delayed_cbet_turn_three_8toK##
-(((FirstFlopCard >= 8 && FirstFlopCard <= 13) && (SecondFlopCard >= 8 && SecondFlopCard <= 13)) ||
- ((FirstFlopCard >= 8 && FirstFlopCard <= 13) && (ThirdFlopCard >= 8 && ThirdFlopCard <= 13)) ||
- ((SecondFlopCard >= 8 && SecondFlopCard <= 13) && (ThirdFlopCard >= 8 && ThirdFlopCard <= 13))) &&
-(TurnCard >= 8 && TurnCard <= 13) ||
-((FirstFlopCard >= 8 && FirstFlopCard <= 13) &&
- (SecondFlopCard >= 8 && SecondFlopCard <= 13) &&
- (ThirdFlopCard >= 8 && ThirdFlopCard <= 13))
+(
+  (
+    ((FirstFlopCard >= 8 && FirstFlopCard <= 13) && (SecondFlopCard >= 8 && SecondFlopCard <= 13)) ||
+    ((FirstFlopCard >= 8 && FirstFlopCard <= 13) && (ThirdFlopCard >= 8 && ThirdFlopCard <= 13)) ||
+    ((SecondFlopCard >= 8 && SecondFlopCard <= 13) && (ThirdFlopCard >= 8 && ThirdFlopCard <= 13))
+  ) && (TurnCard >= 8 && TurnCard <= 13)
+) ||
+(
+  (FirstFlopCard >= 8 && FirstFlopCard <= 13) &&
+  (SecondFlopCard >= 8 && SecondFlopCard <= 13) &&
+  (ThirdFlopCard >= 8 && ThirdFlopCard <= 13)
+)
 
 // -----------------------------------------------------------------------------
 // Normalized Gate12A size IDs
