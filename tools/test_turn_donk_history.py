@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Gate08A Turn Donk ownership / closed-flop parent contracts."""
+"""Gate08A/08C.3 Turn Donk ownership / closed-flop parent contracts."""
 
 from pathlib import Path
 
@@ -39,16 +39,23 @@ def xc_parent_contract() -> None:
     ):
         assert token in call
 
+    clean = block("f$cc_turn_donk_clean_flop_xc")
+    for token in (
+        "f$cc_turn_donk_flop_check_call_only",
+        "f$cc_turn_donk_single_flop_aggressor",
+        "f$cc_turn_donk_flop_aggressor_live_opponent",
+        "f$cc_turn_donk_flop_aggressor_pos_id > 0",
+        "!f$cc_turn_donk_hero_owned_final_flop_aggression",
+    ):
+        assert token in clean
+
     parent = block("f$cc_turn_donk_parent_flop_xc")
     for token in (
         "user_cc_flop_donk_opportunity_seen",
         "user_cc_flop_donk_state_snapshot_recorded",
         "f$cc_hist_flop_donk_family_marker_count = 1",
         "f$cc_hist_flop_donk_snapshot_consistent",
-        "f$cc_turn_donk_flop_check_call_only",
-        "f$cc_turn_donk_single_flop_aggressor",
-        "f$cc_turn_donk_flop_aggressor_live_opponent",
-        "!f$cc_turn_donk_hero_owned_final_flop_aggression",
+        "f$cc_turn_donk_clean_flop_xc",
     ):
         assert token in parent
 
@@ -67,10 +74,23 @@ def bc_parent_contract() -> None:
     ):
         assert token in parent
 
+
+def other_clean_xc_parent_contract() -> None:
+    parent = block("f$cc_turn_donk_parent_other_clean_xc")
+    assert "f$cc_turn_donk_clean_flop_xc" in parent
+    assert "!f$cc_turn_donk_parent_flop_xc" in parent
+
+    count = block("f$cc_turn_donk_parent_count")
+    assert "f$cc_turn_donk_parent_other_clean_xc * 1" in count
+
     pid = block("f$cc_turn_donk_parent_id")
     assert "f$cc_turn_donk_parent_count != 1 Return 0 Force" in pid
     assert "f$cc_turn_donk_parent_flop_xc Return 1 Force" in pid
     assert "f$cc_turn_donk_parent_flop_donk_raise_call Return 2 Force" in pid
+    assert "f$cc_turn_donk_parent_other_clean_xc Return 3 Force" in pid
+
+    diag = block("f$cc_turn_donk_other_clean_xc_needs_exact_child")
+    assert "f$cc_turn_donk_parent_id = 3" in diag
 
 
 def opportunity_contract() -> None:
@@ -122,7 +142,8 @@ if __name__ == "__main__":
     aggressor_contract()
     xc_parent_contract()
     bc_parent_contract()
+    other_clean_xc_parent_contract()
     opportunity_contract()
     ownership_separator_contract()
     no_strategy_leak_contract()
-    print("PASS: Gate08A Turn Donk ownership/history contract")
+    print("PASS: Gate08A/08C.3 Turn Donk ownership/history contract")
