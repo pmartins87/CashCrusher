@@ -147,3 +147,5 @@ jobs:
         run: python tools/test_turn_probe_4bp.py
       - name: Test Turn Probe runtime sizing/all-in contract
         run: python tools/test_turn_probe_runtime.py
+      - name: Test River Probe closed history and native source subset
+        run: python tools/test_river_probe_history_source.py
