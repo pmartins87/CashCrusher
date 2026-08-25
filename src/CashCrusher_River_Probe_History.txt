@@ -1,27 +1,35 @@
 // ============================================================================
 // CashCrusher_River_Probe_History.txt
-// Gate 11A — canonical River Probe ownership from CLOSED flop X/C -> turn X/X
+// Gate 11A / 11A.1 — canonical River Probe ownership from CLOSED flop X/C -> turn X/X
 // ============================================================================
 // Purpose:
-//   Prove that Hero reaches a River PROBE only after having no preflop initiative,
-//   checking and calling exactly once on flop, then checking a Turn that checks
-//   through, and finally reaching its first River action with no wager facing.
+//   Prove that Hero reaches a River PROBE after checking and calling exactly once
+//   on flop, then checking a Turn that checks through, and finally reaching its
+//   first River action FIRST/MIDDLE with no wager facing.
+//
+// Gate11A.1 source-fidelity correction:
+//   Crusher Framework routes FIRST/MIDDLE River no-action states by the ACTUAL
+//   flop history: `BotCalledOnFlop -> f$move_river_Probe`; `!BotCalledOnFlop ->
+//   f$river_lead_noaction`. It does NOT require Hero to lack preflop initiative.
+//   Therefore an opener/PFA who checked and then ACTUALLY X/C'd flop is a River-
+//   Probe history too. Preflop role still matters to each strategic child/range,
+//   but it must not delete the generic River-Probe owner itself.
 //
 // Ownership boundary:
 //   * flop X/C -> turn X/C -> River lead is River Donk (Gate09), not Probe;
 //   * flop X/X -> Turn lead is Turn Probe (Gate10), not River Probe;
-//   * final preflop aggressors belong delayed-CBet ownership;
-//   * exact LAST is a delayed/stab owner, not this OOP/early Probe family.
+//   * flop X/C -> turn X/X is River Probe regardless of preflop initiative;
+//   * exact LAST is a delayed/stab owner, not this FIRST/MIDDLE Probe family.
 //
 // Source boundary:
 //   Crusher Framework 5 leaves `f$move_river_Probe` empty. Positive strategy must
-//   therefore come from explicit Starting-Strategy/TBP/DeepCrusher descendants;
-//   the generic router itself is architecture evidence only.
+//   therefore come from explicit Starting-Strategy/TBP/DeepCrusher descendants or
+//   separately labeled professional six-max fills. Generic ownership grants no bet.
 //
 // Source/Provenance:
 //   T = OpenHoldem closed round-2/3 counters, raisbits/lastraised and River facts.
-//   A = audited legacy Probe-vs-Donk/delayed ownership translation.
-//   P = strict role/position/history firewalls for six-max reuse.
+//   A = audited Framework/DeepCrusher Probe-vs-Donk/noaction ownership translation.
+//   P = strict field/position/history firewalls and 5bet+ fail-closed boundary.
 // ============================================================================
 
 // -----------------------------------------------------------------------------
@@ -45,7 +53,7 @@ When Others Return true Force
 // Purpose: Hero executed clean flop X/C and never bet/raised/jammed.
 // Source: mature DeepCrusher Retro11 markers are written only after final CALL;
 // this closed-history proof is the CashCrusher mechanical equivalent.
-// Provenance: T/A.
+// Source/Provenance: T/A.
 ##f$cc_hist_river_probe_flop_checkcall_clean##
 When !IsRiver Return false Force
 When didchecround2 <= 0 Return false Force
@@ -84,29 +92,20 @@ f$cc_hist_river_probe_hero_checked_turn_clean &&
 f$cc_hist_river_probe_no_turn_aggressor
 
 // -----------------------------------------------------------------------------
-// RP-H.03 — preflop/no-initiative ownership
+// RP-H.03 — preflop scope without false initiative exclusion
 // -----------------------------------------------------------------------------
 
-// Purpose: same audited no-initiative role taxonomy used by Gate10 Probe.
-// Source: legacy `!user_Flop_Init_Hero` owner translated to canonical roles.
-// Provenance: A/P.
-##f$cc_river_probe_preflop_noinitiative##
-When f$cc_pot_family_id <= 0 Return false Force
-When f$cc_pot_family_id >= 5 Return false Force
-When f$cc_pf_role_pfa Return false Force
-When f$cc_pf_role_3bettor Return false Force
-When f$cc_pf_role_4bettor Return false Force
-When f$cc_pf_role_srp_caller Return true Force
-When f$cc_pf_role_open_call_3bet Return true Force
-When f$cc_pf_role_cold_call_3bet Return true Force
-When f$cc_pf_role_call_4bet Return true Force
-When f$cc_pf_role_unraised_caller Return true Force
-When f$cc_pf_role_bb_check Return true Force
-When Others Return false Force
+// Purpose: Gate11 currently recognizes audited pot families through clean 4BP.
+// Framework ownership itself is initiative-agnostic once Hero called flop; 5bet+
+// chronology remains outside current CashCrusher postflop certification.
+// Source/Provenance: T/A Framework BotCalledOnFlop route + P 5bet+ boundary.
+##f$cc_river_probe_preflop_context_supported##
+f$cc_pot_family_id >= 1 && f$cc_pot_family_id <= 4
 
-// Purpose: explicit final-preflop-aggressor firewall.
-// Source/Provenance: A delayed-CBet ownership split.
-##f$cc_river_probe_excluded_delayed_cbet##
+// Purpose: audit metadata exposing the source-fidelity correction: PFA/3bettor/
+// 4bettor are NOT automatically excluded after an actual flop X/C.
+// Source/Provenance: A exact Framework ownership fact; descriptor only.
+##f$cc_river_probe_preflop_aggressor_history_allowed##
 f$cc_pf_role_pfa || f$cc_pf_role_3bettor || f$cc_pf_role_4bettor
 
 // Purpose: exact LAST does not belong to OOP/early River Probe.
@@ -126,15 +125,16 @@ BotsActionsOnThisRoundIncludingChecks = 0 &&
 AmountToCall = 0 &&
 balance > 0
 
-// Purpose: canonical River Probe opportunity.
-// Source/Provenance: T/A/P exact history and owner composition.
+// Purpose: canonical River Probe opportunity after exact X/C -> X/X history.
+// Preflop role is intentionally NOT an ownership filter; strategic descendants
+// must still prove their own pot/range parent before betting.
+// Source/Provenance: T/A/P exact history/position composition.
 ##f$cc_river_probe_base_opportunity##
 When !f$cc_context_valid Return false Force
 When !f$cc_river_probe_first_river_action_clean Return false Force
 When !f$cc_hist_river_probe_flop_checkcall_clean Return false Force
 When !f$cc_hist_river_probe_turn_checkthrough_clean Return false Force
-When !f$cc_river_probe_preflop_noinitiative Return false Force
-When f$cc_river_probe_excluded_delayed_cbet Return false Force
+When !f$cc_river_probe_preflop_context_supported Return false Force
 When f$cc_river_probe_excluded_last Return false Force
 When f$cc_relative_postflop_pos_id != 1 && f$cc_relative_postflop_pos_id != 2 Return false Force
 When Others Return true Force
@@ -168,12 +168,12 @@ When Others Return 0 Force
 // Purpose: ownership sanity and anti-node leakage.
 // Source/Provenance: P fail-closed invariant.
 ##f$cc_river_probe_history_consistent##
-When f$cc_river_probe_base_opportunity && f$cc_river_probe_excluded_delayed_cbet Return false Force
 When f$cc_river_probe_base_opportunity && f$cc_river_probe_excluded_last Return false Force
 When f$cc_river_probe_hu_opportunity && headsupchair != lastraised2 Return false Force
+When f$cc_river_probe_base_opportunity && !f$cc_river_probe_preflop_context_supported Return false Force
 When f$cc_river_probe_base_opportunity && f$cc_river_probe_field_origin_id <= 0 Return false Force
 When Others Return true Force
 
 // ============================================================================
-// End Gate11A River Probe history.
+// End Gate11A.1 River Probe ownership/history.
 // ============================================================================
