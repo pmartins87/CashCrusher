@@ -1,35 +1,35 @@
 // ============================================================================
 // CashCrusher_River_Probe.txt
-// Gate 11 — canonical River Probe strategy router (source-first foundation)
+// Gate 11 — canonical River Probe strategy router / coverage boundary
 // ============================================================================
-// Current reviewed children:
-//   1 = native 3w SBvBTN / BBvBTN source descendants after CLOSED X/C-X/X;
-//   2 = direct true-HU BB (HUBB) source tree after CLOSED X/C-X/X;
-//   3 = native 3wSBvBB direct-source tree when exact Flop-defense price/class
-//       provenance has been written; missing provenance remains uncovered;
-//   4 = native true-multiway blind-v-BTN+blind high-air source line when exact
-//       <=33%-pot Flop-defense call provenance has been written;
-//   5 = ordinary 4-6h clean-HU SRP professional adaptation, preserving whether
-//       Hero was blind caller vs PFA or PFA vs caller flop stab;
-//   6 = clean-HU isolation-pot professional adaptation with exact limper versus
-//       post-raise-coldcaller range provenance;
-//   7 = clean-HU plain-3BP/squeeze professional adaptation with exact caller-stage
-//       chronology in both caller-v-3bettor and 3bettor-v-caller-stab directions;
-//   8 = clean-HU 4BP professional adaptation covering proven call4-v-opener4 and
-//       clean final-4bettor-v-proven-opener/3bettor survivor histories.
+// Purpose:
+//   Compose only reviewed River-Probe children after Gate11A proves CLOSED flop
+//   X/C -> Turn X/X, first/middle River position and no wager facing. Unknown
+//   range/history families remain explicit CHECK/fail-closed.
 //
-// Explicitly still pending:
-//   residual CF7-only non-nut straight/flush translations, post-multiway SRP/ISO/
-//   3BP/4BP, canonical coverage/runtime/all-in geometry.
+// Current child order / provenance:
+//   1 native 3w SBvBTN / BBvBTN direct-source descendants     T/A
+//   2 true-HU BB (HUBB) direct-source tree                    T/A
+//   3 native 3wSBvBB source/provenance tree                   T/A
+//   4 native true-multiway source/provenance tree             T/A
+//   5 ordinary 4-6h clean-HU SRP adaptation                  A/P
+//   6 clean-HU isolation-pot adaptation                       A/P
+//   7 clean-HU plain-3BP / squeeze adaptation                 A/P
+//   8 clean-HU 4BP adaptation                                 A/P
 //
-// Rule:
-//   A generic River-Probe opportunity never grants strategy. Unknown descendants
-//   check/fail closed until their history/range/source or professional fill is audited.
+// Still intentionally uncovered:
+//   * residual CF7-only source translations not mechanically equivalent;
+//   * post-multiway SRP/ISO/3BP/4BP histories not owned by native source child;
+//   * unresolved 4BP caller/reversed/backraise/limp-reraise chronology;
+//   * 5bet+; exact LAST; any state outside Gate11A ownership.
+//
+// This file chooses strategy + strategic size ID only. Runtime bet token, stack
+// geometry and natural all-in equivalence are separate Gate11 execution owners.
 // ============================================================================
 
 // Purpose: reviewed family IDs: 1 native 3w BTN, 2 HUBB, 3 SBvBB, 4 native MW,
 // 5 ordinary 4-6h SRP, 6 ISO, 7 plain-3BP/squeeze, 8 clean 4BP.
-// Source/Provenance: P routing metadata over T/A reviewed children.
+// Source/Provenance: P routing metadata over T/A/P reviewed children.
 ##f$cc_river_probe_family_id##
 When !f$cc_river_probe_base_opportunity Return 0 Force
 When f$cc_river_probe_hubb_covered Return 2 Force
@@ -42,9 +42,8 @@ When f$cc_river_probe_3bp_covered Return 7 Force
 When f$cc_river_probe_4bp_covered Return 8 Force
 When Others Return 0 Force
 
-// Purpose: canonical strategic River Probe action.
-// Source/Provenance: A/P source-first dispatcher; direct-source children precede
-// professional gap families, and unknown states check.
+// Purpose: canonical reviewed River-Probe action.
+// Source/Provenance: A/P source-first dispatcher; uncovered -> CHECK.
 ##f$cc_river_probe_router##
 When !f$cc_river_probe_base_opportunity Return false Force
 When f$cc_river_probe_hubb_covered Return f$cc_river_probe_hubb_action Force
@@ -57,8 +56,8 @@ When f$cc_river_probe_3bp_covered Return f$cc_river_probe_3bp_action Force
 When f$cc_river_probe_4bp_covered Return f$cc_river_probe_4bp_action Force
 When Others Return false Force
 
-// Purpose: canonical strategic size owner. No action/uncovered ->0.
-// Source/Provenance: A/P paired source-first dispatcher.
+// Purpose: paired strategic size-ID owner; check/uncovered ->0.
+// Source/Provenance: A/P exact child dispatcher.
 ##f$cc_river_probe_size_id##
 When !f$cc_river_probe_base_opportunity Return 0 Force
 When f$cc_river_probe_hubb_covered Return f$cc_river_probe_hubb_size_id Force
@@ -71,8 +70,8 @@ When f$cc_river_probe_3bp_covered Return f$cc_river_probe_3bp_size_id Force
 When f$cc_river_probe_4bp_covered Return f$cc_river_probe_4bp_size_id Force
 When Others Return 0 Force
 
-// Purpose: currently reviewed strategic states, including explicit source/P checks.
-// Source/Provenance: P coverage metadata; does not widen source ownership.
+// Purpose: state has a reviewed policy, including explicit CHECK decisions.
+// Source/Provenance: P coverage union; positive action is not required.
 ##f$cc_river_probe_strategy_covered##
 f$cc_river_probe_hubb_covered ||
 f$cc_river_probe_sbvbb_covered ||
@@ -83,18 +82,66 @@ f$cc_river_probe_iso_covered ||
 f$cc_river_probe_3bp_covered ||
 f$cc_river_probe_4bp_covered
 
-// Purpose: visible River-Probe opportunity still awaiting audited strategy.
-// Source/Provenance: P fail-closed gap metadata.
-##f$cc_river_probe_uncovered_context##
-f$cc_river_probe_base_opportunity && !f$cc_river_probe_strategy_covered
+// Purpose: distinguish direct/high-ancestry source ownership from professional
+// six-max fills: 1 direct/high-source, 3 P-heavy cash adaptation.
+// Source/Provenance: P audit metadata only.
+##f$cc_river_probe_provenance_id##
+When f$cc_river_probe_hubb_covered Return 1 Force
+When f$cc_river_probe_sbvbb_covered Return 1 Force
+When f$cc_river_probe_native_mw_covered Return 1 Force
+When f$cc_river_probe_3w_source_covered Return 1 Force
+When f$cc_river_probe_srp_gap_covered Return 3 Force
+When f$cc_river_probe_iso_covered Return 3 Force
+When f$cc_river_probe_3bp_covered Return 3 Force
+When f$cc_river_probe_4bp_covered Return 3 Force
+When Others Return 0 Force
 
-// Purpose: global action/size consistency for current Gate11 seven-ID size palette.
-// Source/Provenance: P safety invariant over current reviewed families.
+// Purpose: action/size integrity across all reviewed children.
+// Source/Provenance: P safety invariant; MIN/25/33/50/75/100/30 IDs are 1..7.
 ##f$cc_river_probe_size_consistent##
 When !f$cc_river_probe_router Return f$cc_river_probe_size_id = 0 Force
 When f$cc_river_probe_router Return f$cc_river_probe_size_id >= 1 && f$cc_river_probe_size_id <= 7 Force
 When Others Return false Force
 
+// Purpose: legal River-Probe opportunity still lacking reviewed strategy.
+// Source/Provenance: P fail-closed audit metadata.
+##f$cc_river_probe_uncovered_context##
+f$cc_river_probe_base_opportunity && !f$cc_river_probe_strategy_covered
+
+// Purpose: coarse unresolved pot-family ID within Gate11A supported domain.
+// 1 unraised | 2 one-raise | 3 two-raise | 4 three-raise.
+// Source/Provenance: P diagnostics only; no action implication.
+##f$cc_river_probe_uncovered_pot_family_id##
+When !f$cc_river_probe_uncovered_context Return 0 Force
+When f$cc_pot_family_id = 1 Return 1 Force
+When f$cc_pot_family_id = 2 Return 2 Force
+When f$cc_pot_family_id = 3 Return 3 Force
+When f$cc_pot_family_id = 4 Return 4 Force
+When Others Return 0 Force
+
+// Purpose: no state should be simultaneously owned by multiple top-level
+// children once each source/P adaptation firewall is applied.
+// Source/Provenance: P deterministic exclusivity invariant.
+##f$cc_river_probe_child_owner_count##
+(f$cc_river_probe_hubb_covered ? 1 : 0) +
+(f$cc_river_probe_sbvbb_covered ? 1 : 0) +
+(f$cc_river_probe_native_mw_covered ? 1 : 0) +
+(f$cc_river_probe_3w_source_covered ? 1 : 0) +
+(f$cc_river_probe_srp_gap_covered ? 1 : 0) +
+(f$cc_river_probe_iso_covered ? 1 : 0) +
+(f$cc_river_probe_3bp_covered ? 1 : 0) +
+(f$cc_river_probe_4bp_covered ? 1 : 0)
+
+// Purpose: top-level strategy/history/size consistency.
+// Source/Provenance: P safety composition over T/A history and child contracts.
+##f$cc_river_probe_router_consistent##
+When !f$cc_river_probe_history_consistent Return false Force
+When f$cc_river_probe_strategy_covered && f$cc_river_probe_child_owner_count != 1 Return false Force
+When !f$cc_river_probe_strategy_covered && f$cc_river_probe_family_id != 0 Return false Force
+When f$cc_river_probe_strategy_covered && f$cc_river_probe_family_id <= 0 Return false Force
+When !f$cc_river_probe_size_consistent Return false Force
+When Others Return true Force
+
 // ============================================================================
-// End current Gate11 router.
+// End Gate11 canonical River Probe router / coverage boundary.
 // ============================================================================
