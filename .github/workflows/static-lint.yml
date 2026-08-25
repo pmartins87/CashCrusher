@@ -113,3 +113,5 @@ jobs:
         run: python tools/test_turn_donk_hubb.py
       - name: Test SBvBTN Turn Donk source/provenance contract
         run: python tools/test_turn_donk_sbvbtn.py
+      - name: Test SBvBB Turn Donk source/provenance contract
+        run: python tools/test_turn_donk_sbvbb.py
