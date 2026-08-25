@@ -145,3 +145,5 @@ jobs:
         run: python tools/test_turn_probe_3bp.py
       - name: Test clean caller-side 4BP Turn Probe contract
         run: python tools/test_turn_probe_4bp.py
+      - name: Test Turn Probe runtime sizing/all-in contract
+        run: python tools/test_turn_probe_runtime.py
