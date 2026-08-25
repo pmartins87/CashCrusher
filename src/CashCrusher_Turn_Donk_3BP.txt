@@ -1,0 +1,198 @@
+// ============================================================================
+// CashCrusher_Turn_Donk_3BP.txt
+// Gate 08F — plain 3BP / squeeze Turn Donk gaps
+// ============================================================================
+// Purpose:
+//   Review Turn leads after a proved flop X/C in supported two-raise pots while
+//   keeping plain 3BP and squeeze histories, Hero range origin and field origin
+//   separate. Hero can be the 3bettor who checked/called or one of three caller
+//   origins reconstructed by Gate05's final-aggressor repair.
+//
+// Source boundary:
+//   DeepCrusher has reraised-pot routing into `f$move_turn_donkbet`, but no
+//   dedicated deep-stack 3BP/squeeze Turn-Donk strategy covering these six-max
+//   ranges. Router reachability is A; it is not positive strategy T.
+//
+// Professional-theory review:
+//   3BP turn donks after X/C exist only in selected range/board interactions.
+//   Opener-call, pre-squeeze coldcall, post-3bet coldcall and 3bettor-X/C ranges
+//   differ materially. Lower SPR alone does not justify manufacturing a lead.
+//
+//   Current deterministic baseline for every PROVEN class is CHECK. Low SPR can
+//   still matter later in exact defense/raise/lead nodes; it is not banned.
+//
+// Provenance:
+//   T/A = repaired lastraised1 chronology, exact Hero role, Gate08A closed X/C.
+//   P   = range-origin decomposition + reviewed CHECK baseline.
+//   X   = treating all reraised-pot OOP/no-initiative states as one Donk range.
+//
+// Safety:
+//   Reversed/backraise/limp-reraise chronology is excluded. Plain 3BP and squeeze
+//   never share a family ID. Unknown caller origin remains uncovered.
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// TD3B.01 — exact Hero range origin
+// -----------------------------------------------------------------------------
+
+// Purpose: Hero is actual final preflop 3bettor in supported chronology.
+// Source/Provenance: T/A Gate00 role + repaired final-aggressor identity.
+##f$cc_turn_donk_3bp_hero_is_3bettor##
+f$cc_pf_role_3bettor &&
+f$cc_pf_rt_3bet_order_supported &&
+f$cc_pf_rt_final_aggressor_is_hero
+
+// Purpose: Hero is original opener who called the final 3bet.
+// Source/Provenance: T/A Gate05 repaired caller chronology.
+##f$cc_turn_donk_3bp_hero_is_opener_call##
+f$cc_pf_rt_hero_is_opener_call_3bet
+
+// Purpose: Hero cold-called the open before a later squeeze and continued.
+// Source/Provenance: T/A exact pre-3bet caller provenance.
+##f$cc_turn_donk_3bp_hero_is_pre3bet_coldcaller##
+f$cc_pf_rt_hero_is_pre3bet_coldcaller
+
+// Purpose: Hero cold-called after the final 3bet.
+// Source/Provenance: T/A exact post-3bet caller provenance.
+##f$cc_turn_donk_3bp_hero_is_post3bet_coldcaller##
+f$cc_pf_rt_hero_is_post3bet_coldcaller
+
+// Purpose: stable Hero range-origin ID.
+// 1 3bettor | 2 opener-call | 3 pre-squeeze caller | 4 post-3bet caller.
+// Source/Provenance: P audit metadata over T/A exact ranges.
+##f$cc_turn_donk_3bp_hero_origin_id##
+When f$cc_turn_donk_3bp_hero_is_3bettor Return 1 Force
+When f$cc_turn_donk_3bp_hero_is_opener_call Return 2 Force
+When f$cc_turn_donk_3bp_hero_is_pre3bet_coldcaller Return 3 Force
+When f$cc_turn_donk_3bp_hero_is_post3bet_coldcaller Return 4 Force
+When Others Return 0 Force
+
+// Purpose: exactly one Hero 3BP range origin is proven.
+// Source/Provenance: P fail-closed integrity.
+##f$cc_turn_donk_3bp_hero_origin_consistent##
+(f$cc_turn_donk_3bp_hero_is_3bettor +
+ f$cc_turn_donk_3bp_hero_is_opener_call +
+ f$cc_turn_donk_3bp_hero_is_pre3bet_coldcaller +
+ f$cc_turn_donk_3bp_hero_is_post3bet_coldcaller) = 1
+
+// -----------------------------------------------------------------------------
+// TD3B.02 — plain versus squeeze topology
+// -----------------------------------------------------------------------------
+
+// Purpose: supported plain 3BP subtype.
+// Source/Provenance: T/A repaired chronology; no intervening pre-3bet caller.
+##f$cc_turn_donk_plain3bp_context##
+f$cc_turn_donk_opportunity &&
+f$cc_pot_family_id = 3 &&
+f$cc_pf_rt_plain3bet_proven &&
+f$cc_pf_rt_3bet_order_supported &&
+f$cc_turn_donk_3bp_hero_origin_consistent
+
+// Purpose: supported squeeze subtype with an intervening caller before 3bet.
+// Source/Provenance: T/A repaired chronology + exact squeeze proof.
+##f$cc_turn_donk_squeeze_context##
+f$cc_turn_donk_opportunity &&
+f$cc_pot_family_id = 3 &&
+f$cc_pf_rt_squeeze_proven &&
+f$cc_pf_rt_3bet_order_supported &&
+f$cc_turn_donk_3bp_hero_origin_consistent
+
+// Purpose: subtype ID 1 plain | 2 squeeze | 0 unresolved/contradictory.
+// Source/Provenance: P metadata over A/T exclusive histories.
+##f$cc_turn_donk_3bp_subtype_id##
+When f$cc_turn_donk_plain3bp_context && !f$cc_turn_donk_squeeze_context Return 1 Force
+When f$cc_turn_donk_squeeze_context && !f$cc_turn_donk_plain3bp_context Return 2 Force
+When Others Return 0 Force
+
+// Purpose: supported two-raise Turn-Donk base after subtype exclusivity.
+// Source/Provenance: P ownership composition over T/A facts.
+##f$cc_turn_donk_3bp_base_context##
+(f$cc_turn_donk_plain3bp_context || f$cc_turn_donk_squeeze_context) &&
+f$cc_turn_donk_3bp_subtype_id > 0
+
+// -----------------------------------------------------------------------------
+// TD3B.03 — current field/origin
+// -----------------------------------------------------------------------------
+
+// Purpose: current HU two-raise state; final flop aggressor must be current sole
+// Villain and Hero must be OOP.
+// Source/Provenance: T exact current geometry + Gate08A aggressor identity.
+##f$cc_turn_donk_3bp_hu_context##
+f$cc_turn_donk_3bp_base_context &&
+f$cc_hu &&
+f$cc_hu_oop &&
+f$cc_turn_donk_hu_aggressor_is_current_villain
+
+// Purpose: HU began flop already HU after preflop action/folds.
+// Source/Provenance: T Gate00 HU origin.
+##f$cc_turn_donk_3bp_hu_preflop_reduced##
+f$cc_turn_donk_3bp_hu_context &&
+(f$cc_true_hu || f$cc_hu_origin_preflop_reduced)
+
+// Purpose: flop began multiway and only later reduced to current HU.
+// Source/Provenance: T/A selected-range origin preservation.
+##f$cc_turn_donk_3bp_hu_postflop_reduced##
+f$cc_turn_donk_3bp_hu_context && f$cc_hu_origin_postflop_reduced
+
+// Purpose: two-raise decision remains multiway on Turn.
+// Source/Provenance: T current field + P dual-bound stack integrity.
+##f$cc_turn_donk_3bp_mw_context##
+f$cc_turn_donk_3bp_base_context &&
+f$cc_multiway &&
+f$cc_mw_spr_bounds_valid
+
+// Purpose: stable current field ID: 2 HU; 3-6 current multiway; 0 invalid.
+// Source/Provenance: P compact audit metadata.
+##f$cc_turn_donk_3bp_field_id##
+When f$cc_turn_donk_3bp_hu_context Return 2 Force
+When f$cc_turn_donk_3bp_mw_context && nplayersplaying >= 3 && nplayersplaying <= 6 Return nplayersplaying Force
+When Others Return 0 Force
+
+// Purpose: compact key S*100 + O*10 + F.
+// Source/Provenance: P audit key; action does not depend on numeric ordering.
+##f$cc_turn_donk_3bp_parent_key##
+When !f$cc_turn_donk_3bp_base_context Return 0 Force
+When f$cc_turn_donk_3bp_field_id <= 0 Return 0 Force
+When Others Return ((f$cc_turn_donk_3bp_subtype_id * 100) + (f$cc_turn_donk_3bp_hero_origin_id * 10) + f$cc_turn_donk_3bp_field_id) Force
+
+// -----------------------------------------------------------------------------
+// TD3B.04 — professional baseline: CHECK
+// -----------------------------------------------------------------------------
+
+// Purpose: reviewed two-raise Turn-Donk action.
+// Professional-theory rationale:
+//   * 3bet pots have compressed ranges and lower SPR, but lower SPR changes value
+//     and stackoff geometry; it does not by itself create a Donk range;
+//   * Hero 3bettor-X/C and Hero caller-X/C ranges have opposite preflop range
+//     asymmetries and cannot safely share a positive turn lead;
+//   * squeeze callers are additionally selected and remain separate.
+// Provenance: P deliberate CHECK baseline.
+##f$cc_turn_donk_3bp_action##
+When f$cc_turn_donk_3bp_parent_key <= 0 Return false Force
+When Others Return false Force
+
+// Purpose: CHECK baseline has no size.
+// Source/Provenance: P paired action/size contract.
+##f$cc_turn_donk_3bp_size_id##
+0
+
+// Purpose: supported parent key has been explicitly reviewed.
+// Source/Provenance: P coverage contract.
+##f$cc_turn_donk_3bp_covered##
+f$cc_turn_donk_3bp_parent_key > 0
+
+// Purpose: unresolved two-raise Turn-Donk state stays visible/fail-closed.
+// Source/Provenance: P evidence-boundary diagnostic.
+##f$cc_turn_donk_3bp_unresolved##
+f$cc_turn_donk_opportunity &&
+f$cc_pot_family_id = 3 &&
+!f$cc_turn_donk_3bp_covered
+
+// Purpose: action/size integrity for check-only family.
+// Source/Provenance: P invariant.
+##f$cc_turn_donk_3bp_size_consistent##
+!f$cc_turn_donk_3bp_action && f$cc_turn_donk_3bp_size_id = 0
+
+// ============================================================================
+// End Gate08F plain 3BP / squeeze Turn Donk.
+// ============================================================================
