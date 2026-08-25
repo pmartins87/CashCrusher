@@ -1,0 +1,159 @@
+// ============================================================================
+// CashCrusher_Turn_DelayedCBet_Snapshot.txt
+// Gate 12A.3 — pre-action flop provenance for source Delayed-CBet histories
+// ============================================================================
+// Purpose:
+//   Save only source facts that disappear after the Turn card arrives. Snapshot
+//   flags are CANDIDATE observations, never proof Hero actually checked. Every
+//   Turn consumer must also require Gate12A.1 CLOSED flop X/X history.
+//
+// Source:
+//   Retro12A final-action writers in DeepCrusher record exact HUSB/HUBB/3w source
+//   classes only when initiative Hero ultimately checks. CashCrusher can capture
+//   the same pre-action class safely because CLOSED history later supplies the
+//   missing executed-check proof.
+//
+// Provenance:
+//   T/A = current flop hand/texture facts + exact native positional reconstruction.
+//   P = persistence wrapper only.
+// ============================================================================
+
+// Purpose: first Hero flop decision with initiative and no wager facing. Relative
+// position is deliberately unrestricted: delayed CBet exists OOP and IP.
+// Source/Provenance: T/A source writer owner before final check is known.
+##f$cc_turn_delayed_cbet_snapshot_capture_eligible##
+IsFlop &&
+f$cc_context_valid &&
+BotsActionsOnThisRoundIncludingChecks = 0 &&
+AmountToCall = 0 &&
+(f$cc_pf_role_pfa || f$cc_pf_role_3bettor || f$cc_pf_role_4bettor || f$cc_native_limped_initiative)
+
+// -----------------------------------------------------------------------------
+// Native scenario contexts
+// -----------------------------------------------------------------------------
+
+// Purpose: true-HU Hero SB/Button versus BB (legacy HUSB).
+// Source/Provenance: A exact native scenario reconstruction.
+##f$cc_turn_delayed_cbet_snapshot_husb_context##
+f$cc_turn_delayed_cbet_snapshot_capture_eligible &&
+f$cc_true_hu && f$cc_flop_entry_count = 2 && f$cc_hu &&
+f$cc_hero_pos_id = 5 && f$cc_hu_villain_pos_id = 6
+
+// Purpose: true-HU Hero BB versus SB/Button (legacy HUBB).
+// Source/Provenance: A exact native scenario reconstruction.
+##f$cc_turn_delayed_cbet_snapshot_hubb_context##
+f$cc_turn_delayed_cbet_snapshot_capture_eligible &&
+f$cc_true_hu && f$cc_flop_entry_count = 2 && f$cc_hu &&
+f$cc_hero_pos_id = 6 && f$cc_hu_villain_pos_id = 5
+
+// Purpose: native 3-handed BTN versus BB, SB folded before flop.
+// Source/Provenance: A exact legacy `3wBTNvBB` reconstruction.
+##f$cc_turn_delayed_cbet_snapshot_3w_btnvbb_context##
+f$cc_turn_delayed_cbet_snapshot_capture_eligible &&
+f$cc_deal_size = 3 && f$cc_flop_entry_count = 2 && f$cc_hu &&
+f$cc_hero_pos_id = 4 && f$cc_hu_villain_pos_id = 6
+
+// -----------------------------------------------------------------------------
+// Source flop-class candidates
+// -----------------------------------------------------------------------------
+
+// Purpose: exact HUSB two-low rank texture used by special TP/OP slowplay.
+// Source/Provenance: T direct `f$flop_2low` translation.
+##f$cc_turn_delayed_cbet_snapshot_flop_two_low##
+((FirstFlopCard >= 2 && FirstFlopCard <= 7) && (SecondFlopCard >= 2 && SecondFlopCard <= 7)) ||
+((FirstFlopCard >= 2 && FirstFlopCard <= 7) && (ThirdFlopCard >= 2 && ThirdFlopCard <= 7)) ||
+((SecondFlopCard >= 2 && SecondFlopCard <= 7) && (ThirdFlopCard >= 2 && ThirdFlopCard <= 7))
+
+// Purpose: source HUSB special TP/OP check candidate. `EffectiveStack_BKP<=16`
+// is conservatively translated to the exact current HU flop-start effective stack;
+// the candidate fails closed when that geometry is unavailable or deeper.
+// Source/Provenance: T source condition + A mechanically safer stack translation.
+##f$cc_turn_delayed_cbet_snapshot_husb_tp_candidate##
+f$cc_turn_delayed_cbet_snapshot_husb_context &&
+(f$cc_hand_just_top_pair || (HaveOverPair && PairInHand)) &&
+(board$A || board$K) &&
+f$cc_turn_delayed_cbet_snapshot_flop_two_low &&
+rankloplayer < 7 &&
+f$cc_hu_effective_stack_round_start_bb > 0 &&
+f$cc_hu_effective_stack_round_start_bb <= 16 &&
+(SuitsOnBoard = 3 || (SuitsOnBoard = 2 && HaveBackdoorFlushDraw))
+
+// Purpose: exact HUSB no-equity air on straight-possible flop candidate.
+// Source/Provenance: T/A `f$hand_Air && StraightPossibleOnFlop`.
+##f$cc_turn_delayed_cbet_snapshot_husb_air_straight_candidate##
+f$cc_turn_delayed_cbet_snapshot_husb_context &&
+f$cc_air_no_frontdoor && StraightPossibleOnFlop
+
+// Purpose: HUBB checked vulnerable third pair.
+// Source/Provenance: T/A exact portable third-pair source class.
+##f$cc_turn_delayed_cbet_snapshot_hubb_thirdpair_candidate##
+f$cc_turn_delayed_cbet_snapshot_hubb_context && f$cc_hand_third_pair_or_pocket
+
+// Purpose: HUBB subset flagged for Delay-Delay River line: third pair and at least
+// two flop cards rank 7..K.
+// Source/Provenance: T direct source conjunction.
+##f$cc_turn_delayed_cbet_snapshot_hubb_thirdpair_deldel_candidate##
+f$cc_turn_delayed_cbet_snapshot_hubb_thirdpair_candidate &&
+f$cc_turn_delayed_cbet_flop_two_7toK
+
+// Purpose: HUBB source wet-air check. The latest writer labels all source air;
+// later Turn conditions decide whether to delay or Delay-Delay.
+// Source/Provenance: T/A portable source-air reconstruction.
+##f$cc_turn_delayed_cbet_snapshot_hubb_air_candidate##
+f$cc_turn_delayed_cbet_snapshot_hubb_context && f$cc_air_no_frontdoor
+
+// Purpose: 3wBTNvBB flop TP+ check class.
+// Source/Provenance: T/A portable `f$hand_TopPairOrBetter` class.
+##f$cc_turn_delayed_cbet_snapshot_3w_btnvbb_tpplus_candidate##
+f$cc_turn_delayed_cbet_snapshot_3w_btnvbb_context && f$cc_hand_top_pair_or_better
+
+// Purpose: 3wBTNvBB exact flop second-pair/pocket class.
+// Source/Provenance: T/A portable source pair ladder.
+##f$cc_turn_delayed_cbet_snapshot_3w_btnvbb_mp_candidate##
+f$cc_turn_delayed_cbet_snapshot_3w_btnvbb_context &&
+!f$cc_hand_top_pair_or_better && f$cc_hand_second_pair_or_pocket
+
+// Purpose: 3wBTNvBB exact flop third-pair/pocket class.
+// Source/Provenance: T/A portable source pair ladder.
+##f$cc_turn_delayed_cbet_snapshot_3w_btnvbb_bp_candidate##
+f$cc_turn_delayed_cbet_snapshot_3w_btnvbb_context &&
+!f$cc_hand_top_pair_or_better && !f$cc_hand_second_pair_or_pocket &&
+f$cc_hand_third_pair_or_pocket
+
+// Purpose: 3wBTNvBB no-made flop class, including draws and air exactly as source.
+// Source/Provenance: T direct source class.
+##f$cc_turn_delayed_cbet_snapshot_3w_btnvbb_nomade_candidate##
+f$cc_turn_delayed_cbet_snapshot_3w_btnvbb_context && f$cc_hand_no_made
+
+// -----------------------------------------------------------------------------
+// Side-effect writer
+// -----------------------------------------------------------------------------
+
+// Purpose: persist source classes. The writer never proves a check and never
+// chooses an action; Gate12A CLOSED history is mandatory on Turn.
+// Source/Provenance: T/A observed flop facts + P persistence wrapper.
+##f$cc_turn_delayed_cbet_snapshot_writer##
+When !f$cc_turn_delayed_cbet_snapshot_capture_eligible Return false Force
+When f$cc_turn_delayed_cbet_snapshot_capture_eligible Set user_cc_turn_delayed_cbet_flop_snapshot_seen
+When f$cc_turn_delayed_cbet_snapshot_husb_tp_candidate Set user_cc_turn_delayed_cbet_husb_flop_tpcheck_candidate
+When f$cc_turn_delayed_cbet_snapshot_husb_air_straight_candidate Set user_cc_turn_delayed_cbet_husb_flop_air_straight_candidate
+When f$cc_turn_delayed_cbet_snapshot_hubb_thirdpair_candidate Set user_cc_turn_delayed_cbet_hubb_flop_thirdpair_candidate
+When f$cc_turn_delayed_cbet_snapshot_hubb_thirdpair_deldel_candidate Set user_cc_turn_delayed_cbet_hubb_flop_thirdpair_deldel_candidate
+When f$cc_turn_delayed_cbet_snapshot_hubb_air_candidate Set user_cc_turn_delayed_cbet_hubb_flop_air_candidate
+When f$cc_turn_delayed_cbet_snapshot_3w_btnvbb_tpplus_candidate Set user_cc_turn_delayed_cbet_3w_btnvbb_flop_tpplus_candidate
+When f$cc_turn_delayed_cbet_snapshot_3w_btnvbb_mp_candidate Set user_cc_turn_delayed_cbet_3w_btnvbb_flop_mp_candidate
+When f$cc_turn_delayed_cbet_snapshot_3w_btnvbb_bp_candidate Set user_cc_turn_delayed_cbet_3w_btnvbb_flop_bp_candidate
+When f$cc_turn_delayed_cbet_snapshot_3w_btnvbb_nomade_candidate Set user_cc_turn_delayed_cbet_3w_btnvbb_flop_nomade_candidate
+When Others Return true Force
+
+// Purpose: snapshot may be consumed only after exact executed flop X/X is proven.
+// Source/Provenance: T/A cross-street evidence bridge.
+##f$cc_turn_delayed_cbet_snapshot_valid##
+IsTurn &&
+f$cc_turn_delayed_cbet_base_opportunity &&
+f$cc_hist_turn_delayed_cbet_flop_checkthrough_clean &&
+user_cc_turn_delayed_cbet_flop_snapshot_seen
+
+// ============================================================================
+// End Gate12A.3 flop provenance snapshot.
+// ============================================================================
