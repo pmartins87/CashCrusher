@@ -196,10 +196,18 @@ f$cc_river_probe_base_opportunity &&
 f$cc_pot_family_id = 4 &&
 !f$cc_river_probe_4bp_covered
 
-// Purpose: explicit unsupported 5bet+ River-Probe visibility.
-// Source/Provenance: P hard domain boundary.
+// Purpose: explicit unsupported 5bet+ history-shaped River-Probe visibility.
+// Gate11A intentionally excludes pot_family>=5 from the strategic base, so this
+// diagnostic reconstructs the same X/C-X/X/position owner without using base.
+// Source/Provenance: P hard domain boundary over T closed-history predicates.
 ##f$cc_river_probe_5betplus_unresolved##
-f$cc_river_probe_base_opportunity && f$cc_pot_family_id = 5
+f$cc_context_valid &&
+f$cc_river_probe_first_river_action_clean &&
+f$cc_hist_river_probe_flop_checkcall_clean &&
+f$cc_hist_river_probe_turn_checkthrough_clean &&
+!f$cc_river_probe_excluded_last &&
+(f$cc_relative_postflop_pos_id = 1 || f$cc_relative_postflop_pos_id = 2) &&
+f$cc_pot_family_id >= 5
 
 // Purpose: local action/size integrity.
 // Source/Provenance: P safety invariant.
