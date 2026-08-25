@@ -121,8 +121,18 @@ def action_contract() -> None:
     unresolved = block(POL, "f$cc_river_probe_4bp_unresolved")
     assert "f$cc_pot_family_id = 4" in unresolved
     assert "!f$cc_river_probe_4bp_covered" in unresolved
+
     five = block(POL, "f$cc_river_probe_5betplus_unresolved")
-    assert "f$cc_pot_family_id = 5" in five
+    for token in (
+        "f$cc_context_valid",
+        "f$cc_river_probe_first_river_action_clean",
+        "f$cc_hist_river_probe_flop_checkcall_clean",
+        "f$cc_hist_river_probe_turn_checkthrough_clean",
+        "!f$cc_river_probe_excluded_last",
+        "f$cc_pot_family_id >= 5",
+    ):
+        assert token in five
+    assert "f$cc_river_probe_base_opportunity" not in executable(five)
 
 
 def router_contract() -> None:
