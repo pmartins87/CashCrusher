@@ -133,3 +133,5 @@ jobs:
         run: python tools/test_turn_probe_3w_source.py
       - name: Test SBvBTN Turn Probe reviewed TBP gaps
         run: python tools/test_turn_probe_sbvbtn_gaps.py
+      - name: Test native multiway Turn Probe reviewed gaps
+        run: python tools/test_turn_probe_multiway_gaps.py
