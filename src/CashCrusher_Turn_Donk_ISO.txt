@@ -1,0 +1,186 @@
+// ============================================================================
+// CashCrusher_Turn_Donk_ISO.txt
+// Gate 08E — isolation-pot Turn Donk gaps
+// ============================================================================
+// Purpose:
+//   Review Turn leads after an ACTUAL flop X/C in proven non-HU isolation pots.
+//   Preserve whether Hero is the isolator, original limper, or post-raise cold
+//   caller; preserve HU-from-flop, post-multiway-to-HU and current-multiway origin.
+//
+// Source boundary:
+//   Crusher/DeepCrusher route reraised-or-isolated OOP/no-initiative states toward
+//   `f$move_turn_donkbet`, but there is no dedicated deep-cash ISO Turn-Donk tree
+//   that supplies positive ranges/frequencies for these six-max histories.
+//   Router ancestry is therefore A, not positive-strategy T.
+//
+// Professional-theory review:
+//   Isolation pots have strongly asymmetric ranges. Limp-call ranges, post-raise
+//   cold calls and the isolator's range cannot share one turn-leading policy.
+//   Exact turn donks can be valid on range-shifting cards, but a deterministic
+//   positive rule without exact board/range evidence is worse than checking.
+//
+//   Current baseline: CHECK for every PROVEN ISO range class below. This is a P
+//   strategy decision, not an assertion that solver donk frequency is zero.
+//
+// Provenance:
+//   T/A = proven ISO chronology, exact masks, Hero role, closed Gate08A X/C.
+//   P   = six-max range decomposition + reviewed CHECK baseline.
+//   X   = treating every `GotRaised_Or_Isolated` router hit as same strategy.
+//
+// Safety:
+//   True HU SB-limp -> BB-raise is NOT ISO. Unknown Hero origin, unsupported role,
+//   contradictory range masks and invalid current field remain fail-closed.
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// TDISO.01 — Hero range origin
+// -----------------------------------------------------------------------------
+
+// Purpose: canonical position bit for Hero in the same mask coordinate system as
+// ISO limper/coldcaller provenance.
+// Source/Provenance: T Gate00 position IDs + A mechanical bit adapter.
+##f$cc_turn_donk_iso_hero_pos_bit##
+When f$cc_hero_pos_id = 1 Return 1 Force
+When f$cc_hero_pos_id = 2 Return 2 Force
+When f$cc_hero_pos_id = 3 Return 4 Force
+When f$cc_hero_pos_id = 4 Return 8 Force
+When f$cc_hero_pos_id = 5 Return 16 Force
+When f$cc_hero_pos_id = 6 Return 32 Force
+When Others Return 0 Force
+
+// Purpose: Hero is the proven sole isolation raiser/PFA.
+// Source/Provenance: T/A Gate00 one-raise role + exact raiser identity.
+##f$cc_turn_donk_iso_hero_is_isolator##
+f$cc_pf_iso_proven &&
+f$cc_pf_role_pfa &&
+f$cc_hero_pos_id = f$cc_pf_single_raiser_pos_id
+
+// Purpose: Hero's one-raise caller range originated as a pre-raise limper.
+// Source/Provenance: A exact persisted ISO provenance mask.
+##f$cc_turn_donk_iso_hero_is_original_limper##
+f$cc_pf_iso_proven &&
+f$cc_pf_role_srp_caller &&
+f$cc_turn_donk_iso_hero_pos_bit > 0 &&
+((f$cc_pf_pre_raise_limper_mask BitAnd f$cc_turn_donk_iso_hero_pos_bit) > 0)
+
+// Purpose: Hero cold-called after the isolation raise.
+// Source/Provenance: A/P exact post-raise caller mask; different range family.
+##f$cc_turn_donk_iso_hero_is_postraise_coldcaller##
+f$cc_pf_iso_proven &&
+f$cc_pf_role_srp_caller &&
+f$cc_turn_donk_iso_hero_pos_bit > 0 &&
+((f$cc_pf_post_raise_coldcaller_mask BitAnd f$cc_turn_donk_iso_hero_pos_bit) > 0)
+
+// Purpose: stable Hero ISO range-origin ID.
+// IDs: 1 isolator | 2 original limper | 3 post-raise coldcaller | 0 unknown.
+// Source/Provenance: P metadata over T/A exact provenance.
+##f$cc_turn_donk_iso_hero_origin_id##
+When f$cc_turn_donk_iso_hero_is_isolator Return 1 Force
+When f$cc_turn_donk_iso_hero_is_original_limper Return 2 Force
+When f$cc_turn_donk_iso_hero_is_postraise_coldcaller Return 3 Force
+When Others Return 0 Force
+
+// Purpose: exactly one reviewed Hero range origin must be true.
+// Source/Provenance: P fail-closed integrity.
+##f$cc_turn_donk_iso_hero_origin_consistent##
+(f$cc_turn_donk_iso_hero_is_isolator +
+ f$cc_turn_donk_iso_hero_is_original_limper +
+ f$cc_turn_donk_iso_hero_is_postraise_coldcaller) = 1
+
+// -----------------------------------------------------------------------------
+// TDISO.02 — current field/origin
+// -----------------------------------------------------------------------------
+
+// Purpose: shared proven ISO Turn-Donk owner after actual Gate08A history.
+// Source/Provenance: T/A exact pot family + parent + role provenance.
+##f$cc_turn_donk_iso_base_context##
+f$cc_turn_donk_opportunity &&
+f$cc_pot_family_id = 2 &&
+f$cc_pf_iso_proven &&
+!f$cc_true_hu &&
+f$cc_turn_donk_iso_hero_origin_consistent
+
+// Purpose: ISO decision is currently HU and Hero is OOP versus the surviving
+// final flop aggressor.
+// Source/Provenance: T current HU geometry + closed aggressor identity.
+##f$cc_turn_donk_iso_hu_context##
+f$cc_turn_donk_iso_base_context &&
+f$cc_hu &&
+f$cc_hu_oop &&
+f$cc_turn_donk_hu_aggressor_is_current_villain
+
+// Purpose: ISO hand entered flop HU after preflop folds.
+// Source/Provenance: T Gate00 HU-origin metadata.
+##f$cc_turn_donk_iso_hu_preflop_reduced##
+f$cc_turn_donk_iso_hu_context && f$cc_hu_origin_preflop_reduced
+
+// Purpose: ISO hand entered flop multiway and only later became HU.
+// Source/Provenance: T/A range-selection origin.
+##f$cc_turn_donk_iso_hu_postflop_reduced##
+f$cc_turn_donk_iso_hu_context && f$cc_hu_origin_postflop_reduced
+
+// Purpose: ISO decision remains multiway on the Turn.
+// Source/Provenance: T current live field + P stack-envelope requirement.
+##f$cc_turn_donk_iso_mw_context##
+f$cc_turn_donk_iso_base_context &&
+f$cc_multiway &&
+f$cc_mw_spr_bounds_valid
+
+// Purpose: stable current field ID: 2 HU, 3-6 current MW count, 0 invalid.
+// Source/Provenance: P compact audit metadata.
+##f$cc_turn_donk_iso_field_id##
+When f$cc_turn_donk_iso_hu_context Return 2 Force
+When f$cc_turn_donk_iso_mw_context && nplayersplaying >= 3 && nplayersplaying <= 6 Return nplayersplaying Force
+When Others Return 0 Force
+
+// Purpose: compact ISO key retaining Hero range origin and current field.
+// Format O*10+F. Exact absolute positions remain available from Gate00 logs.
+// Source/Provenance: P audit key; never strategy by numeric ordering.
+##f$cc_turn_donk_iso_parent_key##
+When !f$cc_turn_donk_iso_base_context Return 0 Force
+When f$cc_turn_donk_iso_field_id <= 0 Return 0 Force
+When Others Return ((f$cc_turn_donk_iso_hero_origin_id * 10) + f$cc_turn_donk_iso_field_id) Force
+
+// -----------------------------------------------------------------------------
+// TDISO.03 — reviewed professional action
+// -----------------------------------------------------------------------------
+
+// Purpose: deliberate ISO Turn-Donk baseline for all proven parent keys.
+// Professional-theory rationale:
+//   * isolator X/C, limp-call X/C and post-raise-coldcall X/C are different
+//     condensed ranges;
+//   * a single positive lead would erase exactly the provenance built to avoid
+//     that error;
+//   * multiway ISO ranges are even more selected after surviving flop action.
+// Provenance: P reviewed CHECK baseline.
+##f$cc_turn_donk_iso_action##
+When f$cc_turn_donk_iso_parent_key <= 0 Return false Force
+When Others Return false Force
+
+// Purpose: CHECK baseline has no strategic size.
+// Source/Provenance: P paired size contract.
+##f$cc_turn_donk_iso_size_id##
+0
+
+// Purpose: recognized ISO state has been reviewed only with exact Hero origin and
+// supported current field.
+// Source/Provenance: P coverage contract.
+##f$cc_turn_donk_iso_covered##
+f$cc_turn_donk_iso_parent_key > 0
+
+// Purpose: visible proven-ISO Turn-Donk opportunity that could not be classified.
+// Source/Provenance: P fail-closed diagnostic.
+##f$cc_turn_donk_iso_unresolved##
+f$cc_turn_donk_opportunity &&
+f$cc_pot_family_id = 2 &&
+f$cc_pf_iso_proven &&
+!f$cc_turn_donk_iso_covered
+
+// Purpose: CHECK-only action/size integrity.
+// Source/Provenance: P invariant.
+##f$cc_turn_donk_iso_size_consistent##
+!f$cc_turn_donk_iso_action && f$cc_turn_donk_iso_size_id = 0
+
+// ============================================================================
+// End Gate08E ISO Turn Donk.
+// ============================================================================
