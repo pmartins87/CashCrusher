@@ -143,22 +143,34 @@ IsTurn &&
 f$cc_hist_turn_probe_flop_checkthrough_clean &&
 user_cc_turn_probe_flop_snapshot_seen
 
+// Purpose: decode saved flop TP+ only under validated Turn-Probe history.
+// Source/Provenance: T/A persisted flop class + closed history.
 ##f$cc_turn_probe_flop_had_tpplus##
 f$cc_turn_probe_snapshot_valid && user_cc_turn_probe_flop_had_tpplus
 
+// Purpose: decode saved flop second-pair class only under validated history.
+// Source/Provenance: T/A persisted flop class + closed history.
 ##f$cc_turn_probe_flop_had_second_pair##
 f$cc_turn_probe_snapshot_valid && user_cc_turn_probe_flop_had_second_pair
 
+// Purpose: decode saved flop lower-pair class only under validated history.
+// Source/Provenance: T/A persisted flop class + closed history.
 ##f$cc_turn_probe_flop_had_low_pair##
 f$cc_turn_probe_snapshot_valid && user_cc_turn_probe_flop_had_low_pair
 
+// Purpose: decode saved flop air class only under validated history.
+// Source/Provenance: T/A persisted flop class + closed history.
 ##f$cc_turn_probe_flop_had_air##
 f$cc_turn_probe_snapshot_valid && user_cc_turn_probe_flop_had_air
 
+// Purpose: decode any saved real frontdoor flop draw under validated history.
+// Source/Provenance: T/A persisted draw facts + closed history.
 ##f$cc_turn_probe_flop_had_frontdoor_draw##
 f$cc_turn_probe_snapshot_valid &&
 (user_cc_turn_probe_flop_had_real_fd || user_cc_turn_probe_flop_had_real_oesd || user_cc_turn_probe_flop_had_real_gutshot)
 
+// Purpose: decode saved flop backdoor equity under validated history.
+// Source/Provenance: T/A persisted backdoor facts + closed history.
 ##f$cc_turn_probe_flop_had_backdoor##
 f$cc_turn_probe_snapshot_valid &&
 (user_cc_turn_probe_flop_had_bdfd || user_cc_turn_probe_flop_had_bdsd)
