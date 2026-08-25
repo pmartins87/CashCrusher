@@ -1,0 +1,250 @@
+// ============================================================================
+// CashCrusher_River_Probe_HUBB.txt
+// Gate 11C — true-HU BB River Probe direct-source subset
+// ============================================================================
+// Purpose:
+//   Implement the direct HUBB River-Probe tree after an ACTUAL flop X/C and
+//   Turn X/X, while keeping contribution-sensitive or legacy-only subclasses
+//   fail-closed where CashCrusher cannot prove exact equivalence.
+//
+// Source hierarchy:
+//   T = newest HUBB Crushfest/DeepCrusher River-Probe rules.
+//   A = mature source reconciliation (new NCF overrides older TBP sizing).
+//   P = only conservative translation boundaries; no new poker line is invented.
+//
+// Direct source actions ported here:
+//   * literal nuts / contributed trips-or-better subset -> pot;
+//   * exact contributed 2P: completed 75, otherwise CHECK;
+//   * contribution-aware TP/OP: completed 25, otherwise CHECK;
+//   * second pair: completed 25, otherwise 50;
+//   * 4th/5th pair or underpair -> CHECK;
+//   * current high-card/no-made air -> 75 (lower exact edge of source 75-100).
+//
+// Deliberately NOT guessed yet:
+//   * one-hole-card flush rank ladder (100/50/25);
+//   * one-hole-card straight low/high split (legacy 30/50);
+//   * third-pair <=3-better-kickers versus weak-third split;
+//   * non-nut straight/flush contribution equivalence not already captured by
+//     the literal-nuts subset.
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// RPH.01 — exact direct HUBB ancestry
+// -----------------------------------------------------------------------------
+
+// Purpose: literal true-HU SB-open -> BB-call ordinary SRP, with BB now probing.
+// Source/Provenance: T positional/pot ancestry + A canonical Gate00 mapping.
+##f$cc_river_probe_hubb_truehu_srp_context##
+f$cc_river_probe_hu_opportunity &&
+f$cc_true_hu &&
+f$cc_flop_entry_count = 2 &&
+f$cc_hero_pos_id = 6 &&
+f$cc_hu_villain_pos_id = 5 &&
+f$cc_pot_family_id = 2 &&
+f$cc_pf_one_raise_ordinary_srp &&
+f$cc_pf_role_srp_caller &&
+f$cc_pf_single_raiser_pos_id = 5 &&
+lastraised2 = f$cc_pos5_chair
+
+// Purpose: literal true-HU SB-limp -> BB-check unraised pot, then BB X/C flop.
+// Source/Provenance: T positional/pot ancestry + A canonical Gate00 mapping.
+##f$cc_river_probe_hubb_truehu_limped_context##
+f$cc_river_probe_hu_opportunity &&
+f$cc_true_hu &&
+f$cc_flop_entry_count = 2 &&
+f$cc_hero_pos_id = 6 &&
+f$cc_hu_villain_pos_id = 5 &&
+f$cc_pot_family_id = 1 &&
+f$cc_pf_raise_count = 0 &&
+f$cc_pf_role_bb_check &&
+f$cc_pf_call_sb &&
+lastraised2 = f$cc_pos5_chair
+
+// Purpose: exact literal HUBB direct-source union only.
+// Source/Provenance: T/A. Preflop-reduced BvB is intentionally excluded here.
+##f$cc_river_probe_hubb_context##
+f$cc_river_probe_hubb_truehu_srp_context ||
+f$cc_river_probe_hubb_truehu_limped_context
+
+// Purpose: compact origin ID: 1 true-HU SRP, 2 true-HU limped.
+// Source/Provenance: P audit metadata over direct T ancestors.
+##f$cc_river_probe_hubb_origin_id##
+When f$cc_river_probe_hubb_truehu_srp_context Return 1 Force
+When f$cc_river_probe_hubb_truehu_limped_context Return 2 Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// RPH.02 — contribution-aware current River classes
+// -----------------------------------------------------------------------------
+
+// Purpose: contribution-aware top pair, excluding board-only category promotion.
+// Source: mature source CF7_TopPairReal.
+// Provenance: T/A same audited reconstruction used in Gate08 HUBB.
+##f$cc_river_probe_hubb_top_pair_real##
+f$cc_hand_just_top_pair && !TwoPairOnBoard && npcbits > 0
+
+// Purpose: contribution-aware overpair.
+// Source/Provenance: T/A CF7_OverPairReal reconstruction.
+##f$cc_river_probe_hubb_overpair_real##
+HaveOverPair && PairInHand && npcbits > 0
+
+// Purpose: direct source TP/OP union.
+// Source/Provenance: T/A.
+##f$cc_river_probe_hubb_tp_or_op_real##
+f$cc_river_probe_hubb_top_pair_real || f$cc_river_probe_hubb_overpair_real
+
+// Purpose: robust trips/set-or-stronger subset whose source action is pot.
+// Straight/flush are intentionally omitted because source contains separate
+// one-hole-card rank ladders and a generic promotion could overbet those classes.
+// Source: source comment 'trips/set and stronger 100' constrained by exact
+// translation safety.
+// Provenance: A conservative subset of CF7_NutClass/RealTrips/HaveSet.
+##f$cc_river_probe_hubb_tripsplus_safe##
+When f$cc_river_probe_literal_nuts Return true Force
+When HaveQuads && pokerval > pokervalcommon Return true Force
+When HaveFullHouse && pokerval > pokervalcommon Return true Force
+When HaveTrips && !TripsOnBoard && npcbits > 0 Return true Force
+When HaveSet Return true Force
+When Others Return false Force
+
+// Purpose: source best-second-pair branch, exactly portable without kicker helper.
+// Source/Provenance: T/A current second pair.
+##f$cc_river_probe_hubb_second_pair##
+f$cc_hand_second_pair_or_pocket &&
+!f$cc_river_probe_hubb_tp_or_op_real &&
+!f$cc_river_probe_contributed_exact_two_pair &&
+!f$cc_river_probe_hubb_tripsplus_safe
+
+// Purpose: source weak-pair classes that definitely CHECK as River attack.
+// Third pair is omitted because source divides it by better-kicker count.
+// Source/Provenance: T/A exact 4th/5th/underpair negative subset.
+##f$cc_river_probe_hubb_weak_pair_check##
+(f$cc_hand_fourth_pair_or_pocket ||
+ f$cc_hand_fifth_pair_or_pocket ||
+ HaveUnderPair) &&
+!f$cc_river_probe_hubb_tripsplus_safe
+
+// -----------------------------------------------------------------------------
+// RPH.03 — reviewed positive/negative actions
+// -----------------------------------------------------------------------------
+
+// Purpose: direct source exact-two-pair action.
+// Completed ->75; non-completed -> deliberate check to induce / bluff-catch.
+// Source/Provenance: T newest NCF, overriding older TBP sizing.
+##f$cc_river_probe_hubb_exact2p_action##
+When !f$cc_river_probe_hubb_context Return false Force
+When !f$cc_river_probe_contributed_exact_two_pair Return false Force
+When f$cc_river_probe_completed Return true Force
+When Others Return false Force
+
+// Purpose: exact-two-pair strategic coverage includes both bet and source check.
+// Source/Provenance: T/A explicit NCF branch.
+##f$cc_river_probe_hubb_exact2p_covered##
+f$cc_river_probe_hubb_context && f$cc_river_probe_contributed_exact_two_pair
+
+// Purpose: TP/OP action: completed block/thin bet 25, otherwise deliberate check.
+// Source/Provenance: T newest NCF.
+##f$cc_river_probe_hubb_tpop_action##
+When !f$cc_river_probe_hubb_context Return false Force
+When !f$cc_river_probe_hubb_tp_or_op_real Return false Force
+When f$cc_river_probe_completed Return true Force
+When Others Return false Force
+
+// Purpose: TP/OP source coverage includes non-completed check.
+// Source/Provenance: T/A.
+##f$cc_river_probe_hubb_tpop_covered##
+f$cc_river_probe_hubb_context && f$cc_river_probe_hubb_tp_or_op_real
+
+// Purpose: second-pair action is always a source bet; board completion changes size.
+// Source/Provenance: T newest NCF.
+##f$cc_river_probe_hubb_secondpair_action##
+f$cc_river_probe_hubb_context && f$cc_river_probe_hubb_second_pair
+
+// Purpose: literal nuts / safe contributed trips+ always value probe pot.
+// Source/Provenance: T/A direct strong-value branch.
+##f$cc_river_probe_hubb_tripsplus_action##
+f$cc_river_probe_hubb_context && f$cc_river_probe_hubb_tripsplus_safe
+
+// Purpose: high-card/no-made after actual flop X/C and Turn X/X probes 75.
+// Source explicitly gives 75-100; mature audited strategy chooses lower exact edge.
+// Source/Provenance: T/A, no professional bluff expansion.
+##f$cc_river_probe_hubb_air_action##
+f$cc_river_probe_hubb_context && f$cc_river_probe_air
+
+// Purpose: explicit reviewed weak-pair check.
+// Source/Provenance: T/A negative source branch.
+##f$cc_river_probe_hubb_weakpair_covered##
+f$cc_river_probe_hubb_context && f$cc_river_probe_hubb_weak_pair_check
+
+// -----------------------------------------------------------------------------
+// RPH.04 — translation gaps made visible rather than guessed
+// -----------------------------------------------------------------------------
+
+// Purpose: third-pair source branch cannot be classified exactly until a
+// CashCrusher contribution-aware better-kicker counter is certified.
+// Source/Provenance: P evidence-gap diagnostic for a T branch.
+##f$cc_river_probe_hubb_thirdpair_translation_pending##
+f$cc_river_probe_hubb_context &&
+f$cc_hand_third_pair_or_pocket &&
+!f$cc_river_probe_hubb_tripsplus_safe
+
+// Purpose: current contributed straight/flush that is not literal nuts needs the
+// source one-hole-card/rank ladder or another exact contribution classification.
+// Source/Provenance: P evidence-gap diagnostic; strategy remains fail-closed.
+##f$cc_river_probe_hubb_straightflush_translation_pending##
+f$cc_river_probe_hubb_context &&
+!f$cc_river_probe_literal_nuts &&
+((HaveFlush && pokerval > pokervalcommon) ||
+ (HaveStraight && pokerval > pokervalcommon))
+
+// -----------------------------------------------------------------------------
+// RPH.05 — canonical HUBB source child
+// -----------------------------------------------------------------------------
+
+// Purpose: source action priority. Strong made precedes exact2P/TP/OP/pairs/air.
+// Explicit covered checks return false without being treated as unknown.
+// Source/Provenance: T/A source-order normalization.
+##f$cc_river_probe_hubb_action##
+When !f$cc_river_probe_hubb_context Return false Force
+When f$cc_river_probe_hubb_tripsplus_action Return true Force
+When f$cc_river_probe_hubb_exact2p_covered Return f$cc_river_probe_hubb_exact2p_action Force
+When f$cc_river_probe_hubb_tpop_covered Return f$cc_river_probe_hubb_tpop_action Force
+When f$cc_river_probe_hubb_secondpair_action Return true Force
+When f$cc_river_probe_hubb_weakpair_covered Return false Force
+When f$cc_river_probe_hubb_air_action Return true Force
+When Others Return false Force
+
+// Purpose: exact source sizes for reviewed positive branches.
+// Source: trips+100; exact2P CPL75; TP/OP CPL25; 2nd pair CPL25/nCPL50; air75.
+// Provenance: T/A.
+##f$cc_river_probe_hubb_size_id##
+When !f$cc_river_probe_hubb_context Return 0 Force
+When f$cc_river_probe_hubb_tripsplus_action Return f$cc_river_probe_size_100_id Force
+When f$cc_river_probe_hubb_exact2p_action Return f$cc_river_probe_size_75_id Force
+When f$cc_river_probe_hubb_tpop_action Return f$cc_river_probe_size_25_id Force
+When f$cc_river_probe_hubb_secondpair_action && f$cc_river_probe_completed Return f$cc_river_probe_size_25_id Force
+When f$cc_river_probe_hubb_secondpair_action && !f$cc_river_probe_completed Return f$cc_river_probe_size_50_id Force
+When f$cc_river_probe_hubb_air_action Return f$cc_river_probe_size_75_id Force
+When Others Return 0 Force
+
+// Purpose: reviewed strategic coverage includes explicit source checks but excludes
+// third-pair and non-nut straight/flush translation gaps.
+// Source/Provenance: P fail-closed coverage around T/A branches.
+##f$cc_river_probe_hubb_covered##
+f$cc_river_probe_hubb_tripsplus_action ||
+f$cc_river_probe_hubb_exact2p_covered ||
+f$cc_river_probe_hubb_tpop_covered ||
+f$cc_river_probe_hubb_secondpair_action ||
+f$cc_river_probe_hubb_weakpair_covered ||
+f$cc_river_probe_hubb_air_action
+
+// Purpose: local action/size integrity.
+// Source/Provenance: P safety invariant.
+##f$cc_river_probe_hubb_size_consistent##
+When !f$cc_river_probe_hubb_action Return f$cc_river_probe_hubb_size_id = 0 Force
+When f$cc_river_probe_hubb_action Return f$cc_river_probe_hubb_size_id >= 1 && f$cc_river_probe_hubb_size_id <= 6 Force
+When Others Return false Force
+
+// ============================================================================
+// End Gate11C direct HUBB River Probe subset.
+// ============================================================================
