@@ -3,24 +3,26 @@
 // Gate 11 — canonical River Probe strategy router (source-first foundation)
 // ============================================================================
 // Current reviewed children:
-//   1 = native 3wSBvBTN source subset with exact saved flop class + CLOSED X/C-X/X.
-//   2 = direct true-HU BB (HUBB) source tree after CLOSED X/C-X/X.
+//   1 = native 3w SBvBTN / BBvBTN source descendants after CLOSED X/C-X/X;
+//   2 = direct true-HU BB (HUBB) source tree after CLOSED X/C-X/X;
+//   3 = native 3wSBvBB direct-source tree when exact Flop-defense price/class
+//       provenance has been written; missing provenance remains uncovered.
 //
 // Explicitly still pending:
-//   residual HUBB CF7-only 2HC straight/flush gap, 3wBBvBTN, 3wSBvBB,
-//   native multiway, 4-6h SRP, ISO, 3BP/squeeze, clean 4BP,
-//   coverage/runtime/all-in geometry.
+//   residual CF7-only non-nut straight/flush translations, native true-multiway,
+//   4-6h SRP, ISO, 3BP/squeeze, clean 4BP, coverage/runtime/all-in geometry.
 //
 // Rule:
 //   A generic River-Probe opportunity never grants strategy. Unknown descendants
 //   check/fail closed until their history/range/source or professional fill is audited.
 // ============================================================================
 
-// Purpose: current reviewed family ID: 1 native 3w, 2 direct HUBB.
+// Purpose: current reviewed family ID: 1 native 3w BTN families, 2 HUBB, 3 SBvBB.
 // Source/Provenance: P routing metadata over T/A reviewed children.
 ##f$cc_river_probe_family_id##
 When !f$cc_river_probe_base_opportunity Return 0 Force
 When f$cc_river_probe_hubb_covered Return 2 Force
+When f$cc_river_probe_sbvbb_covered Return 3 Force
 When f$cc_river_probe_3w_source_covered Return 1 Force
 When Others Return 0 Force
 
@@ -29,6 +31,7 @@ When Others Return 0 Force
 ##f$cc_river_probe_router##
 When !f$cc_river_probe_base_opportunity Return false Force
 When f$cc_river_probe_hubb_covered Return f$cc_river_probe_hubb_action Force
+When f$cc_river_probe_sbvbb_covered Return f$cc_river_probe_sbvbb_action Force
 When f$cc_river_probe_3w_source_covered Return f$cc_river_probe_3w_source_action Force
 When Others Return false Force
 
@@ -37,13 +40,16 @@ When Others Return false Force
 ##f$cc_river_probe_size_id##
 When !f$cc_river_probe_base_opportunity Return 0 Force
 When f$cc_river_probe_hubb_covered Return f$cc_river_probe_hubb_size_id Force
+When f$cc_river_probe_sbvbb_covered Return f$cc_river_probe_sbvbb_size_id Force
 When f$cc_river_probe_3w_source_covered Return f$cc_river_probe_3w_source_size_id Force
 When Others Return 0 Force
 
 // Purpose: currently reviewed strategic states, including explicit source checks.
 // Source/Provenance: P coverage metadata; does not widen source ownership.
 ##f$cc_river_probe_strategy_covered##
-f$cc_river_probe_hubb_covered || f$cc_river_probe_3w_source_covered
+f$cc_river_probe_hubb_covered ||
+f$cc_river_probe_sbvbb_covered ||
+f$cc_river_probe_3w_source_covered
 
 // Purpose: visible River-Probe opportunity still awaiting audited strategy.
 // Source/Provenance: P fail-closed gap metadata.
