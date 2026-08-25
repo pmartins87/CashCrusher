@@ -126,9 +126,9 @@ def source_contract() -> None:
 
     resolved = block(SRC, "f$cc_river_probe_3w_sbvbtn_resolved")
     for token in (
-        "f$cc_river_probe_literal_nuts",
-        "f$cc_river_probe_source_set",
+        "f$cc_river_probe_3w_strong_safe",
         "f$cc_river_probe_contributed_exact_two_pair",
+        "f$cc_river_probe_3w_tp_or_op_real",
         "f$cc_river_probe_air",
     ):
         assert token in resolved
@@ -137,13 +137,14 @@ def source_contract() -> None:
     assert "f$cc_river_probe_size_100_id" in size
     assert "f$cc_river_probe_size_75_id" in size
     assert "f$cc_river_probe_size_50_id" in size
+    assert "f$cc_river_probe_3w_tp_or_op_real Return f$cc_river_probe_size_50_id" in size
 
-    pending = block(SRC, "f$cc_river_probe_3w_bbvbtn_provenance_pending")
-    assert "f$cc_hero_pos_id = 6" in pending
-    # BBvBTN context is labeled but must not leak into coverage yet.
+    # Native 3w dispatcher now includes the separately tested BBvBTN child.
+    bb = block(SRC, "f$cc_river_probe_3w_bbvbtn_context")
+    assert "f$cc_hero_pos_id = 6" in bb
     cov = executable(block(SRC, "f$cc_river_probe_3w_source_covered"))
     assert "f$cc_river_probe_3w_sbvbtn_covered" in cov
-    assert "bbvbtn" not in cov.lower()
+    assert "f$cc_river_probe_3w_bbvbtn_covered" in cov
 
 
 def common_router_safety_contract() -> None:
@@ -153,6 +154,7 @@ def common_router_safety_contract() -> None:
         "f$cc_river_probe_size_50_id",
         "f$cc_river_probe_size_75_id",
         "f$cc_river_probe_size_100_id",
+        "f$cc_river_probe_size_30_id",
     ):
         assert f"##{sym}##" in COMMON
 
