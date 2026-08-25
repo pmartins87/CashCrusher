@@ -139,3 +139,5 @@ jobs:
         run: python tools/test_turn_probe_srp_gaps.py
       - name: Test canonical Turn Probe coverage boundary
         run: python tools/test_turn_probe_coverage.py
+      - name: Test isolation-pot Turn Probe contract
+        run: python tools/test_turn_probe_iso.py
