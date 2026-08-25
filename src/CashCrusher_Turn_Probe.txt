@@ -1,6 +1,6 @@
 // ============================================================================
 // CashCrusher_Turn_Probe.txt
-// Gate 10F/G — canonical Turn Probe strategy router / coverage boundary
+// Gate 10F-H — canonical Turn Probe strategy router / coverage boundary
 // ============================================================================
 // Purpose:
 //   Compose only reviewed Turn-Probe children after Gate10A has proved CLOSED
@@ -14,17 +14,17 @@
 //   4 native true-multiway reviewed TBP gap              A/T
 //   5 ordinary-SRP six-max/source-silent range gaps      A/P
 //   6 proven isolation-pot caller ranges                 A/P
+//   7 supported plain-3BP / squeeze caller ranges        A/P
 //
 // Still intentionally uncovered here:
 //   * unraised residuals outside HUBB/native `(BBorSB)v2pp`;
-//   * plain 3BP / squeeze Turn Probe;
 //   * clean caller-side 4BP Turn Probe;
 //   * 5bet+, reversed/backraise/limp-reraise ambiguity;
 //   * any exact-last history (belongs delayed-float/stab ownership).
 //
 // This file chooses strategy + strategic size ID only. Runtime bet token,
 // stack geometry, natural all-in equivalence and executed Turn history are later
-// Gate10H/N owners and must not be inferred from a positive router result.
+// Gate10 execution/history owners and must not be inferred from a positive router.
 // ============================================================================
 
 // Purpose: compact reviewed Turn-Probe family ID.
@@ -37,6 +37,7 @@ When f$cc_turn_probe_sbvbtn_gap_covered Return 3 Force
 When f$cc_turn_probe_mw_gap_covered Return 4 Force
 When f$cc_turn_probe_srp_gap_covered Return 5 Force
 When f$cc_turn_probe_iso_covered Return 6 Force
+When f$cc_turn_probe_3bp_covered Return 7 Force
 When Others Return 0 Force
 
 // Purpose: canonical reviewed Turn-Probe action.
@@ -49,6 +50,7 @@ When f$cc_turn_probe_sbvbtn_gap_covered Return f$cc_turn_probe_sbvbtn_gap_action
 When f$cc_turn_probe_mw_gap_covered Return f$cc_turn_probe_mw_gap_action Force
 When f$cc_turn_probe_srp_gap_covered Return f$cc_turn_probe_srp_gap_action Force
 When f$cc_turn_probe_iso_covered Return f$cc_turn_probe_iso_action Force
+When f$cc_turn_probe_3bp_covered Return f$cc_turn_probe_3bp_action Force
 When Others Return false Force
 
 // Purpose: paired strategic size-ID owner.
@@ -61,6 +63,7 @@ When f$cc_turn_probe_sbvbtn_gap_covered Return f$cc_turn_probe_sbvbtn_gap_size_i
 When f$cc_turn_probe_mw_gap_covered Return f$cc_turn_probe_mw_gap_size_id Force
 When f$cc_turn_probe_srp_gap_covered Return f$cc_turn_probe_srp_gap_size_id Force
 When f$cc_turn_probe_iso_covered Return f$cc_turn_probe_iso_size_id Force
+When f$cc_turn_probe_3bp_covered Return f$cc_turn_probe_3bp_size_id Force
 When Others Return 0 Force
 
 // Purpose: state has a reviewed policy, including explicit CHECK decisions.
@@ -71,7 +74,8 @@ f$cc_turn_probe_3w_source_covered ||
 f$cc_turn_probe_sbvbtn_gap_covered ||
 f$cc_turn_probe_mw_gap_covered ||
 f$cc_turn_probe_srp_gap_covered ||
-f$cc_turn_probe_iso_covered
+f$cc_turn_probe_iso_covered ||
+f$cc_turn_probe_3bp_covered
 
 // Purpose: distinguish direct/high-ancestry source ownership from professional
 // gap fills for audit/logging; 1 direct T/A, 2 reviewed TBP A/T, 3 P-heavy cash.
@@ -83,6 +87,7 @@ When f$cc_turn_probe_sbvbtn_gap_covered Return 2 Force
 When f$cc_turn_probe_mw_gap_covered Return 2 Force
 When f$cc_turn_probe_srp_gap_covered Return 3 Force
 When f$cc_turn_probe_iso_covered Return 3 Force
+When f$cc_turn_probe_3bp_covered Return 3 Force
 When Others Return 0 Force
 
 // Purpose: action/size integrity across all currently reviewed children.
@@ -98,7 +103,7 @@ When Others Return false Force
 f$cc_turn_probe_base_opportunity && !f$cc_turn_probe_strategy_covered
 
 // Purpose: coarse uncovered pot-family ID for next-gate targeting.
-// 1 unraised | 2 one-raise unresolved | 3 3BP | 4 4BP | 5 5bet+.
+// 1 unraised | 2 one-raise unresolved | 3 3BP unresolved | 4 4BP | 5 5bet+.
 // Source/Provenance: P diagnostics only; no action implication.
 ##f$cc_turn_probe_uncovered_pot_family_id##
 When !f$cc_turn_probe_uncovered_context Return 0 Force
@@ -118,7 +123,8 @@ When Others Return 0 Force
 (f$cc_turn_probe_sbvbtn_gap_covered ? 1 : 0) +
 (f$cc_turn_probe_mw_gap_covered ? 1 : 0) +
 (f$cc_turn_probe_srp_gap_covered ? 1 : 0) +
-(f$cc_turn_probe_iso_covered ? 1 : 0)
+(f$cc_turn_probe_iso_covered ? 1 : 0) +
+(f$cc_turn_probe_3bp_covered ? 1 : 0)
 
 // Purpose: top-level strategy consistency.
 // Source/Provenance: P safety composition.
@@ -131,5 +137,5 @@ When !f$cc_turn_probe_size_consistent Return false Force
 When Others Return true Force
 
 // ============================================================================
-// End Gate10F/G canonical Turn Probe router.
+// End Gate10F-H canonical Turn Probe router.
 // ============================================================================
