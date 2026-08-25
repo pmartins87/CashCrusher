@@ -1,0 +1,74 @@
+// ============================================================================
+// CashCrusher_River_Probe_Common.txt
+// Gate 11B.0 — shared River-Probe hand/texture and sizing vocabulary
+// ============================================================================
+// Purpose:
+//   Normalize only portable current-River facts needed by source descendants.
+//   These descriptors never authorize a Probe by themselves.
+//
+// Source/Provenance:
+//   T/A = portable OpenPPL/CashCrusher made-hand and board descriptors.
+//   P = normalized size IDs.
+// ============================================================================
+
+// Purpose: source completed River = straight or flush possible on board/runout.
+// Source: mature DeepCrusher `f$river_Completed`.
+// Provenance: T.
+##f$cc_river_probe_completed##
+FlushPossible || StraightPossible
+
+// Purpose: paired River board, used by source bad-board/value splits.
+// Source/Provenance: T OpenPPL board state.
+##f$cc_river_probe_paired##
+PairOnBoard
+
+// Purpose: conservative exact-two-pair contribution subset. Board-only two pair
+// is excluded rather than pretending full equivalence to CF7_ExactTwoPair.
+// Source/Provenance: A conservative translation.
+##f$cc_river_probe_contributed_exact_two_pair##
+HaveTwoPair && !TwoPairOnBoard
+
+// Purpose: literal contributed set, directly available without CF7 reconstruction.
+// Source/Provenance: T OpenPPL HaveSet; conservative subset of source real-trips.
+##f$cc_river_probe_source_set##
+HaveSet
+
+// Purpose: literal nuts subset. It is intentionally narrower than CF7_NutClass;
+// no missing nut-class semantics are fabricated.
+// Source/Provenance: T/A conservative translation.
+##f$cc_river_probe_literal_nuts##
+HaveNuts
+
+// Purpose: current no-made/no-frontdoor class used by source missed draw/high-air
+// Probe branches after historical flop X/C and Turn X/X.
+// Source/Provenance: A cleaned CashCrusher hand taxonomy.
+##f$cc_river_probe_air##
+IsRiver && f$cc_air_no_frontdoor
+
+// -----------------------------------------------------------------------------
+// Normalized River-Probe size IDs
+// 1 MIN | 2 25% | 3 33% | 4 50% | 5 75% | 6 100%.
+// Runtime mapping is intentionally deferred until the strategic tree is complete.
+// -----------------------------------------------------------------------------
+
+##f$cc_river_probe_size_min_id##
+1
+
+##f$cc_river_probe_size_25_id##
+2
+
+##f$cc_river_probe_size_33_id##
+3
+
+##f$cc_river_probe_size_50_id##
+4
+
+##f$cc_river_probe_size_75_id##
+5
+
+##f$cc_river_probe_size_100_id##
+6
+
+// ============================================================================
+// End Gate11B.0 common vocabulary.
+// ============================================================================
