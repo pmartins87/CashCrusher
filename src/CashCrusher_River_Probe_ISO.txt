@@ -1,0 +1,347 @@
+// ============================================================================
+// CashCrusher_River_Probe_ISO.txt
+// Gate 11H — isolation-pot River Probe professional adaptation
+// ============================================================================
+// Purpose:
+//   Give proven one-raise ISO pots an exact River-Probe owner after CLOSED flop
+//   X/C -> Turn X/X, preserving original-limper versus post-raise-coldcaller
+//   provenance and also the reverse PFA-vs-caller-stab history.
+//
+// Source boundary:
+//   DeepCrusher has no dedicated deep-stack ISO River-Probe strategy tree. The
+//   framework supplies the postflop owner after an actual flop call; Gate00/01E
+//   supplies exact ISO chronology. Strategy below is therefore P and remains
+//   narrower than the direct native/HUBB children, which keep router precedence.
+//
+// Provenance:
+//   T = Gate00/01E ISO masks/roles, Gate11 closed X/C-X/X history and current
+//       hand/board facts.
+//   A = original-limper versus post-raise-coldcaller separation and source lessons
+//       that missed-draw bluffs require historical equity provenance.
+//   P = conservative 100bb clean-HU cash policy and 33/50/75 sizing.
+//   X = post-multiway ISO, pure-air bluff without saved draw, generic TP lead,
+//       stackoff/commitment/all-in inheritance and inferred historical bet size.
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// RPISO.01 — exact ISO participant provenance
+// -----------------------------------------------------------------------------
+
+// Purpose: Hero canonical-position bit for Gate01E range-mask intersections.
+// Source/Provenance: T/A Gate00 canonical position mapping.
+##f$cc_river_probe_iso_hero_pos_bit##
+When f$cc_hero_pos_id = 1 Return 1 Force
+When f$cc_hero_pos_id = 2 Return 2 Force
+When f$cc_hero_pos_id = 3 Return 4 Force
+When f$cc_hero_pos_id = 4 Return 8 Force
+When f$cc_hero_pos_id = 5 Return 16 Force
+When f$cc_hero_pos_id = 6 Return 32 Force
+When Others Return 0 Force
+
+// Purpose: sole live HU villain canonical-position bit.
+// Source/Provenance: T/A current HU position mapping.
+##f$cc_river_probe_iso_villain_pos_bit##
+When f$cc_hu_villain_pos_id = 1 Return 1 Force
+When f$cc_hu_villain_pos_id = 2 Return 2 Force
+When f$cc_hu_villain_pos_id = 3 Return 4 Force
+When f$cc_hu_villain_pos_id = 4 Return 8 Force
+When f$cc_hu_villain_pos_id = 5 Return 16 Force
+When f$cc_hu_villain_pos_id = 6 Return 32 Force
+When Others Return 0 Force
+
+// Purpose: Hero limped before the isolation raise.
+// Source/Provenance: A exact Gate01E limper-mask intersection.
+##f$cc_river_probe_iso_hero_was_limper##
+f$cc_pf_iso_proven &&
+f$cc_river_probe_iso_hero_pos_bit > 0 &&
+((f$cc_pf_pre_raise_limper_mask BitAnd f$cc_river_probe_iso_hero_pos_bit) > 0)
+
+// Purpose: Hero entered only after the isolation raise.
+// Source/Provenance: A exact Gate01E post-raise mask intersection.
+##f$cc_river_probe_iso_hero_was_postraise_coldcaller##
+f$cc_pf_iso_proven &&
+f$cc_river_probe_iso_hero_pos_bit > 0 &&
+((f$cc_pf_post_raise_coldcaller_mask BitAnd f$cc_river_probe_iso_hero_pos_bit) > 0)
+
+// Purpose: exactly one caller-stage provenance owns Hero.
+// Source/Provenance: P integrity over A exact masks.
+##f$cc_river_probe_iso_hero_caller_origin_consistent##
+When !f$cc_pf_iso_proven Return false Force
+When f$cc_river_probe_iso_hero_was_limper && f$cc_river_probe_iso_hero_was_postraise_coldcaller Return false Force
+When f$cc_river_probe_iso_hero_was_limper || f$cc_river_probe_iso_hero_was_postraise_coldcaller Return true Force
+When Others Return false Force
+
+// Purpose: current HU villain was an original pre-raise limper.
+// Source/Provenance: A exact Gate01E limper-mask intersection.
+##f$cc_river_probe_iso_villain_was_limper##
+f$cc_pf_iso_proven &&
+f$cc_river_probe_iso_villain_pos_bit > 0 &&
+((f$cc_pf_pre_raise_limper_mask BitAnd f$cc_river_probe_iso_villain_pos_bit) > 0)
+
+// Purpose: current HU villain was a post-raise coldcaller.
+// Source/Provenance: A exact Gate01E post-raise mask intersection.
+##f$cc_river_probe_iso_villain_was_postraise_coldcaller##
+f$cc_pf_iso_proven &&
+f$cc_river_probe_iso_villain_pos_bit > 0 &&
+((f$cc_pf_post_raise_coldcaller_mask BitAnd f$cc_river_probe_iso_villain_pos_bit) > 0)
+
+// Purpose: exactly one caller-stage provenance owns the current HU villain.
+// Source/Provenance: P integrity over A exact masks.
+##f$cc_river_probe_iso_villain_caller_origin_consistent##
+When !f$cc_pf_iso_proven Return false Force
+When f$cc_river_probe_iso_villain_was_limper && f$cc_river_probe_iso_villain_was_postraise_coldcaller Return false Force
+When f$cc_river_probe_iso_villain_was_limper || f$cc_river_probe_iso_villain_was_postraise_coldcaller Return true Force
+When Others Return false Force
+
+// -----------------------------------------------------------------------------
+// RPISO.02 — clean-HU X/C-X/X topology
+// -----------------------------------------------------------------------------
+
+// Purpose: audited ISO River-Probe owner restricted to pots that entered flop HU.
+// Source/Provenance: T/A exact Gate00/11 chronology + P scope firewall.
+##f$cc_river_probe_iso_clean_hu_context##
+f$cc_river_probe_hu_opportunity &&
+f$cc_flop_entry_count = 2 &&
+f$cc_hu_origin_preflop_reduced &&
+f$cc_pot_family_id = 2 &&
+f$cc_pf_iso_proven
+
+// Purpose: prove the sole preflop isolation raiser is the current HU villain.
+// Since Gate11 HU opportunity already requires headsupchair=lastraised2, this also
+// proves the isolator was the actual flop aggressor Hero X/C'd.
+// Source/Provenance: T/A exact range + actor identity.
+##f$cc_river_probe_iso_caller_vs_isolator_context##
+f$cc_river_probe_iso_clean_hu_context &&
+f$cc_pf_role_srp_caller &&
+f$cc_river_probe_iso_hero_caller_origin_consistent &&
+f$cc_hu_villain_pos_id = f$cc_pf_single_raiser_pos_id
+
+// Purpose: isolator/PFA checked flop, then X/C'd the sole caller's stab.
+// Source/Provenance: A exact reverse actor history enabled by Gate11A.1 correction.
+##f$cc_river_probe_iso_pfa_vs_caller_stab_context##
+f$cc_river_probe_iso_clean_hu_context &&
+f$cc_pf_role_pfa &&
+f$cc_pf_single_raiser_pos_id = f$cc_hero_pos_id &&
+f$cc_river_probe_iso_villain_caller_origin_consistent &&
+lastraised2 = headsupchair
+
+// Purpose: four exact clean-HU ISO range families.
+// IDs: 1 limper-v-isolator; 2 coldcaller-v-isolator; 3 isolator-v-limper-stab;
+// 4 isolator-v-coldcaller-stab.
+// Source/Provenance: P metadata over T/A provenance.
+##f$cc_river_probe_iso_family_id##
+When f$cc_river_probe_iso_caller_vs_isolator_context && f$cc_river_probe_iso_hero_was_limper Return 1 Force
+When f$cc_river_probe_iso_caller_vs_isolator_context && f$cc_river_probe_iso_hero_was_postraise_coldcaller Return 2 Force
+When f$cc_river_probe_iso_pfa_vs_caller_stab_context && f$cc_river_probe_iso_villain_was_limper Return 3 Force
+When f$cc_river_probe_iso_pfa_vs_caller_stab_context && f$cc_river_probe_iso_villain_was_postraise_coldcaller Return 4 Force
+When Others Return 0 Force
+
+// Purpose: exact clean-HU ISO strategy owner.
+// Source/Provenance: P deterministic partition.
+##f$cc_river_probe_iso_context##
+f$cc_river_probe_iso_family_id > 0
+
+// -----------------------------------------------------------------------------
+// RPISO.03 — current River strength/runout
+// -----------------------------------------------------------------------------
+
+// Purpose: strong contributed flush; weak one-hole-card flushes are not promoted.
+// Source/Provenance: A HUBB flush-quality lesson + P ISO threshold.
+##f$cc_river_probe_iso_strong_flush##
+HaveFlush && pokerval > pokervalcommon && NumberOfUnknownSuitedOvercards <= 4
+
+// Purpose: contributed non-under straight.
+// Source/Provenance: A HUBB under-straight lesson + P ISO threshold.
+##f$cc_river_probe_iso_strong_straight##
+HaveStraight && pokerval > pokervalcommon && !HaveUnderStraight
+
+// Purpose: premium robust value.
+// Source/Provenance: T current facts + P conservative clean-HU region.
+##f$cc_river_probe_iso_premium_value##
+When !f$cc_river_probe_iso_context Return false Force
+When f$cc_river_probe_literal_nuts Return true Force
+When HaveQuads && pokerval > pokervalcommon Return true Force
+When HaveFullHouse && pokerval > pokervalcommon Return true Force
+When f$cc_river_probe_iso_strong_flush Return true Force
+When f$cc_river_probe_iso_strong_straight Return true Force
+When Others Return false Force
+
+// Purpose: real trips/set/exact 2P below premium.
+// Source/Provenance: A contribution-aware portable categories + P grouping.
+##f$cc_river_probe_iso_medium_value##
+f$cc_river_probe_iso_context &&
+!f$cc_river_probe_iso_premium_value &&
+((HaveTrips && !TripsOnBoard && npcbits > 0) ||
+ HaveSet ||
+ f$cc_river_probe_contributed_exact_two_pair)
+
+// Purpose: contribution-aware overpair below medium value.
+// Source/Provenance: T/A certified pair primitive.
+##f$cc_river_probe_iso_overpair_real##
+f$cc_river_probe_iso_context &&
+HaveOverPair && PairInHand && npcbits > 0 &&
+!f$cc_river_probe_iso_medium_value &&
+!f$cc_river_probe_iso_premium_value
+
+// Purpose: strong top pair; action remains range-family specific.
+// Source/Provenance: A kicker-quality principle + P <=2 boundary.
+##f$cc_river_probe_iso_strong_tp##
+f$cc_river_probe_iso_context &&
+f$cc_hand_just_top_pair && !TwoPairOnBoard && npcbits > 0 &&
+f$cc_number_better_kickers <= 2
+
+// Purpose: safe River for thin one-pair lead.
+// Source/Provenance: A completed/paired caution + P cash filter.
+##f$cc_river_probe_iso_thin_value_river##
+!f$cc_river_probe_paired && !f$cc_river_probe_completed
+
+// Purpose: late isolator band with widest plausible isolation ranges.
+// Source/Provenance: P range-strength metadata.
+##f$cc_river_probe_iso_late_isolator##
+f$cc_pf_single_raiser_pos_id = 4 ||
+f$cc_pf_single_raiser_pos_id = 5 ||
+f$cc_pf_single_raiser_pos_id = 6
+
+// -----------------------------------------------------------------------------
+// RPISO.04 — bluff provenance, only original-limper vs late isolator
+// -----------------------------------------------------------------------------
+
+// Purpose: Gate10 pre-action snapshot can prove caller's flop draw because CLOSED
+// Gate11 history independently proves the subsequent check really became X/C.
+// Source/Provenance: T/A persisted equity + closed action bridge.
+##f$cc_river_probe_iso_caller_snapshot_valid##
+f$cc_river_probe_iso_caller_vs_isolator_context &&
+f$cc_river_probe_snapshot_valid
+
+// Purpose: exact persisted real frontdoor draw on flop.
+// Source/Provenance: T/A saved portable draw components.
+##f$cc_river_probe_iso_flop_frontdoor_draw_proven##
+f$cc_river_probe_iso_caller_snapshot_valid &&
+(user_cc_turn_probe_flop_had_real_fd ||
+ user_cc_turn_probe_flop_had_real_oesd ||
+ user_cc_turn_probe_flop_had_real_gutshot)
+
+// Purpose: strict good-bluff River.
+// Source/Provenance: A source bad-board principle + P completion veto.
+##f$cc_river_probe_iso_good_bluff_river##
+!f$cc_river_probe_bad_to_bluff_board && !f$cc_river_probe_completed
+
+// Purpose: only the wider original-limper caller may convert a proven missed draw
+// into a River bluff, and only against a late isolator on a good River.
+// Source/Provenance: P-heavy fill constrained by A historical-provenance lesson.
+##f$cc_river_probe_iso_limper_missed_draw_bluff##
+f$cc_river_probe_iso_family_id = 1 &&
+f$cc_river_probe_iso_late_isolator &&
+f$cc_river_probe_iso_flop_frontdoor_draw_proven &&
+f$cc_river_probe_air &&
+f$cc_river_probe_iso_good_bluff_river
+
+// Purpose: PFA-vs-stab and selected coldcaller ranges receive no air bluff without
+// additional call-time blocker/equity provenance.
+// Source/Provenance: P evidence-boundary diagnostic.
+##f$cc_river_probe_iso_air_bluff_blocked##
+f$cc_river_probe_iso_context &&
+f$cc_river_probe_air &&
+!f$cc_river_probe_iso_limper_missed_draw_bluff
+
+// -----------------------------------------------------------------------------
+// RPISO.05 — four range-family policies
+// -----------------------------------------------------------------------------
+
+// Purpose: original limper versus isolator. Wider caller range permits strong-TP
+// thin value and the sole reviewed missed-draw bluff.
+// Source/Provenance: P professional ISO fill.
+##f$cc_river_probe_iso_f1_action##
+When f$cc_river_probe_iso_family_id != 1 Return false Force
+When f$cc_river_probe_iso_premium_value Return true Force
+When f$cc_river_probe_iso_medium_value Return true Force
+When f$cc_river_probe_iso_overpair_real && f$cc_river_probe_iso_thin_value_river Return true Force
+When f$cc_river_probe_iso_strong_tp && f$cc_river_probe_iso_thin_value_river && f$cc_river_probe_iso_late_isolator Return true Force
+When f$cc_river_probe_iso_limper_missed_draw_bluff Return true Force
+When Others Return false Force
+
+// Purpose: post-raise coldcaller versus isolator. Selected range removes thin TP
+// and pure-air leads; overpair still probes only on clean River.
+// Source/Provenance: P range-condensation fill.
+##f$cc_river_probe_iso_f2_action##
+When f$cc_river_probe_iso_family_id != 2 Return false Force
+When f$cc_river_probe_iso_premium_value Return true Force
+When f$cc_river_probe_iso_medium_value Return true Force
+When f$cc_river_probe_iso_overpair_real && f$cc_river_probe_iso_thin_value_river Return true Force
+When Others Return false Force
+
+// Purpose: isolator/PFA versus original-limper flop stab. Villain's flop stab then
+// Turn check leaves enough capped range for strong TP/OP thin value on clean River.
+// Source/Provenance: A ownership lesson + P six-max ISO adaptation.
+##f$cc_river_probe_iso_f3_action##
+When f$cc_river_probe_iso_family_id != 3 Return false Force
+When f$cc_river_probe_iso_premium_value Return true Force
+When f$cc_river_probe_iso_medium_value Return true Force
+When f$cc_river_probe_iso_overpair_real && f$cc_river_probe_iso_thin_value_river Return true Force
+When f$cc_river_probe_iso_strong_tp && f$cc_river_probe_iso_thin_value_river Return true Force
+When Others Return false Force
+
+// Purpose: isolator/PFA versus post-raise coldcaller stab. Condensed caller range
+// removes TP thin lead; robust value/clean overpair remain.
+// Source/Provenance: P conservative selected-range adaptation.
+##f$cc_river_probe_iso_f4_action##
+When f$cc_river_probe_iso_family_id != 4 Return false Force
+When f$cc_river_probe_iso_premium_value Return true Force
+When f$cc_river_probe_iso_medium_value Return true Force
+When f$cc_river_probe_iso_overpair_real && f$cc_river_probe_iso_thin_value_river Return true Force
+When Others Return false Force
+
+// Purpose: shared size map for every positive ISO family.
+// premium75 | medium50 | one-pair33 | proven missed-draw bluff50.
+// Source/Provenance: P conservative Gate11 palette.
+##f$cc_river_probe_iso_size_for_action##
+When f$cc_river_probe_iso_premium_value Return f$cc_river_probe_size_75_id Force
+When f$cc_river_probe_iso_medium_value Return f$cc_river_probe_size_50_id Force
+When f$cc_river_probe_iso_overpair_real Return f$cc_river_probe_size_33_id Force
+When f$cc_river_probe_iso_strong_tp Return f$cc_river_probe_size_33_id Force
+When f$cc_river_probe_iso_limper_missed_draw_bluff Return f$cc_river_probe_size_50_id Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// RPISO.06 — dispatcher / coverage
+// -----------------------------------------------------------------------------
+
+// Purpose: reviewed clean-HU ISO action.
+// Source/Provenance: P exact-family dispatcher.
+##f$cc_river_probe_iso_action##
+When f$cc_river_probe_iso_family_id = 1 Return f$cc_river_probe_iso_f1_action Force
+When f$cc_river_probe_iso_family_id = 2 Return f$cc_river_probe_iso_f2_action Force
+When f$cc_river_probe_iso_family_id = 3 Return f$cc_river_probe_iso_f3_action Force
+When f$cc_river_probe_iso_family_id = 4 Return f$cc_river_probe_iso_f4_action Force
+When Others Return false Force
+
+// Purpose: size exists only when the selected family actually bets.
+// Source/Provenance: P action/size pairing.
+##f$cc_river_probe_iso_size_id##
+When !f$cc_river_probe_iso_action Return 0 Force
+When Others Return f$cc_river_probe_iso_size_for_action Force
+
+// Purpose: every exact clean-HU ISO range family is reviewed, including checks.
+// Source/Provenance: P coverage contract.
+##f$cc_river_probe_iso_covered##
+f$cc_river_probe_iso_context
+
+// Purpose: ISO River-Probe opportunity outside clean-HU reviewed scope remains
+// visible, especially post-multiway/current-multiway histories.
+// Source/Provenance: P fail-closed evidence boundary.
+##f$cc_river_probe_iso_unresolved##
+f$cc_river_probe_base_opportunity &&
+f$cc_pot_family_id = 2 &&
+f$cc_pf_iso_proven &&
+!f$cc_river_probe_iso_covered
+
+// Purpose: local action/size integrity.
+// Source/Provenance: P safety invariant.
+##f$cc_river_probe_iso_size_consistent##
+When !f$cc_river_probe_iso_action Return f$cc_river_probe_iso_size_id = 0 Force
+When f$cc_river_probe_iso_action Return f$cc_river_probe_iso_size_id >= 1 && f$cc_river_probe_iso_size_id <= 7 Force
+When Others Return false Force
+
+// ============================================================================
+// End Gate11H isolation-pot River Probe adaptation.
+// ============================================================================
