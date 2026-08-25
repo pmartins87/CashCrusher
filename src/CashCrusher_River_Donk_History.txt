@@ -1,0 +1,233 @@
+// ============================================================================
+// CashCrusher_River_Donk_History.txt
+// Gate 09A — canonical River Donk ownership from CLOSED flop/turn history
+// ============================================================================
+// Purpose:
+//   Prove that Hero reaches a River LEAD only after losing/never owning the last
+//   aggression on Turn. The canonical source parent is Hero OOP X/C flop -> X/C
+//   Turn -> first River action with no bet facing Hero.
+//
+// Critical correction:
+//   A normal Turn Donk that Hero actually bet and Villain merely called is NOT a
+//   River Donk parent. Hero ended Turn as final aggressor. Gate08N originally
+//   exposed a poorly named compatibility symbol
+//   `f$cc_hist_river_donk_standard_parent_valid`; this file gives that history its
+//   correct meaning and explicitly quarantines it from Gate09 ownership.
+//
+// Source boundary:
+//   * Crusher Framework 5 leaves `f$move_river_donkbet` empty.
+//   * Mature DeepCrusher Gate09 supplies a HUBB-specific flop-X/C -> turn-CALL ->
+//     river-lead tree and writes Turn provenance only after the resolved CALL.
+//   * Therefore generic framework routing is architecture evidence, not positive
+//     River-Donk strategy provenance.
+//
+// Source/Provenance:
+//   T = OpenHoldem did*round2/3, lastraised2/3, raisbits2/3, first River action.
+//   A = CashCrusher chair->canonical-position reconstruction and ownership split.
+//   P = strict fail-closed parent/field firewalls.
+//
+// OpenPPL safety:
+//   Every WHEN is complete. No logical nesting depends on indentation.
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// RDH.00 — correct the misleading Gate08N cross-node name
+// -----------------------------------------------------------------------------
+
+// Purpose: accurately name the history "Hero Turn-Donked normally and ended Turn
+// as final aggressor". It belongs to River continuation/CBet ownership, not Donk.
+// Source/Provenance: A naming correction over T Gate08N closed counters.
+##f$cc_hist_river_after_turn_donk_standard_parent_valid##
+f$cc_hist_river_donk_standard_parent_valid
+
+// Purpose: hard firewall preventing a standard executed Turn Donk from entering
+// true River Donk strategy merely because another player called it.
+// Source/Provenance: A/P cross-node ownership correction confirmed by DeepCrusher
+// Gate09 continuation guards.
+##f$cc_river_donk_excluded_turn_donk_continuation##
+f$cc_hist_river_after_turn_donk_standard_parent_valid
+
+// -----------------------------------------------------------------------------
+// RDH.01 — actual flop aggressor reconstruction
+// -----------------------------------------------------------------------------
+
+// Purpose: a clean flop X/C source parent has exactly one opponent aggressor.
+// Source/Provenance: T OpenHoldem raisbits2.
+##f$cc_river_donk_flop_unique_aggressor##
+BitCount(raisbits2) = 1
+
+// Purpose: raw final flop aggressor chair is usable and is not Hero.
+// Source/Provenance: T lastraised2 safety.
+##f$cc_river_donk_flop_aggressor_chair_valid##
+lastraised2 >= 0 &&
+lastraised2 <= 9 &&
+lastraised2 != userchair &&
+f$cc_river_donk_flop_unique_aggressor
+
+// Purpose: map actual flop aggressor chair to canonical position ID.
+// IDs: UTG=1 HJ=2 CO=3 BTN=4 SB=5 BB=6.
+// Source/Provenance: A same Gate00 chair/position adapter used by prior history.
+##f$cc_river_donk_flop_aggressor_pos_id##
+When !f$cc_river_donk_flop_aggressor_chair_valid Return 0 Force
+When f$cc_utg_exists && lastraised2 = f$cc_utg_chair Return 1 Force
+When f$cc_hj_exists && lastraised2 = f$cc_hj_chair Return 2 Force
+When f$cc_co_exists && lastraised2 = f$cc_co_chair Return 3 Force
+When lastraised2 = dealerchair Return 4 Force
+When lastraised2 = smallblindchair Return 5 Force
+When lastraised2 = bigblindchair Return 6 Force
+When f$cc_true_hu && lastraised2 = dealerchair Return 5 Force
+When Others Return 0 Force
+
+// Purpose: raisbits2 must independently contain the mapped aggressor chair.
+// Source/Provenance: T/A cross-check against OH's independent history fields.
+##f$cc_river_donk_flop_aggressor_crosscheck##
+When !f$cc_river_donk_flop_aggressor_chair_valid Return false Force
+When f$cc_river_donk_flop_aggressor_pos_id <= 0 Return false Force
+When (raisbits2 BitAnd (1 << lastraised2)) <= 0 Return false Force
+When Others Return true Force
+
+// Purpose: exact Hero flop X/C: Hero checked, later called exactly once, never bet,
+// raised or went all-in on the flop.
+// Source/Provenance: T closed round-2 counters; source Gate09 parent.
+##f$cc_hist_river_donk_flop_checkcall_clean##
+When !IsRiver Return false Force
+When didchecround2 <= 0 Return false Force
+When didcallround2 != 1 Return false Force
+When didraisround2 != 0 Return false Force
+When didbetsizeround2 != 0 Return false Force
+When didalliround2 != 0 Return false Force
+When !f$cc_river_donk_flop_aggressor_crosscheck Return false Force
+When Others Return true Force
+
+// -----------------------------------------------------------------------------
+// RDH.02 — actual Turn aggressor reconstruction
+// -----------------------------------------------------------------------------
+
+// Purpose: a clean source Turn X/C has exactly one opponent aggressor.
+// Source/Provenance: T OpenHoldem raisbits3.
+##f$cc_river_donk_turn_unique_aggressor##
+BitCount(raisbits3) = 1
+
+// Purpose: final Turn aggressor is a valid non-Hero chair.
+// Source/Provenance: T lastraised3 safety.
+##f$cc_river_donk_turn_aggressor_chair_valid##
+lastraised3 >= 0 &&
+lastraised3 <= 9 &&
+lastraised3 != userchair &&
+f$cc_river_donk_turn_unique_aggressor
+
+// Purpose: map actual Turn aggressor chair to canonical position ID.
+// Source/Provenance: A mechanical chair/position adapter.
+##f$cc_river_donk_turn_aggressor_pos_id##
+When !f$cc_river_donk_turn_aggressor_chair_valid Return 0 Force
+When f$cc_utg_exists && lastraised3 = f$cc_utg_chair Return 1 Force
+When f$cc_hj_exists && lastraised3 = f$cc_hj_chair Return 2 Force
+When f$cc_co_exists && lastraised3 = f$cc_co_chair Return 3 Force
+When lastraised3 = dealerchair Return 4 Force
+When lastraised3 = smallblindchair Return 5 Force
+When lastraised3 = bigblindchair Return 6 Force
+When f$cc_true_hu && lastraised3 = dealerchair Return 5 Force
+When Others Return 0 Force
+
+// Purpose: raisbits3 independently confirms the exact Turn aggressor.
+// Source/Provenance: T/A history cross-check.
+##f$cc_river_donk_turn_aggressor_crosscheck##
+When !f$cc_river_donk_turn_aggressor_chair_valid Return false Force
+When f$cc_river_donk_turn_aggressor_pos_id <= 0 Return false Force
+When (raisbits3 BitAnd (1 << lastraised3)) <= 0 Return false Force
+When Others Return true Force
+
+// Purpose: exact Hero Turn X/C: first checked OOP, then called exactly one bet and
+// never raised/bet/jammed. This is the core true River-Donk parent.
+// Source/Provenance: T closed round-3 counters matching mature DeepCrusher Gate09.
+##f$cc_hist_river_donk_turn_checkcall_clean##
+When !IsRiver Return false Force
+When didchecround3 <= 0 Return false Force
+When didcallround3 != 1 Return false Force
+When didraisround3 != 0 Return false Force
+When didbetsizeround3 != 0 Return false Force
+When didalliround3 != 0 Return false Force
+When !f$cc_river_donk_turn_aggressor_crosscheck Return false Force
+When Others Return true Force
+
+// Purpose: source HUBB sequence keeps the same sole Villain as flop and Turn
+// aggressor; a different actor requires a separate multiway/post-multiway audit.
+// Source/Provenance: T/A exact actor identity.
+##f$cc_hist_river_donk_same_aggressor_flop_turn##
+f$cc_hist_river_donk_flop_checkcall_clean &&
+f$cc_hist_river_donk_turn_checkcall_clean &&
+lastraised2 = lastraised3 &&
+f$cc_river_donk_flop_aggressor_pos_id = f$cc_river_donk_turn_aggressor_pos_id
+
+// -----------------------------------------------------------------------------
+// RDH.03 — canonical River lead opportunity
+// -----------------------------------------------------------------------------
+
+// Purpose: common first-Hero-action River lead envelope after a clean Turn X/C.
+// Source: DeepCrusher River Raise No-initiative first/middle architecture plus
+// exact Gate09 HUBB history; positive strategy remains child-owned.
+// Provenance: A/T ownership only.
+##f$cc_river_donk_base_opportunity##
+When !IsRiver Return false Force
+When !f$cc_context_valid Return false Force
+When balance <= 0 Return false Force
+When BotsActionsOnThisRoundIncludingChecks != 0 Return false Force
+When AmountToCall != 0 Return false Force
+When f$cc_river_donk_excluded_turn_donk_continuation Return false Force
+When !f$cc_hist_river_donk_turn_checkcall_clean Return false Force
+When f$cc_relative_postflop_pos_id = 3 Return false Force
+When Others Return true Force
+
+// Purpose: strict HU River Donk opportunity; source parent requires Hero OOP and
+// sole current Villain equal to the actual Turn aggressor.
+// Source/Provenance: T/A exact HU geometry.
+##f$cc_river_donk_hu_opportunity##
+f$cc_river_donk_base_opportunity &&
+f$cc_hu &&
+f$cc_hu_oop &&
+headsupchair = lastraised3
+
+// Purpose: keep current multiway River lead opportunities labeled but unowned by
+// HUBB source. They require later Gate09C+ range/action-order review.
+// Source/Provenance: P evidence-boundary metadata only.
+##f$cc_river_donk_multiway_opportunity##
+f$cc_river_donk_base_opportunity && f$cc_multiway
+
+// -----------------------------------------------------------------------------
+// RDH.04 — literal true-HU HUBB source parent
+// -----------------------------------------------------------------------------
+
+// Purpose: exact true-HU BB-v-SB/Button source ancestry.
+// Source: mature DeepCrusher `f$game_HUBB` Gate09 tree.
+// Provenance: T/A mapping from legacy game label to explicit deal/position/history.
+##f$cc_river_donk_hubb_source_context##
+f$cc_river_donk_hu_opportunity &&
+f$cc_true_hu &&
+f$cc_hero_pos_id = 6 &&
+f$cc_flop_entry_count = 2 &&
+f$cc_hist_river_donk_flop_checkcall_clean &&
+f$cc_hist_river_donk_same_aggressor_flop_turn &&
+f$cc_river_donk_turn_aggressor_pos_id = 5 &&
+(f$cc_pot_family_id = 1 || f$cc_pot_family_id = 2)
+
+// Purpose: exact source parent is fully proven without relying on a user marker.
+// Source/Provenance: T/A coverage boundary.
+##f$cc_river_donk_hubb_source_parent_valid##
+f$cc_river_donk_hubb_source_context
+
+// Purpose: HU River Donk history not owned by literal true-HU HUBB source.
+// Source/Provenance: P gap diagnostic for later 3-6h adaptation.
+##f$cc_river_donk_hu_gap_context##
+f$cc_river_donk_hu_opportunity && !f$cc_river_donk_hubb_source_parent_valid
+
+// Purpose: aggregate current Gate09A ownership integrity.
+// Source/Provenance: P fail-closed contract.
+##f$cc_river_donk_history_consistent##
+When f$cc_river_donk_hubb_source_parent_valid && !f$cc_hu Return false Force
+When f$cc_river_donk_hubb_source_parent_valid && f$cc_river_donk_multiway_opportunity Return false Force
+When f$cc_river_donk_excluded_turn_donk_continuation && f$cc_river_donk_base_opportunity Return false Force
+When Others Return true Force
+
+// ============================================================================
+// End Gate09A River Donk ownership/history.
+// ============================================================================
