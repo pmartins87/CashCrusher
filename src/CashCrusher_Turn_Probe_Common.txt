@@ -1,0 +1,84 @@
+// ============================================================================
+// CashCrusher_Turn_Probe_Common.txt
+// Gate 10B.0 — shared Turn-Probe current-strength and size vocabulary
+// ============================================================================
+// Purpose:
+//   Keep source/adaptation files on one deterministic strength/size vocabulary.
+//   Descriptors do not themselves authorize a probe or stack commitment.
+//
+// Source/Provenance:
+//   T/A = portable CashCrusher made-hand/draw helpers + audited DeepCrusher size
+//         families including `TurnMin`/25/33/50/75/100.
+//   P = normalized numeric IDs only.
+// ============================================================================
+
+// Purpose: exact Turn top-pair-or-better current class.
+// Source/Provenance: T/A portable hand hierarchy.
+##f$cc_turn_probe_tpplus##
+IsTurn && f$cc_hand_top_pair_or_better
+
+// Purpose: exact current second-pair/pocket tier below TP.
+// Source/Provenance: T/A portable pair ladder.
+##f$cc_turn_probe_second_pair##
+IsTurn && f$cc_hand_second_pair_or_pocket && !f$cc_hand_top_pair_or_better
+
+// Purpose: source low-pair union: current 3rd/4th/5th pair/pocket tiers.
+// Source: newest HUBB Turn-Probe tree uses these exact families with `TurnMin`.
+// Provenance: T/A portable pair ladder.
+##f$cc_turn_probe_low_pair##
+IsTurn &&
+!f$cc_hand_top_pair_or_better &&
+!f$cc_hand_second_pair_or_pocket &&
+(f$cc_hand_third_pair_or_pocket || f$cc_hand_fourth_pair_or_pocket || f$cc_hand_fifth_pair_or_pocket)
+
+// Purpose: current no-made hand with real frontdoor Gutshot/OESD/FD equity.
+// Source: DeepCrusher `NoMadeHand && Gutshot_or_BetterFDSD`.
+// Provenance: A exact concept over cleaned portable real-draw evaluators.
+##f$cc_turn_probe_live_frontdoor_draw##
+IsTurn && f$cc_hand_no_made && f$cc_real_frontdoor_draw
+
+// Purpose: source-compatible air: no made hand and no Gutshot-or-better real draw.
+// Source/Provenance: T/A equivalent of generic DeepCrusher `f$hand_Air` concept.
+##f$cc_turn_probe_air##
+IsTurn && f$cc_air_no_frontdoor
+
+// -----------------------------------------------------------------------------
+// Normalized Turn-Probe size IDs
+// 1 MIN | 2 25% | 3 33% | 4 50% | 5 75% | 6 100% pot
+// MIN remains a distinct source instruction and is NOT silently converted to a
+// percentage. Runtime Gate10H will map it to verified OpenPPL `BetMin` semantics.
+// -----------------------------------------------------------------------------
+
+// Purpose: source minimum-bet ID.
+// Source/Provenance: T/A `TurnMin` ancestry; runtime deferred.
+##f$cc_turn_probe_size_min_id##
+1
+
+// Purpose: 25% pot ID.
+// Source/Provenance: A normalized size vocabulary.
+##f$cc_turn_probe_size_25_id##
+2
+
+// Purpose: 33% pot ID.
+// Source/Provenance: A normalized size vocabulary.
+##f$cc_turn_probe_size_33_id##
+3
+
+// Purpose: 50% pot ID.
+// Source/Provenance: A normalized size vocabulary.
+##f$cc_turn_probe_size_50_id##
+4
+
+// Purpose: 75% pot ID.
+// Source/Provenance: A normalized size vocabulary.
+##f$cc_turn_probe_size_75_id##
+5
+
+// Purpose: pot-size ID.
+// Source/Provenance: A normalized source PSB family.
+##f$cc_turn_probe_size_100_id##
+6
+
+// ============================================================================
+// End Gate10B.0.
+// ============================================================================
