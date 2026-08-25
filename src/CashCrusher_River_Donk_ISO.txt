@@ -1,0 +1,231 @@
+// ============================================================================
+// CashCrusher_River_Donk_ISO.txt
+// Gate 09D — isolation-pot River Donk gaps
+// ============================================================================
+// Purpose:
+//   Review River leads after a proven ISO-pot flop X/C -> turn X/C while keeping
+//   Hero's exact preflop range origin: isolator, original limper, or post-raise
+//   coldcaller. HU-from-flop, post-multiway-to-HU and current-multiway remain
+//   separate range families.
+//
+// Source boundary:
+//   Mature DeepCrusher's positive HUBB River-Donk source explicitly excludes
+//   `f$Init_GotRaised_Or_Isolated`. No dedicated deep-stack ISO River-Donk tree
+//   exists. Generic reraised/isolated routing is architecture A, not strategy T.
+//
+// Professional-theory fill:
+//   After two OOP X/C streets, one-pair hands retain substantial bluff-catching
+//   value and should not become generic leads. Positive leads are restricted to
+//   robust current value, especially on nut/range-shifting rivers. Original
+//   limper and post-raise-coldcaller ranges are treated more conservatively than
+//   an isolator range; multiway-origin ranges tighter still.
+//
+//   No missed-draw bluff is created without exact Turn-call draw/blocker history.
+//
+// Provenance:
+//   T/A = exact ISO chronology/masks + Gate09A closed X/C history.
+//   P   = six-max value-lead thresholds and sizes.
+//   X   = generic current-air bluff; inferred Turn-call price; TP+/SPR stackoff.
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// RDISO.01 — exact Hero ISO range origin
+// -----------------------------------------------------------------------------
+
+// Purpose: canonical Hero bit in persisted ISO masks.
+// Source/Provenance: T Gate00 position IDs + A mechanical bit adapter.
+##f$cc_river_donk_iso_hero_pos_bit##
+When f$cc_hero_pos_id = 1 Return 1 Force
+When f$cc_hero_pos_id = 2 Return 2 Force
+When f$cc_hero_pos_id = 3 Return 4 Force
+When f$cc_hero_pos_id = 4 Return 8 Force
+When f$cc_hero_pos_id = 5 Return 16 Force
+When f$cc_hero_pos_id = 6 Return 32 Force
+When Others Return 0 Force
+
+// Purpose: Hero was sole isolation raiser/PFA.
+// Source/Provenance: T/A exact raiser identity.
+##f$cc_river_donk_iso_hero_is_isolator##
+f$cc_pf_iso_proven &&
+f$cc_pf_role_pfa &&
+f$cc_hero_pos_id = f$cc_pf_single_raiser_pos_id
+
+// Purpose: Hero entered before the raise as an original limper.
+// Source/Provenance: T/A persisted pre-raise limper mask.
+##f$cc_river_donk_iso_hero_is_original_limper##
+f$cc_pf_iso_proven &&
+f$cc_pf_role_srp_caller &&
+f$cc_river_donk_iso_hero_pos_bit > 0 &&
+((f$cc_pf_pre_raise_limper_mask BitAnd f$cc_river_donk_iso_hero_pos_bit) > 0)
+
+// Purpose: Hero entered only after the isolation raise as coldcaller.
+// Source/Provenance: T/A persisted post-raise coldcaller mask.
+##f$cc_river_donk_iso_hero_is_postraise_coldcaller##
+f$cc_pf_iso_proven &&
+f$cc_pf_role_srp_caller &&
+f$cc_river_donk_iso_hero_pos_bit > 0 &&
+((f$cc_pf_post_raise_coldcaller_mask BitAnd f$cc_river_donk_iso_hero_pos_bit) > 0)
+
+// Purpose: stable Hero ISO origin ID: 1 isolator | 2 limper | 3 coldcaller.
+// Source/Provenance: P metadata over T/A exact provenance.
+##f$cc_river_donk_iso_hero_origin_id##
+When f$cc_river_donk_iso_hero_is_isolator Return 1 Force
+When f$cc_river_donk_iso_hero_is_original_limper Return 2 Force
+When f$cc_river_donk_iso_hero_is_postraise_coldcaller Return 3 Force
+When Others Return 0 Force
+
+// Purpose: exactly one Hero ISO range origin is valid.
+// Source/Provenance: P fail-closed integrity.
+##f$cc_river_donk_iso_hero_origin_count##
+(f$cc_river_donk_iso_hero_is_isolator * 1) +
+(f$cc_river_donk_iso_hero_is_original_limper * 1) +
+(f$cc_river_donk_iso_hero_is_postraise_coldcaller * 1)
+
+// -----------------------------------------------------------------------------
+// RDISO.02 — topology owner
+// -----------------------------------------------------------------------------
+
+// Purpose: proven ISO River-Donk base; true-HU limp-raised is not ISO.
+// Source/Provenance: T/A Gate00 pot chronology + Gate09A history.
+##f$cc_river_donk_iso_context##
+f$cc_river_donk_base_opportunity &&
+f$cc_pot_family_id = 2 &&
+f$cc_pf_iso_proven &&
+!f$cc_true_hu &&
+f$cc_river_donk_iso_hero_origin_count = 1
+
+// Purpose: clean HU ISO from the flop.
+// Source/Provenance: T field origin + P separate range owner.
+##f$cc_river_donk_iso_clean_hu##
+f$cc_river_donk_iso_context &&
+f$cc_hu &&
+f$cc_hu_oop &&
+f$cc_flop_entry_count = 2 &&
+f$cc_river_donk_hu_opportunity
+
+// Purpose: multiway ISO flop later reduced to HU.
+// Source/Provenance: T selected-range origin.
+##f$cc_river_donk_iso_postmultiway_hu##
+f$cc_river_donk_iso_context &&
+f$cc_hu &&
+f$cc_hu_oop &&
+f$cc_flop_entry_count >= 3 &&
+f$cc_river_donk_hu_opportunity
+
+// Purpose: ISO remains multiway on River.
+// Source/Provenance: T field + P dual-bound stack validity.
+##f$cc_river_donk_iso_current_multiway##
+f$cc_river_donk_iso_context &&
+f$cc_river_donk_multiway_opportunity &&
+f$cc_mw_stack_geometry_valid
+
+// Purpose: compact topology ID 2 cleanHU | 3 postMW-HU | 4 currentMW.
+// Source/Provenance: P audit metadata.
+##f$cc_river_donk_iso_topology_id##
+When f$cc_river_donk_iso_clean_hu Return 2 Force
+When f$cc_river_donk_iso_postmultiway_hu Return 3 Force
+When f$cc_river_donk_iso_current_multiway Return 4 Force
+When Others Return 0 Force
+
+// Purpose: parent key O*10+T preserving Hero range origin and field topology.
+// Source/Provenance: P compact audit key.
+##f$cc_river_donk_iso_parent_key##
+When f$cc_river_donk_iso_topology_id <= 0 Return 0 Force
+When Others Return ((f$cc_river_donk_iso_hero_origin_id * 10) + f$cc_river_donk_iso_topology_id) Force
+
+// -----------------------------------------------------------------------------
+// RDISO.03 — professional value thresholds
+// -----------------------------------------------------------------------------
+
+// Purpose: robust clean-HU ISO lead when Hero was isolator.
+// Professional rationale: isolator retains the strongest uncapped preflop range of
+// the three ISO origins, but two X/C streets still make generic one-pair leads
+// unattractive. Contributing 2P+ can lead on safe rivers; dangerous completions
+// require set/straight/flush contribution or nuts.
+// Provenance: P.
+##f$cc_river_donk_iso_isolator_value##
+When !f$cc_river_donk_iso_clean_hu Return false Force
+When f$cc_river_donk_iso_hero_origin_id != 1 Return false Force
+When HaveNuts Return true Force
+When f$cc_river_four_card_completion && (HaveSet || f$cc_river_donk_2hc_straight || f$cc_river_donk_2hc_flush) Return true Force
+When f$cc_river_four_card_completion Return false Force
+When f$cc_river_completed && (HaveSet || f$cc_river_donk_2hc_straight || f$cc_river_donk_2hc_flush) Return true Force
+When f$cc_river_completed Return false Force
+When f$cc_river_donk_contributed_exact_two_pair || HaveSet Return true Force
+When Others Return false Force
+
+// Purpose: clean-HU limper/coldcaller value threshold is more selective.
+// Professional rationale: these ranges are condensed before flop and then survive
+// two X/C decisions; thin one-pair/two-pair leads are especially vulnerable to a
+// stronger isolator/stabber range.
+// Provenance: P.
+##f$cc_river_donk_iso_caller_value##
+When !f$cc_river_donk_iso_clean_hu Return false Force
+When f$cc_river_donk_iso_hero_origin_id < 2 Return false Force
+When HaveNuts Return true Force
+When f$cc_river_four_card_completion Return false Force
+When f$cc_river_completed && (f$cc_river_donk_2hc_straight || f$cc_river_donk_2hc_flush || HaveSet) Return true Force
+When f$cc_river_completed Return false Force
+When HaveSet Return true Force
+When f$cc_river_donk_contributed_exact_two_pair && f$cc_river_donk_iso_hero_origin_id = 2 Return true Force
+When Others Return false Force
+
+// Purpose: post-multiway/current-multiway ISO value threshold.
+// Professional rationale: surviving two street calls against multiple live ranges
+// sharply selects all ranges. Only very robust/nutty value receives generic lead.
+// Provenance: P.
+##f$cc_river_donk_iso_multiway_origin_value##
+When !(f$cc_river_donk_iso_postmultiway_hu || f$cc_river_donk_iso_current_multiway) Return false Force
+When HaveNuts Return true Force
+When f$cc_river_four_card_completion Return false Force
+When f$cc_river_completed && (f$cc_river_donk_2hc_straight || f$cc_river_donk_2hc_flush) Return true Force
+When f$cc_river_completed Return false Force
+When HaveSet Return true Force
+When Others Return false Force
+
+// Purpose: no generic ISO River bluff without exact Turn-call draw provenance.
+// Source lesson: mature HUBB bluff itself requires a post-decision GOOD-DRAW marker.
+// Provenance: A/P safety.
+##f$cc_river_donk_iso_nomade_bluff_blocked##
+f$cc_river_donk_iso_context && f$cc_river_no_made
+
+// -----------------------------------------------------------------------------
+// RDISO.04 — action / sizing / coverage
+// -----------------------------------------------------------------------------
+
+// Purpose: reviewed ISO River Donk action.
+// Source/Provenance: P professional gap policy only.
+##f$cc_river_donk_iso_action##
+When f$cc_river_donk_iso_parent_key <= 0 Return false Force
+When f$cc_river_donk_iso_isolator_value Return true Force
+When f$cc_river_donk_iso_caller_value Return true Force
+When f$cc_river_donk_iso_multiway_origin_value Return true Force
+When Others Return false Force
+
+// Purpose: size robust ISO River value. Nuts 75; other approved value 50.
+// Provenance: P deterministic cash baseline, no stackoff implication.
+##f$cc_river_donk_iso_size_id##
+When !f$cc_river_donk_iso_action Return 0 Force
+When HaveNuts Return 5 Force
+When Others Return 4 Force
+
+// Purpose: exact ISO parent has been reviewed whether action is bet or check.
+// Source/Provenance: P coverage contract.
+##f$cc_river_donk_iso_covered##
+f$cc_river_donk_iso_parent_key > 0
+
+// Purpose: proven ISO River Donk state whose origin/topology remains unresolved.
+// Source/Provenance: P fail-closed diagnostic.
+##f$cc_river_donk_iso_unresolved##
+f$cc_river_donk_iso_context && !f$cc_river_donk_iso_covered
+
+// Purpose: action/size integrity.
+// Source/Provenance: P invariant.
+##f$cc_river_donk_iso_size_consistent##
+When !f$cc_river_donk_iso_action Return f$cc_river_donk_iso_size_id = 0 Force
+When f$cc_river_donk_iso_action Return f$cc_river_donk_iso_size_id >= 1 && f$cc_river_donk_iso_size_id <= 6 Force
+When Others Return false Force
+
+// ============================================================================
+// End Gate09D ISO River Donk.
+// ============================================================================
