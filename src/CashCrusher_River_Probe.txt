@@ -4,11 +4,12 @@
 // ============================================================================
 // Current reviewed children:
 //   1 = native 3wSBvBTN source subset with exact saved flop class + CLOSED X/C-X/X.
-//   2 = direct true-HU BB (HUBB) source subset after CLOSED X/C-X/X.
+//   2 = direct true-HU BB (HUBB) source tree after CLOSED X/C-X/X.
 //
 // Explicitly still pending:
-//   HUBB translation gaps, 3wBBvBTN, 3wSBvBB, native multiway, 4-6h SRP,
-//   ISO, 3BP/squeeze, clean 4BP, coverage/runtime/all-in geometry.
+//   residual HUBB CF7-only 2HC straight/flush gap, 3wBBvBTN, 3wSBvBB,
+//   native multiway, 4-6h SRP, ISO, 3BP/squeeze, clean 4BP,
+//   coverage/runtime/all-in geometry.
 //
 // Rule:
 //   A generic River-Probe opportunity never grants strategy. Unknown descendants
@@ -49,11 +50,11 @@ f$cc_river_probe_hubb_covered || f$cc_river_probe_3w_source_covered
 ##f$cc_river_probe_uncovered_context##
 f$cc_river_probe_base_opportunity && !f$cc_river_probe_strategy_covered
 
-// Purpose: global action/size consistency for current Gate11 layer.
+// Purpose: global action/size consistency for current Gate11 seven-ID palette.
 // Source/Provenance: P safety invariant over current reviewed families.
 ##f$cc_river_probe_size_consistent##
 When !f$cc_river_probe_router Return f$cc_river_probe_size_id = 0 Force
-When f$cc_river_probe_router Return f$cc_river_probe_size_id >= 1 && f$cc_river_probe_size_id <= 6 Force
+When f$cc_river_probe_router Return f$cc_river_probe_size_id >= 1 && f$cc_river_probe_size_id <= 7 Force
 When Others Return false Force
 
 // ============================================================================
