@@ -10,11 +10,13 @@
 //   4 = native true-multiway blind-v-BTN+blind high-air source line when exact
 //       <=33%-pot Flop-defense call provenance has been written;
 //   5 = ordinary 4-6h clean-HU SRP professional adaptation, preserving whether
-//       Hero was blind caller vs PFA or PFA vs caller flop stab.
+//       Hero was blind caller vs PFA or PFA vs caller flop stab;
+//   6 = clean-HU isolation-pot professional adaptation with exact limper versus
+//       post-raise-coldcaller range provenance.
 //
 // Explicitly still pending:
-//   residual CF7-only non-nut straight/flush translations, post-multiway SRP,
-//   ISO, 3BP/squeeze, clean 4BP, coverage/runtime/all-in geometry.
+//   residual CF7-only non-nut straight/flush translations, post-multiway SRP/ISO,
+//   3BP/squeeze, clean 4BP, coverage/runtime/all-in geometry.
 //
 // Rule:
 //   A generic River-Probe opportunity never grants strategy. Unknown descendants
@@ -22,7 +24,7 @@
 // ============================================================================
 
 // Purpose: reviewed family IDs: 1 native 3w BTN, 2 HUBB, 3 SBvBB, 4 native MW,
-// 5 ordinary 4-6h SRP professional adaptation.
+// 5 ordinary 4-6h SRP, 6 ISO.
 // Source/Provenance: P routing metadata over T/A reviewed children.
 ##f$cc_river_probe_family_id##
 When !f$cc_river_probe_base_opportunity Return 0 Force
@@ -31,6 +33,7 @@ When f$cc_river_probe_sbvbb_covered Return 3 Force
 When f$cc_river_probe_native_mw_covered Return 4 Force
 When f$cc_river_probe_3w_source_covered Return 1 Force
 When f$cc_river_probe_srp_gap_covered Return 5 Force
+When f$cc_river_probe_iso_covered Return 6 Force
 When Others Return 0 Force
 
 // Purpose: canonical strategic River Probe action.
@@ -43,6 +46,7 @@ When f$cc_river_probe_sbvbb_covered Return f$cc_river_probe_sbvbb_action Force
 When f$cc_river_probe_native_mw_covered Return f$cc_river_probe_native_mw_action Force
 When f$cc_river_probe_3w_source_covered Return f$cc_river_probe_3w_source_action Force
 When f$cc_river_probe_srp_gap_covered Return f$cc_river_probe_srp_gap_action Force
+When f$cc_river_probe_iso_covered Return f$cc_river_probe_iso_action Force
 When Others Return false Force
 
 // Purpose: canonical strategic size owner. No action/uncovered ->0.
@@ -54,6 +58,7 @@ When f$cc_river_probe_sbvbb_covered Return f$cc_river_probe_sbvbb_size_id Force
 When f$cc_river_probe_native_mw_covered Return f$cc_river_probe_native_mw_size_id Force
 When f$cc_river_probe_3w_source_covered Return f$cc_river_probe_3w_source_size_id Force
 When f$cc_river_probe_srp_gap_covered Return f$cc_river_probe_srp_gap_size_id Force
+When f$cc_river_probe_iso_covered Return f$cc_river_probe_iso_size_id Force
 When Others Return 0 Force
 
 // Purpose: currently reviewed strategic states, including explicit source/P checks.
@@ -63,7 +68,8 @@ f$cc_river_probe_hubb_covered ||
 f$cc_river_probe_sbvbb_covered ||
 f$cc_river_probe_native_mw_covered ||
 f$cc_river_probe_3w_source_covered ||
-f$cc_river_probe_srp_gap_covered
+f$cc_river_probe_srp_gap_covered ||
+f$cc_river_probe_iso_covered
 
 // Purpose: visible River-Probe opportunity still awaiting audited strategy.
 // Source/Provenance: P fail-closed gap metadata.
