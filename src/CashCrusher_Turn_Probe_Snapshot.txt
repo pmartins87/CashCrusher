@@ -57,9 +57,9 @@ f$cc_turn_probe_snapshot_capture_eligible &&
 // -----------------------------------------------------------------------------
 // TPS.02 — side-effect writer
 // -----------------------------------------------------------------------------
-// This function intentionally RETURNS FALSE after performing Set operations. It
-// exists only to persist provenance. The Flop Donk router invokes it before its
-// actual action-selection Returns; therefore it cannot steal the flop decision.
+// The writer RETURNS TRUE only after a successful eligible capture so the Flop
+// Donk router can evaluate it in a non-terminal `Set` line and then continue to
+// its normal action Returns. It never returns an action itself.
 
 // Purpose: persist the source-relevant flop class/texture snapshot.
 // Source/Provenance: T/A exact current facts; P generic persistence wrapper.
@@ -82,7 +82,7 @@ When f$cc_flop_1bw Set user_cc_turn_probe_flop_had_1bw
 When (f$cc_flop_2bw || f$cc_flop_3bw) Set user_cc_turn_probe_flop_had_2plusbw
 When f$cc_flop_9low Set user_cc_turn_probe_flop_was_9low
 When f$cc_flop_straight_possible Set user_cc_turn_probe_flop_straight_possible
-When Others Return false Force
+When Others Return true Force
 
 // -----------------------------------------------------------------------------
 // TPS.03 — Turn-side validation/decoders
