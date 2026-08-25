@@ -159,3 +159,5 @@ jobs:
         run: python tools/test_river_probe_native_multiway.py
       - name: Test ordinary-SRP River Probe six-max gaps
         run: python tools/test_river_probe_srp_gaps.py
+      - name: Test isolation-pot River Probe contract
+        run: python tools/test_river_probe_iso.py
