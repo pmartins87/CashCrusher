@@ -1,0 +1,80 @@
+// ============================================================================
+// CashCrusher_Turn_Probe_Betsize.txt
+// Gate 10J.1 — OpenPPL runtime adapter for reviewed Turn-Probe size IDs
+// ============================================================================
+// Purpose:
+//   Translate canonical Turn-Probe strategic size IDs to exact OpenPPL actions
+//   without adding strategy or stack commitment.
+//
+// Runtime audit:
+//   * OpenHoldem tokenizer maps `BetMin` to kTokenActionRaise and documents that
+//     token as also MinRaise/Bet/MinBet;
+//   * DeepCrusher explicitly documents `TurnMin` as a 1bb minimum Turn bet;
+//   * BetThirdPot / BetHalfPot / BetTwoThirdPot / BetThreeFourthPot / BetPot are
+//     native OpenPPL action tokens;
+//   * `RaiseBy 25%` uses pot-after-call arithmetic. Turn-Probe opportunity has
+//     AmountToCall=0, therefore it is an exact quarter-pot initial bet.
+//
+// Size IDs:
+//   1 MIN | 2 25 | 3 33 | 4 50 | 5 75 | 6 100 | 7 exact two-thirds.
+//
+// Source/Provenance:
+//   T = OpenHoldem/OpenPPL parser/runtime action semantics + DeepCrusher TurnMin.
+//   A = Gate10 normalized size vocabulary.
+//   P = sentinel representation for MIN in the fraction diagnostic.
+//
+// Safety:
+//   * no BetMax here;
+//   * unknown/check/uncovered ->0;
+//   * later all-in equivalence is mechanical only and separate;
+//   * global BestBetsize/allin callback remains outside this local adapter.
+// ============================================================================
+
+// Purpose: positive reviewed Turn Probe has one legal strategic size ID.
+// Source/Provenance: A/P integrity gate over canonical router.
+##f$cc_turn_probe_runtime_size_ready##
+When !f$cc_turn_probe_router Return false Force
+When !f$cc_turn_probe_router_consistent Return false Force
+When !f$cc_turn_probe_size_consistent Return false Force
+When f$cc_turn_probe_size_id >= 1 && f$cc_turn_probe_size_id <= 7 Return true Force
+When Others Return false Force
+
+// Purpose: requested pot fraction for fixed-fraction sizes. MIN uses -1 because
+// minimum-bet semantics are 1bb, not a stable fraction of the current pot.
+// Source/Provenance: A exact size map + P explicit MIN sentinel.
+##f$cc_turn_probe_requested_pot_fraction##
+When !f$cc_turn_probe_runtime_size_ready Return 0 Force
+When f$cc_turn_probe_size_id = 1 Return -1 Force
+When f$cc_turn_probe_size_id = 2 Return 0.25 Force
+When f$cc_turn_probe_size_id = 3 Return 0.333 Force
+When f$cc_turn_probe_size_id = 4 Return 0.50 Force
+When f$cc_turn_probe_size_id = 5 Return 0.75 Force
+When f$cc_turn_probe_size_id = 6 Return 1.00 Force
+When f$cc_turn_probe_size_id = 7 Return 0.6666667 Force
+When Others Return 0 Force
+
+// Purpose: translate strategic ID to exact OpenPPL action.
+// Source/Provenance: T OpenPPL native actions / RaiseBy parser + A size palette.
+##f$cc_turn_probe_requested_betsize##
+When !f$cc_turn_probe_runtime_size_ready Return 0 Force
+When f$cc_turn_probe_size_id = 1 Return BetMin Force
+When f$cc_turn_probe_size_id = 2 RaiseBy 25% Force
+When f$cc_turn_probe_size_id = 3 Return BetThirdPot Force
+When f$cc_turn_probe_size_id = 4 Return BetHalfPot Force
+When f$cc_turn_probe_size_id = 5 Return BetThreeFourthPot Force
+When f$cc_turn_probe_size_id = 6 Return BetPot Force
+When f$cc_turn_probe_size_id = 7 Return BetTwoThirdPot Force
+When Others Return 0 Force
+
+// Purpose: validate special MIN sentinel versus fixed-fraction sizes.
+// Source/Provenance: P engineering invariant over T/A runtime mapping.
+##f$cc_turn_probe_runtime_mapping_valid##
+When !f$cc_turn_probe_router Return f$cc_turn_probe_requested_pot_fraction = 0 Force
+When !f$cc_turn_probe_runtime_size_ready Return false Force
+When f$cc_turn_probe_size_id = 1 && f$cc_turn_probe_requested_pot_fraction = -1 Return true Force
+When f$cc_turn_probe_size_id >= 2 && f$cc_turn_probe_size_id <= 7 && f$cc_turn_probe_requested_pot_fraction > 0 Return true Force
+When Others Return false Force
+
+// ============================================================================
+// End Gate10J.1 runtime sizing adapter.
+// ============================================================================
