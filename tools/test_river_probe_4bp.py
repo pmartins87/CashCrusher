@@ -100,8 +100,10 @@ def action_contract() -> None:
     assert "f$cc_river_probe_4bp_premium_value Return true Force" in action
     assert "f$cc_river_probe_4bp_medium_value Return true Force" in action
     assert "f$cc_river_probe_4bp_overpair_real && f$cc_river_probe_4bp_thin_value_river Return true Force" in action
-    assert "strong_tp" not in executable(action).lower()
-    assert "air" not in executable(action).lower()
+    action_code = executable(action)
+    assert "f$cc_river_probe_4bp_top_pair_check" not in action_code
+    assert "f$cc_river_probe_air" not in action_code
+    assert "f$cc_river_probe_4bp_air_check" not in action_code
 
     size = block(POL, "f$cc_river_probe_4bp_size_id")
     assert "f$cc_river_probe_4bp_premium_value Return f$cc_river_probe_size_75_id" in size
