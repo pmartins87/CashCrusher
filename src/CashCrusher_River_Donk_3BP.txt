@@ -1,0 +1,226 @@
+// ============================================================================
+// CashCrusher_River_Donk_3BP.txt
+// Gate 09E — plain 3BP / squeeze River Donk gaps
+// ============================================================================
+// Purpose:
+//   Review River leads after flop X/C -> Turn X/C in supported two-raise pots.
+//   Plain 3BP and squeeze remain distinct, as do Hero 3bettor, opener-call,
+//   pre-squeeze-coldcaller and post-3bet-coldcaller ranges.
+//
+// Source boundary:
+//   Mature DeepCrusher has reraised-pot routing but no dedicated deep-stack 3BP /
+//   squeeze River-Donk strategy. The positive HUBB tree explicitly excludes
+//   GotRaised/Isolated histories. Therefore this gate is P-heavy by design.
+//
+// Professional-theory fill:
+//   Two X/C streets strongly condense Hero. In 3BP/squeeze pots lower SPR makes
+//   stack commitment more common in exact value nodes, but lower SPR alone does
+//   not create a River lead. Generic one-pair and missed-draw leads are rejected.
+//   Positive leads are concentrated in robust value, with 3bettor ranges allowed
+//   slightly more non-completed 2P+ value than caller ranges. Multiway origin is
+//   tighter still.
+//
+// Provenance:
+//   T/A = Gate05 repaired lastraised1 chronology + Gate09A closed history.
+//   P   = range/topology-specific value-lead thresholds and sizes.
+//   X   = generic TP+/OP lead, current-air bluff, blanket low-SPR shove.
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// RD3B.01 — exact Hero range origin and subtype
+// -----------------------------------------------------------------------------
+
+// Purpose: Hero is actual final 3bettor in supported chronology.
+// Source/Provenance: T/A repaired final-aggressor identity.
+##f$cc_river_donk_3bp_hero_is_3bettor##
+f$cc_pf_role_3bettor &&
+f$cc_pf_rt_3bet_order_supported &&
+f$cc_pf_rt_final_aggressor_is_hero
+
+// Purpose: Hero original opener called final 3bet.
+// Source/Provenance: T/A Gate05 caller repair.
+##f$cc_river_donk_3bp_hero_is_opener_call##
+f$cc_pf_rt_hero_is_opener_call_3bet
+
+// Purpose: Hero coldcalled open before later squeeze and continued.
+// Source/Provenance: T/A exact caller provenance.
+##f$cc_river_donk_3bp_hero_is_pre3bet_coldcaller##
+f$cc_pf_rt_hero_is_pre3bet_coldcaller
+
+// Purpose: Hero coldcalled only after final 3bet.
+// Source/Provenance: T/A exact caller provenance.
+##f$cc_river_donk_3bp_hero_is_post3bet_coldcaller##
+f$cc_pf_rt_hero_is_post3bet_coldcaller
+
+// Purpose: stable Hero origin ID: 1 3bettor | 2 opener-call | 3 pre-squeeze | 4 post-3bet.
+// Source/Provenance: P metadata over T/A exact ranges.
+##f$cc_river_donk_3bp_hero_origin_id##
+When f$cc_river_donk_3bp_hero_is_3bettor Return 1 Force
+When f$cc_river_donk_3bp_hero_is_opener_call Return 2 Force
+When f$cc_river_donk_3bp_hero_is_pre3bet_coldcaller Return 3 Force
+When f$cc_river_donk_3bp_hero_is_post3bet_coldcaller Return 4 Force
+When Others Return 0 Force
+
+// Purpose: exactly one supported Hero origin.
+// Source/Provenance: P fail-closed integrity.
+##f$cc_river_donk_3bp_hero_origin_count##
+(f$cc_river_donk_3bp_hero_is_3bettor * 1) +
+(f$cc_river_donk_3bp_hero_is_opener_call * 1) +
+(f$cc_river_donk_3bp_hero_is_pre3bet_coldcaller * 1) +
+(f$cc_river_donk_3bp_hero_is_post3bet_coldcaller * 1)
+
+// Purpose: plain versus squeeze subtype ID.
+// Source/Provenance: T/A repaired chronology; mutually exclusive by contract.
+##f$cc_river_donk_3bp_subtype_id##
+When f$cc_pf_rt_plain3bet_proven && !f$cc_pf_rt_squeeze_proven Return 1 Force
+When f$cc_pf_rt_squeeze_proven && !f$cc_pf_rt_plain3bet_proven Return 2 Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// RD3B.02 — topology owner
+// -----------------------------------------------------------------------------
+
+// Purpose: supported two-raise River Donk base.
+// Source/Provenance: T/A pot/chronology + Gate09A actual two-street X/C.
+##f$cc_river_donk_3bp_context##
+f$cc_river_donk_base_opportunity &&
+f$cc_pot_family_id = 3 &&
+f$cc_pf_rt_3bet_order_supported &&
+f$cc_river_donk_3bp_hero_origin_count = 1 &&
+f$cc_river_donk_3bp_subtype_id > 0
+
+// Purpose: clean HU from flop.
+// Source/Provenance: T current/OOP field + P separate range owner.
+##f$cc_river_donk_3bp_clean_hu##
+f$cc_river_donk_3bp_context &&
+f$cc_hu &&
+f$cc_hu_oop &&
+f$cc_flop_entry_count = 2 &&
+f$cc_river_donk_hu_opportunity
+
+// Purpose: flop multiway -> River HU.
+// Source/Provenance: T selected-range origin.
+##f$cc_river_donk_3bp_postmultiway_hu##
+f$cc_river_donk_3bp_context &&
+f$cc_hu &&
+f$cc_hu_oop &&
+f$cc_flop_entry_count >= 3 &&
+f$cc_river_donk_hu_opportunity
+
+// Purpose: River remains multiway.
+// Source/Provenance: T field + P dual-bound stack validity.
+##f$cc_river_donk_3bp_current_multiway##
+f$cc_river_donk_3bp_context &&
+f$cc_river_donk_multiway_opportunity &&
+f$cc_mw_stack_geometry_valid
+
+// Purpose: topology ID 2 cleanHU | 3 postMW-HU | 4 currentMW.
+// Source/Provenance: P audit metadata.
+##f$cc_river_donk_3bp_topology_id##
+When f$cc_river_donk_3bp_clean_hu Return 2 Force
+When f$cc_river_donk_3bp_postmultiway_hu Return 3 Force
+When f$cc_river_donk_3bp_current_multiway Return 4 Force
+When Others Return 0 Force
+
+// Purpose: parent key S*100 + O*10 + T.
+// Source/Provenance: P compact audit metadata.
+##f$cc_river_donk_3bp_parent_key##
+When f$cc_river_donk_3bp_topology_id <= 0 Return 0 Force
+When Others Return ((f$cc_river_donk_3bp_subtype_id * 100) + (f$cc_river_donk_3bp_hero_origin_id * 10) + f$cc_river_donk_3bp_topology_id) Force
+
+// -----------------------------------------------------------------------------
+// RD3B.03 — professional value policy
+// -----------------------------------------------------------------------------
+
+// Purpose: clean-HU value lead for the 3bettor range.
+// Professional rationale: 3bettor retains more nut/overpair density, but after two
+// X/C streets one-pair still benefits from inducing/checking. Contributing 2P+
+// on safe rivers can value-lead; dangerous completions require stronger value.
+// Provenance: P.
+##f$cc_river_donk_3bp_threebettor_value##
+When !f$cc_river_donk_3bp_clean_hu Return false Force
+When f$cc_river_donk_3bp_hero_origin_id != 1 Return false Force
+When HaveNuts Return true Force
+When f$cc_river_four_card_completion && (HaveSet || f$cc_river_donk_2hc_straight || f$cc_river_donk_2hc_flush) Return true Force
+When f$cc_river_four_card_completion Return false Force
+When f$cc_river_completed && (HaveSet || f$cc_river_donk_2hc_straight || f$cc_river_donk_2hc_flush) Return true Force
+When f$cc_river_completed Return false Force
+When f$cc_river_donk_contributed_exact_two_pair || HaveSet Return true Force
+When Others Return false Force
+
+// Purpose: clean-HU caller range value lead.
+// Professional rationale: opener-call and both coldcall classes are more condensed;
+// coldcall continuations especially should not inherit 3bettor thin value.
+// Provenance: P.
+##f$cc_river_donk_3bp_caller_value##
+When !f$cc_river_donk_3bp_clean_hu Return false Force
+When f$cc_river_donk_3bp_hero_origin_id < 2 Return false Force
+When HaveNuts Return true Force
+When f$cc_river_four_card_completion Return false Force
+When f$cc_river_completed && (f$cc_river_donk_2hc_straight || f$cc_river_donk_2hc_flush || HaveSet) Return true Force
+When f$cc_river_completed Return false Force
+When HaveSet Return true Force
+When f$cc_river_donk_3bp_hero_origin_id = 2 && f$cc_river_donk_contributed_exact_two_pair Return true Force
+When Others Return false Force
+
+// Purpose: post-multiway/current-multiway two-raise value threshold.
+// Professional rationale: squeeze/multiway continuations are heavily selected;
+// generic river leads are limited to nutty/robust value.
+// Provenance: P.
+##f$cc_river_donk_3bp_multiway_origin_value##
+When !(f$cc_river_donk_3bp_postmultiway_hu || f$cc_river_donk_3bp_current_multiway) Return false Force
+When HaveNuts Return true Force
+When f$cc_river_four_card_completion Return false Force
+When f$cc_river_completed && (f$cc_river_donk_2hc_straight || f$cc_river_donk_2hc_flush) Return true Force
+When f$cc_river_completed Return false Force
+When HaveSet Return true Force
+When Others Return false Force
+
+// Purpose: no generic missed-draw bluff after two calls without exact called-draw
+// provenance/blocker class.
+// Source/Provenance: A source lesson + P safety.
+##f$cc_river_donk_3bp_nomade_bluff_blocked##
+f$cc_river_donk_3bp_context && f$cc_river_no_made
+
+// -----------------------------------------------------------------------------
+// RD3B.04 — action / sizing / coverage
+// -----------------------------------------------------------------------------
+
+// Purpose: reviewed 3BP/squeeze River Donk action.
+// Source/Provenance: P professional gap policy.
+##f$cc_river_donk_3bp_action##
+When f$cc_river_donk_3bp_parent_key <= 0 Return false Force
+When f$cc_river_donk_3bp_threebettor_value Return true Force
+When f$cc_river_donk_3bp_caller_value Return true Force
+When f$cc_river_donk_3bp_multiway_origin_value Return true Force
+When Others Return false Force
+
+// Purpose: value sizing. Nuts 75; other approved value 50.
+// Provenance: P, no all-in/stackoff implication.
+##f$cc_river_donk_3bp_size_id##
+When !f$cc_river_donk_3bp_action Return 0 Force
+When HaveNuts Return 5 Force
+When Others Return 4 Force
+
+// Purpose: exact parent reviewed whether current action is check or bet.
+// Source/Provenance: P coverage contract.
+##f$cc_river_donk_3bp_covered##
+f$cc_river_donk_3bp_parent_key > 0
+
+// Purpose: supported pot-family opportunity not classifiable by chronology/range.
+// Source/Provenance: P fail-closed diagnostic.
+##f$cc_river_donk_3bp_unresolved##
+f$cc_river_donk_base_opportunity &&
+f$cc_pot_family_id = 3 &&
+!f$cc_river_donk_3bp_covered
+
+// Purpose: action/size integrity.
+// Source/Provenance: P invariant.
+##f$cc_river_donk_3bp_size_consistent##
+When !f$cc_river_donk_3bp_action Return f$cc_river_donk_3bp_size_id = 0 Force
+When f$cc_river_donk_3bp_action Return f$cc_river_donk_3bp_size_id >= 1 && f$cc_river_donk_3bp_size_id <= 6 Force
+When Others Return false Force
+
+// ============================================================================
+// End Gate09E 3BP/squeeze River Donk.
+// ============================================================================
