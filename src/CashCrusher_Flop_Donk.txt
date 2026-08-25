@@ -22,6 +22,11 @@
 // Future children remain fail-closed:
 //   multiway/unresolved 4BP, 5bet+ and unresolved/reversed reraised histories.
 //
+// Cross-street provenance:
+//   Gate10A.5 invokes `f$cc_turn_probe_snapshot_writer` at this exact pre-action
+//   no-initiative owner before any Return. The snapshot never changes the flop
+//   action and is consumable on Turn only if CLOSED history later proves X/X.
+//
 // Source/Provenance:
 //   T/A = Gate07A ownership + Gate07B direct source strategy.
 //   P = Gate07C 4-6h adaptation, Gate07D/E/F/G reviewed check baselines,
@@ -48,8 +53,10 @@ When Others Return 0 Force
 
 // Purpose: canonical Flop Donk action router.
 // Source/Provenance: A/P source-first exact-family router; unknown ->check.
+// Gate10 note: the snapshot Set is non-terminal and cannot choose the flop action.
 ##f$cc_flop_donk_router##
 When !f$cc_flop_donk_opportunity Return false Force
+When f$cc_turn_probe_snapshot_writer Set user_cc_turn_probe_snapshot_writer_invoked
 When f$cc_flop_donk_source_covered Return f$cc_flop_donk_source_action Force
 When f$cc_flop_donk_6max_covered Return f$cc_flop_donk_6max_action Force
 When f$cc_flop_donk_hu_covered Return f$cc_flop_donk_hu_action Force
