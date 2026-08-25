@@ -151,3 +151,5 @@ jobs:
         run: python tools/test_river_probe_history_source.py
       - name: Test true-HU HUBB River Probe source tree
         run: python tools/test_river_probe_hubb.py
+      - name: Test native 3wBBvBTN River Probe source tree
+        run: python tools/test_river_probe_bbvbtn.py
