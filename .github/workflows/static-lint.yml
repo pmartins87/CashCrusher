@@ -117,3 +117,5 @@ jobs:
         run: python tools/test_turn_donk_sbvbb.py
       - name: Test BBvBTN Turn Donk source/provenance contract
         run: python tools/test_turn_donk_bbvbtn.py
+      - name: Test Turn Donk residual/other-pot/runtime/history contracts
+        run: python tools/test_turn_donk_gaps_runtime_history.py
