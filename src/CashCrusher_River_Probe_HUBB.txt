@@ -44,7 +44,7 @@ f$cc_pot_family_id = 2 &&
 f$cc_pf_one_raise_ordinary_srp &&
 f$cc_pf_role_srp_caller &&
 f$cc_pf_single_raiser_pos_id = 5 &&
-lastraised2 = f$cc_pos5_chair
+lastraised2 = smallblindchair
 
 // Purpose: literal true-HU SB-limp -> BB-check unraised pot, then BB X/C flop.
 // Source/Provenance: T positional/pot ancestry + A canonical Gate00 mapping.
@@ -58,7 +58,7 @@ f$cc_pot_family_id = 1 &&
 f$cc_pf_raise_count = 0 &&
 f$cc_pf_role_bb_check &&
 f$cc_pf_call_sb &&
-lastraised2 = f$cc_pos5_chair
+lastraised2 = smallblindchair
 
 // Purpose: exact literal HUBB direct-source union only.
 // Source/Provenance: T/A. Preflop-reduced BvB is intentionally excluded here.
