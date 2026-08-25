@@ -1,0 +1,70 @@
+// ============================================================================
+// CashCrusher_Limped_Initiative_Context.txt
+// Gate 12A.0 — source-faithful limped-initiative ownership
+// ============================================================================
+// Purpose:
+//   Preserve DeepCrusher's nonstandard but explicit rule that a few OPEN-LIMP
+//   topologies own flop initiative and therefore route a flop X/X to Delayed CBet,
+//   not Probe/Delayed Float.
+//
+// Source:
+//   `f$pot_Limped_Initiative` returns true only for:
+//     * HUSB with Hero SB/Button after an unraised limp;
+//     * 3w BTN initiative after BTN open-limps;
+//     * 3w SB-v-BB after BTN folds and SB open-limps.
+//   HUBB is deliberately absent: BB checking option after SB limp is not initiative.
+//
+// Provenance:
+//   T = raise/call history, deal/flop-entry counts and canonical positions.
+//   A = exact legacy scenario reconstruction without using the old game labels.
+//   P = none in the positive source set; 4-6h open-limp initiative remains pending.
+// ============================================================================
+
+// Purpose: true-HU SB/Button open-limp -> BB check topology.
+// Source/Provenance: T/A exact HUSB limped-initiative descendant.
+##f$cc_native_limped_init_husb##
+f$cc_true_hu &&
+f$cc_flop_entry_count = 2 &&
+f$cc_pf_raise_count = 0 &&
+f$cc_pf_role_unraised_caller &&
+f$cc_hero_pos_id = 5 &&
+f$cc_hu_villain_pos_id = 6
+
+// Purpose: 3-handed BTN open-limp. One or both blinds may survive to flop; BTN
+// remains the source limped-initiative player.
+// Source/Provenance: T/A exact `game_3wBTN` limped-initiative family.
+##f$cc_native_limped_init_3w_btn##
+f$cc_deal_size = 3 &&
+f$cc_pf_raise_count = 0 &&
+f$cc_pf_role_unraised_caller &&
+f$cc_hero_pos_id = 4 &&
+f$cc_flop_entry_count >= 2 && f$cc_flop_entry_count <= 3
+
+// Purpose: 3-handed BTN folded, SB open-limped and BB checked.
+// Source/Provenance: T/A exact `game_3wSBvBB` limped-initiative topology.
+##f$cc_native_limped_init_3w_sbvbb##
+f$cc_deal_size = 3 &&
+f$cc_flop_entry_count = 2 &&
+f$cc_hu &&
+f$cc_pf_raise_count = 0 &&
+f$cc_pf_role_unraised_caller &&
+f$cc_hero_pos_id = 5 &&
+f$cc_hu_villain_pos_id = 6
+
+// Purpose: canonical native source limped-initiative flag.
+// Source/Provenance: A exact union of source-positive scenarios only.
+##f$cc_native_limped_initiative##
+f$cc_native_limped_init_husb ||
+f$cc_native_limped_init_3w_btn ||
+f$cc_native_limped_init_3w_sbvbb
+
+// Purpose: unraised Hero caller outside the direct source limped-initiative set.
+// Source/Provenance: P explicit evidence boundary; no strategy implication.
+##f$cc_limped_initiative_unresolved##
+f$cc_pf_raise_count = 0 &&
+f$cc_pf_role_unraised_caller &&
+!f$cc_native_limped_initiative
+
+// ============================================================================
+// End Gate12A.0 limped-initiative ownership.
+// ============================================================================
