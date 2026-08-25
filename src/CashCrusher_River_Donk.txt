@@ -13,16 +13,18 @@
 //   3 = proven ISO descendants retaining isolator/original-limper/post-raise-
 //       coldcaller provenance and HU/post-MW/current-MW topology;
 //   4 = supported plain-3BP/squeeze descendants retaining 3bettor/opener-call/
-//       pre-squeeze/post-3bet coldcaller provenance and exact topology.
+//       pre-squeeze/post-3bet coldcaller provenance and exact topology;
+//   5 = clean supported HU 4BP descendants, including opener4/cold4/call4 range
+//       parents and node-local low-SPR review without generic one-pair leading.
 //
 // Deliberately unowned for now:
-//   * 4BP and 5BP+ gaps;
+//   * multiway/post-multiway/reversed/other-caller 4BP and all 5BP+ histories;
 //   * source branches that require defense-written historical Turn price/draw/class
 //     provenance which CashCrusher cannot yet prove.
 //
 // Source/Provenance:
-//   T/A = Gate09A exact history + Gate09B source branch + Gate09C source mappings.
-//   P = Gate09C-E six-max topology/value gap fill + fail-closed ownership.
+//   T/A = Gate09A exact history + Gate09B source branch + earlier context engines.
+//   P = Gate09C-F six-max topology/value gap fill + fail-closed ownership.
 // ============================================================================
 
 // Purpose: compact current River-Donk family ID.
@@ -33,6 +35,7 @@ When f$cc_river_donk_hubb_covered Return 1 Force
 When f$cc_river_donk_srp_gap_covered Return 2 Force
 When f$cc_river_donk_iso_covered Return 3 Force
 When f$cc_river_donk_3bp_covered Return 4 Force
+When f$cc_river_donk_4bp_covered Return 5 Force
 When Others Return 0 Force
 
 // Purpose: canonical River Donk action.
@@ -43,6 +46,7 @@ When f$cc_river_donk_hubb_covered Return f$cc_river_donk_hubb_action Force
 When f$cc_river_donk_srp_gap_covered Return f$cc_river_donk_srp_gap_action Force
 When f$cc_river_donk_iso_covered Return f$cc_river_donk_iso_action Force
 When f$cc_river_donk_3bp_covered Return f$cc_river_donk_3bp_action Force
+When f$cc_river_donk_4bp_covered Return f$cc_river_donk_4bp_action Force
 When Others Return false Force
 
 // Purpose: canonical local strategic size ID.
@@ -54,6 +58,7 @@ When f$cc_river_donk_hubb_covered Return f$cc_river_donk_hubb_size_id Force
 When f$cc_river_donk_srp_gap_covered Return f$cc_river_donk_srp_gap_size_id Force
 When f$cc_river_donk_iso_covered Return f$cc_river_donk_iso_size_id Force
 When f$cc_river_donk_3bp_covered Return f$cc_river_donk_3bp_size_id Force
+When f$cc_river_donk_4bp_covered Return f$cc_river_donk_4bp_size_id Force
 When Others Return 0 Force
 
 // Purpose: current River Donk state has an audited strategic owner.
@@ -62,7 +67,8 @@ When Others Return 0 Force
 f$cc_river_donk_hubb_covered ||
 f$cc_river_donk_srp_gap_covered ||
 f$cc_river_donk_iso_covered ||
-f$cc_river_donk_3bp_covered
+f$cc_river_donk_3bp_covered ||
+f$cc_river_donk_4bp_covered
 
 // Purpose: reviewed owner count.
 // Source/Provenance: P exclusivity invariant.
@@ -70,7 +76,8 @@ f$cc_river_donk_3bp_covered
 (f$cc_river_donk_hubb_covered * 1) +
 (f$cc_river_donk_srp_gap_covered * 1) +
 (f$cc_river_donk_iso_covered * 1) +
-(f$cc_river_donk_3bp_covered * 1)
+(f$cc_river_donk_3bp_covered * 1) +
+(f$cc_river_donk_4bp_covered * 1)
 
 // Purpose: audited River Donk states have exactly one owner; unowned have zero.
 // Source/Provenance: P fail-closed safety.
