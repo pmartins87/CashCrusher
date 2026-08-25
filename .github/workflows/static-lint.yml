@@ -123,3 +123,5 @@ jobs:
         run: python tools/test_river_donk_history_source.py
       - name: Test ordinary-SRP River Donk six-max gaps
         run: python tools/test_river_donk_srp_gaps.py
+      - name: Test ISO and 3BP/squeeze River Donk gaps
+        run: python tools/test_river_donk_iso_3bp.py
