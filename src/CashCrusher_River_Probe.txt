@@ -6,23 +6,26 @@
 //   1 = native 3w SBvBTN / BBvBTN source descendants after CLOSED X/C-X/X;
 //   2 = direct true-HU BB (HUBB) source tree after CLOSED X/C-X/X;
 //   3 = native 3wSBvBB direct-source tree when exact Flop-defense price/class
-//       provenance has been written; missing provenance remains uncovered.
+//       provenance has been written; missing provenance remains uncovered;
+//   4 = native true-multiway blind-v-BTN+blind high-air source line when exact
+//       <=33%-pot Flop-defense call provenance has been written.
 //
 // Explicitly still pending:
-//   residual CF7-only non-nut straight/flush translations, native true-multiway,
-//   4-6h SRP, ISO, 3BP/squeeze, clean 4BP, coverage/runtime/all-in geometry.
+//   residual CF7-only non-nut straight/flush translations, 4-6h SRP, ISO,
+//   3BP/squeeze, clean 4BP, coverage/runtime/all-in geometry.
 //
 // Rule:
 //   A generic River-Probe opportunity never grants strategy. Unknown descendants
 //   check/fail closed until their history/range/source or professional fill is audited.
 // ============================================================================
 
-// Purpose: current reviewed family ID: 1 native 3w BTN families, 2 HUBB, 3 SBvBB.
+// Purpose: current reviewed family ID: 1 native 3w BTN, 2 HUBB, 3 SBvBB, 4 native MW.
 // Source/Provenance: P routing metadata over T/A reviewed children.
 ##f$cc_river_probe_family_id##
 When !f$cc_river_probe_base_opportunity Return 0 Force
 When f$cc_river_probe_hubb_covered Return 2 Force
 When f$cc_river_probe_sbvbb_covered Return 3 Force
+When f$cc_river_probe_native_mw_covered Return 4 Force
 When f$cc_river_probe_3w_source_covered Return 1 Force
 When Others Return 0 Force
 
@@ -32,6 +35,7 @@ When Others Return 0 Force
 When !f$cc_river_probe_base_opportunity Return false Force
 When f$cc_river_probe_hubb_covered Return f$cc_river_probe_hubb_action Force
 When f$cc_river_probe_sbvbb_covered Return f$cc_river_probe_sbvbb_action Force
+When f$cc_river_probe_native_mw_covered Return f$cc_river_probe_native_mw_action Force
 When f$cc_river_probe_3w_source_covered Return f$cc_river_probe_3w_source_action Force
 When Others Return false Force
 
@@ -41,6 +45,7 @@ When Others Return false Force
 When !f$cc_river_probe_base_opportunity Return 0 Force
 When f$cc_river_probe_hubb_covered Return f$cc_river_probe_hubb_size_id Force
 When f$cc_river_probe_sbvbb_covered Return f$cc_river_probe_sbvbb_size_id Force
+When f$cc_river_probe_native_mw_covered Return f$cc_river_probe_native_mw_size_id Force
 When f$cc_river_probe_3w_source_covered Return f$cc_river_probe_3w_source_size_id Force
 When Others Return 0 Force
 
@@ -49,6 +54,7 @@ When Others Return 0 Force
 ##f$cc_river_probe_strategy_covered##
 f$cc_river_probe_hubb_covered ||
 f$cc_river_probe_sbvbb_covered ||
+f$cc_river_probe_native_mw_covered ||
 f$cc_river_probe_3w_source_covered
 
 // Purpose: visible River-Probe opportunity still awaiting audited strategy.
