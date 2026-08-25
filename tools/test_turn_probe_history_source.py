@@ -25,28 +25,45 @@ def executable(text: str) -> str:
 
 
 def history_contract() -> None:
+    # The source implements the closed-state proof as fail guards followed by
+    # `Others true`, so test the guards themselves rather than rewriting them as
+    # positive equalities. This also locks the actual OpenHoldem all-in counter
+    # spelling (`didalliround2`) instead of the unrelated legacy swag family.
     clean = block(HIST, "f$cc_hist_turn_probe_hero_checked_flop_clean")
-    for token in ("didchecround2 = 1", "didcallround2 = 0", "didraisround2 = 0", "didbetsizeround2 = 0", "didswaground2 = 0"):
+    for token in (
+        "didchecround2 != 1 Return false Force",
+        "didcallround2 != 0 Return false Force",
+        "didraisround2 != 0 Return false Force",
+        "didbetsizeround2 != 0 Return false Force",
+        "didalliround2 != 0 Return false Force",
+        "When Others Return true Force",
+    ):
         assert token in clean
 
     field = block(HIST, "f$cc_hist_turn_probe_flop_field_unchanged")
-    assert "nplayersplaying = f$cc_flop_entry_count" in field
+    assert "nplayersplaying != f$cc_flop_entry_count Return false Force" in field
+    assert "When Others Return true Force" in field
 
     base = block(HIST, "f$cc_turn_probe_base_opportunity")
+    # This function is also guard-shaped: required parents fail on `!parent`,
+    # excluded owners fail when TRUE, and exact FIRST/MIDDLE is expressed by
+    # rejecting every other relpos.
     for token in (
-        "f$cc_context_valid",
-        "f$cc_turn_probe_first_turn_action_clean",
-        "f$cc_hist_turn_probe_flop_checkthrough_clean",
-        "f$cc_turn_probe_preflop_noinitiative",
-        "!f$cc_turn_probe_excluded_delayed_cbet",
-        "!f$cc_turn_probe_excluded_delayed_float",
-        "f$cc_relpos_id = 1 || f$cc_relpos_id = 2",
+        "When !f$cc_context_valid Return false Force",
+        "When !f$cc_turn_probe_first_turn_action_clean Return false Force",
+        "When !f$cc_hist_turn_probe_flop_checkthrough_clean Return false Force",
+        "When !f$cc_turn_probe_preflop_noinitiative Return false Force",
+        "When f$cc_turn_probe_excluded_delayed_cbet Return false Force",
+        "When f$cc_turn_probe_excluded_delayed_float Return false Force",
+        "When f$cc_relpos_id != 1 && f$cc_relpos_id != 2 Return false Force",
+        "When Others Return true Force",
     ):
         assert token in base
 
     first = block(HIST, "f$cc_turn_probe_first_turn_action_clean")
     assert "BotsActionsOnThisRoundIncludingChecks = 0" in first
     assert "AmountToCall = 0" in first
+    assert "balance > 0" in first
 
     impossible = block(HIST, "f$cc_turn_probe_postflop_reduced_hu_impossible")
     assert "f$cc_hu_origin_postflop_reduced" in impossible
