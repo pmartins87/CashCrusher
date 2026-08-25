@@ -1,0 +1,371 @@
+// ============================================================================
+// CashCrusher_Turn_Probe_SRP_Gaps.txt
+// Gate 10E — ordinary-SRP OOP caller Turn-Probe six-max gaps
+// ============================================================================
+// Purpose:
+//   Fill ordinary one-raise HU Turn-Probe states that have no literal complete
+//   Spin source tree after a CLOSED flop check-through. Direct HUBB/3w source and
+//   reviewed SBvBTN TBP descendants always keep precedence.
+//
+// Exact strategic geometry owned here:
+//   * Hero is SB or BB caller, OOP versus the sole preflop opener;
+//   * 3-6 players were dealt, flop entered HU, and flop truly checked through;
+//   * BTN-open descendants are reviewed separately from CO and UTG/HJ ranges;
+//   * native 3wSBvBTN is excluded because Gate10B.2/10C already own that family;
+//   * native 3wBBvBTN keeps its explicit high-air source line first, then this
+//     module reviews the otherwise source-silent made/draw remainder.
+//
+// Source hierarchy / provenance:
+//   T = exact Gate00 pot/position/history, Gate10 snapshot and current hand facts.
+//   A = direct 3wBBvBTN/SBvBTN range-pressure principles only where structurally
+//       comparable; literal source actions are NOT widened silently.
+//   P = conservative 100bb six-max cash policy for source-silent exact ranges.
+//   X = generic TP+ stackoff, broad air probing versus tight openers, shortest-
+//       stack commitment and any future River/raise-defense ownership.
+//
+// Cash-depth principle:
+//   A checked-back PFA is capped relative to its betting range, but not empty of
+//   strong hands. Earlier-position opening ranges remain materially stronger than
+//   BTN ranges. Therefore this gap layer expands value/equity probes far more
+//   readily than pure-air probes, and tightens monotonically BTN -> CO -> UTG/HJ.
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// TPSRP.01 — exact ordinary-SRP OOP-caller parent
+// -----------------------------------------------------------------------------
+
+// Purpose: reduced-HU ordinary SRP where a blind caller is OOP versus sole opener.
+// Source/Provenance: T/A exact Gate00 chronology + P owner restriction.
+##f$cc_turn_probe_srp_hu_gap_context##
+f$cc_turn_probe_hu_opportunity &&
+f$cc_turn_probe_snapshot_valid &&
+f$cc_hu_origin_preflop_reduced &&
+f$cc_pot_family_id = 2 &&
+f$cc_pf_one_raise_ordinary_srp &&
+f$cc_pf_role_srp_caller &&
+f$cc_hu_oop &&
+f$cc_hu_villain_pos_id = f$cc_pf_single_raiser_pos_id &&
+(f$cc_hero_pos_id = 5 || f$cc_hero_pos_id = 6) &&
+(f$cc_pf_single_raiser_pos_id >= 1 && f$cc_pf_single_raiser_pos_id <= 4)
+
+// Purpose: native 3-handed SB-v-BTN is already source/TBP-reviewed and must not
+// receive a second professional fallback if a partition invariant fails.
+// Source/Provenance: P precedence firewall over Gate10B.2/10C.
+##f$cc_turn_probe_srp_native_sbvbtn_reserved##
+f$cc_turn_probe_srp_hu_gap_context &&
+f$cc_deal_size = 3 &&
+f$cc_hero_pos_id = 5 &&
+f$cc_pf_single_raiser_pos_id = 4
+
+// Purpose: residual native 3w BB-v-BTN after the explicit source high-air line.
+// Source: old direct source answers only the narrow air Probe75 family.
+// Provenance: A context + P review of source-silent remainder.
+##f$cc_turn_probe_srp_native_bbvbtn_gap##
+f$cc_turn_probe_srp_hu_gap_context &&
+f$cc_deal_size = 3 &&
+f$cc_hero_pos_id = 6 &&
+f$cc_pf_single_raiser_pos_id = 4 &&
+!f$cc_turn_probe_3w_bbvbtn_covered
+
+// Purpose: 4-6 handed BTN-open versus blind caller.
+// Source/Provenance: A same positional skeleton as 3w BTN family + P range-depth
+// adjustment; original deal size remains explicit.
+##f$cc_turn_probe_srp_btn_6max_gap##
+f$cc_turn_probe_srp_hu_gap_context &&
+f$cc_deal_size >= 4 && f$cc_deal_size <= 6 &&
+f$cc_pf_single_raiser_pos_id = 4
+
+// Purpose: CO-open versus SB/BB caller.
+// Source/Provenance: P exact six-max cash range family.
+##f$cc_turn_probe_srp_co_gap##
+f$cc_turn_probe_srp_hu_gap_context && f$cc_pf_single_raiser_pos_id = 3
+
+// Purpose: UTG/HJ opener versus blind caller; tightest ordinary-SRP Probe family.
+// Source/Provenance: P exact early-position range band.
+##f$cc_turn_probe_srp_ep_gap##
+f$cc_turn_probe_srp_hu_gap_context &&
+(f$cc_pf_single_raiser_pos_id = 1 || f$cc_pf_single_raiser_pos_id = 2)
+
+// Purpose: all exact ordinary-SRP gap contexts reviewed by this module.
+// Source/Provenance: P deterministic partition; native SBvBTN reservation excluded.
+##f$cc_turn_probe_srp_gap_context##
+When !f$cc_turn_probe_srp_hu_gap_context Return false Force
+When f$cc_turn_probe_srp_native_sbvbtn_reserved Return false Force
+When f$cc_turn_probe_srp_native_bbvbtn_gap Return true Force
+When f$cc_turn_probe_srp_btn_6max_gap Return true Force
+When f$cc_turn_probe_srp_co_gap Return true Force
+When f$cc_turn_probe_srp_ep_gap Return true Force
+When Others Return false Force
+
+// -----------------------------------------------------------------------------
+// TPSRP.02 — current strength / runout quality
+// -----------------------------------------------------------------------------
+
+// Purpose: current exact overpair below 2P+.
+// Source/Provenance: T current hand fact; policy remains local.
+##f$cc_turn_probe_srp_overpair##
+IsTurn && HaveOverPair && !f$cc_hand_two_pair_or_better
+
+// Purpose: strong exact TP, using the already-audited CashCrusher kicker ladder.
+// Source: DeepCrusher repeatedly splits TP by kicker.
+// Provenance: A source concept + P <=2 better-kicker engineering boundary.
+##f$cc_turn_probe_srp_strong_tp##
+IsTurn && f$cc_hand_just_top_pair && f$cc_number_better_kickers <= 2
+
+// Purpose: medium TP band.
+// Source/Provenance: A/P deterministic quality split.
+##f$cc_turn_probe_srp_medium_tp##
+IsTurn && f$cc_hand_just_top_pair &&
+f$cc_number_better_kickers > 2 && f$cc_number_better_kickers <= 4
+
+// Purpose: weakest TP band.
+// Source/Provenance: A/P deterministic residue.
+##f$cc_turn_probe_srp_weak_tp##
+IsTurn && f$cc_hand_just_top_pair && f$cc_number_better_kickers > 4
+
+// Purpose: premium no-made Turn draw, without stack-off semantics.
+// Source: DeepCrusher good/combo/nut draw ingredients.
+// Provenance: A/P same cleaned quality concept used by other CashCrusher nodes.
+##f$cc_turn_probe_srp_premium_draw##
+IsTurn && f$cc_hand_no_made &&
+(f$cc_real_combo_draw || f$cc_real_nut_fd ||
+ (f$cc_real_oesd && f$cc_two_overcards) ||
+ (f$cc_real_fd && f$cc_two_overcards))
+
+// Purpose: useful no-made draw below premium tier.
+// Source/Provenance: A/P conservative semibluff quality split.
+##f$cc_turn_probe_srp_good_draw##
+IsTurn && f$cc_hand_no_made &&
+!f$cc_turn_probe_srp_premium_draw &&
+(f$cc_real_fd || f$cc_real_oesd || (f$cc_real_gutshot && f$cc_two_overcards))
+
+// Purpose: four-card board contains an Ace.
+// Source: source/TBP bad-bluff ingredient.
+// Provenance: T/A reconstruction from saved flop + current Turn.
+##f$cc_turn_probe_srp_board_has_ace##
+AcePresentOnFlop || f$cc_turn_is_ace
+
+// Purpose: four-card board contains at least two broadway cards.
+// Source/Provenance: T/A Gate10 saved flop broadway count + current Turn card.
+##f$cc_turn_probe_srp_board_2plus_bw##
+user_cc_turn_probe_flop_had_2plusbw ||
+(user_cc_turn_probe_flop_had_1bw && f$cc_turn_is_broadway)
+
+// Purpose: conservative board on which source-style pure-air pressure is poor.
+// `turn_Completed` is added for six-max cash rather than copied from one Spin
+// matchup; paired/A/2+BW are direct source pressure ingredients.
+// Source/Provenance: A source board principle + P conservative cash expansion.
+##f$cc_turn_probe_srp_bad_bluff_turn##
+PairOnBoard ||
+f$cc_turn_probe_srp_board_has_ace ||
+f$cc_turn_probe_srp_board_2plus_bw ||
+f$cc_turn_completed
+
+// Purpose: favorable pressure runout for thin value/equity and selected BTN air.
+// Source/Provenance: P complement inside this exact gap family.
+##f$cc_turn_probe_srp_favorable_turn##
+f$cc_turn_probe_srp_gap_context && !f$cc_turn_probe_srp_bad_bluff_turn
+
+// Purpose: source-like higher second-pair tier for thin BTN probing.
+// Source: existing Crusher pair-rank 8+ distinction in postflop trees.
+// Provenance: A/T mechanical rank boundary + P Turn-Probe use.
+##f$cc_turn_probe_srp_second_pair_high##
+f$cc_turn_probe_second_pair &&
+((SecondBestBoardCard >= eight) || (ispair && rankhiplayer >= eight))
+
+// -----------------------------------------------------------------------------
+// TPSRP.03 — native BB-v-BTN residual, source-first then P fill
+// -----------------------------------------------------------------------------
+
+// Purpose: reviewed residual policy after the literal high-air source branch.
+// Source/Provenance: P 100bb fill constrained by A BTN-range ancestry.
+##f$cc_turn_probe_srp_native_bbvbtn_action##
+When !f$cc_turn_probe_srp_native_bbvbtn_gap Return false Force
+When f$cc_hand_two_pair_or_better Return true Force
+When f$cc_turn_probe_srp_overpair Return true Force
+When f$cc_turn_probe_srp_strong_tp Return true Force
+When f$cc_turn_probe_srp_medium_tp && f$cc_turn_probe_srp_favorable_turn Return true Force
+When f$cc_turn_probe_srp_weak_tp Return false Force
+When f$cc_turn_probe_srp_second_pair_high && f$cc_turn_probe_srp_favorable_turn Return true Force
+When f$cc_turn_probe_second_pair Return false Force
+When f$cc_turn_probe_low_pair Return false Force
+When f$cc_turn_probe_srp_premium_draw && f$cc_turn_probe_srp_favorable_turn Return true Force
+When f$cc_turn_probe_srp_good_draw Return false Force
+When f$cc_turn_probe_air Return false Force
+When Others Return false Force
+
+// Purpose: P size map; current robust value uses 50/75, thin pair uses 33,
+// premium equity uses 50. No strategic BetMax lives here.
+// Source/Provenance: P cash sizing normalized onto source-supported palette.
+##f$cc_turn_probe_srp_native_bbvbtn_size_id##
+When !f$cc_turn_probe_srp_native_bbvbtn_action Return 0 Force
+When f$cc_hand_two_pair_or_better && f$cc_turn_completed Return f$cc_turn_probe_size_75_id Force
+When f$cc_hand_two_pair_or_better Return f$cc_turn_probe_size_50_id Force
+When f$cc_turn_probe_srp_overpair Return f$cc_turn_probe_size_50_id Force
+When f$cc_turn_probe_srp_strong_tp Return f$cc_turn_probe_size_50_id Force
+When f$cc_turn_probe_srp_medium_tp Return f$cc_turn_probe_size_33_id Force
+When f$cc_turn_probe_srp_second_pair_high Return f$cc_turn_probe_size_33_id Force
+When f$cc_turn_probe_srp_premium_draw Return f$cc_turn_probe_size_50_id Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// TPSRP.04 — BTN-open 4-6h adaptation
+// -----------------------------------------------------------------------------
+
+// Purpose: selected BTN-range air candidate. Compared with native 3h source this
+// requires a saved flop backdoor and a favorable Turn, and is BB-only because
+// SB cold-call ranges are more selected and should not inherit BB bluff density.
+// Source/Provenance: A direct high-air pressure principle + P tighter 6max filter.
+##f$cc_turn_probe_srp_btn_selected_air##
+f$cc_turn_probe_srp_btn_6max_gap &&
+f$cc_hero_pos_id = 6 &&
+f$cc_turn_probe_flop_had_air &&
+f$cc_turn_probe_flop_had_backdoor &&
+f$cc_turn_probe_air &&
+f$cc_turn_probe_srp_favorable_turn
+
+// Purpose: 4-6h BTN-open reviewed action.
+// Source/Provenance: A BTN ancestry + P 100bb range adaptation.
+##f$cc_turn_probe_srp_btn_6max_action##
+When !f$cc_turn_probe_srp_btn_6max_gap Return false Force
+When f$cc_hand_two_pair_or_better Return true Force
+When f$cc_turn_probe_srp_overpair Return true Force
+When f$cc_turn_probe_srp_strong_tp Return true Force
+When f$cc_turn_probe_srp_medium_tp && f$cc_turn_probe_srp_favorable_turn Return true Force
+When f$cc_turn_probe_srp_weak_tp Return false Force
+When f$cc_hero_pos_id = 6 && f$cc_turn_probe_srp_second_pair_high && f$cc_turn_probe_srp_favorable_turn Return true Force
+When f$cc_turn_probe_second_pair Return false Force
+When f$cc_turn_probe_low_pair Return false Force
+When f$cc_turn_probe_srp_premium_draw && f$cc_turn_probe_srp_favorable_turn Return true Force
+When f$cc_turn_probe_srp_good_draw Return false Force
+When f$cc_turn_probe_srp_btn_selected_air Return true Force
+When f$cc_turn_probe_air Return false Force
+When Others Return false Force
+
+// Purpose: 4-6h BTN size map; source 75-air is reduced to 50 in this stricter
+// selected 6max adaptation rather than copied literally from wider 3h ranges.
+// Source/Provenance: P with A source-size ancestry.
+##f$cc_turn_probe_srp_btn_6max_size_id##
+When !f$cc_turn_probe_srp_btn_6max_action Return 0 Force
+When f$cc_hand_two_pair_or_better && f$cc_turn_completed Return f$cc_turn_probe_size_75_id Force
+When f$cc_hand_two_pair_or_better Return f$cc_turn_probe_size_50_id Force
+When f$cc_turn_probe_srp_overpair Return f$cc_turn_probe_size_50_id Force
+When f$cc_turn_probe_srp_strong_tp Return f$cc_turn_probe_size_50_id Force
+When f$cc_turn_probe_srp_medium_tp Return f$cc_turn_probe_size_33_id Force
+When f$cc_turn_probe_srp_second_pair_high Return f$cc_turn_probe_size_33_id Force
+When f$cc_turn_probe_srp_premium_draw Return f$cc_turn_probe_size_50_id Force
+When f$cc_turn_probe_srp_btn_selected_air Return f$cc_turn_probe_size_50_id Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// TPSRP.05 — CO-open gap
+// -----------------------------------------------------------------------------
+
+// Purpose: CO opener is tighter than BTN; pure-air Probe is absent. Thin value
+// and premium equity remain possible after the flop checks through.
+// Source/Provenance: P professional range-strength adaptation.
+##f$cc_turn_probe_srp_co_action##
+When !f$cc_turn_probe_srp_co_gap Return false Force
+When f$cc_hand_two_pair_or_better Return true Force
+When f$cc_turn_probe_srp_overpair Return true Force
+When f$cc_turn_probe_srp_strong_tp Return true Force
+When f$cc_hero_pos_id = 6 && f$cc_turn_probe_srp_medium_tp && f$cc_turn_probe_srp_favorable_turn Return true Force
+When f$cc_turn_probe_srp_medium_tp Return false Force
+When f$cc_turn_probe_srp_weak_tp Return false Force
+When f$cc_turn_probe_second_pair Return false Force
+When f$cc_turn_probe_low_pair Return false Force
+When f$cc_turn_probe_srp_premium_draw && f$cc_turn_probe_srp_favorable_turn Return true Force
+When f$cc_turn_probe_srp_good_draw Return false Force
+When f$cc_turn_probe_air Return false Force
+When Others Return false Force
+
+// Purpose: CO size map.
+// Source/Provenance: P conservative 33/50/75 cash sizing.
+##f$cc_turn_probe_srp_co_size_id##
+When !f$cc_turn_probe_srp_co_action Return 0 Force
+When f$cc_hand_two_pair_or_better && f$cc_turn_completed Return f$cc_turn_probe_size_75_id Force
+When f$cc_hand_two_pair_or_better Return f$cc_turn_probe_size_50_id Force
+When f$cc_turn_probe_srp_overpair Return f$cc_turn_probe_size_50_id Force
+When f$cc_turn_probe_srp_strong_tp Return f$cc_turn_probe_size_50_id Force
+When f$cc_turn_probe_srp_medium_tp Return f$cc_turn_probe_size_33_id Force
+When f$cc_turn_probe_srp_premium_draw Return f$cc_turn_probe_size_50_id Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// TPSRP.06 — UTG/HJ-open gap
+// -----------------------------------------------------------------------------
+
+// Purpose: tightest opener family. Keep the source-silent baseline value-heavy;
+// strong TP, lower pairs, draws and air check by default instead of assuming a
+// BTN-like capped range.
+// Source/Provenance: P professional six-max early-position range adaptation.
+##f$cc_turn_probe_srp_ep_action##
+When !f$cc_turn_probe_srp_ep_gap Return false Force
+When f$cc_hand_two_pair_or_better Return true Force
+When f$cc_turn_probe_srp_overpair && f$cc_turn_probe_srp_favorable_turn Return true Force
+When f$cc_turn_probe_srp_strong_tp Return false Force
+When f$cc_turn_probe_srp_medium_tp Return false Force
+When f$cc_turn_probe_srp_weak_tp Return false Force
+When f$cc_turn_probe_second_pair Return false Force
+When f$cc_turn_probe_low_pair Return false Force
+When f$cc_turn_probe_srp_premium_draw Return false Force
+When f$cc_turn_probe_srp_good_draw Return false Force
+When f$cc_turn_probe_air Return false Force
+When Others Return false Force
+
+// Purpose: early-position value-heavy size map.
+// Source/Provenance: P 50/75 deterministic sizing.
+##f$cc_turn_probe_srp_ep_size_id##
+When !f$cc_turn_probe_srp_ep_action Return 0 Force
+When f$cc_hand_two_pair_or_better && f$cc_turn_completed Return f$cc_turn_probe_size_75_id Force
+When f$cc_hand_two_pair_or_better Return f$cc_turn_probe_size_50_id Force
+When f$cc_turn_probe_srp_overpair Return f$cc_turn_probe_size_50_id Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// TPSRP.07 — canonical ordinary-SRP gap dispatcher
+// -----------------------------------------------------------------------------
+
+// Purpose: every context admitted by this module has a reviewed action, including
+// explicit CHECK fallbacks. Native SBvBTN partition failures remain outside.
+// Source/Provenance: P coverage contract.
+##f$cc_turn_probe_srp_gap_covered##
+f$cc_turn_probe_srp_gap_context
+
+// Purpose: action dispatcher ordered widest/source-nearest to tightest opener.
+// Source/Provenance: A/P exact-range router.
+##f$cc_turn_probe_srp_gap_action##
+When f$cc_turn_probe_srp_native_bbvbtn_gap Return f$cc_turn_probe_srp_native_bbvbtn_action Force
+When f$cc_turn_probe_srp_btn_6max_gap Return f$cc_turn_probe_srp_btn_6max_action Force
+When f$cc_turn_probe_srp_co_gap Return f$cc_turn_probe_srp_co_action Force
+When f$cc_turn_probe_srp_ep_gap Return f$cc_turn_probe_srp_ep_action Force
+When Others Return false Force
+
+// Purpose: paired strategic size owner.
+// Source/Provenance: A/P exact-range router; explicit check ->0.
+##f$cc_turn_probe_srp_gap_size_id##
+When f$cc_turn_probe_srp_native_bbvbtn_gap Return f$cc_turn_probe_srp_native_bbvbtn_size_id Force
+When f$cc_turn_probe_srp_btn_6max_gap Return f$cc_turn_probe_srp_btn_6max_size_id Force
+When f$cc_turn_probe_srp_co_gap Return f$cc_turn_probe_srp_co_size_id Force
+When f$cc_turn_probe_srp_ep_gap Return f$cc_turn_probe_srp_ep_size_id Force
+When Others Return 0 Force
+
+// Purpose: action/size consistency across the P gap family.
+// Source/Provenance: P invariant.
+##f$cc_turn_probe_srp_gap_size_consistent##
+When !f$cc_turn_probe_srp_gap_action Return f$cc_turn_probe_srp_gap_size_id = 0 Force
+When f$cc_turn_probe_srp_gap_action Return f$cc_turn_probe_srp_gap_size_id >= 1 && f$cc_turn_probe_srp_gap_size_id <= 7 Force
+When Others Return false Force
+
+// Purpose: diagnostics for ordinary-SRP Probe opportunities intentionally outside
+// this review (currently native 3wSBvBTN partition anomalies).
+// Source/Provenance: P fail-closed metadata.
+##f$cc_turn_probe_srp_gap_uncovered_context##
+f$cc_turn_probe_srp_hu_gap_context &&
+!f$cc_turn_probe_3w_source_covered &&
+!f$cc_turn_probe_sbvbtn_gap_covered &&
+!f$cc_turn_probe_srp_gap_covered
+
+// ============================================================================
+// End Gate10E.
+// ============================================================================
