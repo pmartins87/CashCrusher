@@ -1,0 +1,435 @@
+// ============================================================================
+// CashCrusher_Turn_Donk_BBVBTN.txt
+// Gate 08C.4 — `3wBBvBTN` Turn Donk source mapping
+// ============================================================================
+// Purpose:
+//   Map the NEW CRUSHFEST BB-v-BTN Turn-Donk descendants after an ACTUAL flop
+//   X/C, preserving the exact BTN-open -> BB-call range origin instead of treating
+//   every OOP HU caller as the same family.
+//
+// Source priority:
+//   1) `12- NOVO CRUSHFEST 3wBBvBTN` = primary/current source;
+//   2) `7- CRUSHFEST 3wBBvBTN - ok` = corroborating old source where non-conflicting;
+//   3) audited mature DeepCrusher = ambiguity/implementation-gap resolver only.
+//
+// Primary-source TP-flop-X/C descendants:
+//   * paired Turn -> actual trips/boat/quads: completed board Donk75,
+//     non-completed Donk50;
+//   * 4-card straight + made straight: Donk50;
+//   * 4-card flush + K/A-high contributing flush: Donk50;
+//   * 4-card flush Q-high or worse: CHECK (future X/C belongs defense);
+//   * other completed draw: OC CHECK; UC BET; UC after 51%+ flop sizing CHECK.
+//
+// The source leaves the positive non-4CS/non-4CF UC bet size open. Mature
+// DeepCrusher uses 50%; CashCrusher labels that size A, never T.
+//
+// Source Draw section is separate and explicit: if a flop draw MISSES on Turn,
+// do not Donk; check and consider X/C or later River probe. Completing a no-made
+// flop draw is NOT silently merged into the TP-section Q8 source tree.
+//
+// Evidence boundary:
+//   * Source TP usually X/R <=50%; actual X/C occurs only in source exceptions
+//     (e.g. A-high/super-completed or larger dry sizing). Therefore a mere
+//     `top-pair snapshot + actual call` does not prove source-valid X/C.
+//   * Flop defense must write an exact TP-X/C eligibility marker.
+//   * The source's 51%+ exception additionally requires explicit <=50 or >50
+//     price provenance. Absence of >50 is never interpreted as <=50.
+//
+// Provenance:
+//   T   = NEW CRUSHFEST topology/action/size where explicit.
+//   A   = mature DeepCrusher exact-trip correction, Q8 ordering and open UC size=50.
+//   A/P = 4-6h BTN-open -> BB-call structural descendants.
+//   X   = mature generic current 2P+ Turn50 fallback as direct-source policy;
+//         Turn-owned River50 plans; any TP-X/C inferred without defense proof.
+//
+// Safety:
+//   No River barrel is scheduled here. No stackoff/jam/HandPower/random,
+//   `Raise_Committed` or generic effective-stack threshold is imported.
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// TDBB.01 — exact BB-v-BTN strategic/range ancestry
+// -----------------------------------------------------------------------------
+
+// Purpose: source lineage is an actual reviewed Gate07 HU Flop-Donk opportunity
+// that became clean X/C. Unlike SBvBB MNR, BBvBTN is already non-initiative OOP
+// on the flop, so parent 1 + family 3 is the strongest exact ownership proof.
+// Source/Provenance: T/A exact closed history and Gate07 ancestry.
+##f$cc_turn_donk_bbvbtn_threehanded_context##
+f$cc_turn_donk_opportunity &&
+f$cc_turn_donk_parent_id = 1 &&
+f$cc_hist_flop_donk_family_id = 3 &&
+f$cc_deal_size = 3 &&
+f$cc_hu_origin_preflop_reduced &&
+f$cc_flop_entry_count = 2 &&
+f$cc_hu &&
+f$cc_hu_oop &&
+f$cc_hero_pos_id = 6 &&
+f$cc_hu_villain_pos_id = 4 &&
+f$cc_turn_donk_hu_aggressor_is_current_villain &&
+f$cc_turn_donk_flop_aggressor_pos_id = 4 &&
+f$cc_pot_family_id = 2 &&
+f$cc_pf_one_raise_ordinary_srp &&
+f$cc_pf_role_srp_caller &&
+f$cc_pf_single_raiser_pos_id = 4 &&
+f$cc_pf_call_bb
+
+// Purpose: exact 4-6h structural descendant: BTN opens, BB calls, every other
+// seat is gone before flop and the same actual flop X/C closes versus BTN.
+// Source/Provenance: A/P range-topology adaptation, never literal T.
+##f$cc_turn_donk_bbvbtn_sixmax_descendant_context##
+f$cc_turn_donk_opportunity &&
+f$cc_turn_donk_parent_id = 1 &&
+f$cc_hist_flop_donk_family_id = 3 &&
+f$cc_deal_size >= 4 && f$cc_deal_size <= 6 &&
+f$cc_hu_origin_preflop_reduced &&
+f$cc_flop_entry_count = 2 &&
+f$cc_hu &&
+f$cc_hu_oop &&
+f$cc_hero_pos_id = 6 &&
+f$cc_hu_villain_pos_id = 4 &&
+f$cc_turn_donk_hu_aggressor_is_current_villain &&
+f$cc_turn_donk_flop_aggressor_pos_id = 4 &&
+f$cc_pot_family_id = 2 &&
+f$cc_pf_one_raise_ordinary_srp &&
+f$cc_pf_role_srp_caller &&
+f$cc_pf_single_raiser_pos_id = 4 &&
+f$cc_pf_call_bb
+
+// Purpose: stable ancestry ID: 1=literal 3h source; 2=4-6h structural descendant.
+// Source/Provenance: P audit metadata over T/A/P exact parents.
+##f$cc_turn_donk_bbvbtn_origin_id##
+When f$cc_turn_donk_bbvbtn_threehanded_context Return 1 Force
+When f$cc_turn_donk_bbvbtn_sixmax_descendant_context Return 2 Force
+When Others Return 0 Force
+
+// Purpose: exact reviewed BB-v-BTN Turn-Donk ancestry only.
+// Source/Provenance: A/P union; arbitrary OOP HU callers are excluded.
+##f$cc_turn_donk_bbvbtn_context##
+f$cc_turn_donk_bbvbtn_origin_id > 0
+
+// Purpose: distinguish direct 3h source from six-max structural adaptation.
+// Source/Provenance: P metadata.
+##f$cc_turn_donk_bbvbtn_is_direct_threehanded_source##
+f$cc_turn_donk_bbvbtn_origin_id = 1
+
+// -----------------------------------------------------------------------------
+// TDBB.02 — source flop TP-X/C provenance belongs defense
+// -----------------------------------------------------------------------------
+
+// Purpose: exact flop primary class used by the mature source implementation.
+// The NEW source Q8/Q9 sits inside `TP or better`; mature DeepCrusher narrows
+// the Turn-Donk state to `JustTopPair` on flop, which we retain as A.
+// Source/Provenance: T section ancestry + A detailed state resolution.
+##f$cc_turn_donk_bbvbtn_flop_tp_snapshot##
+f$cc_turn_donk_bbvbtn_context &&
+user_cc_flop_donk_state_had_top_pair
+
+// Purpose: future Flop defense proves that this exact TP actually belonged to a
+// source-approved X/C exception instead of the source's normal X/R line.
+// Source: <=50 TP normally X/R; A-high/super-completed and larger dry sizing create
+// X/C exceptions. Provenance: P ownership bridge to future T/A defense execution.
+##f$cc_turn_donk_bbvbtn_tp_xc_defense_proven##
+user_cc_flop_bbvbtn_source_tp_xc_eligible
+
+// Purpose: future defense records exact called flop price <=50%.
+// Source/Provenance: T Q8 51% boundary + P defense-owned bridge.
+##f$cc_turn_donk_bbvbtn_tp_xc_price_le50##
+user_cc_flop_bbvbtn_source_tp_xc_called_le50
+
+// Purpose: future defense records exact called flop price >50% (source 51%+).
+// Source/Provenance: T Q8 51% boundary + P defense-owned bridge.
+##f$cc_turn_donk_bbvbtn_tp_xc_price_gt50##
+user_cc_flop_bbvbtn_source_tp_xc_called_gt50
+
+// Purpose: exactly one price marker when a Q8 branch needs the flop-size split.
+// Source/Provenance: P integrity over T source boundary.
+##f$cc_turn_donk_bbvbtn_tp_xc_price_marker_count##
+(f$cc_turn_donk_bbvbtn_tp_xc_price_le50 * 1) +
+(f$cc_turn_donk_bbvbtn_tp_xc_price_gt50 * 1)
+
+// Purpose: exact TP-X/C source lineage after defense confirms eligibility.
+// Source/Provenance: T source state + A/P closed execution/defense bridge.
+##f$cc_turn_donk_bbvbtn_tp_xc_context##
+f$cc_turn_donk_bbvbtn_flop_tp_snapshot &&
+f$cc_turn_donk_bbvbtn_tp_xc_defense_proven
+
+// Purpose: source-shaped TP X/C exists but Flop defense has not proven the call
+// belonged to a source-approved exception.
+// Source/Provenance: P diagnostic, never an action.
+##f$cc_turn_donk_bbvbtn_tp_xc_needs_defense_provenance##
+f$cc_turn_donk_bbvbtn_flop_tp_snapshot &&
+!f$cc_turn_donk_bbvbtn_tp_xc_defense_proven
+
+// -----------------------------------------------------------------------------
+// TDBB.03 — exact paired-Turn trips/boat/quads Q9
+// -----------------------------------------------------------------------------
+
+// Purpose: Q9 is specifically real trips or stronger on a Turn that pairs a
+// flop rank. Generic two-pair is intentionally excluded.
+// Source: NEW Q9 + mature correction of an earlier broad TwoPairPlus pass.
+// Provenance: T Q9 trips wording + A exact mature correction.
+##f$cc_turn_donk_bbvbtn_q9_tripsplus_context##
+f$cc_turn_donk_bbvbtn_tp_xc_context &&
+f$cc_turn_pairs_flop_rank &&
+(HaveTrips || HaveFullHouse || HaveQuads)
+
+// Purpose: completed paired Turn -> Donk75.
+// Source/Provenance: T direct Q9 action/size.
+##f$cc_turn_donk_bbvbtn_q9_completed_action##
+f$cc_turn_donk_bbvbtn_q9_tripsplus_context && f$cc_turn_completed
+
+// Purpose: non-completed paired Turn -> Donk50.
+// Source/Provenance: T direct Q9 action/size.
+##f$cc_turn_donk_bbvbtn_q9_noncompleted_action##
+f$cc_turn_donk_bbvbtn_q9_tripsplus_context && !f$cc_turn_completed
+
+// Purpose: exact Q9 size map.
+// Source/Provenance: T direct 75/50.
+##f$cc_turn_donk_bbvbtn_q9_size_id##
+When f$cc_turn_donk_bbvbtn_q9_completed_action Return f$cc_turn_donk_size_75_id Force
+When f$cc_turn_donk_bbvbtn_q9_noncompleted_action Return f$cc_turn_donk_size_50_id Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// TDBB.04 — Q8 4-card straight / 4-card flush branches
+// -----------------------------------------------------------------------------
+
+// Purpose: source 4CS branch. Mature code gives this precedence before 4CF.
+// Source/Provenance: T 4CS+made-straight action + A explicit precedence.
+##f$cc_turn_donk_bbvbtn_q8_4cs_action##
+f$cc_turn_donk_bbvbtn_tp_xc_context &&
+nstraightcommon >= 4 &&
+HaveStraight
+
+// Purpose: 4CS Donk50. River50 source follow-through is NOT owned here.
+// Source/Provenance: T direct Turn size, later-street implication excluded.
+##f$cc_turn_donk_bbvbtn_q8_4cs_size_id##
+When f$cc_turn_donk_bbvbtn_q8_4cs_action Return f$cc_turn_donk_size_50_id Force
+When Others Return 0 Force
+
+// Purpose: one-hole-card flush on a four-card public flush structure.
+// On Turn, nsuitedcommon>=4 plus HaveFlush necessarily means at least one Hero
+// hole card contributes; the source's 2HC flush family requires only 3 suited
+// public cards and is therefore excluded mechanically here.
+// Source/Provenance: T/A translation of mature `1HC_Flush` under Q8 4CF.
+##f$cc_turn_donk_bbvbtn_q8_4cf_onecard_flush##
+f$cc_turn_donk_bbvbtn_tp_xc_context &&
+nsuitedcommon >= 4 &&
+HaveFlush
+
+// Purpose: K/A-high contributing one-card flush.
+// Source helper equivalence: on 4+ suited public cards, <=1 unknown suited
+// overcard means Hero's contributing flush card is K or A high.
+// Source/Provenance: T/A mature helper translated to OpenPPL primitive.
+##f$cc_turn_donk_bbvbtn_q8_4cf_khigh_plus##
+f$cc_turn_donk_bbvbtn_q8_4cf_onecard_flush &&
+NumberOfUnknownSuitedOvercards <= 1
+
+// Purpose: Q-high or worse one-card flush source class.
+// Source/Provenance: T direct Q8 split + A complement of the audited K/A helper.
+##f$cc_turn_donk_bbvbtn_q8_4cf_qhigh_or_worse##
+f$cc_turn_donk_bbvbtn_q8_4cf_onecard_flush &&
+NumberOfUnknownSuitedOvercards > 1
+
+// Purpose: K/A-high 4CF -> Donk50 unless the earlier 4CS branch already owns the
+// same state. The action is identical, but explicit precedence keeps provenance clear.
+// Source/Provenance: T action/size + A ordering.
+##f$cc_turn_donk_bbvbtn_q8_4cf_khigh_action##
+f$cc_turn_donk_bbvbtn_q8_4cf_khigh_plus &&
+!f$cc_turn_donk_bbvbtn_q8_4cs_action
+
+// Purpose: exact K/A-high 4CF Turn size.
+// Source/Provenance: T direct 50%.
+##f$cc_turn_donk_bbvbtn_q8_4cf_khigh_size_id##
+When f$cc_turn_donk_bbvbtn_q8_4cf_khigh_action Return f$cc_turn_donk_size_50_id Force
+When Others Return 0 Force
+
+// Purpose: Q-high-or-worse 4CF is a source CHECK at first Turn action; possible
+// X/C <=50 belongs Turn defense and X/F River belongs later street ownership.
+// Source/Provenance: T direct negative Turn-Donk branch.
+##f$cc_turn_donk_bbvbtn_q8_4cf_qhigh_check##
+f$cc_turn_donk_bbvbtn_q8_4cf_qhigh_or_worse &&
+!f$cc_turn_donk_bbvbtn_q8_4cs_action
+
+// -----------------------------------------------------------------------------
+// TDBB.05 — Q8 other completed draw: OC check / UC bet / UC+51 check
+// -----------------------------------------------------------------------------
+
+// Purpose: remaining made straight/flush after Q9/4CS/4CF special branches.
+// Source: `Not 4CS: OC Check; UC Bet; UC + 51%+ Check`.
+// Provenance: T source category + A precedence firewall.
+##f$cc_turn_donk_bbvbtn_q8_other_made_draw##
+f$cc_turn_donk_bbvbtn_tp_xc_context &&
+(HaveStraight || HaveFlush) &&
+!f$cc_turn_donk_bbvbtn_q9_tripsplus_context &&
+!f$cc_turn_donk_bbvbtn_q8_4cs_action &&
+!f$cc_turn_donk_bbvbtn_q8_4cf_onecard_flush
+
+// Purpose: other completed draw on a strict overcard -> CHECK.
+// Source/Provenance: T direct Q8 OC branch.
+##f$cc_turn_donk_bbvbtn_q8_other_oc_check##
+f$cc_turn_donk_bbvbtn_q8_other_made_draw &&
+f$cc_turn_overcard_to_flop
+
+// Purpose: other completed draw on strict undercard after exact >50% flop call -> CHECK.
+// Source/Provenance: T direct `UC + 51% or higher - Check`.
+##f$cc_turn_donk_bbvbtn_q8_other_uc_gt50_check##
+f$cc_turn_donk_bbvbtn_q8_other_made_draw &&
+f$cc_turn_undercard &&
+f$cc_turn_donk_bbvbtn_tp_xc_price_gt50 &&
+f$cc_turn_donk_bbvbtn_tp_xc_price_marker_count = 1
+
+// Purpose: other completed draw on strict undercard after exact <=50% flop call -> BET.
+// Source/Provenance: T direct positive UC action + P exact-price proof requirement.
+##f$cc_turn_donk_bbvbtn_q8_other_uc_le50_action##
+f$cc_turn_donk_bbvbtn_q8_other_made_draw &&
+f$cc_turn_undercard &&
+f$cc_turn_donk_bbvbtn_tp_xc_price_le50 &&
+f$cc_turn_donk_bbvbtn_tp_xc_price_marker_count = 1
+
+// Purpose: source leaves this positive UC bet size unspecified; mature detailed
+// implementation uses Turn50. Preserve it as A rather than mislabeling it T.
+// Source/Provenance: A deterministic size-gap resolution.
+##f$cc_turn_donk_bbvbtn_q8_other_uc_size_id##
+When f$cc_turn_donk_bbvbtn_q8_other_uc_le50_action Return f$cc_turn_donk_size_50_id Force
+When Others Return 0 Force
+
+// Purpose: UC completed-draw branch needs exact called-price provenance before
+// action can be known. Missing/contradictory price stays uncovered.
+// Source/Provenance: P fail-closed diagnostic.
+##f$cc_turn_donk_bbvbtn_q8_other_uc_needs_price_provenance##
+f$cc_turn_donk_bbvbtn_q8_other_made_draw &&
+f$cc_turn_undercard &&
+f$cc_turn_donk_bbvbtn_tp_xc_price_marker_count != 1
+
+// Purpose: source Q8 does not specify a first-action Turn lead for completed draw
+// on a rank that is neither strict OC nor strict UC after special 4CS/4CF cases.
+// Source/Provenance: X as direct source rule; future A/P review may fill.
+##f$cc_turn_donk_bbvbtn_q8_neutral_runout_source_gap##
+f$cc_turn_donk_bbvbtn_q8_other_made_draw &&
+!f$cc_turn_overcard_to_flop &&
+!f$cc_turn_undercard
+
+// -----------------------------------------------------------------------------
+// TDBB.06 — source gap: mature generic current 2P+ fallback
+// -----------------------------------------------------------------------------
+
+// Purpose: mature DeepCrusher adds Turn50 for residual current TwoPairPlus after
+// source-exact trips/straight/flush branches. NEW/old source does not state that
+// generic fallback inside the flop-TP X/C Q8/Q9 tree.
+// Source/Provenance: X as direct-source rule; retained as visible future A/P gap.
+##f$cc_turn_donk_bbvbtn_residual_2pplus_mature_only_gap##
+f$cc_turn_donk_bbvbtn_tp_xc_context &&
+f$cc_hand_two_pair_or_better &&
+!f$cc_turn_donk_bbvbtn_q9_tripsplus_context &&
+!HaveStraight &&
+!HaveFlush
+
+// -----------------------------------------------------------------------------
+// TDBB.07 — source Draw section: missed draw explicitly does NOT Donk
+// -----------------------------------------------------------------------------
+
+// Purpose: future Flop defense proves one of the source non-best draws actually
+// X/C'd within its 50/75% price ceiling. Best draws belong X/R and must not set it.
+// Source/Provenance: T Draws 2/4 + P defense-owned execution bridge.
+##f$cc_turn_donk_bbvbtn_draw_xc_defense_proven##
+user_cc_flop_bbvbtn_source_nonbest_draw_xc_eligible
+
+// Purpose: exact no-made flop source draw lineage from contribution-aware snapshot.
+// Source/Provenance: T draw family + A/P defense proof.
+##f$cc_turn_donk_bbvbtn_draw_xc_context##
+f$cc_turn_donk_bbvbtn_context &&
+user_cc_flop_donk_state_had_no_made &&
+f$cc_turn_donk_bbvbtn_draw_xc_defense_proven
+
+// Purpose: source question explicitly covers MISSED draw on Turn. Current no-made
+// state means the flop draw did not become a made pair/straight/flush.
+// Source/Provenance: T direct `We don't donkbet our draws` negative action.
+##f$cc_turn_donk_bbvbtn_missed_draw_check##
+f$cc_turn_donk_bbvbtn_draw_xc_context &&
+f$cc_hand_no_made
+
+// Purpose: a no-made flop draw that becomes a made hand is not silently folded
+// into TP-section Q8. The source supplied here does not prove that ownership.
+// Source/Provenance: X as direct source rule; future exact review required.
+##f$cc_turn_donk_bbvbtn_completed_nomade_draw_source_gap##
+f$cc_turn_donk_bbvbtn_draw_xc_context &&
+!f$cc_hand_no_made
+
+// -----------------------------------------------------------------------------
+// TDBB.08 — canonical action / size / coverage
+// -----------------------------------------------------------------------------
+
+// Purpose: exact BB-v-BTN Turn Donk dispatcher. Ordering follows NEW source plus
+// mature source's explicit Q9 -> 4CS -> 4CF -> other-completion precedence.
+// Source/Provenance: T/A/P exact range-history owner.
+##f$cc_turn_donk_bbvbtn_action##
+When !f$cc_turn_donk_bbvbtn_context Return false Force
+When !f$cc_turn_donk_bbvbtn_tp_xc_defense_proven && !f$cc_turn_donk_bbvbtn_draw_xc_defense_proven Return false Force
+When f$cc_turn_donk_bbvbtn_q9_completed_action Return true Force
+When f$cc_turn_donk_bbvbtn_q9_noncompleted_action Return true Force
+When f$cc_turn_donk_bbvbtn_q8_4cs_action Return true Force
+When f$cc_turn_donk_bbvbtn_q8_4cf_khigh_action Return true Force
+When f$cc_turn_donk_bbvbtn_q8_4cf_qhigh_check Return false Force
+When f$cc_turn_donk_bbvbtn_q8_other_oc_check Return false Force
+When f$cc_turn_donk_bbvbtn_q8_other_uc_gt50_check Return false Force
+When f$cc_turn_donk_bbvbtn_q8_other_uc_le50_action Return true Force
+When f$cc_turn_donk_bbvbtn_missed_draw_check Return false Force
+When Others Return false Force
+
+// Purpose: paired size dispatcher. Every source check is size 0.
+// Source/Provenance: T/A exact owner.
+##f$cc_turn_donk_bbvbtn_size_id##
+When !f$cc_turn_donk_bbvbtn_context Return 0 Force
+When f$cc_turn_donk_bbvbtn_q9_tripsplus_context Return f$cc_turn_donk_bbvbtn_q9_size_id Force
+When f$cc_turn_donk_bbvbtn_q8_4cs_action Return f$cc_turn_donk_bbvbtn_q8_4cs_size_id Force
+When f$cc_turn_donk_bbvbtn_q8_4cf_khigh_action Return f$cc_turn_donk_bbvbtn_q8_4cf_khigh_size_id Force
+When f$cc_turn_donk_bbvbtn_q8_other_uc_le50_action Return f$cc_turn_donk_bbvbtn_q8_other_uc_size_id Force
+When Others Return 0 Force
+
+// Purpose: TP-X/C state has a complete source decision only when it is in an
+// explicitly mapped Q9/Q8 branch and no mature-only/source-gap state remains.
+// Source/Provenance: P coverage firewall over T/A exact descendants.
+##f$cc_turn_donk_bbvbtn_tp_source_decision_covered##
+When !f$cc_turn_donk_bbvbtn_tp_xc_context Return false Force
+When f$cc_turn_donk_bbvbtn_residual_2pplus_mature_only_gap Return false Force
+When f$cc_turn_donk_bbvbtn_q8_other_uc_needs_price_provenance Return false Force
+When f$cc_turn_donk_bbvbtn_q8_neutral_runout_source_gap Return false Force
+When f$cc_turn_donk_bbvbtn_q9_tripsplus_context Return true Force
+When f$cc_turn_donk_bbvbtn_q8_4cs_action Return true Force
+When f$cc_turn_donk_bbvbtn_q8_4cf_khigh_action Return true Force
+When f$cc_turn_donk_bbvbtn_q8_4cf_qhigh_check Return true Force
+When f$cc_turn_donk_bbvbtn_q8_other_oc_check Return true Force
+When f$cc_turn_donk_bbvbtn_q8_other_uc_gt50_check Return true Force
+When f$cc_turn_donk_bbvbtn_q8_other_uc_le50_action Return true Force
+When Others Return false Force
+
+// Purpose: source missed-draw state is covered only while still no-made. A made
+// completion from that separate Draw section remains a source gap.
+// Source/Provenance: P coverage boundary over T negative source branch.
+##f$cc_turn_donk_bbvbtn_draw_source_decision_covered##
+f$cc_turn_donk_bbvbtn_missed_draw_check
+
+// Purpose: canonical reviewed BB-v-BTN coverage.
+// Source/Provenance: P union of separately proven TP and draw source states.
+##f$cc_turn_donk_bbvbtn_covered##
+f$cc_turn_donk_bbvbtn_tp_source_decision_covered ||
+f$cc_turn_donk_bbvbtn_draw_source_decision_covered
+
+// Purpose: action/size integrity.
+// Source/Provenance: P safety invariant.
+##f$cc_turn_donk_bbvbtn_size_consistent##
+When !f$cc_turn_donk_bbvbtn_action Return f$cc_turn_donk_bbvbtn_size_id = 0 Force
+When f$cc_turn_donk_bbvbtn_action Return f$cc_turn_donk_bbvbtn_size_id >= 1 && f$cc_turn_donk_bbvbtn_size_id <= 4 Force
+When Others Return false Force
+
+// Purpose: exact BB-v-BTN Turn opportunity held closed because required source
+// eligibility/price provenance is missing or source is silent on the state.
+// Source/Provenance: P audit diagnostic.
+##f$cc_turn_donk_bbvbtn_uncovered_context##
+f$cc_turn_donk_bbvbtn_context && !f$cc_turn_donk_bbvbtn_covered
+
+// ============================================================================
+// End Gate08C.4 BB-v-BTN Turn Donk.
+// ============================================================================
