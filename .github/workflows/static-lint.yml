@@ -149,3 +149,5 @@ jobs:
         run: python tools/test_turn_probe_runtime.py
       - name: Test River Probe closed history and native source subset
         run: python tools/test_river_probe_history_source.py
+      - name: Test true-HU HUBB River Probe source tree
+        run: python tools/test_river_probe_hubb.py
