@@ -8,7 +8,7 @@
 //
 // Source/Provenance:
 //   T/A = portable CashCrusher made-hand/draw helpers + audited DeepCrusher size
-//         families including `TurnMin`/25/33/50/75/100.
+//         families including `TurnMin`/25/33/50/66/75/100.
 //   P = normalized numeric IDs only.
 // ============================================================================
 
@@ -44,9 +44,11 @@ IsTurn && f$cc_air_no_frontdoor
 
 // -----------------------------------------------------------------------------
 // Normalized Turn-Probe size IDs
-// 1 MIN | 2 25% | 3 33% | 4 50% | 5 75% | 6 100% pot
+// 1 MIN | 2 25% | 3 33% | 4 50% | 5 75% | 6 100% | 7 two-thirds pot
 // MIN remains a distinct source instruction and is NOT silently converted to a
 // percentage. Runtime Gate10H will map it to verified OpenPPL `BetMin` semantics.
+// Two-thirds is kept distinct from 66% because the source executes
+// `BetTwoThirdPot`, an explicit OpenPPL action token.
 // -----------------------------------------------------------------------------
 
 // Purpose: source minimum-bet ID.
@@ -78,6 +80,13 @@ IsTurn && f$cc_air_no_frontdoor
 // Source/Provenance: A normalized source PSB family.
 ##f$cc_turn_probe_size_100_id##
 6
+
+// Purpose: exact OpenPPL two-thirds-pot source family.
+// Source: DeepCrusher `BetsizeTurnHeadsup` normal Turn-Probe fallback executes
+// `BetTwoThirdPot` for no-made Probe states.
+// Provenance: T/A source execution family; runtime action mapping deferred to 10H.
+##f$cc_turn_probe_size_twothirds_id##
+7
 
 // ============================================================================
 // End Gate10B.0.
