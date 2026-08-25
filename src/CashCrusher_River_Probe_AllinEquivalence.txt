@@ -1,0 +1,96 @@
+// ============================================================================
+// CashCrusher_River_Probe_AllinEquivalence.txt
+// Gate 11L.3 — local natural/mechanical all-in equivalence for River Probe
+// ============================================================================
+// Purpose:
+//   Convert a reviewed River-Probe request to BetMax ONLY when that requested bet
+//   already reaches Hero's balance or every currently live effective relation.
+//   This is execution equivalence, never a new strategic shove policy.
+//
+// Source boundary:
+//   Historical DeepCrusher ~50/~60 commitment thresholds remain diagnostics.
+//   They are not promoted. Shortest-only multiway reach remains a sidepot event.
+//
+// Source/Provenance:
+//   T = OpenHoldem BetMax/balance/effective-stack execution geometry.
+//   A = mechanical-equivalence architecture frozen on prior attack nodes.
+//   P = sidepot safety and plan-v-execution diagnostics.
+// ============================================================================
+
+// Purpose: request reaches every currently matchable live relation.
+// Source/Provenance: T/A HU exact / MW deepest-all-live definition.
+##f$cc_river_probe_requested_reaches_all_live_effective##
+When !f$cc_river_probe_stackgeom_clean Return false Force
+When f$cc_hu && f$cc_river_probe_requested_reaches_hu_effective Return true Force
+When f$cc_multiway && f$cc_river_probe_requested_reaches_mw_deepest Return true Force
+When Others Return false Force
+
+// Purpose: local natural all-in equivalence.
+// Source/Provenance: T/A mechanical reach only; no hand/threshold strategy.
+##f$cc_river_probe_natural_allin_equivalent##
+When !f$cc_river_probe_runtime_size_ready Return false Force
+When !f$cc_river_probe_stackgeom_clean Return false Force
+When f$cc_river_probe_requested_reaches_hero_stack Return true Force
+When f$cc_river_probe_requested_reaches_all_live_effective Return true Force
+When Others Return false Force
+
+// Purpose: diagnostic reason ID: 1 Hero stack; 2 HU effective; 3 MW deepest.
+// Source/Provenance: P metadata over T/A mechanical reach conditions.
+##f$cc_river_probe_natural_allin_reason_id##
+When !f$cc_river_probe_natural_allin_equivalent Return 0 Force
+When f$cc_river_probe_requested_reaches_hero_stack Return 1 Force
+When f$cc_hu && f$cc_river_probe_requested_reaches_hu_effective Return 2 Force
+When f$cc_multiway && f$cc_river_probe_requested_reaches_mw_deepest Return 3 Force
+When Others Return 0 Force
+
+// Purpose: final local River-Probe execution size. Plan markers record what this
+// execution owner requested; they do NOT prove that the table action occurred.
+// Source/Provenance: T OpenPPL actions + A/P plan-provenance architecture.
+##f$cc_river_probe_execution_betsize##
+When !f$cc_river_probe_runtime_size_ready Return 0 Force
+When f$cc_river_probe_runtime_size_ready Set user_cc_river_probe_opportunity_seen
+When f$cc_river_probe_runtime_size_ready Set user_cc_river_probe_plan_bet_seen
+When f$cc_river_probe_runtime_size_ready Set user_cc_river_probe_plan_size_recorded
+When f$cc_river_probe_size_id = 1 Set user_cc_river_probe_plan_size_min
+When f$cc_river_probe_size_id = 2 Set user_cc_river_probe_plan_size_25
+When f$cc_river_probe_size_id = 3 Set user_cc_river_probe_plan_size_33
+When f$cc_river_probe_size_id = 4 Set user_cc_river_probe_plan_size_50
+When f$cc_river_probe_size_id = 5 Set user_cc_river_probe_plan_size_75
+When f$cc_river_probe_size_id = 6 Set user_cc_river_probe_plan_size_100
+When f$cc_river_probe_size_id = 7 Set user_cc_river_probe_plan_size_30
+When f$cc_river_probe_natural_allin_equivalent Set user_cc_river_probe_plan_expected_allin
+When f$cc_river_probe_natural_allin_equivalent Return BetMax Force
+When Others Return f$cc_river_probe_requested_betsize Force
+
+// Purpose: count mutually exclusive strategic-size plan markers.
+// Source/Provenance: P integrity arithmetic over per-hand user variables.
+##f$cc_river_probe_plan_size_marker_count##
+(user_cc_river_probe_plan_size_min * 1) +
+(user_cc_river_probe_plan_size_25 * 1) +
+(user_cc_river_probe_plan_size_33 * 1) +
+(user_cc_river_probe_plan_size_50 * 1) +
+(user_cc_river_probe_plan_size_75 * 1) +
+(user_cc_river_probe_plan_size_100 * 1) +
+(user_cc_river_probe_plan_size_30 * 1)
+
+// Purpose: validate stored plan provenance without recomputing old River geometry.
+// Source/Provenance: P invariant over OpenPPL user-variable persistence.
+##f$cc_river_probe_plan_markers_consistent##
+When user_cc_river_probe_plan_size_recorded && !user_cc_river_probe_plan_bet_seen Return false Force
+When user_cc_river_probe_plan_bet_seen && !user_cc_river_probe_plan_size_recorded Return false Force
+When user_cc_river_probe_plan_size_recorded && f$cc_river_probe_plan_size_marker_count != 1 Return false Force
+When !user_cc_river_probe_plan_size_recorded && f$cc_river_probe_plan_size_marker_count != 0 Return false Force
+When user_cc_river_probe_plan_expected_allin && !user_cc_river_probe_plan_size_recorded Return false Force
+When Others Return true Force
+
+// Purpose: prove shortest-only MW reach can never be promoted locally while a
+// deeper live opponent remains unmatched.
+// Source/Provenance: P invariant over corrected dual-bound geometry.
+##f$cc_river_probe_sidepot_divergence_not_promoted##
+When !f$cc_river_probe_mw_sidepot_divergence_candidate Return true Force
+When f$cc_river_probe_natural_allin_equivalent Return false Force
+When Others Return true Force
+
+// ============================================================================
+// End Gate11L.3. No strategic near-all-in promotion is encoded.
+// ============================================================================
