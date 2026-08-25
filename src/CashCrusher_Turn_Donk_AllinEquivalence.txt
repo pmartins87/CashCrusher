@@ -1,0 +1,93 @@
+// ============================================================================
+// CashCrusher_Turn_Donk_AllinEquivalence.txt
+// Gate 08H.2B — natural/mechanical all-in equivalence for Turn Donk
+// ============================================================================
+// Purpose:
+//   Convert an already-reviewed 25/50/75/POT/BetMin Turn Donk to BetMax only when
+//   that requested contribution already reaches Hero's stack or every currently
+//   live effective relationship.
+//
+// Source boundary:
+//   DeepCrusher contains several distinct ~50/55/60 commitment mechanisms and
+//   exact strategic Turn shoves. Those are NOT merged into a generic rule here.
+//   Historical thresholds remain diagnostic in StackGeometry and exact future
+//   strategic shoves remain available to the node that actually justifies them.
+//
+// Source/Provenance:
+//   T = OpenPPL BetMax + exact stack geometry.
+//   A = mechanical-equivalence separation frozen in prior attack gates.
+//   P = multiway sidepot safety + pre-action plan metadata.
+// ============================================================================
+
+// Purpose: requested Turn Donk covers every currently matchable opponent relation.
+// Source/Provenance: T/A exact HU or multiway deepest-effective reach.
+##f$cc_turn_donk_requested_reaches_all_live_effective##
+When !f$cc_turn_donk_stackgeom_clean Return false Force
+When f$cc_hu && f$cc_turn_donk_requested_reaches_hu_effective Return true Force
+When f$cc_multiway && f$cc_turn_donk_requested_reaches_mw_deepest Return true Force
+When Others Return false Force
+
+// Purpose: local natural/mechanical BetMax equivalence only.
+// Source/Provenance: T/A physical cap, not strategic commitment.
+##f$cc_turn_donk_natural_allin_equivalent##
+When !f$cc_turn_donk_runtime_size_ready Return false Force
+When !f$cc_turn_donk_stackgeom_clean Return false Force
+When f$cc_turn_donk_requested_reaches_hero_stack Return true Force
+When f$cc_turn_donk_requested_reaches_all_live_effective Return true Force
+When Others Return false Force
+
+// Purpose: reason ID 1 Hero stack | 2 HU effective | 3 MW deepest/all-live.
+// Source/Provenance: P metadata over T/A mechanical reach.
+##f$cc_turn_donk_natural_allin_reason_id##
+When !f$cc_turn_donk_natural_allin_equivalent Return 0 Force
+When f$cc_turn_donk_requested_reaches_hero_stack Return 1 Force
+When f$cc_hu && f$cc_turn_donk_requested_reaches_hu_effective Return 2 Force
+When f$cc_multiway && f$cc_turn_donk_requested_reaches_mw_deepest Return 3 Force
+When Others Return 0 Force
+
+// Purpose: final local Turn-Donk execution size plus PRE-ACTION plan markers.
+// Source/Provenance: T/A native sizing/BetMax adapter + P history metadata.
+// Safety: user markers describe intention only; closed round-3 counters prove
+// actual execution later.
+##f$cc_turn_donk_execution_betsize##
+When !f$cc_turn_donk_runtime_size_ready Return 0 Force
+When f$cc_turn_donk_runtime_size_ready Set user_cc_turn_donk_plan_bet_seen
+When f$cc_turn_donk_runtime_size_ready Set user_cc_turn_donk_plan_size_recorded
+When f$cc_turn_donk_size_id = 1 Set user_cc_turn_donk_plan_size_25
+When f$cc_turn_donk_size_id = 2 Set user_cc_turn_donk_plan_size_50
+When f$cc_turn_donk_size_id = 3 Set user_cc_turn_donk_plan_size_75
+When f$cc_turn_donk_size_id = 4 Set user_cc_turn_donk_plan_size_100
+When f$cc_turn_donk_size_id = 5 Set user_cc_turn_donk_plan_size_min
+When f$cc_turn_donk_natural_allin_equivalent Set user_cc_turn_donk_plan_expected_allin
+When f$cc_turn_donk_natural_allin_equivalent Return BetMax Force
+When Others Return f$cc_turn_donk_requested_betsize Force
+
+// Purpose: count mutually exclusive strategic size markers.
+// Source/Provenance: P plan integrity.
+##f$cc_turn_donk_plan_size_marker_count##
+(user_cc_turn_donk_plan_size_25 * 1) +
+(user_cc_turn_donk_plan_size_50 * 1) +
+(user_cc_turn_donk_plan_size_75 * 1) +
+(user_cc_turn_donk_plan_size_100 * 1) +
+(user_cc_turn_donk_plan_size_min * 1)
+
+// Purpose: validate stored plan markers without recomputing old Turn geometry.
+// Source/Provenance: P cross-street-stable marker invariant.
+##f$cc_turn_donk_plan_markers_consistent##
+When user_cc_turn_donk_plan_size_recorded && !user_cc_turn_donk_plan_bet_seen Return false Force
+When user_cc_turn_donk_plan_bet_seen && !user_cc_turn_donk_plan_size_recorded Return false Force
+When user_cc_turn_donk_plan_size_recorded && f$cc_turn_donk_plan_size_marker_count != 1 Return false Force
+When !user_cc_turn_donk_plan_size_recorded && f$cc_turn_donk_plan_size_marker_count != 0 Return false Force
+When user_cc_turn_donk_plan_expected_allin && !user_cc_turn_donk_plan_size_recorded Return false Force
+When Others Return true Force
+
+// Purpose: shortest-only sidepot reach must never promote whole Turn Donk to BetMax.
+// Source/Provenance: P invariant over T dual-bound geometry.
+##f$cc_turn_donk_sidepot_divergence_not_promoted##
+When !f$cc_turn_donk_mw_sidepot_divergence_candidate Return true Force
+When f$cc_turn_donk_natural_allin_equivalent Return false Force
+When Others Return true Force
+
+// ============================================================================
+// End Gate08H.2B Turn Donk execution equivalence.
+// ============================================================================
