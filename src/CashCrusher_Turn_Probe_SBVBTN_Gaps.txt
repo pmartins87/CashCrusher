@@ -107,7 +107,7 @@ f$cc_hand_third_pair_or_pocket
 // Provenance: A reviewed TBP action, translated to cleaned real-draw semantics.
 ##f$cc_turn_probe_sbvbtn_gap_air_bad_check##
 f$cc_turn_probe_sbvbtn_gap_context &&
-f$cc_turn_probe_bad_bluff_turn &&
+f$cc_turn_probe_sbvbtn_bad_bluff_turn &&
 f$cc_turn_probe_air
 
 // Purpose: good bluff Turn + any current no-made hand probes 75.
