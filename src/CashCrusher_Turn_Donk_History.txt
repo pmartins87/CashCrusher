@@ -1,31 +1,34 @@
 // ============================================================================
 // CashCrusher_Turn_Donk_History.txt
-// Gate 08A — canonical Turn Donk ownership / closed-flop history bridge
+// Gate 08A / 08C.3 — canonical Turn Donk ownership / closed-flop history bridge
 // ============================================================================
 // Purpose:
 //   Define exactly which CLOSED flop histories may reach Turn Donk before any
 //   hand-strength strategy is added.
 //
 // Audited DeepCrusher meaning:
-//   Turn Donk = Hero is OOP/FIRST-or-MIDDLE, does not own flop initiative, faces
-//   no turn bet, and an exact prior history supports leading. It is NOT the normal
-//   second barrel after Hero Donked/bet flop and remained final aggressor.
+//   Turn Donk = Hero is OOP/FIRST-or-MIDDLE, does not own final flop aggression,
+//   faces no Turn bet, and an exact prior history supports leading. It is NOT the
+//   normal second barrel after Hero bet the flop and remained final aggressor.
 //
-// Supported parent IDs at Gate08A:
-//   1 = Flop Donk opportunity -> Hero CHECK -> one clean CALL versus one later
-//       flop aggressor, who remains live and owns final flop aggression (X/C).
+// Parent IDs:
+//   1 = reviewed Flop-Donk opportunity -> Hero CHECK -> one clean CALL versus one
+//       later flop aggressor, with reviewed Gate07 family snapshot (X/C).
 //   2 = Hero executed Flop Donk -> later opponent RAISE -> Hero CALL, with no Hero
 //       re-aggression; raiser remains live and owns final flop aggression (B/C).
+//   3 = other clean OOP flop X/C whose execution is fully proved by closed did*
+//       history but which is not parent 1. This is required for source families
+//       such as 3wSBvBB where Hero may have entered flop with preflop/limped
+//       initiative and then surrendered flop initiative by checking and calling.
 //
 // Source/Provenance:
 //   T = closed round-2 did* counters, raisbits2, lastraised2, current Turn facts.
-//   A = DeepCrusher no-initiative Turn-Donk router + Gate07 closed Donk history.
+//   A = DeepCrusher no-initiative Turn-Donk router + Gate01N/Gate07 histories.
 //   P = strict parent exclusivity and fail-closed six-max ownership boundaries.
 //
 // Safety:
-//   This file contains NO Turn betting policy. Source scenario/hand-state mapping
-//   is audited in the next block. A pre-action Flop Donk plan never proves X/C,
-//   B/C or any other executed history.
+//   This file contains NO Turn betting policy. Parent 3 grants only an opportunity
+//   for a later exact child; it never grants strategy by itself.
 // ============================================================================
 
 // -----------------------------------------------------------------------------
@@ -78,12 +81,13 @@ When Others Return true Force
 f$cc_turn_donk_flop_aggressor_history_valid && lastraised2 = userchair
 
 // -----------------------------------------------------------------------------
-// TDH.02 — parent 1: initial Donk opportunity -> X/C
+// TDH.02 — clean Hero X/C execution primitive
 // -----------------------------------------------------------------------------
 
 // Purpose: Hero's closed flop line was exactly one CHECK then one CALL, with no
 // Hero bet/raise/all-in contribution.
-// Source: DeepCrusher Turn-Donk source repeatedly uses BotCalledOnFlop after X/C.
+// Source: DeepCrusher Turn-Donk source repeatedly uses actual BotCalledOnFlop
+// after an initial check; 3wSBvBB also has this exact X/C lineage.
 // Provenance: T exact Hero round-2 counters.
 ##f$cc_turn_donk_flop_check_call_only##
 When !(IsTurn || IsRiver) Return false Force
@@ -94,15 +98,10 @@ When didbetsizeround2 != 0 Return false Force
 When didalliround2 != 0 Return false Force
 When Others Return true Force
 
-// Purpose: reviewed Flop-Donk opportunity actually became X/C against one later
-// opponent aggressor. The Gate07 snapshot proves Hero first had AmountToCall=0;
-// closed counters prove the later check/call sequence actually occurred.
-// Source/Provenance: A/T exact execution bridge; P requires reviewed family state.
-##f$cc_turn_donk_parent_flop_xc##
-user_cc_flop_donk_opportunity_seen &&
-user_cc_flop_donk_state_snapshot_recorded &&
-f$cc_hist_flop_donk_family_marker_count = 1 &&
-f$cc_hist_flop_donk_snapshot_consistent &&
+// Purpose: all actor-independent requirements for one clean X/C against one
+// surviving flop aggressor.
+// Source/Provenance: T closed history + P canonical ownership composition.
+##f$cc_turn_donk_clean_flop_xc##
 f$cc_turn_donk_flop_check_call_only &&
 f$cc_turn_donk_single_flop_aggressor &&
 f$cc_turn_donk_flop_aggressor_live_opponent &&
@@ -110,15 +109,28 @@ f$cc_turn_donk_flop_aggressor_pos_id > 0 &&
 !f$cc_turn_donk_hero_owned_final_flop_aggression
 
 // -----------------------------------------------------------------------------
-// TDH.03 — parent 2: executed Flop Donk -> raise -> call (B/C)
+// TDH.03 — parent 1: reviewed Flop-Donk opportunity -> X/C
+// -----------------------------------------------------------------------------
+
+// Purpose: reviewed Flop-Donk opportunity actually became X/C. Gate07 snapshot
+// proves Hero first had AmountToCall=0; closed counters prove actual X/C.
+// Source/Provenance: A/T exact execution bridge; P requires reviewed family state.
+##f$cc_turn_donk_parent_flop_xc##
+user_cc_flop_donk_opportunity_seen &&
+user_cc_flop_donk_state_snapshot_recorded &&
+f$cc_hist_flop_donk_family_marker_count = 1 &&
+f$cc_hist_flop_donk_snapshot_consistent &&
+f$cc_turn_donk_clean_flop_xc
+
+// -----------------------------------------------------------------------------
+// TDH.04 — parent 2: executed Flop Donk -> raise -> call (B/C)
 // -----------------------------------------------------------------------------
 
 // Purpose: clean Donk-B/C parent where opponent's later raise ends flop
 // aggression and Hero did not re-aggress.
 // Source: `(BBorSB)v2pp` Turn source explicitly includes verified draw B/C history.
 // Provenance: A direct source-history shape + T Gate07K executed actions.
-// Safety: exact defensive eligibility (which Flop Donk hands are allowed to call
-// the raise) belongs to the later defensive node and is NOT inferred here.
+// Safety: exact defensive eligibility belongs the defensive node and is not inferred.
 ##f$cc_turn_donk_parent_flop_donk_raise_call##
 f$cc_hist_flop_donk_then_called_raise &&
 !f$cc_hist_flop_donk_then_reaggressed &&
@@ -130,18 +142,37 @@ f$cc_turn_donk_flop_aggressor_live_opponent &&
 f$cc_turn_donk_flop_aggressor_pos_id > 0 &&
 !f$cc_turn_donk_hero_owned_final_flop_aggression
 
+// -----------------------------------------------------------------------------
+// TDH.05 — parent 3: clean X/C outside reviewed Gate07 family parent
+// -----------------------------------------------------------------------------
+
+// Purpose: preserve a real clean X/C even when the flop began under a different
+// attack owner (for example, PFA checks then calls) or the exact source scenario
+// was not a reviewed Gate07 family. This repairs the 3wSBvBB MNR/limped ancestry
+// without pretending that a pre-action strategy snapshot is execution proof.
+// Source: 3wSBvBB Starting Strategy explicitly owns `After flop X/C` branches.
+// Provenance: T actual X/C + A source ownership repair + P exclusion of parent 1.
+// Safety: this grants no strategy; exact children still prove preflop topology,
+// range origin and defense-owned flop-call eligibility.
+##f$cc_turn_donk_parent_other_clean_xc##
+f$cc_turn_donk_clean_flop_xc &&
+!f$cc_turn_donk_parent_flop_xc
+
 // Purpose: count mutually exclusive approved Turn-Donk parents.
 // Source/Provenance: P safety invariant over A/T histories.
 ##f$cc_turn_donk_parent_count##
 (f$cc_turn_donk_parent_flop_xc * 1) +
-(f$cc_turn_donk_parent_flop_donk_raise_call * 1)
+(f$cc_turn_donk_parent_flop_donk_raise_call * 1) +
+(f$cc_turn_donk_parent_other_clean_xc * 1)
 
-// Purpose: stable parent ID: 1=X/C, 2=Donk-B/C, 0=unknown/contradiction.
+// Purpose: stable parent ID: 1=reviewed Flop-Donk X/C, 2=Donk-B/C,
+// 3=other clean X/C, 0=unknown/contradiction.
 // Source/Provenance: P engineering metadata.
 ##f$cc_turn_donk_parent_id##
 When f$cc_turn_donk_parent_count != 1 Return 0 Force
 When f$cc_turn_donk_parent_flop_xc Return 1 Force
 When f$cc_turn_donk_parent_flop_donk_raise_call Return 2 Force
+When f$cc_turn_donk_parent_other_clean_xc Return 3 Force
 When Others Return 0 Force
 
 // Purpose: parent histories must never overlap.
@@ -150,7 +181,7 @@ When Others Return 0 Force
 f$cc_turn_donk_parent_count <= 1
 
 // -----------------------------------------------------------------------------
-// TDH.04 — actual Turn Donk opportunity
+// TDH.06 — actual Turn Donk opportunity
 // -----------------------------------------------------------------------------
 
 // Purpose: Hero has not yet acted on Turn, including checks.
@@ -160,8 +191,7 @@ IsTurn && BotsActionsOnThisRoundIncludingChecks = 0
 
 // Purpose: canonical no-initiative FIRST/MIDDLE Turn Donk opportunity.
 // Source: DeepCrusher no-initiative router sends FIRST/MIDDLE + AmountToCall=0
-// to `f$move_turn_donkbet`, while LAST belongs Float and Hero-initiative belongs
-// Turn CBet/continuation.
+// to Turn Donk; LAST belongs Float and Hero-final-aggressor belongs continuation.
 // Provenance: A source ownership + T current facts + P exact-parent requirement.
 ##f$cc_turn_donk_opportunity##
 When !IsTurn Return false Force
@@ -197,14 +227,12 @@ f$cc_turn_donk_opportunity && f$cc_hu_origin_postflop_reduced
 f$cc_turn_donk_opportunity && f$cc_multiway
 
 // -----------------------------------------------------------------------------
-// TDH.05 — explicit owner separators / discovered coverage dependency
+// TDH.07 — explicit owner separators / discovered coverage dependencies
 // -----------------------------------------------------------------------------
 
 // Purpose: Hero's one-size Flop Donk was called and Hero remained final flop
-// aggressor. This is an initiative continuation/second-barrel family, NOT Turn Donk.
-// Source: DeepCrusher routes ordinary Hero-initiative Turn no-bet states to CBet;
-// `(BBorSB)v2pp` value-Donk continuation is also implemented there historically.
-// Provenance: A/T ownership separator; strategy repair is a separate Gate02R task.
+// aggressor. This is an initiative continuation/second-barrel family, not Turn Donk.
+// Source/Provenance: A/T ownership separator.
 ##f$cc_turn_donk_excluded_flop_donk_standard_continuation##
 IsTurn && f$cc_hist_flop_donk_standard_called_parent
 
@@ -218,15 +246,19 @@ IsTurn && f$cc_hist_turn_standard_cbet_parent
 ##f$cc_turn_donk_excluded_standard_flop_float##
 IsTurn && f$cc_hist_flop_float_standard_parent_valid
 
-// Purpose: visible source-state limitation before Gate08B strategy coding.
-// The Gate07 snapshot knows family/primary hand and direct positive source subtype,
-// but an X/C source history still needs exact old-flop draw/high-air/TP substate
+// Purpose: reviewed Gate07 source X/C still needs exact old-flop source substate
 // provenance before source-specific Turn branches may fire.
 // Source/Provenance: P audit flag describing an evidence gap, never an action.
 ##f$cc_turn_donk_xc_source_substate_needs_review##
 f$cc_turn_donk_parent_flop_xc &&
 (f$cc_hist_flop_donk_family_id = 1 || f$cc_deal_size <= 3)
 
+// Purpose: parent 3 is intentionally only an ownership bridge. A later strategy
+// child must prove exact range/history provenance before acting.
+// Source/Provenance: P diagnostic for the new clean-X/C repair.
+##f$cc_turn_donk_other_clean_xc_needs_exact_child##
+f$cc_turn_donk_parent_id = 3
+
 // ============================================================================
-// End Gate08A Turn Donk ownership/history bridge.
+// End Gate08A/08C.3 Turn Donk ownership/history bridge.
 // ============================================================================
