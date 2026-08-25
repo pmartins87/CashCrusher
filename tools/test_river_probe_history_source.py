@@ -56,16 +56,31 @@ def history_contract() -> None:
         assert token in turn
     assert "raisbits3 = 0" in block(HIST, "f$cc_hist_river_probe_no_turn_aggressor")
 
+    supported = block(HIST, "f$cc_river_probe_preflop_context_supported")
+    assert "f$cc_pot_family_id >= 1" in supported
+    assert "f$cc_pot_family_id <= 4" in supported
+
+    # Gate11A.1 correction: actual flop CALL, not preflop initiative, owns Probe.
+    allowed = block(HIST, "f$cc_river_probe_preflop_aggressor_history_allowed")
+    for token in ("f$cc_pf_role_pfa", "f$cc_pf_role_3bettor", "f$cc_pf_role_4bettor"):
+        assert token in allowed
+
     opp = block(HIST, "f$cc_river_probe_base_opportunity")
     for token in (
         "f$cc_context_valid",
         "f$cc_river_probe_first_river_action_clean",
         "f$cc_hist_river_probe_flop_checkcall_clean",
         "f$cc_hist_river_probe_turn_checkthrough_clean",
-        "f$cc_river_probe_preflop_noinitiative",
+        "f$cc_river_probe_preflop_context_supported",
         "f$cc_relative_postflop_pos_id != 1 && f$cc_relative_postflop_pos_id != 2",
     ):
         assert token in opp
+    executable_opp = executable(opp)
+    assert "preflop_noinitiative" not in executable_opp
+    assert "excluded_delayed_cbet" not in executable_opp
+    assert "f$cc_pf_role_pfa" not in executable_opp
+    assert "f$cc_pf_role_3bettor" not in executable_opp
+    assert "f$cc_pf_role_4bettor" not in executable_opp
 
     hu = block(HIST, "f$cc_river_probe_hu_opportunity")
     assert "f$cc_hu_oop" in hu
@@ -139,7 +154,6 @@ def source_contract() -> None:
     assert "f$cc_river_probe_size_50_id" in size
     assert "f$cc_river_probe_3w_tp_or_op_real Return f$cc_river_probe_size_50_id" in size
 
-    # Native 3w dispatcher now includes the separately tested BBvBTN child.
     bb = block(SRC, "f$cc_river_probe_3w_bbvbtn_context")
     assert "f$cc_hero_pos_id = 6" in bb
     cov = executable(block(SRC, "f$cc_river_probe_3w_source_covered"))
@@ -183,4 +197,4 @@ if __name__ == "__main__":
     snapshot_contract()
     source_contract()
     common_router_safety_contract()
-    print("PASS: Gate11A/B River Probe history and native-source subset")
+    print("PASS: Gate11A.1/B River Probe history and native-source subset")
