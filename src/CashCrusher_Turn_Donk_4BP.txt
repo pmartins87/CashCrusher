@@ -1,0 +1,153 @@
+// ============================================================================
+// CashCrusher_Turn_Donk_4BP.txt
+// Gate 08G — clean supported HU 4BP Turn Donk gaps
+// ============================================================================
+// Purpose:
+//   Review clean three-raise pots where Hero reaches the Turn HU/OOP after an
+//   actual flop X/C and no longer owns flop aggression. Support both:
+//     * clean Hero 4bettor -> flop X/C versus proven opener/3bettor survivor;
+//     * clean Hero 3bettor -> call opener4 -> flop X/C versus opener4.
+//
+// Source boundary:
+//   No dedicated deep-stack 4BP Turn-Donk source tree was found in the Crusher
+//   material. Reraised-pot routing is architecture evidence only.
+//
+// Professional-theory review:
+//   4BP reaches low SPR naturally even from 100bb, so strong one-pair hands can
+//   legitimately play for stacks in exact contexts. That fact does NOT imply
+//   `SPR low -> lead Turn` after Hero X/C flop. Check/raise, check/call and lead
+//   frequencies remain range/board dependent. The deterministic baseline here is
+//   therefore CHECK until an exact positive child is justified.
+//
+// Provenance:
+//   T/A = Gate01I clean 4BP chronology + caller-side repair + Gate08A actual X/C.
+//   P   = reviewed clean-HU CHECK baseline.
+//   X   = low-SPR/TP+/OP as a generic reason to manufacture a Turn Donk.
+//
+// Safety:
+//   Multiway 4BP, other-caller survivor, reversed/backraise/limp-reraise and 5BP+
+//   remain fail-closed. This file does not ban future exact-node shoves/leads.
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// TD4B.01 — Hero 4bettor clean HU parents
+// -----------------------------------------------------------------------------
+
+// Purpose: Hero is clean standard 4bettor and current sole Villain is a supported
+// original opener or original 3bettor survivor.
+// Source/Provenance: T/A Gate01I clean subtype + exact HU survivor proof.
+##f$cc_turn_donk_4bp_hero4_base##
+f$cc_turn_donk_opportunity &&
+f$cc_pot_family_id = 4 &&
+f$cc_pf_role_4bettor &&
+f$cc_pf_4bet_subtype_id > 0 &&
+f$cc_hu &&
+f$cc_hu_oop &&
+f$cc_flop_entry_count = 2 &&
+f$cc_hu_4bp_survivor_consistent &&
+(f$cc_hu_4bp_survivor_type_id = 1 || f$cc_hu_4bp_survivor_type_id = 2) &&
+f$cc_turn_donk_hu_aggressor_is_current_villain
+
+// Purpose: standard opener4 Hero versus original 3bettor survivor.
+// Source/Provenance: T/A exact clean subtype/range identity.
+##f$cc_turn_donk_4bp_opener4_vs_threebettor##
+f$cc_turn_donk_4bp_hero4_base &&
+f$cc_pf_4bet_standard_opener4_proven &&
+f$cc_hu_4bp_villain_is_threebettor
+
+// Purpose: standard cold4 Hero versus original opener survivor.
+// Source/Provenance: T/A exact clean cold4 range parent.
+##f$cc_turn_donk_4bp_cold4_vs_opener##
+f$cc_turn_donk_4bp_hero4_base &&
+f$cc_pf_4bet_standard_cold4_proven &&
+f$cc_hu_4bp_villain_is_opener
+
+// Purpose: standard cold4 Hero versus original 3bettor survivor.
+// Source/Provenance: T/A exact clean cold4 range parent.
+##f$cc_turn_donk_4bp_cold4_vs_threebettor##
+f$cc_turn_donk_4bp_hero4_base &&
+f$cc_pf_4bet_standard_cold4_proven &&
+f$cc_hu_4bp_villain_is_threebettor
+
+// -----------------------------------------------------------------------------
+// TD4B.02 — Hero caller of opener4 parent
+// -----------------------------------------------------------------------------
+
+// Purpose: opener -> Hero 3bet -> opener 4bet -> Hero call, then exact HU/OOP
+// flop X/C and same opener4 remains sole Turn Villain/final flop aggressor.
+// Source/Provenance: T/A generic caller-side clean 4BP proof + Gate08A history.
+##f$cc_turn_donk_4bp_call4_vs_opener4##
+f$cc_turn_donk_opportunity &&
+f$cc_pot_family_id = 4 &&
+f$cc_pf_call4_opener4_vs_hero3bettor_proven &&
+f$cc_hu_call4_vs_opener4_context &&
+f$cc_hu_oop &&
+f$cc_flop_entry_count = 2 &&
+f$cc_turn_donk_hu_aggressor_is_current_villain &&
+f$cc_turn_donk_flop_aggressor_pos_id = f$cc_pf_call4_other_raiser_pos_id
+
+// Purpose: stable clean-HU 4BP parent ID.
+// 1 opener4-vs-3bettor | 2 cold4-vs-opener | 3 cold4-vs-3bettor |
+// 4 call4-vs-opener4.
+// Source/Provenance: P audit metadata over T/A exact chronology.
+##f$cc_turn_donk_4bp_parent_id##
+When f$cc_turn_donk_4bp_opener4_vs_threebettor Return 1 Force
+When f$cc_turn_donk_4bp_cold4_vs_opener Return 2 Force
+When f$cc_turn_donk_4bp_cold4_vs_threebettor Return 3 Force
+When f$cc_turn_donk_4bp_call4_vs_opener4 Return 4 Force
+When Others Return 0 Force
+
+// Purpose: exactly one supported clean-HU 4BP parent owns the decision.
+// Source/Provenance: P overlap guard.
+##f$cc_turn_donk_4bp_parent_count##
+(f$cc_turn_donk_4bp_opener4_vs_threebettor * 1) +
+(f$cc_turn_donk_4bp_cold4_vs_opener * 1) +
+(f$cc_turn_donk_4bp_cold4_vs_threebettor * 1) +
+(f$cc_turn_donk_4bp_call4_vs_opener4 * 1)
+
+// Purpose: parent integrity; contradictory histories are not covered.
+// Source/Provenance: P fail-closed safety.
+##f$cc_turn_donk_4bp_context_consistent##
+f$cc_turn_donk_4bp_parent_count = 1 && f$cc_turn_donk_4bp_parent_id > 0
+
+// -----------------------------------------------------------------------------
+// TD4B.03 — reviewed professional action
+// -----------------------------------------------------------------------------
+
+// Purpose: clean-HU 4BP Turn-Donk baseline.
+// Professional-theory rationale:
+//   Low SPR can make later commitment correct, but after flop X/C the question
+//   "lead Turn?" remains separate from "willing to stack off?". Without exact
+//   board/range evidence a universal lead would reproduce the short-stack
+//   contamination we are explicitly avoiding.
+// Provenance: P deliberate CHECK baseline.
+##f$cc_turn_donk_4bp_action##
+When !f$cc_turn_donk_4bp_context_consistent Return false Force
+When Others Return false Force
+
+// Purpose: CHECK baseline has no size.
+// Source/Provenance: P paired size contract.
+##f$cc_turn_donk_4bp_size_id##
+0
+
+// Purpose: clean supported 4BP state is reviewed only when exactly one parent is
+// proven.
+// Source/Provenance: P coverage contract.
+##f$cc_turn_donk_4bp_covered##
+f$cc_turn_donk_4bp_context_consistent
+
+// Purpose: visible unsupported 4BP/5BP+ Turn-Donk opportunity.
+// Source/Provenance: P evidence-boundary diagnostic.
+##f$cc_turn_donk_4bp_unresolved##
+f$cc_turn_donk_opportunity &&
+f$cc_pot_family_id >= 4 &&
+!f$cc_turn_donk_4bp_covered
+
+// Purpose: action/size integrity.
+// Source/Provenance: P check-only invariant.
+##f$cc_turn_donk_4bp_size_consistent##
+!f$cc_turn_donk_4bp_action && f$cc_turn_donk_4bp_size_id = 0
+
+// ============================================================================
+// End Gate08G clean supported HU 4BP Turn Donk.
+// ============================================================================
