@@ -1,12 +1,15 @@
 // ============================================================================
 // CashCrusher_River_Probe_3W_Source.txt
-// Gate 11B.1 — native 3-handed River Probe source subset
+// Gate 11B/11D — native 3-handed River Probe source descendants
 // ============================================================================
 // Purpose:
-//   Port only native 3w River-Probe decisions whose FLOP class and executed
-//   X/C -> Turn X/X history can both be proved. The first implemented descendant
-//   is 3wSBvBTN draw/high-air; BBvBTN/SBvBB source trees remain separately pending
-//   where their exact final-call provenance is not yet snapshotted.
+//   Port native 3w River-Probe decisions whose FLOP class and executed
+//   X/C -> Turn X/X history can both be proved. Current River strength always
+//   supersedes stale flop class exactly as in the mature Retro11 tree.
+//
+// Reviewed descendants here:
+//   * 3wSBvBTN draw/high-air source parents;
+//   * 3wBBvBTN made/MPBP/draw/high-air source parents.
 //
 // Source hierarchy:
 //   1) mature DeepCrusher Retro11 final-action markers and River-Probe tree;
@@ -20,7 +23,7 @@
 // ============================================================================
 
 // -----------------------------------------------------------------------------
-// RP3W.01 — River-side validation of the saved flop observation
+// RP3W.01 — River-side validation of saved flop observations
 // -----------------------------------------------------------------------------
 
 // Purpose: generic saved-flop facts become River-Probe-usable only after exact
@@ -36,7 +39,7 @@ user_cc_turn_probe_flop_snapshot_seen
 // Purpose: exact native 3-handed SB caller versus BTN opener, BB folded preflop;
 // BTN must also be the actual flop aggressor that Hero check-called.
 // Source: legacy `game_3wSBvBTN` Retro11 owner.
-// Provenance: A exact canonical reconstruction over T history.
+// Source/Provenance: A exact canonical reconstruction over T history.
 ##f$cc_river_probe_3w_sbvbtn_context##
 f$cc_river_probe_hu_opportunity &&
 f$cc_river_probe_snapshot_valid &&
@@ -50,89 +53,13 @@ f$cc_pf_single_raiser_pos_id = 4 &&
 headsupchair = dealerchair &&
 lastraised2 = dealerchair
 
-// Purpose: source-compatible actual flop X/C with the saved non-best draw class.
-// Source: mature Retro11 writes its marker only after final CALL and excludes
-// best-draw/XR classes; Gate11 reproduces that with pre-action class + closed X/C.
-// Provenance: T/A.
-##f$cc_river_probe_3w_sbvbtn_draw_parent##
-f$cc_river_probe_3w_sbvbtn_context &&
-user_cc_river_probe_flop_3w_sbvbtn_nonbest_draw_candidate
-
-// Purpose: source-compatible actual flop X/C with the saved high-air/backdoor class.
-// Source/Provenance: T/A same final-action reconstruction.
-##f$cc_river_probe_3w_sbvbtn_highair_parent##
-f$cc_river_probe_3w_sbvbtn_context &&
-user_cc_river_probe_flop_3w_sbvbtn_highair_candidate
-
-// Purpose: exact positive source parent union.
-// Source/Provenance: T/A.
-##f$cc_river_probe_3w_sbvbtn_source_parent##
-f$cc_river_probe_3w_sbvbtn_draw_parent || f$cc_river_probe_3w_sbvbtn_highair_parent
-
-// -----------------------------------------------------------------------------
-// RP3W.02 — current River reclassification, conservative CF7 boundary
-// -----------------------------------------------------------------------------
-
-// Purpose: states that can be resolved without pretending CashCrusher has full
-// CF7_NutClass/RealTrips/TopPairReal equivalence.
-// Directly provable source actions:
-//   literal nuts ->100; literal set ->100; contributed exact 2P ->75;
-//   historical draw/high-air that is still no-made air ->50.
-// Source: mature 3wSBvBTN Retro11 tree.
-// Provenance: T/A conservative subsets.
-##f$cc_river_probe_3w_sbvbtn_resolved##
-f$cc_river_probe_3w_sbvbtn_source_parent &&
-(f$cc_river_probe_literal_nuts ||
- f$cc_river_probe_source_set ||
- f$cc_river_probe_contributed_exact_two_pair ||
- f$cc_river_probe_air)
-
-// Purpose: source branch exists for improved real TP/OP, but full contribution-
-// aware CF7 equivalence is not yet proven. Keep it visible rather than guessing.
-// Source/Provenance: P evidence-gap diagnostic over T positive source branch.
-##f$cc_river_probe_3w_sbvbtn_value_translation_pending##
-f$cc_river_probe_3w_sbvbtn_source_parent &&
-f$cc_hand_top_pair_or_better &&
-!f$cc_river_probe_literal_nuts &&
-!f$cc_river_probe_source_set &&
-!f$cc_river_probe_contributed_exact_two_pair
-
-// Purpose: source action for currently resolvable states.
-// Source/Provenance: T/A exact sizing branch by branch.
-##f$cc_river_probe_3w_sbvbtn_action##
-When !f$cc_river_probe_3w_sbvbtn_resolved Return false Force
-When f$cc_river_probe_literal_nuts Return true Force
-When f$cc_river_probe_source_set Return true Force
-When f$cc_river_probe_contributed_exact_two_pair Return true Force
-When f$cc_river_probe_air Return true Force
-When Others Return false Force
-
-// Purpose: paired exact source sizing for resolved subset.
-// Source: mature tree: nuts/set 100; exact two-pair 75; missed draw/high-air 50.
-// Provenance: T/A.
-##f$cc_river_probe_3w_sbvbtn_size_id##
-When !f$cc_river_probe_3w_sbvbtn_resolved Return 0 Force
-When f$cc_river_probe_literal_nuts Return f$cc_river_probe_size_100_id Force
-When f$cc_river_probe_source_set Return f$cc_river_probe_size_100_id Force
-When f$cc_river_probe_contributed_exact_two_pair Return f$cc_river_probe_size_75_id Force
-When f$cc_river_probe_air Return f$cc_river_probe_size_50_id Force
-When Others Return 0 Force
-
-// Purpose: only fully resolvable source states count as strategic coverage.
-// Source/Provenance: P fail-closed coverage firewall.
-##f$cc_river_probe_3w_sbvbtn_covered##
-f$cc_river_probe_3w_sbvbtn_resolved
-
-// -----------------------------------------------------------------------------
-// RP3W.03 — native 3w descendants explicitly pending, not silently generalized
-// -----------------------------------------------------------------------------
-
-// Purpose: exact 3wBBvBTN BTN-open-SRP reduced-HU geometry after actual flop X/C.
-// Source tree is rich (TP/MPBP/draw/high-air) but its final-call class provenance
-// is not yet persisted by CashCrusher, so this context owns NO positive strategy.
-// Source/Provenance: A context label, P strategy firewall.
-##f$cc_river_probe_3w_bbvbtn_provenance_pending##
+// Purpose: exact native 3-handed BB caller versus BTN opener, SB folded preflop;
+// BTN must be both current Villain and actual flop aggressor.
+// Source: legacy `game_3wBBvBTN` Retro11 owner.
+// Source/Provenance: A exact canonical reconstruction over T history.
+##f$cc_river_probe_3w_bbvbtn_context##
 f$cc_river_probe_hu_opportunity &&
+f$cc_river_probe_snapshot_valid &&
 f$cc_deal_size = 3 &&
 f$cc_flop_entry_count = 2 &&
 f$cc_hero_pos_id = 6 &&
@@ -143,26 +70,293 @@ f$cc_pf_single_raiser_pos_id = 4 &&
 headsupchair = dealerchair &&
 lastraised2 = dealerchair
 
-// Purpose: aggregate direct native-3w coverage currently proven.
-// Source/Provenance: A/P dispatcher over T/A resolved descendants.
-##f$cc_river_probe_3w_source_covered##
-f$cc_river_probe_3w_sbvbtn_covered
+// -----------------------------------------------------------------------------
+// RP3W.02 — shared contribution-safe current River classes
+// -----------------------------------------------------------------------------
 
-##f$cc_river_probe_3w_source_action##
-When f$cc_river_probe_3w_sbvbtn_covered Return f$cc_river_probe_3w_sbvbtn_action Force
+// Purpose: contribution-aware current top pair used by native 3w source branches.
+// Source: CF7_TopPairReal.
+// Source/Provenance: T/A same certified reconstruction used by HUBB Gate11C.
+##f$cc_river_probe_3w_top_pair_real##
+f$cc_hand_just_top_pair && !TwoPairOnBoard && npcbits > 0
+
+// Purpose: contribution-aware current overpair.
+// Source: CF7_OverPairReal.
+// Source/Provenance: T/A same certified reconstruction used by HUBB Gate11C.
+##f$cc_river_probe_3w_overpair_real##
+HaveOverPair && PairInHand && npcbits > 0
+
+// Purpose: TP/OP real union.
+// Source/Provenance: T/A.
+##f$cc_river_probe_3w_tp_or_op_real##
+f$cc_river_probe_3w_top_pair_real || f$cc_river_probe_3w_overpair_real
+
+// Purpose: contribution-safe subset of NutClass/RealTrips/Set used by 3w tables.
+// Non-nut straight/flush remains outside this helper because exact CF7 ownership
+// is not reconstructible from coarse HaveStraight/HaveFlush alone.
+// Source/Provenance: T source region, A conservative exact subset.
+##f$cc_river_probe_3w_strong_safe##
+When f$cc_river_probe_literal_nuts Return true Force
+When HaveSet Return true Force
+When HaveTrips && !TripsOnBoard && npcbits > 0 Return true Force
+When HaveQuads && pokerval > pokervalcommon Return true Force
+When HaveFullHouse && pokerval > pokervalcommon Return true Force
 When Others Return false Force
 
-##f$cc_river_probe_3w_source_size_id##
-When f$cc_river_probe_3w_sbvbtn_covered Return f$cc_river_probe_3w_sbvbtn_size_id Force
+// Purpose: unresolved current non-nut straight/flush contribution class.
+// Source/Provenance: P evidence-gap diagnostic around T CF7_NutClass semantics.
+##f$cc_river_probe_3w_current_straightflush_pending##
+!f$cc_river_probe_literal_nuts &&
+((HaveFlush && pokerval > pokervalcommon) ||
+ (HaveStraight && pokerval > pokervalcommon))
+
+// Purpose: current weak-pair tiers that are explicitly non-positive in the
+// 3wBBvBTN source after its listed value branches are exhausted.
+// Source/Provenance: T/A pair-ladder residual.
+##f$cc_river_probe_3w_bbvbtn_weak_pair##
+f$cc_hand_third_pair_or_pocket ||
+f$cc_hand_fourth_pair_or_pocket ||
+f$cc_hand_fifth_pair_or_pocket ||
+HaveUnderPair
+
+// -----------------------------------------------------------------------------
+// RP3W.03 — 3wSBvBTN exact source parent and current strategy
+// -----------------------------------------------------------------------------
+
+// Purpose: actual flop X/C with the saved non-best draw source class.
+// Source/Provenance: T/A pre-action class + CLOSED final CALL.
+##f$cc_river_probe_3w_sbvbtn_draw_parent##
+f$cc_river_probe_3w_sbvbtn_context &&
+user_cc_river_probe_flop_3w_sbvbtn_nonbest_draw_candidate
+
+// Purpose: actual flop X/C with the saved high-air/backdoor source class.
+// Source/Provenance: T/A pre-action class + CLOSED final CALL.
+##f$cc_river_probe_3w_sbvbtn_highair_parent##
+f$cc_river_probe_3w_sbvbtn_context &&
+user_cc_river_probe_flop_3w_sbvbtn_highair_candidate
+
+// Purpose: exact positive source parent union.
+// Source/Provenance: T/A.
+##f$cc_river_probe_3w_sbvbtn_source_parent##
+f$cc_river_probe_3w_sbvbtn_draw_parent || f$cc_river_probe_3w_sbvbtn_highair_parent
+
+// Purpose: source state currently resolvable without full CF7 straight/flush.
+// Source: nuts/trips/set100; exact2P75; TP/OP50; missed draw/high-air50.
+// Source/Provenance: T/A conservative current reclassification.
+##f$cc_river_probe_3w_sbvbtn_resolved##
+f$cc_river_probe_3w_sbvbtn_source_parent &&
+!f$cc_river_probe_3w_current_straightflush_pending &&
+(f$cc_river_probe_3w_strong_safe ||
+ f$cc_river_probe_contributed_exact_two_pair ||
+ f$cc_river_probe_3w_tp_or_op_real ||
+ f$cc_river_probe_air)
+
+// Purpose: remaining current CF7-only strong translation gap for this parent.
+// Source/Provenance: P diagnostic; no action inferred.
+##f$cc_river_probe_3w_sbvbtn_value_translation_pending##
+f$cc_river_probe_3w_sbvbtn_source_parent &&
+f$cc_river_probe_3w_current_straightflush_pending
+
+// Purpose: source action for resolvable 3wSBvBTN states.
+// Source/Provenance: T/A exact sizing branch by branch.
+##f$cc_river_probe_3w_sbvbtn_action##
+When !f$cc_river_probe_3w_sbvbtn_resolved Return false Force
+When f$cc_river_probe_3w_strong_safe Return true Force
+When f$cc_river_probe_contributed_exact_two_pair Return true Force
+When f$cc_river_probe_3w_tp_or_op_real Return true Force
+When f$cc_river_probe_air Return true Force
+When Others Return false Force
+
+// Purpose: paired exact source sizing for resolved 3wSBvBTN subset.
+// Source: strong100; exact2P75; TP/OP50; missed draw/high-air50.
+// Source/Provenance: T/A.
+##f$cc_river_probe_3w_sbvbtn_size_id##
+When !f$cc_river_probe_3w_sbvbtn_resolved Return 0 Force
+When f$cc_river_probe_3w_strong_safe Return f$cc_river_probe_size_100_id Force
+When f$cc_river_probe_contributed_exact_two_pair Return f$cc_river_probe_size_75_id Force
+When f$cc_river_probe_3w_tp_or_op_real Return f$cc_river_probe_size_50_id Force
+When f$cc_river_probe_air Return f$cc_river_probe_size_50_id Force
 When Others Return 0 Force
 
-// Purpose: local action/size consistency.
+// Purpose: only fully resolvable source states count as strategic coverage.
+// Source/Provenance: P fail-closed coverage firewall.
+##f$cc_river_probe_3w_sbvbtn_covered##
+f$cc_river_probe_3w_sbvbtn_resolved
+
+// -----------------------------------------------------------------------------
+// RP3W.04 — 3wBBvBTN exact source parent reconstruction
+// -----------------------------------------------------------------------------
+
+// Purpose: source made-hand final-call parent, using only contribution-safe flop
+// classes persisted before the check and actual X/C proved by Gate11A.
+// Source/Provenance: T/A.
+##f$cc_river_probe_3w_bbvbtn_made_parent##
+f$cc_river_probe_3w_bbvbtn_context &&
+user_cc_river_probe_flop_3w_bbvbtn_made_candidate
+
+// Purpose: source MP/BP final-call parent.
+// Source/Provenance: T/A exact portable pair-tier snapshot + CLOSED X/C.
+##f$cc_river_probe_3w_bbvbtn_mpbp_parent##
+f$cc_river_probe_3w_bbvbtn_context &&
+user_cc_river_probe_flop_3w_bbvbtn_mpbp_candidate
+
+// Purpose: source non-best draw final-call parent.
+// Source/Provenance: T/A.
+##f$cc_river_probe_3w_bbvbtn_draw_parent##
+f$cc_river_probe_3w_bbvbtn_context &&
+user_cc_river_probe_flop_3w_bbvbtn_nonbest_draw_candidate
+
+// Purpose: source high-air/backdoor final-call parent.
+// Source/Provenance: T/A.
+##f$cc_river_probe_3w_bbvbtn_highair_parent##
+f$cc_river_probe_3w_bbvbtn_context &&
+user_cc_river_probe_flop_3w_bbvbtn_highair_candidate
+
+// Purpose: source parent union corresponding to the four mature Retro11 markers.
+// Source/Provenance: T/A exact provenance union over conservative made subset.
+##f$cc_river_probe_3w_bbvbtn_source_parent##
+f$cc_river_probe_3w_bbvbtn_made_parent ||
+f$cc_river_probe_3w_bbvbtn_mpbp_parent ||
+f$cc_river_probe_3w_bbvbtn_draw_parent ||
+f$cc_river_probe_3w_bbvbtn_highair_parent
+
+// -----------------------------------------------------------------------------
+// RP3W.05 — 3wBBvBTN current River source strategy
+// -----------------------------------------------------------------------------
+
+// Purpose: current exact two-pair-or-safe-strong branch: source River100.
+// Source/Provenance: T/A direct current reclassification.
+##f$cc_river_probe_3w_bbvbtn_strong100##
+f$cc_river_probe_3w_bbvbtn_source_parent &&
+(f$cc_river_probe_3w_strong_safe || f$cc_river_probe_contributed_exact_two_pair)
+
+// Purpose: current TP/OP branch, positive on all boards; source size depends CPL.
+// Source/Provenance: T/A.
+##f$cc_river_probe_3w_bbvbtn_tpop_action##
+f$cc_river_probe_3w_bbvbtn_source_parent && f$cc_river_probe_3w_tp_or_op_real
+
+// Purpose: current second-pair branch, positive on all boards; CPL50/nCPL75.
+// Source/Provenance: T/A.
+##f$cc_river_probe_3w_bbvbtn_secondpair_action##
+f$cc_river_probe_3w_bbvbtn_source_parent && f$cc_hand_second_pair_or_pocket
+
+// Purpose: exact narrow third-pair thin-value branch: <=3 better kickers, River
+// not completed and not paired -> River33.
+// Source/Provenance: T newest Retro11 direct branch + certified kicker helper.
+##f$cc_river_probe_3w_bbvbtn_thirdpair33##
+f$cc_river_probe_3w_bbvbtn_source_parent &&
+f$cc_hand_third_pair_or_pocket &&
+f$cc_number_better_kickers <= 3 &&
+!f$cc_river_probe_completed &&
+!f$cc_river_probe_paired
+
+// Purpose: draw-parent missed/no-made River always probes 50 in source/C++ fill.
+// Source/Provenance: T source parent + A reviewed C++ source-silent size fill.
+##f$cc_river_probe_3w_bbvbtn_draw_air_action##
+f$cc_river_probe_3w_bbvbtn_draw_parent && f$cc_river_probe_air
+
+// Purpose: high-air-parent missed River probes 50 only on source-approved board.
+// Source/Provenance: T exact `!f$board_BadToBluffRiver` branch.
+##f$cc_river_probe_3w_bbvbtn_highair_action##
+f$cc_river_probe_3w_bbvbtn_highair_parent &&
+f$cc_river_probe_air &&
+!f$cc_river_probe_bad_to_bluff_board
+
+// Purpose: high-air missed River on bad source board is an explicit CHECK.
+// Source/Provenance: T exact negative branch.
+##f$cc_river_probe_3w_bbvbtn_highair_badboard_check##
+f$cc_river_probe_3w_bbvbtn_highair_parent &&
+f$cc_river_probe_air &&
+f$cc_river_probe_bad_to_bluff_board
+
+// Purpose: weak-pair/current third-pair residual is explicit source CHECK unless
+// the precise third-pair33 branch above owns it.
+// Source/Provenance: T final scenario `Return false` after positive branches.
+##f$cc_river_probe_3w_bbvbtn_pair_check##
+f$cc_river_probe_3w_bbvbtn_source_parent &&
+f$cc_river_probe_3w_bbvbtn_weak_pair &&
+!f$cc_river_probe_3w_bbvbtn_thirdpair33
+
+// Purpose: current CF7-only non-nut straight/flush gap remains unowned.
+// Source/Provenance: P evidence boundary.
+##f$cc_river_probe_3w_bbvbtn_translation_pending##
+f$cc_river_probe_3w_bbvbtn_source_parent &&
+f$cc_river_probe_3w_current_straightflush_pending
+
+// Purpose: explicit union of all BBvBTN states whose source action is known,
+// including covered checks. Unknown made-category edge cases fail closed.
+// Source/Provenance: P coverage firewall over T/A current branches.
+##f$cc_river_probe_3w_bbvbtn_covered##
+f$cc_river_probe_3w_bbvbtn_strong100 ||
+f$cc_river_probe_3w_bbvbtn_tpop_action ||
+f$cc_river_probe_3w_bbvbtn_secondpair_action ||
+f$cc_river_probe_3w_bbvbtn_thirdpair33 ||
+f$cc_river_probe_3w_bbvbtn_draw_air_action ||
+f$cc_river_probe_3w_bbvbtn_highair_action ||
+f$cc_river_probe_3w_bbvbtn_highair_badboard_check ||
+f$cc_river_probe_3w_bbvbtn_pair_check
+
+// Purpose: exact BBvBTN source action over reviewed current states.
+// Source/Provenance: T/A branch-priority normalization.
+##f$cc_river_probe_3w_bbvbtn_action##
+When !f$cc_river_probe_3w_bbvbtn_covered Return false Force
+When f$cc_river_probe_3w_bbvbtn_strong100 Return true Force
+When f$cc_river_probe_3w_bbvbtn_tpop_action Return true Force
+When f$cc_river_probe_3w_bbvbtn_secondpair_action Return true Force
+When f$cc_river_probe_3w_bbvbtn_thirdpair33 Return true Force
+When f$cc_river_probe_3w_bbvbtn_draw_air_action Return true Force
+When f$cc_river_probe_3w_bbvbtn_highair_action Return true Force
+When f$cc_river_probe_3w_bbvbtn_highair_badboard_check Return false Force
+When f$cc_river_probe_3w_bbvbtn_pair_check Return false Force
+When Others Return false Force
+
+// Purpose: exact BBvBTN source sizes for positive reviewed states.
+// Source: strong100; TP/OP CPL75/nCPL100; second CPL50/nCPL75;
+// third-good clean33; draw/high-air50.
+// Source/Provenance: T/A.
+##f$cc_river_probe_3w_bbvbtn_size_id##
+When !f$cc_river_probe_3w_bbvbtn_covered Return 0 Force
+When f$cc_river_probe_3w_bbvbtn_strong100 Return f$cc_river_probe_size_100_id Force
+When f$cc_river_probe_3w_bbvbtn_tpop_action && f$cc_river_probe_completed Return f$cc_river_probe_size_75_id Force
+When f$cc_river_probe_3w_bbvbtn_tpop_action && !f$cc_river_probe_completed Return f$cc_river_probe_size_100_id Force
+When f$cc_river_probe_3w_bbvbtn_secondpair_action && f$cc_river_probe_completed Return f$cc_river_probe_size_50_id Force
+When f$cc_river_probe_3w_bbvbtn_secondpair_action && !f$cc_river_probe_completed Return f$cc_river_probe_size_75_id Force
+When f$cc_river_probe_3w_bbvbtn_thirdpair33 Return f$cc_river_probe_size_33_id Force
+When f$cc_river_probe_3w_bbvbtn_draw_air_action Return f$cc_river_probe_size_50_id Force
+When f$cc_river_probe_3w_bbvbtn_highair_action Return f$cc_river_probe_size_50_id Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// RP3W.06 — native 3w dispatcher
+// -----------------------------------------------------------------------------
+
+// Purpose: aggregate direct native-3w strategic coverage currently proven.
+// Source/Provenance: A/P dispatcher over T/A resolved descendants.
+##f$cc_river_probe_3w_source_covered##
+f$cc_river_probe_3w_sbvbtn_covered ||
+f$cc_river_probe_3w_bbvbtn_covered
+
+// Purpose: direct native-3w action dispatcher.
+// Source/Provenance: A/P paired exact-family router.
+##f$cc_river_probe_3w_source_action##
+When f$cc_river_probe_3w_sbvbtn_covered Return f$cc_river_probe_3w_sbvbtn_action Force
+When f$cc_river_probe_3w_bbvbtn_covered Return f$cc_river_probe_3w_bbvbtn_action Force
+When Others Return false Force
+
+// Purpose: direct native-3w size dispatcher.
+// Source/Provenance: A/P; explicit checks/uncovered ->0.
+##f$cc_river_probe_3w_source_size_id##
+When f$cc_river_probe_3w_sbvbtn_covered Return f$cc_river_probe_3w_sbvbtn_size_id Force
+When f$cc_river_probe_3w_bbvbtn_covered Return f$cc_river_probe_3w_bbvbtn_size_id Force
+When Others Return 0 Force
+
+// Purpose: local action/size consistency under the seven-ID global palette.
 // Source/Provenance: P invariant.
 ##f$cc_river_probe_3w_source_size_consistent##
 When !f$cc_river_probe_3w_source_action Return f$cc_river_probe_3w_source_size_id = 0 Force
-When f$cc_river_probe_3w_source_action Return f$cc_river_probe_3w_source_size_id >= 1 && f$cc_river_probe_3w_source_size_id <= 6 Force
+When f$cc_river_probe_3w_source_action Return f$cc_river_probe_3w_source_size_id >= 1 && f$cc_river_probe_3w_source_size_id <= 7 Force
 When Others Return false Force
 
 // ============================================================================
-// End Gate11B.1 native 3w source subset.
+// End native 3w River Probe source descendants.
 // ============================================================================
