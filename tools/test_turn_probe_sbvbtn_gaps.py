@@ -89,6 +89,8 @@ def size_contract() -> None:
         "f$cc_turn_probe_sbvbtn_gap_secondpair_flush50 Return f$cc_turn_probe_size_50_id Force",
         "f$cc_turn_probe_sbvbtn_gap_secondpair_75 Return f$cc_turn_probe_size_75_id Force",
         "f$cc_turn_probe_sbvbtn_gap_thirdpair_33 Return f$cc_turn_probe_size_33_id Force",
+        "f$cc_turn_probe_sbvbtn_gap_residual_nomade_probe Return f$cc_turn_probe_size_twothirds_id Force",
+        "f$cc_turn_probe_sbvbtn_gap_residual_pair_probe Return f$cc_turn_probe_size_75_id Force",
     ):
         assert token in size
 
@@ -101,19 +103,34 @@ def size_contract() -> None:
         "f$cc_turn_probe_size_50_id",
         "f$cc_turn_probe_size_75_id",
         "f$cc_turn_probe_size_100_id",
+        "f$cc_turn_probe_size_twothirds_id",
     ):
         assert f"##{symbol}##" in COMMON
 
+    assert executable(block(COMMON, "f$cc_turn_probe_size_twothirds_id")).strip() == "7"
+
 
 def residual_and_safety_contract() -> None:
-    residual = block(GAP, "f$cc_turn_probe_sbvbtn_gap_residual_needs_size_audit")
-    assert "f$cc_turn_probe_sbvbtn_gap_context" in residual
-    assert "!f$cc_turn_probe_sbvbtn_gap_covered" in residual
+    explicit = block(GAP, "f$cc_turn_probe_sbvbtn_gap_explicit_state")
+    assert "f$cc_turn_probe_sbvbtn_gap_air_bad_check" in explicit
+    assert "f$cc_turn_probe_sbvbtn_gap_thirdpair_33" in explicit
 
-    # Never turn the final DeepCrusher normal-sizing catch-all into an invented
-    # fixed size before its exact owner is audited.
-    covered = executable(block(GAP, "f$cc_turn_probe_sbvbtn_gap_covered"))
-    assert "residual_needs_size_audit" not in covered
+    residual_nomade = block(GAP, "f$cc_turn_probe_sbvbtn_gap_residual_nomade_probe")
+    assert "!f$cc_turn_probe_sbvbtn_gap_explicit_state" in residual_nomade
+    assert "f$cc_hand_no_made" in residual_nomade
+
+    residual_pair = block(GAP, "f$cc_turn_probe_sbvbtn_gap_residual_pair_probe")
+    assert "!f$cc_turn_probe_sbvbtn_gap_explicit_state" in residual_pair
+    assert "f$cc_hand_pair_or_better" in residual_pair
+    assert "!f$cc_turn_probe_second_pair" in residual_pair
+
+    unexpected = block(GAP, "f$cc_turn_probe_sbvbtn_gap_unexpected_secondpair_residual")
+    assert "f$cc_turn_probe_second_pair" in unexpected
+
+    covered = block(GAP, "f$cc_turn_probe_sbvbtn_gap_covered")
+    assert "f$cc_turn_probe_sbvbtn_gap_explicit_state" in covered
+    assert "f$cc_turn_probe_sbvbtn_gap_residual_nomade_probe" in covered
+    assert "f$cc_turn_probe_sbvbtn_gap_residual_pair_probe" in covered
 
     code = executable(GAP).lower()
     for forbidden in (
@@ -131,7 +148,12 @@ def residual_and_safety_contract() -> None:
     action = block(GAP, "f$cc_turn_probe_sbvbtn_gap_action")
     assert "f$cc_turn_probe_sbvbtn_gap_air_bad_check Return false Force" in action
     assert "f$cc_turn_probe_sbvbtn_gap_thirdpair_flush_check Return false Force" in action
+    assert "f$cc_turn_probe_sbvbtn_gap_residual_nomade_probe Return true Force" in action
+    assert "f$cc_turn_probe_sbvbtn_gap_residual_pair_probe Return true Force" in action
     assert "When Others Return false Force" in action
+
+    consistency = block(GAP, "f$cc_turn_probe_sbvbtn_gap_size_consistent")
+    assert "f$cc_turn_probe_sbvbtn_gap_size_id <= 7" in consistency
 
 
 if __name__ == "__main__":
