@@ -3,17 +3,17 @@
 // Gate 10C — 3wSBvBTN flop-X/X Turn Probe reviewed TBP gap layer
 // ============================================================================
 // Purpose:
-//   Fill ONLY the source-silent 3wSBvBTN Turn-Probe classes for which the mature
-//   DeepCrusher Retro Nothing-Here/TBP audit already supplied an explicit action
-//   and size. The direct Starting-Strategy historical TP+ PSB branch from
-//   Gate10B.2 always keeps precedence.
+//   Fill the source-silent 3wSBvBTN Turn-Probe classes from DeepCrusher's
+//   reviewed Retro Nothing-Here/TBP audit. The direct Starting-Strategy
+//   historical TP+ PSB branch from Gate10B.2 always keeps precedence.
 //
 // Source hierarchy:
-//   T = mechanical current hand/board facts and exact persisted flop snapshot.
-//   A = DeepCrusher `Retro Nothing-Here 01` / reviewed CrusherTBP gap decisions.
-//   X = the final catch-all "remaining classes active / normal sizing router" is
-//       NOT imported here because its exact size ownership is not yet reconstructed
-//       in CashCrusher. Those residual states remain uncovered.
+//   T = mechanical current hand/board facts, persisted flop snapshot and the
+//       exact DeepCrusher heads-up Turn sizing router.
+//   A = DeepCrusher `Retro Nothing-Here 01` / reviewed CrusherTBP gap decisions
+//       mapped onto canonical CashCrusher hand and board descriptors.
+//   X = future River continuation markers and any global stackoff/all-in meaning;
+//       neither belongs to this initial Turn action node.
 //
 // Critical source semantics:
 //   `f$board_BadToBluffTurn` = PairOnBoard OR board Ace OR >=2 broadways on the
@@ -22,6 +22,13 @@
 //   flush uses 75. Second pair is 50 on a new flush completion that did not pair
 //   a flop rank, otherwise 75. Third pair checks on new flush completion,
 //   otherwise probes 33.
+//
+//   The final reviewed TBP catch-all explicitly returns a Probe but delegates
+//   size to DeepCrusher `f$BetsizeTurnHeadsup`. In this exact FIRST/OOP Probe
+//   history that router deterministically gives:
+//      * no pair -> BetTwoThirdPot;
+//      * pair-or-better other than second pair -> BetThreeFourthPot.
+//   Second pair is already intercepted by the explicit 50/75 branches above.
 //
 // Safety:
 //   This module owns the initial Turn lead only. It imports no future River plan,
@@ -161,14 +168,14 @@ f$cc_turn_probe_sbvbtn_gap_third_pair && f$cc_turn_probe_sbvbtn_new_flush_comple
 f$cc_turn_probe_sbvbtn_gap_third_pair && !f$cc_turn_probe_sbvbtn_new_flush_completion
 
 // -----------------------------------------------------------------------------
-// TPSB.05 — coverage / action / size
+// TPSB.05 — reviewed catch-all sizing reconstruction
 // -----------------------------------------------------------------------------
 
-// Purpose: reviewed gap states. Bad-board live draws, fourth/fifth pair, underpair
-// and other source-silent residuals remain intentionally uncovered until their
-// old normal-sizing ownership is audited.
-// Source/Provenance: P coverage firewall around A reviewed TBP branches.
-##f$cc_turn_probe_sbvbtn_gap_covered##
+// Purpose: collect every explicitly enumerated Retro01 state before its final
+// catch-all. This is an engineering partition only; action semantics remain in
+// the dedicated predicates above.
+// Source/Provenance: P partition over A reviewed source branches.
+##f$cc_turn_probe_sbvbtn_gap_explicit_state##
 f$cc_turn_probe_sbvbtn_gap_air_bad_check ||
 f$cc_turn_probe_sbvbtn_gap_nomade_good_probe ||
 f$cc_turn_probe_sbvbtn_gap_twoplus_probe ||
@@ -179,8 +186,47 @@ f$cc_turn_probe_sbvbtn_gap_secondpair_75 ||
 f$cc_turn_probe_sbvbtn_gap_thirdpair_flush_check ||
 f$cc_turn_probe_sbvbtn_gap_thirdpair_33
 
-// Purpose: reviewed SBvBTN gap action preserving exception precedence.
-// Source/Provenance: A reviewed TBP strategy.
+// Purpose: final Retro01 catch-all with no made hand. The exact legacy HU Turn
+// sizing router first matches `user_TurnProbeOpportunity && !PairOrBetter` and
+// executes `BetTwoThirdPot`.
+// Source/Provenance: T sizing-router behavior + A catch-all ownership.
+##f$cc_turn_probe_sbvbtn_gap_residual_nomade_probe##
+f$cc_turn_probe_sbvbtn_gap_context &&
+!f$cc_turn_probe_sbvbtn_gap_explicit_state &&
+f$cc_hand_no_made
+
+// Purpose: final Retro01 catch-all with a made hand not already intercepted.
+// The legacy router's next Probe fallback is `!2ndTopPair_or_Pocket ->75`.
+// Exact second pair is already fully owned by the explicit branch above.
+// Source/Provenance: T sizing-router behavior + A catch-all ownership.
+##f$cc_turn_probe_sbvbtn_gap_residual_pair_probe##
+f$cc_turn_probe_sbvbtn_gap_context &&
+!f$cc_turn_probe_sbvbtn_gap_explicit_state &&
+f$cc_hand_pair_or_better &&
+!f$cc_turn_probe_second_pair
+
+// Purpose: any residual exact-second-pair state would contradict the explicit
+// partition and therefore remains a diagnostic rather than receiving a guess.
+// Source/Provenance: P consistency guard.
+##f$cc_turn_probe_sbvbtn_gap_unexpected_secondpair_residual##
+f$cc_turn_probe_sbvbtn_gap_context &&
+!f$cc_turn_probe_sbvbtn_gap_explicit_state &&
+f$cc_turn_probe_second_pair
+
+// -----------------------------------------------------------------------------
+// TPSB.06 — coverage / action / size
+// -----------------------------------------------------------------------------
+
+// Purpose: every reviewed direct TBP state with reconstructable action/size.
+// Unexpected second-pair partition failure remains fail-closed.
+// Source/Provenance: P coverage firewall around A/T reviewed decisions.
+##f$cc_turn_probe_sbvbtn_gap_covered##
+f$cc_turn_probe_sbvbtn_gap_explicit_state ||
+f$cc_turn_probe_sbvbtn_gap_residual_nomade_probe ||
+f$cc_turn_probe_sbvbtn_gap_residual_pair_probe
+
+// Purpose: reviewed SBvBTN gap action preserving source exception precedence.
+// Source/Provenance: A/T reviewed TBP strategy + exact sizing-router catch-all.
 ##f$cc_turn_probe_sbvbtn_gap_action##
 When !f$cc_turn_probe_sbvbtn_gap_context Return false Force
 When f$cc_turn_probe_sbvbtn_gap_air_bad_check Return false Force
@@ -192,10 +238,13 @@ When f$cc_turn_probe_sbvbtn_gap_secondpair_flush50 Return true Force
 When f$cc_turn_probe_sbvbtn_gap_secondpair_75 Return true Force
 When f$cc_turn_probe_sbvbtn_gap_thirdpair_flush_check Return false Force
 When f$cc_turn_probe_sbvbtn_gap_thirdpair_33 Return true Force
+When f$cc_turn_probe_sbvbtn_gap_residual_nomade_probe Return true Force
+When f$cc_turn_probe_sbvbtn_gap_residual_pair_probe Return true Force
 When Others Return false Force
 
 // Purpose: paired reviewed size owner.
-// Source/Provenance: A exact 33/50/75/100 Retro Nothing-Here sizes.
+// Source/Provenance: A exact 33/50/75/100 Retro01 sizes plus T exact normal-router
+// two-thirds/75 residual sizes.
 ##f$cc_turn_probe_sbvbtn_gap_size_id##
 When !f$cc_turn_probe_sbvbtn_gap_action Return 0 Force
 When f$cc_turn_probe_sbvbtn_gap_nomade_good_probe Return f$cc_turn_probe_size_75_id Force
@@ -205,20 +254,21 @@ When f$cc_turn_probe_sbvbtn_gap_tpop_pot_probe Return f$cc_turn_probe_size_100_i
 When f$cc_turn_probe_sbvbtn_gap_secondpair_flush50 Return f$cc_turn_probe_size_50_id Force
 When f$cc_turn_probe_sbvbtn_gap_secondpair_75 Return f$cc_turn_probe_size_75_id Force
 When f$cc_turn_probe_sbvbtn_gap_thirdpair_33 Return f$cc_turn_probe_size_33_id Force
+When f$cc_turn_probe_sbvbtn_gap_residual_nomade_probe Return f$cc_turn_probe_size_twothirds_id Force
+When f$cc_turn_probe_sbvbtn_gap_residual_pair_probe Return f$cc_turn_probe_size_75_id Force
 When Others Return 0 Force
 
-// Purpose: explicit source-silent residual that reviewed TBP would activate but
-// whose old normal Turn sizing router has not yet been source-mapped here.
-// Source: final Retro Nothing-Here 01 catch-all.
-// Provenance: X for current action import; audit marker only.
-##f$cc_turn_probe_sbvbtn_gap_residual_needs_size_audit##
+// Purpose: any still-uncovered state is a classification/partition diagnostic,
+// not an invitation to inherit a neighboring family.
+// Source/Provenance: P fail-closed audit metadata.
+##f$cc_turn_probe_sbvbtn_gap_uncovered_context##
 f$cc_turn_probe_sbvbtn_gap_context && !f$cc_turn_probe_sbvbtn_gap_covered
 
 // Purpose: action/size integrity.
 // Source/Provenance: P safety invariant.
 ##f$cc_turn_probe_sbvbtn_gap_size_consistent##
 When !f$cc_turn_probe_sbvbtn_gap_action Return f$cc_turn_probe_sbvbtn_gap_size_id = 0 Force
-When f$cc_turn_probe_sbvbtn_gap_action Return f$cc_turn_probe_sbvbtn_gap_size_id >= 1 && f$cc_turn_probe_sbvbtn_gap_size_id <= 6 Force
+When f$cc_turn_probe_sbvbtn_gap_action Return f$cc_turn_probe_sbvbtn_gap_size_id >= 1 && f$cc_turn_probe_sbvbtn_gap_size_id <= 7 Force
 When Others Return false Force
 
 // ============================================================================
