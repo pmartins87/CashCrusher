@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Gate10F canonical Turn-Probe routing/coverage contracts."""
+"""Gate10F/G canonical Turn-Probe routing/coverage contracts."""
 
 from pathlib import Path
 
@@ -28,6 +28,7 @@ def ordered_router_contract() -> None:
         "f$cc_turn_probe_sbvbtn_gap_covered Return 3 Force",
         "f$cc_turn_probe_mw_gap_covered Return 4 Force",
         "f$cc_turn_probe_srp_gap_covered Return 5 Force",
+        "f$cc_turn_probe_iso_covered Return 6 Force",
     ]
     positions = [family.index(x) for x in expected]
     assert positions == sorted(positions), "source/gap family precedence changed"
@@ -40,6 +41,7 @@ def ordered_router_contract() -> None:
         "f$cc_turn_probe_sbvbtn_gap_covered Return f$cc_turn_probe_sbvbtn_gap_action Force",
         "f$cc_turn_probe_mw_gap_covered Return f$cc_turn_probe_mw_gap_action Force",
         "f$cc_turn_probe_srp_gap_covered Return f$cc_turn_probe_srp_gap_action Force",
+        "f$cc_turn_probe_iso_covered Return f$cc_turn_probe_iso_action Force",
         "When Others Return false Force",
     ):
         assert token in router
@@ -53,6 +55,7 @@ def coverage_contract() -> None:
         "f$cc_turn_probe_sbvbtn_gap_covered",
         "f$cc_turn_probe_mw_gap_covered",
         "f$cc_turn_probe_srp_gap_covered",
+        "f$cc_turn_probe_iso_covered",
     ):
         assert token in covered
 
@@ -72,9 +75,10 @@ def provenance_and_exclusivity_contract() -> None:
     assert "f$cc_turn_probe_sbvbtn_gap_covered Return 2 Force" in prov
     assert "f$cc_turn_probe_mw_gap_covered Return 2 Force" in prov
     assert "f$cc_turn_probe_srp_gap_covered Return 3 Force" in prov
+    assert "f$cc_turn_probe_iso_covered Return 3 Force" in prov
 
     count = block(ROUTER, "f$cc_turn_probe_child_owner_count")
-    assert count.count("? 1 : 0") == 5
+    assert count.count("? 1 : 0") == 6
 
     consistent = block(ROUTER, "f$cc_turn_probe_router_consistent")
     assert "f$cc_turn_probe_history_consistent" in consistent
@@ -90,6 +94,7 @@ def sizing_and_safety_contract() -> None:
         "f$cc_turn_probe_sbvbtn_gap_size_id",
         "f$cc_turn_probe_mw_gap_size_id",
         "f$cc_turn_probe_srp_gap_size_id",
+        "f$cc_turn_probe_iso_size_id",
     ):
         assert token in size
 
@@ -106,7 +111,7 @@ def sizing_and_safety_contract() -> None:
         "user_turn",
         "f$game_",
     ):
-        assert forbidden not in code, f"forbidden Gate10F executable leak: {forbidden}"
+        assert forbidden not in code, f"forbidden Gate10F/G executable leak: {forbidden}"
 
 
 if __name__ == "__main__":
@@ -114,4 +119,4 @@ if __name__ == "__main__":
     coverage_contract()
     provenance_and_exclusivity_contract()
     sizing_and_safety_contract()
-    print("PASS: Gate10F canonical Turn-Probe routing/coverage")
+    print("PASS: Gate10F/G canonical Turn-Probe routing/coverage")
