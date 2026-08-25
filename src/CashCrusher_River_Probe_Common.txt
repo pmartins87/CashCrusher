@@ -22,6 +22,23 @@ FlushPossible || StraightPossible
 ##f$cc_river_probe_paired##
 PairOnBoard
 
+// Purpose: exact count of public broadway ranks across the five-card River board.
+// Source: DeepCrusher `f$board_2BW/f$board_3BW` classify >=2 broadways.
+// Source/Provenance: T/A equivalent arithmetic over persistent board-card ranks.
+##f$cc_river_probe_board_broadway_count##
+(FirstFlopCard >= 10 ? 1 : 0) +
+(SecondFlopCard >= 10 ? 1 : 0) +
+(ThirdFlopCard >= 10 ? 1 : 0) +
+(TurnCard >= 10 ? 1 : 0) +
+(RiverCard >= 10 ? 1 : 0)
+
+// Purpose: exact source River board class on which native 3wBBvBTN high-air
+// abandons the bluff: paired OR any Ace OR at least two broadway board cards.
+// Source: DeepCrusher `f$board_BadToBluffRiver`.
+// Source/Provenance: T/A direct mechanical translation.
+##f$cc_river_probe_bad_to_bluff_board##
+IsRiver && (PairOnBoard || board$A || f$cc_river_probe_board_broadway_count >= 2)
+
 // Purpose: conservative exact-two-pair contribution subset. Board-only two pair
 // is excluded rather than pretending full equivalence to CF7_ExactTwoPair.
 // Source/Provenance: A conservative translation.
