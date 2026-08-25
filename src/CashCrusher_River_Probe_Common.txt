@@ -47,7 +47,9 @@ IsRiver && f$cc_air_no_frontdoor
 
 // -----------------------------------------------------------------------------
 // Normalized River-Probe size IDs
-// 1 MIN | 2 25% | 3 33% | 4 50% | 5 75% | 6 100%.
+// 1 MIN | 2 25% | 3 33% | 4 50% | 5 75% | 6 100% | 7 30%.
+// 30% is kept distinct because the audited HUBB 1HC-under-straight source uses
+// River30 exactly; silently rounding it to 33% would change source strategy.
 // Runtime mapping is intentionally deferred until the strategic tree is complete.
 // -----------------------------------------------------------------------------
 
@@ -80,6 +82,11 @@ IsRiver && f$cc_air_no_frontdoor
 // Source/Provenance: P sizing metadata only; no strategy ownership.
 ##f$cc_river_probe_size_100_id##
 6
+
+// Purpose: exact 30%-pot River Probe size identifier used by HUBB source.
+// Source/Provenance: T River30 source family; P normalized numeric ID.
+##f$cc_river_probe_size_30_id##
+7
 
 // ============================================================================
 // End Gate11B.0 common vocabulary.
