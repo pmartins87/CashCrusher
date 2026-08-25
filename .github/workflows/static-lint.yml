@@ -119,3 +119,5 @@ jobs:
         run: python tools/test_turn_donk_bbvbtn.py
       - name: Test Turn Donk residual/other-pot/runtime/history contracts
         run: python tools/test_turn_donk_gaps_runtime_history.py
+      - name: Test River Donk history and true-HU HUBB source
+        run: python tools/test_river_donk_history_source.py
