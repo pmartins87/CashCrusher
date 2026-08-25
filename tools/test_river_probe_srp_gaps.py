@@ -55,7 +55,7 @@ def topology_contract() -> None:
     # Gate11A.1 must allow a source child to own PFA-vs-stab after actual flop X/C.
     base = executable(block(HIST, "f$cc_river_probe_base_opportunity")).lower()
     assert "f$cc_pf_role_pfa return false" not in base
-    assert "f$cc_river_probe_preflop_supported" in base
+    assert "f$cc_river_probe_preflop_context_supported" in base
 
 
 def range_partition_contract() -> None:
