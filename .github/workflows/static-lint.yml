@@ -127,3 +127,7 @@ jobs:
         run: python tools/test_river_donk_iso_3bp.py
       - name: Test clean HU 4BP and River Donk runtime
         run: python tools/test_river_donk_4bp_runtime.py
+      - name: Test Turn Probe ownership snapshot and HUBB source
+        run: python tools/test_turn_probe_history_source.py
+      - name: Test native 3-handed Turn Probe source descendants
+        run: python tools/test_turn_probe_3w_source.py
