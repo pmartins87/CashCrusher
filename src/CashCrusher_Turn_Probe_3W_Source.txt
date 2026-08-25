@@ -1,0 +1,227 @@
+// ============================================================================
+// CashCrusher_Turn_Probe_3W_Source.txt
+// Gate 10B.2 — native 3-handed Turn Probe source descendants
+// ============================================================================
+// Purpose:
+//   Preserve the three explicit non-HUBB flop-X/X -> Turn Probe families from
+//   Crusher Starting Strategy / audited DeepCrusher without pretending that the
+//   source-silent remainder is an instruction to probe or check.
+//
+// Families owned here:
+//   1) 3wSBvBTN, BTN-open SRP reduced HU: historical flop TP+ that remains TP+
+//      on Turn -> Probe pot.
+//   2) 3wBBvBTN, BTN-open SRP reduced HU: historical flop air that remains air
+//      -> Probe 75 only when the four-card board is unpaired and contains fewer
+//      than two broadway cards.
+//   3) native true-multiway (BBorSB)v2pp: current second pair -> Probe 50;
+//      current 3rd/4th/5th pair -> explicit check, preserving the source's
+//      "3rd pair or worse" pair-family instruction without extending it to
+//      source-silent draws/air.
+//
+// Source hierarchy / provenance:
+//   T = Crusher Starting Strategy explicit AFTER FLOP X/X instructions and the
+//       matching newest DeepCrusher executable branches.
+//   A = legacy 3w seat labels mapped to exact canonical deal/live topology and
+//       saved flop classes decoded through Gate10A.5 snapshot provenance.
+//   P = coverage firewall only: states not explicitly owned above remain
+//       uncovered so later gap layers may review them individually.
+//
+// Important:
+//   DeepCrusher contains later Retro Nothing-Here/TBP fills before these direct
+//   branches. Those are NOT silently merged into this direct-source module.
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// TP3W.01 — exact native contexts
+// -----------------------------------------------------------------------------
+
+// Purpose: literal 3-handed SB caller versus BTN opener, BB folded preflop.
+// Source: legacy `game_3wSBvBTN`; Starting Strategy SBvBTN is BTN-range SRP.
+// Provenance: A exact canonical reconstruction over T persisted history.
+##f$cc_turn_probe_3w_sbvbtn_context##
+f$cc_turn_probe_hu_opportunity &&
+f$cc_turn_probe_snapshot_valid &&
+f$cc_deal_size = 3 &&
+f$cc_flop_entry_count = 2 &&
+f$cc_hero_pos_id = 5 &&
+f$cc_hu_villain_pos_id = 4 &&
+f$cc_pot_family_id = 2 &&
+f$cc_pf_one_raise_ordinary_srp &&
+f$cc_pf_role_srp_caller &&
+f$cc_pf_single_raiser_pos_id = 4
+
+// Purpose: literal 3-handed BB caller versus BTN opener, SB folded preflop.
+// Source: legacy `game_3wBBvBTN`; source discussion explicitly assumes BTN's
+// opening range rather than a generic limped-pot Button range.
+// Provenance: A exact canonical reconstruction over T persisted history.
+##f$cc_turn_probe_3w_bbvbtn_context##
+f$cc_turn_probe_hu_opportunity &&
+f$cc_turn_probe_snapshot_valid &&
+f$cc_deal_size = 3 &&
+f$cc_flop_entry_count = 2 &&
+f$cc_hero_pos_id = 6 &&
+f$cc_hu_villain_pos_id = 4 &&
+f$cc_pot_family_id = 2 &&
+f$cc_pf_one_raise_ordinary_srp &&
+f$cc_pf_role_srp_caller &&
+f$cc_pf_single_raiser_pos_id = 4
+
+// Purpose: literal native `(BBorSB)v2pp` current three-way field: BTN plus both
+// blinds entered flop and all remain live after the clean check-through.
+// Source: Crusher Starting Strategy `BBorSBv2pp` + DeepCrusher
+// `game_3wBlinds_vBTN`. The old game label itself spans limped and one-raise pots.
+// Provenance: A exact canonical reconstruction; only pot families 1/2 are owned.
+##f$cc_turn_probe_3w_blinds_vbtn_context##
+f$cc_turn_probe_multiway_opportunity &&
+f$cc_turn_probe_snapshot_valid &&
+f$cc_deal_size = 3 &&
+f$cc_flop_entry_count = 3 &&
+nplayersplaying = 3 &&
+(f$cc_pot_family_id = 1 || f$cc_pot_family_id = 2) &&
+((f$cc_hero_pos_id = 5 && f$cc_opp_live_mask = 40) ||
+ (f$cc_hero_pos_id = 6 && f$cc_opp_live_mask = 24))
+
+// -----------------------------------------------------------------------------
+// TP3W.02 — 3wSBvBTN direct positive source branch
+// -----------------------------------------------------------------------------
+
+// Purpose: source historical TP+ survived as current TP+ after flop X/X.
+// Source: `PR T opportunity PSB & PSB`; DeepCrusher requires the saved flop TP+
+// marker and current TP+/robust value before Turn100.
+// Provenance: T/A exact direct-source positive subset.
+##f$cc_turn_probe_3w_sbvbtn_tpplus_probe##
+f$cc_turn_probe_3w_sbvbtn_context &&
+f$cc_turn_probe_flop_had_tpplus &&
+f$cc_turn_probe_tpplus
+
+// Purpose: direct-source action; source-silent classes remain unowned.
+// Source/Provenance: T/A.
+##f$cc_turn_probe_3w_sbvbtn_action##
+f$cc_turn_probe_3w_sbvbtn_tpplus_probe
+
+// Purpose: source pot-size Turn probe.
+// Source/Provenance: T direct PSB instruction.
+##f$cc_turn_probe_3w_sbvbtn_size_id##
+When f$cc_turn_probe_3w_sbvbtn_tpplus_probe Return f$cc_turn_probe_size_100_id Force
+When Others Return 0 Force
+
+// Purpose: coverage is the explicit positive source subset only.
+// Source/Provenance: P firewall preserving source silence elsewhere.
+##f$cc_turn_probe_3w_sbvbtn_covered##
+f$cc_turn_probe_3w_sbvbtn_tpplus_probe
+
+// -----------------------------------------------------------------------------
+// TP3W.03 — 3wBBvBTN high-air direct source branch
+// -----------------------------------------------------------------------------
+
+// Purpose: exact bad-board exclusions from source/executable rule.
+// `flop_2BW` historically includes 3BW as well; Gate10 snapshot's 2plusBW flag
+// intentionally preserves that semantics. A one-BW flop becomes two-BW on a
+// broadway Turn and is therefore also excluded.
+// Source/Provenance: T/A exact persistent-board translation.
+##f$cc_turn_probe_3w_bbvbtn_air_bad_board##
+When !f$cc_turn_probe_3w_bbvbtn_context Return false Force
+When PairOnBoard Return true Force
+When user_cc_turn_probe_flop_had_2plusbw Return true Force
+When user_cc_turn_probe_flop_had_1bw && f$cc_turn_is_broadway Return true Force
+When Others Return false Force
+
+// Purpose: narrow source high-air Probe75 after true flop check-through.
+// Source: 3wBBvBTN Starting Strategy `After XX flop (PR T opportunity)` examples;
+// DeepCrusher `user_DC10_3wBBvBTN_FlopHighAir` branch.
+// Provenance: T/A exact direct-source positive subset.
+##f$cc_turn_probe_3w_bbvbtn_air_probe##
+f$cc_turn_probe_3w_bbvbtn_context &&
+f$cc_turn_probe_flop_had_air &&
+f$cc_turn_probe_air &&
+!f$cc_turn_probe_3w_bbvbtn_air_bad_board
+
+// Purpose: direct-source action; non-air/source-silent states remain unowned.
+// Source/Provenance: T/A.
+##f$cc_turn_probe_3w_bbvbtn_action##
+f$cc_turn_probe_3w_bbvbtn_air_probe
+
+// Purpose: exact source 75% Turn Probe size.
+// Source/Provenance: T.
+##f$cc_turn_probe_3w_bbvbtn_size_id##
+When f$cc_turn_probe_3w_bbvbtn_air_probe Return f$cc_turn_probe_size_75_id Force
+When Others Return 0 Force
+
+// Purpose: coverage is only the explicit high-air positive subset.
+// Source/Provenance: P source-silence firewall.
+##f$cc_turn_probe_3w_bbvbtn_covered##
+f$cc_turn_probe_3w_bbvbtn_air_probe
+
+// -----------------------------------------------------------------------------
+// TP3W.04 — native true-multiway `(BBorSB)v2pp`
+// -----------------------------------------------------------------------------
+
+// Purpose: explicit source second-pair Probe50 branch.
+// Source: Starting Strategy MP/BP AFTER FLOP X/X: `2nd pair ... PR 50%`;
+// DeepCrusher exact current second-pair branch.
+// Provenance: T/A.
+##f$cc_turn_probe_3w_mw_second_pair_probe##
+f$cc_turn_probe_3w_blinds_vbtn_context && f$cc_turn_probe_second_pair
+
+// Purpose: explicit weaker-pair check subset.
+// Source: same Starting Strategy line says `3rd pair or worse ... x/f vs delay`.
+// Provenance: T/A constrained to the actual pair tiers named by source; this does
+// NOT classify source-silent no-made/draw hands as "worse".
+##f$cc_turn_probe_3w_mw_low_pair_check##
+f$cc_turn_probe_3w_blinds_vbtn_context && f$cc_turn_probe_low_pair
+
+// Purpose: true-multiway direct-source action.
+// Source/Provenance: T/A; second pair leads, explicit low-pair subset checks.
+##f$cc_turn_probe_3w_mw_action##
+When f$cc_turn_probe_3w_mw_second_pair_probe Return true Force
+When f$cc_turn_probe_3w_mw_low_pair_check Return false Force
+When Others Return false Force
+
+// Purpose: exact source 50% sizing for second pair.
+// Source/Provenance: T.
+##f$cc_turn_probe_3w_mw_size_id##
+When f$cc_turn_probe_3w_mw_second_pair_probe Return f$cc_turn_probe_size_50_id Force
+When Others Return 0 Force
+
+// Purpose: only explicit second-/low-pair source states are reviewed here.
+// Source/Provenance: P coverage firewall.
+##f$cc_turn_probe_3w_mw_covered##
+f$cc_turn_probe_3w_mw_second_pair_probe || f$cc_turn_probe_3w_mw_low_pair_check
+
+// -----------------------------------------------------------------------------
+// TP3W.05 — direct-source dispatcher
+// -----------------------------------------------------------------------------
+
+// Purpose: direct native 3-handed source coverage union.
+// Source/Provenance: A/P exact-family dispatcher over T/A children.
+##f$cc_turn_probe_3w_source_covered##
+f$cc_turn_probe_3w_sbvbtn_covered ||
+f$cc_turn_probe_3w_bbvbtn_covered ||
+f$cc_turn_probe_3w_mw_covered
+
+// Purpose: direct native 3-handed source action.
+// Source/Provenance: A/P deterministic dispatcher.
+##f$cc_turn_probe_3w_source_action##
+When f$cc_turn_probe_3w_sbvbtn_covered Return f$cc_turn_probe_3w_sbvbtn_action Force
+When f$cc_turn_probe_3w_bbvbtn_covered Return f$cc_turn_probe_3w_bbvbtn_action Force
+When f$cc_turn_probe_3w_mw_covered Return f$cc_turn_probe_3w_mw_action Force
+When Others Return false Force
+
+// Purpose: direct native 3-handed source size owner.
+// Source/Provenance: A/P paired dispatcher; check/uncovered ->0.
+##f$cc_turn_probe_3w_source_size_id##
+When f$cc_turn_probe_3w_sbvbtn_covered Return f$cc_turn_probe_3w_sbvbtn_size_id Force
+When f$cc_turn_probe_3w_bbvbtn_covered Return f$cc_turn_probe_3w_bbvbtn_size_id Force
+When f$cc_turn_probe_3w_mw_covered Return f$cc_turn_probe_3w_mw_size_id Force
+When Others Return 0 Force
+
+// Purpose: action/size integrity for direct 3-handed source descendants.
+// Source/Provenance: P safety invariant.
+##f$cc_turn_probe_3w_source_size_consistent##
+When !f$cc_turn_probe_3w_source_action Return f$cc_turn_probe_3w_source_size_id = 0 Force
+When f$cc_turn_probe_3w_source_action Return f$cc_turn_probe_3w_source_size_id >= 1 && f$cc_turn_probe_3w_source_size_id <= 6 Force
+When Others Return false Force
+
+// ============================================================================
+// End Gate10B.2.
+// ============================================================================
