@@ -66,6 +66,7 @@ def history_contract() -> None:
         "BotsActionsOnThisRoundIncludingChecks != 0",
         "AmountToCall != 0",
         "f$cc_river_donk_excluded_turn_donk_continuation",
+        "f$cc_hist_river_donk_flop_checkcall_clean",
         "f$cc_hist_river_donk_turn_checkcall_clean",
         "f$cc_relative_postflop_pos_id = 3",
     ):
