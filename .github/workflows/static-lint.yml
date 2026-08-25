@@ -143,3 +143,5 @@ jobs:
         run: python tools/test_turn_probe_iso.py
       - name: Test 3BP and squeeze Turn Probe contract
         run: python tools/test_turn_probe_3bp.py
+      - name: Test clean caller-side 4BP Turn Probe contract
+        run: python tools/test_turn_probe_4bp.py
