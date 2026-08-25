@@ -1,0 +1,176 @@
+// ============================================================================
+// CashCrusher_Flop_Donk_SixMax.txt
+// Gate 07C — P-heavy 4-6h BTN+both-blinds Flop Donk adaptation
+// ============================================================================
+// Purpose:
+//   Adapt the source-shaped BTN+SB+BB three-way flop reached after a 4-6 handed
+//   deal without pretending the native 3-handed Spin ranges are identical.
+//
+// Provenance:
+//   T/A = exact Gate07A topology, source board/hand principles and existing
+//         CashCrusher contribution-aware hand/texture primitives.
+//   P   = conservative 100bb six-max cash range selection and sizing.
+//
+// Strategic boundary:
+//   * folded-to-BTN limped pots and BTN-open ordinary SRPs are separate owners;
+//   * the limped family may lead selected robust one-pair value and real draws;
+//   * the raised family is much tighter: polarized robust value / combo-draw only;
+//   * Axx remains a check family, preserving the strongest direct-source negative;
+//   * no low-pair semibluff, pure air, generic commitment or strategic all-in.
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// FD6.01 — exact 4-6 handed ancestry contexts
+// -----------------------------------------------------------------------------
+
+// Purpose: folded-to-BTN limp -> SB complete/call -> BB check, with exactly
+// BTN+SB+BB reaching flop from an originally 4-6 handed deal.
+// Source/Provenance: T/A source topology translated to six-max ancestry; P range
+// adaptation is owned below rather than inheriting the native three-handed policy.
+##f$cc_flop_donk_sixmax_btn_limp_context##
+f$cc_flop_donk_sixmax_btn_blinds_ancestry_context &&
+f$cc_pot_family_id = 1 &&
+f$cc_pf_raise_count = 0 &&
+f$cc_pf_call_btn &&
+f$cc_pf_call_sb
+
+// Purpose: folded-to-BTN open -> SB call -> BB call ordinary SRP, with exactly
+// BTN+SB+BB reaching flop from an originally 4-6 handed deal.
+// Source/Provenance: T exact one-raiser chronology + A source-shaped geometry;
+// P policy remains separate because six-max ranges/depth are not source-exact.
+##f$cc_flop_donk_sixmax_btn_raise_context##
+f$cc_flop_donk_sixmax_btn_blinds_ancestry_context &&
+f$cc_pot_family_id = 2 &&
+f$cc_pf_one_raise_ordinary_srp &&
+f$cc_pf_single_raiser_pos_id = 4 &&
+f$cc_pf_call_sb &&
+f$cc_pf_call_bb
+
+// -----------------------------------------------------------------------------
+// FD6.02 — unraised/limped-pot P-heavy action
+// -----------------------------------------------------------------------------
+
+// Purpose: selected robust made-value leads in the folded-to-BTN limped family.
+// Source/Provenance: A preserves source Axx-check/value-first principles; P
+// tightens deep-cash one-pair leads to overpairs and strong TP on low/paired calm
+// structures rather than copying the native source's broad TP+ leading frequency.
+##f$cc_flop_donk_sixmax_limp_value_action##
+When !f$cc_flop_donk_sixmax_btn_limp_context Return false Force
+When AcePresentOnFlop Return false Force
+When f$cc_hand_two_pair_or_better Return true Force
+When f$cc_cbet_flop_overpair && !f$cc_flop_monotone Return true Force
+When f$cc_cbet_flop_strong_top_pair && !f$cc_flop_monotone && (f$cc_flop_static_lowmid_parent || f$cc_flop_paired_parent) Return true Force
+When Others Return false Force
+
+// Purpose: selected real-draw leads in the folded-to-BTN limped family.
+// Source/Provenance: A keeps source draw checks on Axx/completed/2+BW; P permits
+// premium draws and selected good draws on low/paired structures at cash depth.
+// Safety: no naked air/backdoor and no pair-only semibluff enters this branch.
+##f$cc_flop_donk_sixmax_limp_draw_action##
+When !f$cc_flop_donk_sixmax_btn_limp_context Return false Force
+When AcePresentOnFlop Return false Force
+When f$cc_flop_donk_source_completed Return false Force
+When f$cc_flop_donk_source_two_plus_bw Return false Force
+When f$cc_cbet_flop_premium_draw Return true Force
+When f$cc_cbet_flop_good_draw && (f$cc_flop_static_lowmid_parent || f$cc_flop_paired_parent) Return true Force
+When Others Return false Force
+
+// Purpose: canonical folded-to-BTN limped-pot six-max Donk action.
+// Source/Provenance: P exact-family dispatcher over the A/T constrained value and
+// draw branches; every residual hand is an explicit check.
+##f$cc_flop_donk_sixmax_limp_action##
+When !f$cc_flop_donk_sixmax_btn_limp_context Return false Force
+When f$cc_flop_donk_sixmax_limp_value_action Return true Force
+When f$cc_flop_donk_sixmax_limp_draw_action Return true Force
+When Others Return false Force
+
+// Purpose: deep-cash limped-pot Donk sizing: 50% baseline, 75% only for robust
+// 2P+ value on dynamic/completed boards; no source short-SPR POT inheritance.
+// Source/Provenance: P deterministic cash sizing constrained by A source palette.
+##f$cc_flop_donk_sixmax_limp_size_id##
+When !f$cc_flop_donk_sixmax_limp_action Return 0 Force
+When f$cc_hand_two_pair_or_better && (f$cc_flop_dynamic_high_parent || f$cc_flop_dynamic_lowmid_parent || f$cc_flop_donk_source_completed) Return f$cc_flop_donk_size_75_id Force
+When Others Return f$cc_flop_donk_size_50_id Force
+
+// -----------------------------------------------------------------------------
+// FD6.03 — BTN-open ordinary-SRP P-heavy action
+// -----------------------------------------------------------------------------
+
+// Purpose: polarized made-value Donk subset versus BTN PFA with both blinds live.
+// Source/Provenance: P professional multiway cash fill. Axx and broad high-board
+// source-shaped leads are rejected; only 2P+ on low/mid or paired structures leads.
+##f$cc_flop_donk_sixmax_raised_value_action##
+When !f$cc_flop_donk_sixmax_btn_raise_context Return false Force
+When AcePresentOnFlop Return false Force
+When f$cc_hand_two_pair_or_better && (f$cc_flop_dynamic_lowmid_parent || f$cc_flop_static_lowmid_parent || f$cc_flop_paired_parent) Return true Force
+When Others Return false Force
+
+// Purpose: polarized no-made draw complement versus BTN PFA.
+// Source/Provenance: P restricts positive action to real combo draws on dynamic
+// low/mid non-completed, non-monotone boards; A source negative families remain checks.
+##f$cc_flop_donk_sixmax_raised_draw_action##
+When !f$cc_flop_donk_sixmax_btn_raise_context Return false Force
+When AcePresentOnFlop Return false Force
+When f$cc_flop_donk_source_completed Return false Force
+When f$cc_flop_monotone Return false Force
+When f$cc_cbet_flop_premium_draw && f$cc_real_combo_draw && f$cc_flop_dynamic_lowmid_parent Return true Force
+When Others Return false Force
+
+// Purpose: canonical BTN-open three-way six-max Donk action.
+// Source/Provenance: P exact-family dispatcher; TP/OP, weaker draws, low pairs,
+// backdoors and air intentionally remain checks to the preflop aggressor.
+##f$cc_flop_donk_sixmax_raised_action##
+When !f$cc_flop_donk_sixmax_btn_raise_context Return false Force
+When f$cc_flop_donk_sixmax_raised_value_action Return true Force
+When f$cc_flop_donk_sixmax_raised_draw_action Return true Force
+When Others Return false Force
+
+// Purpose: BTN-open three-way deep-cash Donk sizing.
+// Source/Provenance: P uses 75% for dynamic robust value and 50% for the selected
+// static/paired value or combo-draw semibluff; no automatic POT/all-in conversion.
+##f$cc_flop_donk_sixmax_raised_size_id##
+When !f$cc_flop_donk_sixmax_raised_action Return 0 Force
+When f$cc_flop_donk_sixmax_raised_value_action && f$cc_flop_dynamic_lowmid_parent Return f$cc_flop_donk_size_75_id Force
+When Others Return f$cc_flop_donk_size_50_id Force
+
+// -----------------------------------------------------------------------------
+// FD6.04 — dispatch / coverage / audit metadata
+// -----------------------------------------------------------------------------
+
+// Purpose: dispatch the two reviewed 4-6h BTN+both-blinds Donk origins.
+// Source/Provenance: P exact preflop-origin ownership; no generic ancestry fallback.
+##f$cc_flop_donk_sixmax_action##
+When f$cc_flop_donk_sixmax_btn_limp_context Return f$cc_flop_donk_sixmax_limp_action Force
+When f$cc_flop_donk_sixmax_btn_raise_context Return f$cc_flop_donk_sixmax_raised_action Force
+When Others Return false Force
+
+// Purpose: paired strategic size dispatcher for Gate07C.
+// Source/Provenance: P exact owner; reviewed checks and outside contexts return 0.
+##f$cc_flop_donk_sixmax_size_id##
+When f$cc_flop_donk_sixmax_btn_limp_context Return f$cc_flop_donk_sixmax_limp_size_id Force
+When f$cc_flop_donk_sixmax_btn_raise_context Return f$cc_flop_donk_sixmax_raised_size_id Force
+When Others Return 0 Force
+
+// Purpose: report full policy coverage for the two exact Gate07C origins,
+// including explicit checks.
+// Source/Provenance: P engineering coverage contract over reviewed T chronology.
+##f$cc_flop_donk_sixmax_covered##
+f$cc_flop_donk_sixmax_btn_limp_context || f$cc_flop_donk_sixmax_btn_raise_context
+
+// Purpose: compact Gate07C origin ID: 1 limped/no-PFA, 2 BTN-open SRP, 0 outside.
+// Source/Provenance: P audit metadata only; it does not select an action itself.
+##f$cc_flop_donk_sixmax_origin_id##
+When f$cc_flop_donk_sixmax_btn_limp_context Return 1 Force
+When f$cc_flop_donk_sixmax_btn_raise_context Return 2 Force
+When Others Return 0 Force
+
+// Purpose: Gate07C action/size consistency.
+// Source/Provenance: P safety invariant over the reviewed six-max policy.
+##f$cc_flop_donk_sixmax_size_consistent##
+When !f$cc_flop_donk_sixmax_action Return f$cc_flop_donk_sixmax_size_id = 0 Force
+When f$cc_flop_donk_sixmax_action Return f$cc_flop_donk_sixmax_size_id = f$cc_flop_donk_size_50_id || f$cc_flop_donk_sixmax_size_id = f$cc_flop_donk_size_75_id Force
+When Others Return false Force
+
+// ============================================================================
+// End Gate07C six-max BTN+both-blinds adaptation.
+// ============================================================================
