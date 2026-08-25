@@ -135,3 +135,7 @@ jobs:
         run: python tools/test_turn_probe_sbvbtn_gaps.py
       - name: Test native multiway Turn Probe reviewed gaps
         run: python tools/test_turn_probe_multiway_gaps.py
+      - name: Test ordinary-SRP Turn Probe six-max gaps
+        run: python tools/test_turn_probe_srp_gaps.py
+      - name: Test canonical Turn Probe coverage boundary
+        run: python tools/test_turn_probe_coverage.py
