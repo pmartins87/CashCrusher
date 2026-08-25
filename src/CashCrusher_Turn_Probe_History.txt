@@ -13,6 +13,8 @@
 //     leaves `f$move_turn_Probe` itself empty.
 //   * DeepCrusher/Starting Strategy supply positive scenario descendants only.
 //   * PFA/3bettor/4bettor who checked flop belong Delayed CBet instead.
+//   * DeepCrusher also gives initiative to a narrow native open-limp set via
+//     `f$pot_Limped_Initiative`; those exact topologies also belong Delayed CBet.
 //
 // Source/Provenance:
 //   T = OpenHoldem closed round-2 counters, raisbits2 and current Turn facts.
@@ -66,16 +68,18 @@ f$cc_hist_turn_probe_flop_field_unchanged
 // TP-H.02 — preflop initiative ownership
 // -----------------------------------------------------------------------------
 
-// Purpose: Hero did not end preflop as final aggressor in any audited pot family.
-// Caller/limper/BB-check/call4 roles are non-initiative; 5bet+ stays unsupported.
-// Source: DeepCrusher `!user_Flop_Init_Hero` Probe ownership generalized to 6max.
-// Provenance: A/P exact role taxonomy over Gate00 context.
+// Purpose: Hero did not own audited preflop/flop initiative. Caller/call4/BB-check
+// are non-initiative; an unraised caller is non-initiative only outside the exact
+// native open-limp families that DeepCrusher marks `f$pot_Limped_Initiative`.
+// Source: DeepCrusher `!user_Flop_Init_Hero` Probe ownership + limped-init repair.
+// Provenance: A/P exact role taxonomy over Gate00/Gate12A.0 context.
 ##f$cc_turn_probe_preflop_noinitiative##
 When f$cc_pot_family_id <= 0 Return false Force
 When f$cc_pot_family_id >= 5 Return false Force
 When f$cc_pf_role_pfa Return false Force
 When f$cc_pf_role_3bettor Return false Force
 When f$cc_pf_role_4bettor Return false Force
+When f$cc_native_limped_initiative Return false Force
 When f$cc_pf_role_srp_caller Return true Force
 When f$cc_pf_role_open_call_3bet Return true Force
 When f$cc_pf_role_cold_call_3bet Return true Force
@@ -84,11 +88,14 @@ When f$cc_pf_role_unraised_caller Return true Force
 When f$cc_pf_role_bb_check Return true Force
 When Others Return false Force
 
-// Purpose: explicit Delayed-CBet firewall: a final preflop aggressor who checked
-// through flop cannot be reinterpreted as Probe merely because Turn is checked to.
+// Purpose: explicit Delayed-CBet firewall: final preflop aggressors and exact
+// source limped-initiative owners cannot become Probe after checking flop.
 // Source/Provenance: A exact attack-node ownership boundary.
 ##f$cc_turn_probe_excluded_delayed_cbet##
-f$cc_pf_role_pfa || f$cc_pf_role_3bettor || f$cc_pf_role_4bettor
+f$cc_pf_role_pfa ||
+f$cc_pf_role_3bettor ||
+f$cc_pf_role_4bettor ||
+f$cc_native_limped_initiative
 
 // Purpose: exact-last no-initiative check-through is a delayed-float/stab family,
 // not the OOP/early Turn Probe owner.
