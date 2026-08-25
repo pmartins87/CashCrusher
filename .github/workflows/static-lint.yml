@@ -169,3 +169,5 @@ jobs:
         run: python tools/test_river_probe_coverage.py
       - name: Test River Probe runtime sizing/all-in contract
         run: python tools/test_river_probe_runtime.py
+      - name: Test core Turn Delayed CBet source contract
+        run: python tools/test_turn_delayed_cbet_source_core.py
