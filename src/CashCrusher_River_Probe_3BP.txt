@@ -1,0 +1,293 @@
+// ============================================================================
+// CashCrusher_River_Probe_3BP.txt
+// Gate 11I — plain-3BP / squeeze River Probe professional adaptation
+// ============================================================================
+// Purpose:
+//   Review clean-HU two-raise pots after CLOSED flop X/C -> Turn X/X while
+//   preserving plain-3bet versus squeeze chronology and the exact caller stage.
+//   Both directions are represented: caller X/C versus the final 3bettor's flop
+//   bet, and final 3bettor X/C versus a caller's flop stab.
+//
+// Source boundary:
+//   DeepCrusher has no complete deep-stack 3BP/squeeze River-Probe policy. The
+//   framework proves River-Probe ownership after an actual flop call; Gate01F
+//   supplies exact raise/caller chronology. Betting policy here is P-heavy and
+//   intentionally narrower than direct HUBB/native children.
+//
+// Provenance:
+//   T = Gate00/01F exact two-raise chronology, Gate11 X/C-X/X history, HU actor
+//       identity and current hand/board facts.
+//   A = opener-call / pre-squeeze / post-3bet caller taxonomy and plain-v-squeeze
+//       separation already audited in Gate10.
+//   P = conservative 100bb clean-HU value policy and 33/50/75 sizing.
+//   X = pure-air River Probe in condensed two-raise ranges, inferred flop price,
+//       generic TP/OP stackoff, shortest-stack commitment and automatic all-in.
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// RP3B.01 — caller-stage provenance for Hero and current HU villain
+// -----------------------------------------------------------------------------
+
+// Purpose: canonical Hero position bit for Gate01F caller masks.
+// Source/Provenance: T/A Gate00 position mapping.
+##f$cc_river_probe_3bp_hero_pos_bit##
+When f$cc_hero_pos_id = 1 Return 1 Force
+When f$cc_hero_pos_id = 2 Return 2 Force
+When f$cc_hero_pos_id = 3 Return 4 Force
+When f$cc_hero_pos_id = 4 Return 8 Force
+When f$cc_hero_pos_id = 5 Return 16 Force
+When f$cc_hero_pos_id = 6 Return 32 Force
+When Others Return 0 Force
+
+// Purpose: current sole HU villain canonical-position bit.
+// Source/Provenance: T/A current range identity.
+##f$cc_river_probe_3bp_villain_pos_bit##
+When f$cc_hu_villain_pos_id = 1 Return 1 Force
+When f$cc_hu_villain_pos_id = 2 Return 2 Force
+When f$cc_hu_villain_pos_id = 3 Return 4 Force
+When f$cc_hu_villain_pos_id = 4 Return 8 Force
+When f$cc_hu_villain_pos_id = 5 Return 16 Force
+When f$cc_hu_villain_pos_id = 6 Return 32 Force
+When Others Return 0 Force
+
+// Purpose: Hero was original opener and called the 3bet.
+// Source/Provenance: A exact Gate01F chronology.
+##f$cc_river_probe_3bp_hero_is_opener_call##
+f$cc_pf_role_open_call_3bet &&
+f$cc_pf_3bet_order_supported &&
+f$cc_hero_pos_id = f$cc_pf_3bet_first_raiser_pos_id
+
+// Purpose: Hero cold-called before a later squeeze and continued.
+// Source/Provenance: A exact pre3bet mask intersection.
+##f$cc_river_probe_3bp_hero_is_pre3bet_coldcaller##
+f$cc_pf_role_cold_call_3bet &&
+f$cc_pf_squeeze_proven &&
+f$cc_river_probe_3bp_hero_pos_bit > 0 &&
+((f$cc_pf_pre3bet_coldcaller_mask BitAnd f$cc_river_probe_3bp_hero_pos_bit) > 0)
+
+// Purpose: Hero first entered after the final 3bet.
+// Source/Provenance: A exact post3bet mask intersection.
+##f$cc_river_probe_3bp_hero_is_post3bet_coldcaller##
+f$cc_pf_role_cold_call_3bet &&
+f$cc_pf_3bet_order_supported &&
+f$cc_river_probe_3bp_hero_pos_bit > 0 &&
+((f$cc_pf_post3bet_coldcaller_mask BitAnd f$cc_river_probe_3bp_hero_pos_bit) > 0)
+
+// Purpose: exactly one caller-stage provenance owns Hero.
+// Source/Provenance: P integrity over A exact classes.
+##f$cc_river_probe_3bp_hero_origin_consistent##
+When f$cc_river_probe_3bp_hero_is_opener_call && (f$cc_river_probe_3bp_hero_is_pre3bet_coldcaller || f$cc_river_probe_3bp_hero_is_post3bet_coldcaller) Return false Force
+When f$cc_river_probe_3bp_hero_is_pre3bet_coldcaller && f$cc_river_probe_3bp_hero_is_post3bet_coldcaller Return false Force
+When f$cc_river_probe_3bp_hero_is_opener_call || f$cc_river_probe_3bp_hero_is_pre3bet_coldcaller || f$cc_river_probe_3bp_hero_is_post3bet_coldcaller Return true Force
+When Others Return false Force
+
+// Purpose: current HU villain is the original opener who continued versus 3bet.
+// Source/Provenance: A exact first-raiser identity in a two-player flop.
+##f$cc_river_probe_3bp_villain_is_opener_call##
+f$cc_pf_3bet_order_supported &&
+f$cc_hu_villain_pos_id = f$cc_pf_3bet_first_raiser_pos_id
+
+// Purpose: current HU villain cold-called before a later squeeze.
+// Source/Provenance: A exact pre3bet mask intersection.
+##f$cc_river_probe_3bp_villain_is_pre3bet_coldcaller##
+f$cc_pf_squeeze_proven &&
+f$cc_river_probe_3bp_villain_pos_bit > 0 &&
+((f$cc_pf_pre3bet_coldcaller_mask BitAnd f$cc_river_probe_3bp_villain_pos_bit) > 0)
+
+// Purpose: current HU villain first entered after final 3bet.
+// Source/Provenance: A exact post3bet mask intersection.
+##f$cc_river_probe_3bp_villain_is_post3bet_coldcaller##
+f$cc_pf_3bet_order_supported &&
+f$cc_river_probe_3bp_villain_pos_bit > 0 &&
+((f$cc_pf_post3bet_coldcaller_mask BitAnd f$cc_river_probe_3bp_villain_pos_bit) > 0)
+
+// Purpose: exactly one caller-stage provenance owns the current HU villain.
+// Source/Provenance: P integrity over A exact classes.
+##f$cc_river_probe_3bp_villain_origin_consistent##
+When f$cc_river_probe_3bp_villain_is_opener_call && (f$cc_river_probe_3bp_villain_is_pre3bet_coldcaller || f$cc_river_probe_3bp_villain_is_post3bet_coldcaller) Return false Force
+When f$cc_river_probe_3bp_villain_is_pre3bet_coldcaller && f$cc_river_probe_3bp_villain_is_post3bet_coldcaller Return false Force
+When f$cc_river_probe_3bp_villain_is_opener_call || f$cc_river_probe_3bp_villain_is_pre3bet_coldcaller || f$cc_river_probe_3bp_villain_is_post3bet_coldcaller Return true Force
+When Others Return false Force
+
+// -----------------------------------------------------------------------------
+// RP3B.02 — exact clean-HU two-raise parent and actor directions
+// -----------------------------------------------------------------------------
+
+// Purpose: supported two-raise River Probe that entered flop with exactly two.
+// True-HU 3BP and preflop-reduced 3-6h HU are both allowed if Gate11 position
+// ownership itself is valid; range families below still require exact chronology.
+// Source/Provenance: T/A mechanics + P clean-HU scope.
+##f$cc_river_probe_3bp_clean_hu_context##
+f$cc_river_probe_hu_opportunity &&
+f$cc_flop_entry_count = 2 &&
+f$cc_pot_family_id = 3 &&
+f$cc_pf_3bet_order_supported
+
+// Purpose: caller X/C'd the final 3bettor's flop bet.
+// Source/Provenance: T/A exact range and actor identity.
+##f$cc_river_probe_3bp_caller_vs_3bettor_context##
+f$cc_river_probe_3bp_clean_hu_context &&
+f$cc_river_probe_3bp_hero_origin_consistent &&
+f$cc_hu_villain_pos_id = f$cc_pf_3bet_final_raiser_pos_id
+
+// Purpose: final 3bettor checked flop, then X/C'd a caller's stab.
+// Source/Provenance: A reverse actor history enabled by Gate11A.1 owner repair.
+##f$cc_river_probe_3bp_3bettor_vs_caller_stab_context##
+f$cc_river_probe_3bp_clean_hu_context &&
+f$cc_pf_role_3bettor &&
+f$cc_pf_3bet_final_raiser_pos_id = f$cc_hero_pos_id &&
+f$cc_river_probe_3bp_villain_origin_consistent &&
+lastraised2 = headsupchair
+
+// -----------------------------------------------------------------------------
+// RP3B.03 — ten exact plain/squeeze range families
+// -----------------------------------------------------------------------------
+
+// Purpose: compact exact family ID.
+// 1 plain opener-call vs 3bettor; 2 plain postcold vs 3bettor;
+// 3 squeeze opener-call vs squeezer; 4 squeeze precold vs squeezer;
+// 5 squeeze postcold vs squeezer; 6 plain 3bettor vs opener stab;
+// 7 plain 3bettor vs postcold stab; 8 squeezer vs opener stab;
+// 9 squeezer vs precold stab; 10 squeezer vs postcold stab.
+// Source/Provenance: A chronology taxonomy + P routing metadata.
+##f$cc_river_probe_3bp_family_id##
+When f$cc_river_probe_3bp_caller_vs_3bettor_context && f$cc_pf_3bet_plain_proven && f$cc_river_probe_3bp_hero_is_opener_call Return 1 Force
+When f$cc_river_probe_3bp_caller_vs_3bettor_context && f$cc_pf_3bet_plain_proven && f$cc_river_probe_3bp_hero_is_post3bet_coldcaller Return 2 Force
+When f$cc_river_probe_3bp_caller_vs_3bettor_context && f$cc_pf_squeeze_proven && f$cc_river_probe_3bp_hero_is_opener_call Return 3 Force
+When f$cc_river_probe_3bp_caller_vs_3bettor_context && f$cc_pf_squeeze_proven && f$cc_river_probe_3bp_hero_is_pre3bet_coldcaller Return 4 Force
+When f$cc_river_probe_3bp_caller_vs_3bettor_context && f$cc_pf_squeeze_proven && f$cc_river_probe_3bp_hero_is_post3bet_coldcaller Return 5 Force
+When f$cc_river_probe_3bp_3bettor_vs_caller_stab_context && f$cc_pf_3bet_plain_proven && f$cc_river_probe_3bp_villain_is_opener_call Return 6 Force
+When f$cc_river_probe_3bp_3bettor_vs_caller_stab_context && f$cc_pf_3bet_plain_proven && f$cc_river_probe_3bp_villain_is_post3bet_coldcaller Return 7 Force
+When f$cc_river_probe_3bp_3bettor_vs_caller_stab_context && f$cc_pf_squeeze_proven && f$cc_river_probe_3bp_villain_is_opener_call Return 8 Force
+When f$cc_river_probe_3bp_3bettor_vs_caller_stab_context && f$cc_pf_squeeze_proven && f$cc_river_probe_3bp_villain_is_pre3bet_coldcaller Return 9 Force
+When f$cc_river_probe_3bp_3bettor_vs_caller_stab_context && f$cc_pf_squeeze_proven && f$cc_river_probe_3bp_villain_is_post3bet_coldcaller Return 10 Force
+When Others Return 0 Force
+
+// Purpose: exact clean-HU two-raise strategy owner.
+// Source/Provenance: P deterministic partition.
+##f$cc_river_probe_3bp_context##
+f$cc_river_probe_3bp_family_id > 0
+
+// Purpose: wider opener-connected families where strong TP can thin-probe on a
+// clean River. Condensed coldcaller families remain stricter.
+// Source/Provenance: P range-strength grouping over A exact family IDs.
+##f$cc_river_probe_3bp_wider_family##
+f$cc_river_probe_3bp_family_id = 1 ||
+f$cc_river_probe_3bp_family_id = 3 ||
+f$cc_river_probe_3bp_family_id = 6 ||
+f$cc_river_probe_3bp_family_id = 8
+
+// -----------------------------------------------------------------------------
+// RP3B.04 — current River value region
+// -----------------------------------------------------------------------------
+
+// Purpose: strong contributed flush.
+// Source/Provenance: A source flush-quality lesson + P 3BP threshold.
+##f$cc_river_probe_3bp_strong_flush##
+HaveFlush && pokerval > pokervalcommon && NumberOfUnknownSuitedOvercards <= 4
+
+// Purpose: contributed non-under straight.
+// Source/Provenance: A under-straight lesson + P 3BP threshold.
+##f$cc_river_probe_3bp_strong_straight##
+HaveStraight && pokerval > pokervalcommon && !HaveUnderStraight
+
+// Purpose: premium value in condensed two-raise range.
+// Source/Provenance: T current facts + P robust value boundary.
+##f$cc_river_probe_3bp_premium_value##
+When !f$cc_river_probe_3bp_context Return false Force
+When f$cc_river_probe_literal_nuts Return true Force
+When HaveQuads && pokerval > pokervalcommon Return true Force
+When HaveFullHouse && pokerval > pokervalcommon Return true Force
+When f$cc_river_probe_3bp_strong_flush Return true Force
+When f$cc_river_probe_3bp_strong_straight Return true Force
+When Others Return false Force
+
+// Purpose: contributed trips/set/exact 2P below premium.
+// Source/Provenance: A contribution-aware classes + P medium-value grouping.
+##f$cc_river_probe_3bp_medium_value##
+f$cc_river_probe_3bp_context &&
+!f$cc_river_probe_3bp_premium_value &&
+((HaveTrips && !TripsOnBoard && npcbits > 0) ||
+ HaveSet ||
+ f$cc_river_probe_contributed_exact_two_pair)
+
+// Purpose: contribution-aware overpair below 2P+.
+// Source/Provenance: T/A current pair primitive.
+##f$cc_river_probe_3bp_overpair_real##
+f$cc_river_probe_3bp_context &&
+HaveOverPair && PairInHand && npcbits > 0 &&
+!f$cc_river_probe_3bp_medium_value &&
+!f$cc_river_probe_3bp_premium_value
+
+// Purpose: strong TP; only wider opener-connected families can lead it.
+// Source/Provenance: A kicker quality + P <=2 threshold.
+##f$cc_river_probe_3bp_strong_tp##
+f$cc_river_probe_3bp_context &&
+f$cc_hand_just_top_pair && !TwoPairOnBoard && npcbits > 0 &&
+f$cc_number_better_kickers <= 2
+
+// Purpose: safe River for one-pair thin value.
+// Source/Provenance: A completion caution + P two-raise cash filter.
+##f$cc_river_probe_3bp_thin_value_river##
+!f$cc_river_probe_paired && !f$cc_river_probe_completed
+
+// Purpose: all pure-air 3BP/squeeze River Probe remains blocked at this gate.
+// Blocker/frequency provenance is not strong enough to manufacture a bluff line.
+// Source/Provenance: P conservative evidence boundary.
+##f$cc_river_probe_3bp_air_check##
+f$cc_river_probe_3bp_context && f$cc_river_probe_air
+
+// -----------------------------------------------------------------------------
+// RP3B.05 — deterministic value-only policy
+// -----------------------------------------------------------------------------
+
+// Purpose: shared action across exact family IDs. Premium/medium value leads;
+// overpair requires clean River; strong TP also requires a wider family.
+// Source/Provenance: P professional two-raise fill.
+##f$cc_river_probe_3bp_action##
+When !f$cc_river_probe_3bp_context Return false Force
+When f$cc_river_probe_3bp_premium_value Return true Force
+When f$cc_river_probe_3bp_medium_value Return true Force
+When f$cc_river_probe_3bp_overpair_real && f$cc_river_probe_3bp_thin_value_river Return true Force
+When f$cc_river_probe_3bp_wider_family && f$cc_river_probe_3bp_strong_tp && f$cc_river_probe_3bp_thin_value_river Return true Force
+When Others Return false Force
+
+// Purpose: premium75 | medium50 | clean overpair/strongTP33.
+// Source/Provenance: P conservative Gate11 palette; no jam semantics.
+##f$cc_river_probe_3bp_size_id##
+When !f$cc_river_probe_3bp_action Return 0 Force
+When f$cc_river_probe_3bp_premium_value Return f$cc_river_probe_size_75_id Force
+When f$cc_river_probe_3bp_medium_value Return f$cc_river_probe_size_50_id Force
+When f$cc_river_probe_3bp_overpair_real Return f$cc_river_probe_size_33_id Force
+When f$cc_river_probe_3bp_strong_tp Return f$cc_river_probe_size_33_id Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// RP3B.06 — coverage / unresolved / integrity
+// -----------------------------------------------------------------------------
+
+// Purpose: every exact clean-HU two-raise family above is reviewed, including
+// explicit one-pair/air checks.
+// Source/Provenance: P coverage metadata.
+##f$cc_river_probe_3bp_covered##
+f$cc_river_probe_3bp_context
+
+// Purpose: supported 3BP River-Probe opportunity outside exact clean-HU range
+// partition remains fail-closed, especially current/post-multiway history.
+// Source/Provenance: P evidence-boundary diagnostic.
+##f$cc_river_probe_3bp_unresolved##
+f$cc_river_probe_base_opportunity &&
+f$cc_pot_family_id = 3 &&
+f$cc_pf_3bet_order_supported &&
+!f$cc_river_probe_3bp_covered
+
+// Purpose: local action/size integrity.
+// Source/Provenance: P safety invariant.
+##f$cc_river_probe_3bp_size_consistent##
+When !f$cc_river_probe_3bp_action Return f$cc_river_probe_3bp_size_id = 0 Force
+When f$cc_river_probe_3bp_action Return f$cc_river_probe_3bp_size_id >= 1 && f$cc_river_probe_3bp_size_id <= 7 Force
+When Others Return false Force
+
+// ============================================================================
+// End Gate11I plain-3BP / squeeze River Probe adaptation.
+// ============================================================================
