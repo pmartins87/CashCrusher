@@ -163,7 +163,9 @@ f$cc_river_donk_flop_aggressor_pos_id = f$cc_river_donk_turn_aggressor_pos_id
 // RDH.03 — canonical River lead opportunity
 // -----------------------------------------------------------------------------
 
-// Purpose: common first-Hero-action River lead envelope after a clean Turn X/C.
+// Purpose: common first-Hero-action River lead envelope after the canonical
+// clean flop X/C -> Turn X/C parent. Other possible River-lead histories must be
+// added later as separate audited parents, never absorbed by this one.
 // Source: DeepCrusher River Raise No-initiative first/middle architecture plus
 // exact Gate09 HUBB history; positive strategy remains child-owned.
 // Provenance: A/T ownership only.
@@ -174,6 +176,7 @@ When balance <= 0 Return false Force
 When BotsActionsOnThisRoundIncludingChecks != 0 Return false Force
 When AmountToCall != 0 Return false Force
 When f$cc_river_donk_excluded_turn_donk_continuation Return false Force
+When !f$cc_hist_river_donk_flop_checkcall_clean Return false Force
 When !f$cc_hist_river_donk_turn_checkcall_clean Return false Force
 When f$cc_relative_postflop_pos_id = 3 Return false Force
 When Others Return true Force
