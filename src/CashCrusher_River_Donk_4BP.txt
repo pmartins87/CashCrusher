@@ -1,0 +1,205 @@
+// ============================================================================
+// CashCrusher_River_Donk_4BP.txt
+// Gate 09F — clean supported HU 4BP River Donk
+// ============================================================================
+// Purpose:
+//   Review only clean HU three-raise pots that reach River after an ACTUAL
+//   Hero X/C flop -> X/C Turn sequence. Keep opener4, cold4 and caller-of-opener4
+//   ranges separate and refuse unresolved/reversed/multiway histories.
+//
+// Source boundary:
+//   No dedicated deep-stack 4BP River-Donk table exists in the supplied Crusher
+//   material. Legacy reraised-pot routing is architecture A, not positive strategy.
+//
+// Professional-theory review:
+//   A 100bb hand can naturally reach very low River SPR in a 4BP. That can make
+//   OP/strong-TP stack commitment correct in an exact node, but it does NOT prove
+//   that leading River after two X/C streets is superior to checking. Therefore
+//   this deterministic baseline leads only robust current value and exposes a
+//   separate low-SPR one-pair REVIEW diagnostic without granting it action.
+//
+// Provenance:
+//   T/A = Gate01I clean 4BP + caller-side chronology + Gate09A closed X/C history.
+//   P   = robust-value lead thresholds/sizing and explicit reviewed checks.
+//   X   = generic low-SPR -> lead/jam; TP+/OP -> automatic stackoff; current-air bluff.
+//
+// Safety:
+//   * clean HU from flop only;
+//   * current Villain must be the proven 4BP counterpart and Turn aggressor;
+//   * multiway/post-multiway/other-caller/reversed/backraise/5bet+ fail closed;
+//   * no BetMax here; natural all-in belongs to Gate09H runtime geometry.
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// RD4B.01 — exact clean HU parents
+// -----------------------------------------------------------------------------
+
+// Purpose: common two-street X/C proof required by every Gate09F parent.
+// Source/Provenance: T Gate09A closed flop+Turn counters.
+##f$cc_river_donk_4bp_two_street_xc##
+f$cc_hist_river_donk_flop_checkcall_clean &&
+f$cc_hist_river_donk_turn_checkcall_clean
+
+// Purpose: Hero is clean final 4bettor, sole current Villain is original opener
+// or original 3bettor, and Hero is OOP on River after exact X/C-X/C history.
+// Source/Provenance: T/A Gate01I + Gate09A identity/history.
+##f$cc_river_donk_4bp_hero4_base##
+f$cc_river_donk_base_opportunity &&
+f$cc_river_donk_4bp_two_street_xc &&
+f$cc_pot_family_id = 4 &&
+f$cc_pf_role_4bettor &&
+f$cc_pf_4bet_subtype_id > 0 &&
+f$cc_hu &&
+f$cc_hu_oop &&
+f$cc_flop_entry_count = 2 &&
+f$cc_hu_4bp_survivor_consistent &&
+(f$cc_hu_4bp_survivor_type_id = 1 || f$cc_hu_4bp_survivor_type_id = 2) &&
+f$cc_river_donk_hu_opportunity
+
+// Purpose: standard opener4 Hero versus original 3bettor survivor.
+// Source/Provenance: A/T exact clean range parent.
+##f$cc_river_donk_4bp_opener4_vs_threebettor##
+f$cc_river_donk_4bp_hero4_base &&
+f$cc_pf_4bet_standard_opener4_proven &&
+f$cc_hu_4bp_villain_is_threebettor
+
+// Purpose: standard cold4 Hero versus original opener survivor.
+// Source/Provenance: A/T exact clean cold4 range parent.
+##f$cc_river_donk_4bp_cold4_vs_opener##
+f$cc_river_donk_4bp_hero4_base &&
+f$cc_pf_4bet_standard_cold4_proven &&
+f$cc_hu_4bp_villain_is_opener
+
+// Purpose: standard cold4 Hero versus original 3bettor survivor.
+// Source/Provenance: A/T exact clean cold4 range parent.
+##f$cc_river_donk_4bp_cold4_vs_threebettor##
+f$cc_river_donk_4bp_hero4_base &&
+f$cc_pf_4bet_standard_cold4_proven &&
+f$cc_hu_4bp_villain_is_threebettor
+
+// Purpose: opener -> Hero 3bet -> opener 4bet -> Hero call, clean HU from flop,
+// same opener4 is current Villain/Turn aggressor and Hero acts OOP on River.
+// Source/Provenance: A/T caller-side 4BP chronology + Gate09A history.
+##f$cc_river_donk_4bp_call4_vs_opener4##
+f$cc_river_donk_base_opportunity &&
+f$cc_river_donk_4bp_two_street_xc &&
+f$cc_pot_family_id = 4 &&
+f$cc_pf_call4_opener4_vs_hero3bettor_proven &&
+f$cc_hu_call4_vs_opener4_context &&
+f$cc_hu_oop &&
+f$cc_flop_entry_count = 2 &&
+f$cc_river_donk_hu_opportunity &&
+f$cc_river_donk_turn_aggressor_pos_id = f$cc_pf_call4_other_raiser_pos_id
+
+// Purpose: stable parent ID.
+// 1 opener4-v-3bettor | 2 cold4-v-opener | 3 cold4-v-3bettor |
+// 4 call4-v-opener4.
+// Source/Provenance: P audit metadata over A/T exact parents.
+##f$cc_river_donk_4bp_parent_id##
+When f$cc_river_donk_4bp_opener4_vs_threebettor Return 1 Force
+When f$cc_river_donk_4bp_cold4_vs_opener Return 2 Force
+When f$cc_river_donk_4bp_cold4_vs_threebettor Return 3 Force
+When f$cc_river_donk_4bp_call4_vs_opener4 Return 4 Force
+When Others Return 0 Force
+
+// Purpose: exactly one clean 4BP parent may own current state.
+// Source/Provenance: P overlap guard.
+##f$cc_river_donk_4bp_parent_count##
+(f$cc_river_donk_4bp_opener4_vs_threebettor * 1) +
+(f$cc_river_donk_4bp_cold4_vs_opener * 1) +
+(f$cc_river_donk_4bp_cold4_vs_threebettor * 1) +
+(f$cc_river_donk_4bp_call4_vs_opener4 * 1)
+
+// Purpose: parent integrity.
+// Source/Provenance: P fail-closed safety.
+##f$cc_river_donk_4bp_context_consistent##
+f$cc_river_donk_4bp_parent_id > 0 && f$cc_river_donk_4bp_parent_count = 1
+
+// -----------------------------------------------------------------------------
+// RD4B.02 — low-SPR review diagnostics, never automatic action
+// -----------------------------------------------------------------------------
+
+// Purpose: exact HU River SPR below one in a clean 4BP parent.
+// Source/Provenance: T geometry + P node-local review descriptor.
+##f$cc_river_donk_4bp_spr_below_1##
+f$cc_river_donk_4bp_context_consistent &&
+f$cc_spr_round_start >= 0 &&
+f$cc_spr_round_start < 1
+
+// Purpose: one-pair region where low SPR may make commitment correct but does not
+// itself prove a River lead. This remains diagnostic until exact solver/source
+// evidence selects parent+runout+hand combinations.
+// Source/Provenance: P review marker, deliberately no action.
+##f$cc_river_donk_4bp_low_spr_onepair_review##
+f$cc_river_donk_4bp_spr_below_1 &&
+(HaveOverPair || f$cc_river_top_pair)
+
+// -----------------------------------------------------------------------------
+// RD4B.03 — robust value lead
+// -----------------------------------------------------------------------------
+
+// Purpose: clean 4BP robust River value after two X/C streets.
+// Professional rationale:
+//   * literal nuts always qualify;
+//   * four-card public completions require Hero contribution to the completed
+//     straight/flush or full-house+ style strength, never board-only 2P;
+//   * ordinary completed boards require set or contributed straight/flush;
+//   * non-completed rivers permit contributed two-pair/set value.
+// Provenance: P deterministic deep-cash gap fill; this is BET threshold only.
+##f$cc_river_donk_4bp_robust_value##
+When !f$cc_river_donk_4bp_context_consistent Return false Force
+When HaveNuts Return true Force
+When f$cc_river_four_card_completion && (HaveFullHouse || HaveQuads || HaveStraightFlush || f$cc_river_donk_2hc_straight || f$cc_river_donk_2hc_flush) Return true Force
+When f$cc_river_four_card_completion Return false Force
+When f$cc_river_completed && (HaveSet || f$cc_river_donk_2hc_straight || f$cc_river_donk_2hc_flush) Return true Force
+When f$cc_river_completed Return false Force
+When f$cc_river_donk_contributed_exact_two_pair || HaveSet Return true Force
+When Others Return false Force
+
+// Purpose: no generic River bluff in a 4BP without exact Turn-call draw/blocker
+// provenance. Low SPR does not relax this information requirement.
+// Source/Provenance: A/P safety.
+##f$cc_river_donk_4bp_nomade_bluff_blocked##
+f$cc_river_donk_4bp_context_consistent && f$cc_river_no_made
+
+// -----------------------------------------------------------------------------
+// RD4B.04 — action / sizing / coverage
+// -----------------------------------------------------------------------------
+
+// Purpose: clean-HU 4BP River Donk action.
+// Source/Provenance: P robust-value lead only.
+##f$cc_river_donk_4bp_action##
+When !f$cc_river_donk_4bp_context_consistent Return false Force
+When f$cc_river_donk_4bp_robust_value Return true Force
+When Others Return false Force
+
+// Purpose: 75% for literal nuts, 50% for other robust value. Natural low-SPR
+// all-in equivalence is resolved later by runtime, not by this strategy file.
+// Source/Provenance: P deterministic value sizing.
+##f$cc_river_donk_4bp_size_id##
+When !f$cc_river_donk_4bp_action Return 0 Force
+When HaveNuts Return 5 Force
+When Others Return 4 Force
+
+// Purpose: clean supported 4BP parent is reviewed whether action is bet/check.
+// Source/Provenance: P coverage contract.
+##f$cc_river_donk_4bp_covered##
+f$cc_river_donk_4bp_context_consistent
+
+// Purpose: visible unsupported 4BP/5BP+ River-Donk opportunity.
+// Source/Provenance: P evidence-boundary diagnostic.
+##f$cc_river_donk_4bp_unresolved##
+f$cc_river_donk_base_opportunity &&
+f$cc_pot_family_id >= 4 &&
+!f$cc_river_donk_4bp_covered
+
+// Purpose: action/size integrity.
+// Source/Provenance: P invariant.
+##f$cc_river_donk_4bp_size_consistent##
+When !f$cc_river_donk_4bp_action Return f$cc_river_donk_4bp_size_id = 0 Force
+When f$cc_river_donk_4bp_action Return f$cc_river_donk_4bp_size_id >= 1 && f$cc_river_donk_4bp_size_id <= 6 Force
+When Others Return false Force
+
+// ============================================================================
+// End Gate09F clean supported HU 4BP River Donk.
+// ============================================================================
