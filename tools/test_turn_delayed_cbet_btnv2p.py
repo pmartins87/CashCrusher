@@ -25,6 +25,15 @@ def executable(text: str) -> str:
     return "\n".join(line.split("//", 1)[0] for line in text.splitlines())
 
 
+def normalized_comments(text: str) -> str:
+    """Collapse comment line wrapping so provenance tests check meaning, not layout."""
+    pieces = []
+    for line in text.splitlines():
+        if "//" in line:
+            pieces.append(line.split("//", 1)[1].strip().lower())
+    return " ".join(pieces)
+
+
 def snapshot_contract() -> None:
     ctx = block(SNAP, "f$cc_turn_delayed_cbet_snapshot_3w_btnv2p_context")
     for token in (
@@ -102,11 +111,11 @@ def router_contract() -> None:
 
 
 def provenance_and_safety_contract() -> None:
-    low = (SNAP + "\n" + POL).lower()
-    assert "starting strategy is silent" in low or "no dedicated starting strategy" in low
-    assert "no exact" in low
-    assert "a/p" in low
-    assert "scenario-wide" in low
+    comments = normalized_comments(SNAP + "\n" + POL)
+    assert "starting strategy is silent" in comments or "no dedicated starting strategy" in comments
+    assert "no exact source/tbp size" in comments
+    assert "a/p" in comments
+    assert "scenario-wide" in comments
 
     code = executable(SNAP + "\n" + POL + "\n" + ROUTER).lower()
     for forbidden in (
