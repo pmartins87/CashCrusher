@@ -1,0 +1,87 @@
+// ============================================================================
+// CashCrusher_Turn_DelayedFloat_Unraised_Snapshot.txt
+// Gate 12B.10 — source-silent 4-6h unraised flop check-back snapshot
+// ============================================================================
+// Purpose:
+//   Gate04 correctly excludes unraised/no-initiative pots from Flop Float, so its
+//   snapshot cannot support the legitimate Gate12B history where a 4-6h overlimp/
+//   BB-check range acts LAST, checks behind, and the Turn checks through again.
+//   Save only mechanical flop state here; strategy remains in the paired P module.
+//
+// Provenance:
+//   T/A = exact no-initiative/unraised/LAST flop topology and hand primitives.
+//   P = persistent snapshot wrapper for later professional six-max adaptation.
+// ============================================================================
+
+// Purpose: source-silent 4-6h unraised checked-to flop snapshot owner.
+// Source/Provenance: T/A exact topology; native three-handed LP source excluded.
+##f$cc_turn_delayed_float_unraised_snapshot_context##
+IsFlop &&
+f$cc_context_valid &&
+BotsActionsOnThisRoundIncludingChecks = 0 &&
+AmountToCall = 0 &&
+f$cc_relpos_id = 3 &&
+f$cc_deal_size >= 4 && f$cc_deal_size <= 6 &&
+f$cc_pot_family_id = 1 &&
+f$cc_turn_delayed_float_preflop_noinitiative &&
+(f$cc_pf_role_unraised_caller || f$cc_pf_role_bb_check)
+
+// Purpose: primary flop class count before persistence.
+// Source/Provenance: P integrity check over T/A mutually-exclusive hand tiers.
+##f$cc_turn_delayed_float_unraised_primary_class_count##
+(f$cc_hand_two_pair_or_better * 1) +
+(HaveOverPair && !f$cc_hand_two_pair_or_better) +
+(f$cc_hand_just_top_pair * 1) +
+(f$cc_hand_middle_or_bottom_pair && !f$cc_hand_top_pair_or_better) +
+(f$cc_hand_no_made * 1)
+
+// Purpose: save pre-action flop state; marker is candidate evidence only and does
+// not prove Hero later checked. Turn consumer still requires CLOSED X/X history.
+// Source/Provenance: P persistence wrapper over T/A mechanical facts.
+##f$cc_turn_delayed_float_unraised_snapshot_writer##
+When !f$cc_turn_delayed_float_unraised_snapshot_context Return false Force
+When f$cc_turn_delayed_float_unraised_snapshot_context Set user_cc_turn_delayed_float_unraised_snapshot_seen
+When f$cc_turn_delayed_float_unraised_snapshot_context && f$cc_hand_two_pair_or_better Set user_cc_turn_delayed_float_unraised_flop_2pplus
+When f$cc_turn_delayed_float_unraised_snapshot_context && HaveOverPair && !f$cc_hand_two_pair_or_better Set user_cc_turn_delayed_float_unraised_flop_overpair
+When f$cc_turn_delayed_float_unraised_snapshot_context && f$cc_hand_just_top_pair Set user_cc_turn_delayed_float_unraised_flop_top_pair
+When f$cc_turn_delayed_float_unraised_snapshot_context && f$cc_hand_middle_or_bottom_pair && !f$cc_hand_top_pair_or_better Set user_cc_turn_delayed_float_unraised_flop_lower_pair
+When f$cc_turn_delayed_float_unraised_snapshot_context && f$cc_hand_no_made Set user_cc_turn_delayed_float_unraised_flop_no_made
+When f$cc_turn_delayed_float_unraised_snapshot_context && f$cc_flop_float_real_gutshot_plus Set user_cc_turn_delayed_float_unraised_flop_real_draw
+When f$cc_turn_delayed_float_unraised_snapshot_context && f$cc_flop_float_air Set user_cc_turn_delayed_float_unraised_flop_air
+When Others Return true Force
+
+// Purpose: count persisted primary classes.
+// Source/Provenance: P integrity check.
+##f$cc_turn_delayed_float_unraised_saved_primary_count##
+(user_cc_turn_delayed_float_unraised_flop_2pplus * 1) +
+(user_cc_turn_delayed_float_unraised_flop_overpair * 1) +
+(user_cc_turn_delayed_float_unraised_flop_top_pair * 1) +
+(user_cc_turn_delayed_float_unraised_flop_lower_pair * 1) +
+(user_cc_turn_delayed_float_unraised_flop_no_made * 1)
+
+// Purpose: exact Turn-side persisted snapshot validity after actual X/X history.
+// Source/Provenance: T/P cross-street fail-closed bridge.
+##f$cc_turn_delayed_float_unraised_snapshot_valid##
+When !f$cc_turn_delayed_float_base_opportunity Return false Force
+When !user_cc_turn_delayed_float_unraised_snapshot_seen Return false Force
+When f$cc_turn_delayed_float_unraised_saved_primary_count != 1 Return false Force
+When Others Return true Force
+
+// Purpose: saved lower-pair provenance for thin second-pair decisions.
+// Source/Provenance: P alias to persisted T/A flop class.
+##f$cc_turn_delayed_float_unraised_flop_had_lower_pair##
+f$cc_turn_delayed_float_unraised_snapshot_valid && user_cc_turn_delayed_float_unraised_flop_lower_pair
+
+// Purpose: saved pure-air provenance for selected delayed bluffs.
+// Source/Provenance: P alias to persisted T/A flop class.
+##f$cc_turn_delayed_float_unraised_flop_had_air##
+f$cc_turn_delayed_float_unraised_snapshot_valid && user_cc_turn_delayed_float_unraised_flop_air
+
+// Purpose: saved real-draw provenance for diagnostics/future Gate13 plans.
+// Source/Provenance: P alias to persisted T/A flop equity class.
+##f$cc_turn_delayed_float_unraised_flop_had_real_draw##
+f$cc_turn_delayed_float_unraised_snapshot_valid && user_cc_turn_delayed_float_unraised_flop_real_draw
+
+// ============================================================================
+// End Gate12B.10 unraised snapshot.
+// ============================================================================
