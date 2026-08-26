@@ -131,7 +131,9 @@ def dispatcher_contract() -> None:
     assert "f$cc_turn_delayed_cbet_3w_sbvbb_source_size_id" in size
     cov = block(ROUTER, "f$cc_turn_delayed_cbet_strategy_covered")
     assert "f$cc_turn_delayed_cbet_3w_sbvbb_source_covered" in cov
-    assert "<= 6" in block(ROUTER, "f$cc_turn_delayed_cbet_size_consistent")
+    # SBvBB remains local palette 1..6; the canonical router may grow with
+    # reviewed non-SBvBB sizes (currently ID7 = BTNv2p multiway 33%).
+    assert "<= 7" in block(ROUTER, "f$cc_turn_delayed_cbet_size_consistent")
     assert "f$cc_turn_delayed_cbet_3w_sbvbb_size_consistent" in block(ROUTER, "f$cc_turn_delayed_cbet_router_consistent")
 
     common150 = block(COMMON, "f$cc_turn_delayed_cbet_size_150_id")
