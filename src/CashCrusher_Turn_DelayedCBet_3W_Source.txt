@@ -5,14 +5,13 @@
 // Purpose:
 //   Translate the next two mature DeepCrusher delayed-CBet families after an
 //   ACTUAL initiative flop X/X. The source's generic per-scenario false fallback
-//   is preserved. The one branch that depends on untranslated dead/zombie draw
-//   safety remains visibly fail-closed instead of being guessed.
+//   is preserved. Legacy dead/zombie draw safety is now consumed from the exact
+//   Gate12A common translation rather than guessed.
 //
 // Provenance:
 //   T = mature `f$move_turn_DelayedCB` actions and sizes.
 //   A = canonical native positions + portable current hand classes.
 //   P = normalized IDs/coverage metadata only.
-//   X = completed-draw 3wBBvSB branch until dead/zombie equivalence is certified.
 // ============================================================================
 
 // -----------------------------------------------------------------------------
@@ -114,58 +113,54 @@ f$cc_turn_delayed_cbet_third_pair
 // DC12A-3W.04 — 3wBBvSB wet-air direct source
 // -----------------------------------------------------------------------------
 
-// Purpose: source branch requiring dead/zombie draw-quality exclusion. CashCrusher
-// has not yet certified exact equivalence for those legacy helpers; this state is
-// deliberately X/pending rather than silently treated as bet or check.
-// Source/Provenance: X explicit translation boundary over T source condition.
-##f$cc_turn_delayed_cbet_3w_bbvsb_completed_draw_translation_pending##
+// Purpose: exact completed-turn live-draw branch. Dead/zombie draws check; only
+// source FDSD equity that survives both safety filters delays 50.
+// Source/Provenance: T direct mature source condition.
+##f$cc_turn_delayed_cbet_3w_bbvsb_completed_live_draw##
 f$cc_turn_delayed_cbet_3w_bbvsb_source_context &&
 user_cc_turn_delayed_cbet_3w_bbvsb_flop_wetair_candidate &&
 f$cc_turn_delayed_cbet_turn_completed &&
 f$cc_turn_delayed_cbet_no_made &&
-f$cc_real_frontdoor_draw
+f$cc_turn_delayed_cbet_source_gutshot_or_better_fdsd &&
+f$cc_turn_delayed_cbet_source_draw_live_safe
 
-// Purpose: wet-air action for all mechanically resolved source states. Current
-// value acts first. Non-completed no-made bluffs only when flop was not 2BW/A.
-// Completed live-draw state stays outside execution until dead/zombie is ported.
-// Source/Provenance: T direct source with X branch removed fail-closed.
+// Purpose: wet-air action. Current value acts first; completed live draw delays
+// 50; non-completed no-made bluffs only when the flop was not 2BW/A.
+// Source/Provenance: T direct source ordering.
 ##f$cc_turn_delayed_cbet_3w_bbvsb_air_action##
 When !f$cc_turn_delayed_cbet_3w_bbvsb_source_context Return false Force
 When !user_cc_turn_delayed_cbet_3w_bbvsb_flop_wetair_candidate Return false Force
 When f$cc_turn_delayed_cbet_two_pair_plus_real Return true Force
 When f$cc_turn_delayed_cbet_tpop_real Return true Force
 When f$cc_hand_second_pair_or_pocket && !f$cc_hand_top_pair_or_better Return true Force
-When f$cc_turn_delayed_cbet_3w_bbvsb_completed_draw_translation_pending Return false Force
+When f$cc_turn_delayed_cbet_3w_bbvsb_completed_live_draw Return true Force
 When !f$cc_turn_delayed_cbet_turn_completed && !user_cc_turn_delayed_cbet_3w_bbvsb_flop_air_2bworA_candidate && f$cc_turn_delayed_cbet_no_made Return true Force
 When Others Return false Force
 
-// Purpose: exact resolved wet-air sizes: current 2P+75; TP/OP/second pair50;
-// allowed non-completed no-made bluff50.
+// Purpose: exact wet-air sizes: current 2P+75; all other positive branches50.
 // Source/Provenance: T direct Turn75/Turn50 mapping.
 ##f$cc_turn_delayed_cbet_3w_bbvsb_air_size_id##
 When !f$cc_turn_delayed_cbet_3w_bbvsb_air_action Return 0 Force
 When f$cc_turn_delayed_cbet_two_pair_plus_real Return f$cc_turn_delayed_cbet_size_75_id Force
 When Others Return f$cc_turn_delayed_cbet_size_50_id Force
 
-// Purpose: resolved air Delay50 check-River metadata only.
-// Source/Provenance: T direct source future-street plan.
+// Purpose: completed live-draw and non-completed eligible air both check River
+// after the Turn50 according to source. Metadata only; Gate13 owns execution.
+// Source/Provenance: T direct future-street plan.
 ##f$cc_turn_delayed_cbet_3w_bbvsb_plan_air_delay50_checkriver##
-f$cc_turn_delayed_cbet_3w_bbvsb_source_context &&
-user_cc_turn_delayed_cbet_3w_bbvsb_flop_wetair_candidate &&
-!f$cc_turn_delayed_cbet_turn_completed &&
-!user_cc_turn_delayed_cbet_3w_bbvsb_flop_air_2bworA_candidate &&
-f$cc_turn_delayed_cbet_no_made
+When f$cc_turn_delayed_cbet_3w_bbvsb_completed_live_draw Return true Force
+When f$cc_turn_delayed_cbet_3w_bbvsb_source_context && user_cc_turn_delayed_cbet_3w_bbvsb_flop_wetair_candidate && !f$cc_turn_delayed_cbet_turn_completed && !user_cc_turn_delayed_cbet_3w_bbvsb_flop_air_2bworA_candidate && f$cc_turn_delayed_cbet_no_made Return true Force
+When Others Return false Force
 
-// Purpose: resolved source Turn-check/BxB-River50 state, excluding the unresolved
-// completed-draw branch. It is metadata only and never manufactures a Turn bet.
-// Source/Provenance: T direct source fallback + X exclusion.
+// Purpose: source Turn-check/BxB-River50 fallback after a wet-air flop check.
+// Positive current-value branches and the two Delay50 branches are excluded.
+// Source/Provenance: T direct source fallback metadata.
 ##f$cc_turn_delayed_cbet_3w_bbvsb_plan_turncheck_bxb_river50##
 f$cc_turn_delayed_cbet_3w_bbvsb_source_context &&
 user_cc_turn_delayed_cbet_3w_bbvsb_flop_wetair_candidate &&
 !f$cc_turn_delayed_cbet_two_pair_plus_real &&
 !f$cc_turn_delayed_cbet_tpop_real &&
 !(f$cc_hand_second_pair_or_pocket && !f$cc_hand_top_pair_or_better) &&
-!f$cc_turn_delayed_cbet_3w_bbvsb_completed_draw_translation_pending &&
 !f$cc_turn_delayed_cbet_3w_bbvsb_plan_air_delay50_checkriver
 
 // -----------------------------------------------------------------------------
@@ -192,23 +187,22 @@ When Others Return 0 Force
 ##f$cc_turn_delayed_cbet_3w_btnvsb_source_covered##
 f$cc_turn_delayed_cbet_3w_btnvsb_source_context
 
-// Purpose: BBvSB source scenario is reviewed except the exact completed-draw
-// state that still requires dead/zombie equivalence.
-// Source/Provenance: T coverage minus X translation gap.
+// Purpose: BBvSB source scenario is now fully reviewed after exact dead/zombie
+// translation closed the completed-draw branch.
+// Source/Provenance: T direct source coverage.
 ##f$cc_turn_delayed_cbet_3w_bbvsb_source_covered##
-f$cc_turn_delayed_cbet_3w_bbvsb_source_context &&
-!f$cc_turn_delayed_cbet_3w_bbvsb_completed_draw_translation_pending
+f$cc_turn_delayed_cbet_3w_bbvsb_source_context
 
-// Purpose: union of the two new native source families.
+// Purpose: union of the two native source families.
 // Source/Provenance: P coverage metadata over T/A children.
 ##f$cc_turn_delayed_cbet_3w_extra_source_covered##
 f$cc_turn_delayed_cbet_3w_btnvsb_source_covered ||
 f$cc_turn_delayed_cbet_3w_bbvsb_source_covered
 
-// Purpose: visible unresolved exact source state.
-// Source/Provenance: X fail-closed diagnostic.
+// Purpose: no remaining translation gap inside these two exact source trees.
+// Source/Provenance: X diagnostic closed by exact source helper port.
 ##f$cc_turn_delayed_cbet_3w_extra_unresolved##
-f$cc_turn_delayed_cbet_3w_bbvsb_completed_draw_translation_pending
+false
 
 // Purpose: local size integrity.
 // Source/Provenance: P safety invariant.
@@ -217,7 +211,6 @@ When f$cc_turn_delayed_cbet_3w_btnvsb_source_covered && !f$cc_turn_delayed_cbet_
 When f$cc_turn_delayed_cbet_3w_btnvsb_source_action Return f$cc_turn_delayed_cbet_3w_btnvsb_source_size_id >= 1 && f$cc_turn_delayed_cbet_3w_btnvsb_source_size_id <= 5 Force
 When f$cc_turn_delayed_cbet_3w_bbvsb_source_covered && !f$cc_turn_delayed_cbet_3w_bbvsb_source_action Return f$cc_turn_delayed_cbet_3w_bbvsb_source_size_id = 0 Force
 When f$cc_turn_delayed_cbet_3w_bbvsb_source_action Return f$cc_turn_delayed_cbet_3w_bbvsb_source_size_id >= 1 && f$cc_turn_delayed_cbet_3w_bbvsb_source_size_id <= 5 Force
-When f$cc_turn_delayed_cbet_3w_extra_unresolved Return true Force
 When Others Return true Force
 
 // ============================================================================
