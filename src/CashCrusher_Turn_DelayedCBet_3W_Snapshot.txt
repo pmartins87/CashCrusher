@@ -1,0 +1,170 @@
+// ============================================================================
+// CashCrusher_Turn_DelayedCBet_3W_Snapshot.txt
+// Gate 12A.5 — native 3wBTNvSB / 3wBBvSB delayed-CBet flop provenance
+// ============================================================================
+// Purpose:
+//   Extend the Gate12A pre-action snapshot with the exact native three-handed
+//   classes that the mature source carries from a skipped flop CBet to Turn.
+//   These are observations only. CLOSED flop X/X remains mandatory on Turn.
+//
+// Source hierarchy:
+//   T = DeepCrusher Retro12A final-check writers for 3wBTNvSB / 3wBBvSB.
+//   A = canonical CashCrusher positions and portable pair/air/texture primitives.
+//   P = side-effect persistence wrapper only.
+//
+// Safety:
+//   This module does not choose a flop action. A flag can only become strategy
+//   evidence after f$cc_turn_delayed_cbet_snapshot_valid proves actual X/X.
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// DC12A-3WS.01 — exact native HU-after-preflop-fold contexts
+// -----------------------------------------------------------------------------
+
+// Purpose: native 3-handed BTN initiative versus SB, with BB folded preflop.
+// Source/Provenance: A exact `game_3wBTNvSB` reconstruction over T context.
+##f$cc_turn_delayed_cbet_snapshot_3w_btnvsb_context##
+f$cc_turn_delayed_cbet_snapshot_capture_eligible &&
+f$cc_deal_size = 3 &&
+f$cc_flop_entry_count = 2 &&
+f$cc_hu &&
+f$cc_hero_pos_id = 4 &&
+f$cc_hu_villain_pos_id = 5
+
+// Purpose: native 3-handed BB initiative versus SB, with BTN folded preflop.
+// Source/Provenance: A exact `game_3wBBvSB` reconstruction over T context.
+##f$cc_turn_delayed_cbet_snapshot_3w_bbvsb_context##
+f$cc_turn_delayed_cbet_snapshot_capture_eligible &&
+f$cc_deal_size = 3 &&
+f$cc_flop_entry_count = 2 &&
+f$cc_hu &&
+f$cc_hero_pos_id = 6 &&
+f$cc_hu_villain_pos_id = 5
+
+// -----------------------------------------------------------------------------
+// DC12A-3WS.02 — exact 3wBTNvSB source candidates
+// -----------------------------------------------------------------------------
+
+// Purpose: source allows only flop 2nd/3rd pair to seed this delayed tree.
+// Source/Provenance: T direct `FlopMPBPCheck` class via portable pair ladder.
+##f$cc_turn_delayed_cbet_snapshot_3w_btnvsb_mpbp_candidate##
+f$cc_turn_delayed_cbet_snapshot_3w_btnvsb_context &&
+(f$cc_hand_second_pair_or_pocket || f$cc_hand_third_pair_or_pocket)
+
+// Purpose: saved two-broadway texture for the direct delayed-50 condition.
+// Source/Provenance: T direct `f$flop_2BW` translation.
+##f$cc_turn_delayed_cbet_snapshot_3w_btnvsb_2bw_candidate##
+f$cc_turn_delayed_cbet_snapshot_3w_btnvsb_mpbp_candidate && f$cc_flop_2bw
+
+// Purpose: saved one-broadway texture for pair-9+ conditional delay.
+// Source/Provenance: T direct `f$flop_1BW` translation.
+##f$cc_turn_delayed_cbet_snapshot_3w_btnvsb_1bw_candidate##
+f$cc_turn_delayed_cbet_snapshot_3w_btnvsb_mpbp_candidate && f$cc_flop_1bw
+
+// Purpose: exact source pair-rank 9+ test. For a board-made pair tier the source
+// uses Second/ThirdBestBoardCard; a pocket pair uses rankhiplayer.
+// Source/Provenance: T direct Retro12A final-check condition.
+##f$cc_turn_delayed_cbet_snapshot_3w_btnvsb_pair9plus_candidate##
+When !f$cc_turn_delayed_cbet_snapshot_3w_btnvsb_mpbp_candidate Return false Force
+When f$cc_hand_second_pair_or_pocket && (SecondBestBoardCard >= 9 || (ispair && rankhiplayer >= 9)) Return true Force
+When f$cc_hand_third_pair_or_pocket && (ThirdBestBoardCard >= 9 || (ispair && rankhiplayer >= 9)) Return true Force
+When Others Return false Force
+
+// -----------------------------------------------------------------------------
+// DC12A-3WS.03 — 3wBBvSB source wetness reconstruction
+// -----------------------------------------------------------------------------
+
+// Purpose: exact source adjacency helper (KQ through 54; wheel edge deliberately
+// follows the historical source rather than a generalized connectivity formula).
+// Source/Provenance: T direct `f$TwoConnectedCardsOnFlop` translation.
+##f$cc_turn_delayed_cbet_source_two_connected_flop##
+((FirstFlopCard = 13 || SecondFlopCard = 13 || ThirdFlopCard = 13) && (FirstFlopCard = 12 || SecondFlopCard = 12 || ThirdFlopCard = 12)) ||
+((FirstFlopCard = 12 || SecondFlopCard = 12 || ThirdFlopCard = 12) && (FirstFlopCard = 11 || SecondFlopCard = 11 || ThirdFlopCard = 11)) ||
+((FirstFlopCard = 11 || SecondFlopCard = 11 || ThirdFlopCard = 11) && (FirstFlopCard = 10 || SecondFlopCard = 10 || ThirdFlopCard = 10)) ||
+((FirstFlopCard = 10 || SecondFlopCard = 10 || ThirdFlopCard = 10) && (FirstFlopCard = 9 || SecondFlopCard = 9 || ThirdFlopCard = 9)) ||
+((FirstFlopCard = 9 || SecondFlopCard = 9 || ThirdFlopCard = 9) && (FirstFlopCard = 8 || SecondFlopCard = 8 || ThirdFlopCard = 8)) ||
+((FirstFlopCard = 8 || SecondFlopCard = 8 || ThirdFlopCard = 8) && (FirstFlopCard = 7 || SecondFlopCard = 7 || ThirdFlopCard = 7)) ||
+((FirstFlopCard = 7 || SecondFlopCard = 7 || ThirdFlopCard = 7) && (FirstFlopCard = 6 || SecondFlopCard = 6 || ThirdFlopCard = 6)) ||
+((FirstFlopCard = 6 || SecondFlopCard = 6 || ThirdFlopCard = 6) && (FirstFlopCard = 5 || SecondFlopCard = 5 || ThirdFlopCard = 5)) ||
+((FirstFlopCard = 5 || SecondFlopCard = 5 || ThirdFlopCard = 5) && (FirstFlopCard = 4 || SecondFlopCard = 4 || ThirdFlopCard = 4))
+
+// Purpose: source spread-out flop pattern: one J+, one 7-T, one 2-6.
+// Source/Provenance: T direct `f$flop_spreaded` translation.
+##f$cc_turn_delayed_cbet_source_flop_spreaded##
+(FirstFlopCard >= 11 || SecondFlopCard >= 11 || ThirdFlopCard >= 11) &&
+((FirstFlopCard >= 7 && FirstFlopCard <= 10) || (SecondFlopCard >= 7 && SecondFlopCard <= 10) || (ThirdFlopCard >= 7 && ThirdFlopCard <= 10)) &&
+((FirstFlopCard >= 2 && FirstFlopCard <= 6) || (SecondFlopCard >= 2 && SecondFlopCard <= 6) || (ThirdFlopCard >= 2 && ThirdFlopCard <= 6))
+
+// Purpose: source flop draw-heavy predicate.
+// Source/Provenance: T direct `f$flop_DrawHeavy` translation.
+##f$cc_turn_delayed_cbet_source_flop_drawheavy##
+SuitsOnFlop <= 2 && OpenEndedStraightDrawPossibleOnFlop && !PairOnBoard
+
+// Purpose: exact 3wBBvSB branch of legacy `f$board_dry` on flop. OpponentsAtTable
+// is 2 in the native three-handed source, so the HU-table-only dry helper does
+// not participate. Early draw-heavy false branches retain precedence.
+// Source/Provenance: T direct source mechanics, A normalized flat expression.
+##f$cc_turn_delayed_cbet_source_3w_bbvsb_flop_dry##
+When FlushDrawPossible && OpenEndedStraightDrawPossibleOnFlop Return false Force
+When f$cc_turn_delayed_cbet_source_flop_drawheavy Return false Force
+When SuitsOnFlop >= 2 && !f$cc_turn_delayed_cbet_source_two_connected_flop && f$cc_turn_delayed_cbet_source_flop_spreaded Return true Force
+When SuitsOnFlop >= 3 && !StraightPossibleOnFlop Return true Force
+When SuitsOnFlop >= 3 && !OpenEndedStraightDrawPossibleOnFlop Return true Force
+When Others Return false Force
+
+// Purpose: direct source wet-flop complement used only inside native 3wBBvSB.
+// Source/Provenance: T complement of the exact source dry predicate.
+##f$cc_turn_delayed_cbet_source_3w_bbvsb_flop_wet##
+IsFlop && !f$cc_turn_delayed_cbet_source_3w_bbvsb_flop_dry
+
+// -----------------------------------------------------------------------------
+// DC12A-3WS.04 — exact 3wBBvSB source candidates
+// -----------------------------------------------------------------------------
+
+// Purpose: flop second-pair check marker.
+// Source/Provenance: T direct source class.
+##f$cc_turn_delayed_cbet_snapshot_3w_bbvsb_secondpair_candidate##
+f$cc_turn_delayed_cbet_snapshot_3w_bbvsb_context && f$cc_hand_second_pair_or_pocket
+
+// Purpose: flop third-pair check marker.
+// Source/Provenance: T direct source class.
+##f$cc_turn_delayed_cbet_snapshot_3w_bbvsb_thirdpair_candidate##
+f$cc_turn_delayed_cbet_snapshot_3w_bbvsb_context && f$cc_hand_third_pair_or_pocket
+
+// Purpose: wet source air checked on flop.
+// Source/Provenance: T direct `f$hand_Air && !f$board_dry`, using source wetness.
+##f$cc_turn_delayed_cbet_snapshot_3w_bbvsb_wetair_candidate##
+f$cc_turn_delayed_cbet_snapshot_3w_bbvsb_context &&
+f$cc_air_no_frontdoor &&
+f$cc_turn_delayed_cbet_source_3w_bbvsb_flop_wet
+
+// Purpose: saved source exclusion for the non-completed Turn bluff: 2BW or A-high.
+// Source/Provenance: T direct `f$flop_2BW || AcePresentOnFlop`.
+##f$cc_turn_delayed_cbet_snapshot_3w_bbvsb_air_2bworA_candidate##
+f$cc_turn_delayed_cbet_snapshot_3w_bbvsb_wetair_candidate &&
+(f$cc_flop_2bw || AcePresentOnFlop)
+
+// -----------------------------------------------------------------------------
+// DC12A-3WS.05 — side-effect writer
+// -----------------------------------------------------------------------------
+
+// Purpose: persist only native source candidates. It also sets the common
+// snapshot-seen flag so the standard Gate12A closed-history validator can consume
+// this module independently when whole-bot composition later invokes the writer.
+// Source/Provenance: T/A observed source facts + P persistence wrapper.
+##f$cc_turn_delayed_cbet_3w_extra_snapshot_writer##
+When !(f$cc_turn_delayed_cbet_snapshot_3w_btnvsb_context || f$cc_turn_delayed_cbet_snapshot_3w_bbvsb_context) Return false Force
+When f$cc_turn_delayed_cbet_snapshot_3w_btnvsb_context || f$cc_turn_delayed_cbet_snapshot_3w_bbvsb_context Set user_cc_turn_delayed_cbet_flop_snapshot_seen
+When f$cc_turn_delayed_cbet_snapshot_3w_btnvsb_mpbp_candidate Set user_cc_turn_delayed_cbet_3w_btnvsb_flop_mpbp_candidate
+When f$cc_turn_delayed_cbet_snapshot_3w_btnvsb_2bw_candidate Set user_cc_turn_delayed_cbet_3w_btnvsb_flop_2bw_candidate
+When f$cc_turn_delayed_cbet_snapshot_3w_btnvsb_1bw_candidate Set user_cc_turn_delayed_cbet_3w_btnvsb_flop_1bw_candidate
+When f$cc_turn_delayed_cbet_snapshot_3w_btnvsb_pair9plus_candidate Set user_cc_turn_delayed_cbet_3w_btnvsb_flop_pair9plus_candidate
+When f$cc_turn_delayed_cbet_snapshot_3w_bbvsb_secondpair_candidate Set user_cc_turn_delayed_cbet_3w_bbvsb_flop_secondpair_candidate
+When f$cc_turn_delayed_cbet_snapshot_3w_bbvsb_thirdpair_candidate Set user_cc_turn_delayed_cbet_3w_bbvsb_flop_thirdpair_candidate
+When f$cc_turn_delayed_cbet_snapshot_3w_bbvsb_wetair_candidate Set user_cc_turn_delayed_cbet_3w_bbvsb_flop_wetair_candidate
+When f$cc_turn_delayed_cbet_snapshot_3w_bbvsb_air_2bworA_candidate Set user_cc_turn_delayed_cbet_3w_bbvsb_flop_air_2bworA_candidate
+When Others Return true Force
+
+// ============================================================================
+// End Gate12A.5 native 3w extra snapshot.
+// ============================================================================
