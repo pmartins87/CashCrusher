@@ -1,0 +1,259 @@
+// ============================================================================
+// CashCrusher_Turn_DelayedCBet_SRP_6Max.txt
+// Gate 12A.11 — 4-6 handed ordinary-SRP Turn Delayed-CBet adaptation
+// ============================================================================
+// Purpose:
+//   Fill the first genuinely six-max source-silent Delayed-CBet family: Hero was
+//   the ordinary one-raise PFA, chose NOT to CBet flop, the entire flop checked
+//   through, and Hero now has the first Turn decision with no wager facing.
+//
+// Source boundary:
+//   Crusher/DeepCrusher has literal two/three-handed delayed trees but no 4-6h
+//   range tree for these exact cash-game states. Therefore no Spin frequency is
+//   copied. The source contributes only A-level architecture: current-strength
+//   reclassification, runout caution, IP/OOP and HU/multiway separation, and a
+//   protected checking range. The action policy below is P-heavy professional
+//   cash adaptation and is labelled as such.
+//
+// Safety:
+//   * exact ordinary-SRP/PFA chronology is mandatory;
+//   * HU and current-multiway are separate owners;
+//   * pure-air Turn barrels are deliberately absent until a 4-6h flop-check
+//     snapshot can prove a strategically selected bluff parent;
+//   * no HandPower/random/BetMax/stackoff/commitment shortcut exists here;
+//   * a Turn bet never authorizes a response versus a later raise.
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// DCSR.01 — exact 4-6h ordinary-SRP ownership
+// -----------------------------------------------------------------------------
+
+// Purpose: source-silent 4-6h ordinary one-raise PFA parent after CLOSED flop X/X.
+// Source/Provenance: T exact Gate00 chronology + Gate12A history; P strategy domain.
+##f$cc_turn_delayed_cbet_srp6_parent##
+f$cc_turn_delayed_cbet_base_opportunity &&
+f$cc_deal_size >= 4 && f$cc_deal_size <= 6 &&
+f$cc_pot_family_id = 2 &&
+f$cc_pf_role_pfa &&
+f$cc_pf_one_raise_ordinary_srp &&
+f$cc_pf_single_raiser_pos_id = f$cc_hero_pos_id
+
+// Purpose: 4-6h deal reduced preflop to exactly one caller; no postflop reduction
+// is possible because the entire flop checked through.
+// Source/Provenance: T exact field/history geometry.
+##f$cc_turn_delayed_cbet_srp6_hu_context##
+f$cc_turn_delayed_cbet_srp6_parent &&
+f$cc_flop_entry_count = 2 &&
+f$cc_hu &&
+f$cc_hu_origin_preflop_reduced
+
+// Purpose: ordinary-SRP PFA IP versus a surviving blind caller.
+// Source/Provenance: T positional geometry + P exact range-family owner.
+##f$cc_turn_delayed_cbet_srp6_hu_ip_blind##
+f$cc_turn_delayed_cbet_srp6_hu_context &&
+f$cc_hu_ip &&
+(f$cc_hu_villain_pos_id = 5 || f$cc_hu_villain_pos_id = 6)
+
+// Purpose: ordinary-SRP PFA OOP versus later-position nonblind caller.
+// Source/Provenance: T positional geometry + P distinct cash range family.
+##f$cc_turn_delayed_cbet_srp6_hu_oop_nonblind##
+f$cc_turn_delayed_cbet_srp6_hu_context &&
+f$cc_hu_oop &&
+(f$cc_hu_villain_pos_id >= 1 && f$cc_hu_villain_pos_id <= 4)
+
+// Purpose: exact reviewed HU family; weird reversed blind/nonblind topologies stay
+// outside instead of inheriting a generic HU fallback.
+// Source/Provenance: P deterministic partition over T geometry.
+##f$cc_turn_delayed_cbet_srp6_hu_supported##
+f$cc_turn_delayed_cbet_srp6_hu_ip_blind ||
+f$cc_turn_delayed_cbet_srp6_hu_oop_nonblind
+
+// Purpose: 3+ players remain after the checked-through flop.
+// Source/Provenance: T field geometry + P multiway owner.
+##f$cc_turn_delayed_cbet_srp6_mw_context##
+f$cc_turn_delayed_cbet_srp6_parent &&
+f$cc_flop_entry_count >= 3 &&
+f$cc_multiway
+
+// -----------------------------------------------------------------------------
+// DCSR.02 — current strength / runout vocabulary
+// -----------------------------------------------------------------------------
+
+// Purpose: exact contributed current two pair below stronger value.
+// Source/Provenance: T/A contribution-aware hand reconstruction.
+##f$cc_turn_delayed_cbet_srp6_exact_two_pair##
+IsTurn && HaveTwoPair && !TwoPairOnBoard && npcbits > 0
+
+// Purpose: contribution-aware value stronger than exact two pair.
+// Source/Provenance: A portable value ladder; P policy remains downstream.
+##f$cc_turn_delayed_cbet_srp6_strong_value##
+f$cc_turn_delayed_cbet_two_pair_plus_real &&
+!f$cc_turn_delayed_cbet_srp6_exact_two_pair
+
+// Purpose: strong top-pair quality using audited kicker reconstruction.
+// Source: Crusher repeatedly separates TP by kicker; exact <=2 boundary is P.
+// Provenance: A source concept + P deterministic cash quality split.
+##f$cc_turn_delayed_cbet_srp6_strong_tp##
+f$cc_turn_delayed_cbet_top_pair_real && f$cc_number_better_kickers <= 2
+
+// Purpose: medium top-pair band below strong TP.
+// Source/Provenance: A/P deterministic quality split.
+##f$cc_turn_delayed_cbet_srp6_medium_tp##
+f$cc_turn_delayed_cbet_top_pair_real &&
+f$cc_number_better_kickers > 2 && f$cc_number_better_kickers <= 4
+
+// Purpose: weak top-pair residue.
+// Source/Provenance: A/P explicit check-range descriptor.
+##f$cc_turn_delayed_cbet_srp6_weak_tp##
+f$cc_turn_delayed_cbet_top_pair_real && f$cc_number_better_kickers > 4
+
+// Purpose: completion/four-card topology where one-pair and thin 2P value require
+// more caution after the flop checked through.
+// Source: direct Crusher delayed trees repeatedly treat completed boards specially.
+// Provenance: A source principle + P 4-6h generalization.
+##f$cc_turn_delayed_cbet_srp6_dangerous_runout##
+f$cc_turn_completed ||
+f$cc_turn_four_card_straight_or_flush ||
+f$cc_turn_super_completed
+
+// Purpose: clean Turn complement used by thin value/equity branches.
+// Source/Provenance: P exact local complement.
+##f$cc_turn_delayed_cbet_srp6_clean_turn##
+!f$cc_turn_delayed_cbet_srp6_dangerous_runout
+
+// Purpose: favorable A/K pressure overcard without a new completion.
+// Source: source uses meaningful overcards as delayed-barrel ingredients.
+// Provenance: A source concept + P cash selector; it does not authorize pure air.
+##f$cc_turn_delayed_cbet_srp6_high_pressure_turn##
+f$cc_turn_delayed_cbet_srp6_clean_turn &&
+f$cc_turn_overcard_to_flop &&
+!f$cc_turn_pairs_flop_rank &&
+(f$cc_turn_is_ace || f$cc_turn_is_king)
+
+// Purpose: premium current no-made draw without stack-off semantics.
+// Source/Provenance: A cleaned Crusher draw quality + P exact combination boundary.
+##f$cc_turn_delayed_cbet_srp6_premium_draw##
+IsTurn && f$cc_hand_no_made &&
+(f$cc_real_combo_draw || f$cc_real_nut_fd ||
+ (f$cc_real_oesd && f$cc_two_overcards) ||
+ (f$cc_real_fd && f$cc_two_overcards))
+
+// Purpose: useful frontdoor draw below premium tier.
+// Source/Provenance: A/P conservative semibluff descriptor.
+##f$cc_turn_delayed_cbet_srp6_good_draw##
+IsTurn && f$cc_hand_no_made &&
+!f$cc_turn_delayed_cbet_srp6_premium_draw &&
+(f$cc_real_fd || f$cc_real_oesd || (f$cc_real_gutshot && f$cc_two_overcards))
+
+// -----------------------------------------------------------------------------
+// DCSR.03 — reduced-HU professional adaptation
+// -----------------------------------------------------------------------------
+
+// Purpose: 4-6h HU Delayed-CBet action after skipped flop CBet.
+// Provenance: P-heavy. IP-v-blind may value/probe somewhat wider; OOP-v-nonblind
+// protects more checks. Pure air remains CHECK because no 4-6h skipped-flop bluff
+// snapshot exists yet.
+##f$cc_turn_delayed_cbet_srp6_hu_action##
+When !f$cc_turn_delayed_cbet_srp6_hu_supported Return false Force
+When f$cc_turn_delayed_cbet_srp6_strong_value Return true Force
+When f$cc_turn_delayed_cbet_srp6_exact_two_pair && f$cc_turn_delayed_cbet_srp6_dangerous_runout Return false Force
+When f$cc_turn_delayed_cbet_srp6_exact_two_pair Return true Force
+When f$cc_turn_delayed_cbet_overpair_real && f$cc_turn_delayed_cbet_srp6_dangerous_runout Return false Force
+When f$cc_turn_delayed_cbet_overpair_real Return true Force
+When f$cc_turn_delayed_cbet_srp6_strong_tp && f$cc_turn_delayed_cbet_srp6_dangerous_runout Return false Force
+When f$cc_turn_delayed_cbet_srp6_strong_tp Return true Force
+When f$cc_turn_delayed_cbet_srp6_hu_ip_blind && f$cc_hero_pos_id >= 3 && f$cc_turn_delayed_cbet_srp6_medium_tp && f$cc_turn_delayed_cbet_srp6_clean_turn Return true Force
+When f$cc_turn_delayed_cbet_srp6_medium_tp Return false Force
+When f$cc_turn_delayed_cbet_srp6_weak_tp Return false Force
+When f$cc_turn_delayed_cbet_second_pair Return false Force
+When f$cc_turn_delayed_cbet_third_pair Return false Force
+When f$cc_turn_delayed_cbet_srp6_hu_ip_blind && f$cc_turn_delayed_cbet_srp6_premium_draw && f$cc_turn_delayed_cbet_srp6_clean_turn Return true Force
+When f$cc_turn_delayed_cbet_srp6_hu_oop_nonblind && f$cc_turn_delayed_cbet_srp6_premium_draw && f$cc_turn_delayed_cbet_srp6_high_pressure_turn Return true Force
+When f$cc_turn_delayed_cbet_srp6_good_draw Return false Force
+When f$cc_hand_no_made Return false Force
+When Others Return false Force
+
+// Purpose: paired HU size map. Strong value uses 75; merged one-pair/draw 50;
+// selected thin late-position TP uses 33. No pot/overbet/jam baseline.
+// Source/Provenance: P cash sizing on Gate12A's reviewed 33/50/75 palette.
+##f$cc_turn_delayed_cbet_srp6_hu_size_id##
+When !f$cc_turn_delayed_cbet_srp6_hu_action Return 0 Force
+When f$cc_turn_delayed_cbet_srp6_strong_value Return f$cc_turn_delayed_cbet_size_75_id Force
+When f$cc_turn_delayed_cbet_srp6_exact_two_pair Return f$cc_turn_delayed_cbet_size_75_id Force
+When f$cc_turn_delayed_cbet_overpair_real Return f$cc_turn_delayed_cbet_size_50_id Force
+When f$cc_turn_delayed_cbet_srp6_strong_tp Return f$cc_turn_delayed_cbet_size_50_id Force
+When f$cc_turn_delayed_cbet_srp6_medium_tp Return f$cc_turn_delayed_cbet_size_33_id Force
+When f$cc_turn_delayed_cbet_srp6_premium_draw Return f$cc_turn_delayed_cbet_size_50_id Force
+When Others Return 0 Force
+
+// Purpose: whole exact supported HU scenario is reviewed; unlisted classes are
+// explicit checks under the conservative P baseline.
+// Source/Provenance: P complete policy coverage inside exact context.
+##f$cc_turn_delayed_cbet_srp6_hu_covered##
+f$cc_turn_delayed_cbet_srp6_hu_supported
+
+// -----------------------------------------------------------------------------
+// DCSR.04 — current-multiway professional adaptation
+// -----------------------------------------------------------------------------
+
+// Purpose: 4-6h ordinary-SRP multiway Delayed-CBet policy. LAST can realize the
+// widest value/equity stab after prior checks; FIRST/MIDDLE remain value-dense.
+// Source: no literal Crusher cash-range tree. Value-heavy multiway philosophy is
+// only an A-level constraint. Exact decisions are P-heavy.
+##f$cc_turn_delayed_cbet_srp6_mw_action##
+When !f$cc_turn_delayed_cbet_srp6_mw_context Return false Force
+When f$cc_turn_delayed_cbet_srp6_strong_value Return true Force
+When f$cc_turn_delayed_cbet_srp6_exact_two_pair && f$cc_turn_delayed_cbet_srp6_dangerous_runout Return false Force
+When f$cc_turn_delayed_cbet_srp6_exact_two_pair Return true Force
+When f$cc_turn_delayed_cbet_overpair_real && f$cc_relpos_id = 3 && f$cc_turn_delayed_cbet_srp6_clean_turn Return true Force
+When f$cc_turn_delayed_cbet_overpair_real Return false Force
+When f$cc_turn_delayed_cbet_srp6_strong_tp && f$cc_relpos_id = 3 && f$cc_turn_delayed_cbet_srp6_clean_turn Return true Force
+When f$cc_turn_delayed_cbet_top_pair_real Return false Force
+When f$cc_turn_delayed_cbet_second_pair Return false Force
+When f$cc_turn_delayed_cbet_third_pair Return false Force
+When f$cc_turn_delayed_cbet_srp6_premium_draw && f$cc_relpos_id = 3 && f$cc_turn_delayed_cbet_srp6_clean_turn Return true Force
+When f$cc_turn_delayed_cbet_srp6_good_draw Return false Force
+When f$cc_hand_no_made Return false Force
+When Others Return false Force
+
+// Purpose: paired multiway size map. Robust value 75; thin LAST one-pair and
+// premium-equity branches 50. No pure-air or overbet family.
+// Source/Provenance: P conservative multiway cash sizing.
+##f$cc_turn_delayed_cbet_srp6_mw_size_id##
+When !f$cc_turn_delayed_cbet_srp6_mw_action Return 0 Force
+When f$cc_turn_delayed_cbet_srp6_strong_value Return f$cc_turn_delayed_cbet_size_75_id Force
+When f$cc_turn_delayed_cbet_srp6_exact_two_pair Return f$cc_turn_delayed_cbet_size_50_id Force
+When f$cc_turn_delayed_cbet_overpair_real Return f$cc_turn_delayed_cbet_size_50_id Force
+When f$cc_turn_delayed_cbet_srp6_strong_tp Return f$cc_turn_delayed_cbet_size_50_id Force
+When f$cc_turn_delayed_cbet_srp6_premium_draw Return f$cc_turn_delayed_cbet_size_50_id Force
+When Others Return 0 Force
+
+// Purpose: whole exact 4-6h ordinary-SRP current-multiway scenario is reviewed;
+// unlisted classes are explicit checks.
+// Source/Provenance: P complete conservative policy coverage.
+##f$cc_turn_delayed_cbet_srp6_mw_covered##
+f$cc_turn_delayed_cbet_srp6_mw_context
+
+// Purpose: combined reviewed ordinary-SRP 4-6h coverage.
+// Source/Provenance: P exact-domain union.
+##f$cc_turn_delayed_cbet_srp6_covered##
+f$cc_turn_delayed_cbet_srp6_hu_covered ||
+f$cc_turn_delayed_cbet_srp6_mw_covered
+
+// Purpose: local size integrity for both reviewed families.
+// Source/Provenance: P safety invariant.
+##f$cc_turn_delayed_cbet_srp6_size_consistent##
+When f$cc_turn_delayed_cbet_srp6_hu_covered && !f$cc_turn_delayed_cbet_srp6_hu_action Return f$cc_turn_delayed_cbet_srp6_hu_size_id = 0 Force
+When f$cc_turn_delayed_cbet_srp6_hu_action Return f$cc_turn_delayed_cbet_srp6_hu_size_id = f$cc_turn_delayed_cbet_size_33_id || f$cc_turn_delayed_cbet_srp6_hu_size_id = f$cc_turn_delayed_cbet_size_50_id || f$cc_turn_delayed_cbet_srp6_hu_size_id = f$cc_turn_delayed_cbet_size_75_id Force
+When f$cc_turn_delayed_cbet_srp6_mw_covered && !f$cc_turn_delayed_cbet_srp6_mw_action Return f$cc_turn_delayed_cbet_srp6_mw_size_id = 0 Force
+When f$cc_turn_delayed_cbet_srp6_mw_action Return f$cc_turn_delayed_cbet_srp6_mw_size_id = f$cc_turn_delayed_cbet_size_50_id || f$cc_turn_delayed_cbet_srp6_mw_size_id = f$cc_turn_delayed_cbet_size_75_id Force
+When Others Return true Force
+
+// Purpose: exact ordinary-SRP 4-6h opportunity outside the reviewed geometry.
+// Source/Provenance: X/P diagnostic; weird/reversed topology remains fail-closed.
+##f$cc_turn_delayed_cbet_srp6_unresolved##
+f$cc_turn_delayed_cbet_srp6_parent && !f$cc_turn_delayed_cbet_srp6_covered
+
+// ============================================================================
+// End Gate12A.11 4-6h ordinary-SRP adaptation.
+// ============================================================================
