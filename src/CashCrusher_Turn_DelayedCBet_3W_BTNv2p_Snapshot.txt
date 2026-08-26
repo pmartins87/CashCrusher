@@ -1,0 +1,49 @@
+// ============================================================================
+// CashCrusher_Turn_DelayedCBet_3W_BTNv2p_Snapshot.txt
+// Gate 12A.8 — 3w BTN versus two live opponents delayed-CBet provenance
+// ============================================================================
+// Purpose:
+//   Preserve the exact flop AIR class for the mature CrusherTBP gap rule that
+//   acts only after BTN actually checks back into TWO live opponents.
+//
+// Source boundary:
+//   No dedicated Starting Strategy tree covers this exact 3wBTNv2p delayed-CBet
+//   node. Mature DeepCrusher explicitly labels CrusherTBP as the preferred gap
+//   interpreter and records `user_DC12AR_3wBTNv2p_FlopAirChecked` only after the
+//   final flop action is a check. CashCrusher captures the pre-action AIR class;
+//   Gate12A CLOSED X/X history supplies the executed-check proof on Turn.
+//
+// Provenance:
+//   T = three-player field/position facts and source `f$hand_Air` vocabulary.
+//   A = canonical CashCrusher context reconstruction.
+//   P = persistence wrapper only.
+// ============================================================================
+
+// Purpose: exact three-handed BTN with both blind opponents still live on flop.
+// Source/Provenance: T/A reconstruction of legacy `f$game_3wBTNv2p`.
+##f$cc_turn_delayed_cbet_snapshot_3w_btnv2p_context##
+f$cc_turn_delayed_cbet_snapshot_capture_eligible &&
+f$cc_deal_size = 3 &&
+f$cc_flop_entry_count = 3 &&
+f$cc_multiway &&
+f$cc_hero_pos_id = 4
+
+// Purpose: source-equivalent AIR candidate in the exact BTN-v-two-live field.
+// Source/Provenance: T source `f$hand_Air` first-clause translation already
+// frozen as `f$cc_turn_delayed_cbet_source_air`; no draw/TP class is imported.
+##f$cc_turn_delayed_cbet_snapshot_3w_btnv2p_air_candidate##
+f$cc_turn_delayed_cbet_snapshot_3w_btnv2p_context &&
+f$cc_turn_delayed_cbet_source_air
+
+// Purpose: persist only the source/TBP gap fact that disappears after Turn card.
+// Source/Provenance: A/P persistence mirror of mature final-check marker; the
+// marker itself never proves Hero checked and never selects the flop action.
+##f$cc_turn_delayed_cbet_3w_btnv2p_snapshot_writer##
+When !f$cc_turn_delayed_cbet_snapshot_3w_btnv2p_context Return false Force
+When f$cc_turn_delayed_cbet_snapshot_3w_btnv2p_context Set user_cc_turn_delayed_cbet_flop_snapshot_seen
+When f$cc_turn_delayed_cbet_snapshot_3w_btnv2p_air_candidate Set user_cc_turn_delayed_cbet_3w_btnv2p_flop_air_candidate
+When Others Return true Force
+
+// ============================================================================
+// End Gate12A.8 3wBTNv2p snapshot.
+// ============================================================================
