@@ -4,23 +4,26 @@
 // ============================================================================
 // Purpose:
 //   Implement the mature CrusherTBP gap interpretation for an ACTUAL flop
-//   check-back with AIR by BTN against both blinds. This is deliberately not
-//   labelled a direct Starting-Strategy descendant: that source is silent here.
+//   check-back with AIR by BTN against both blinds and preserve the mature
+//   scenario-wide CHECK fallback for every other skipped-CBet class.
 //
 // Strategy evidence:
-//   Mature DeepCrusher/CrusherTBP says this exact AIR history always delayed-
-//   CBets Turn. It states no exact size. The mature multiway Turn size router
-//   supplies its reviewed fallback: one-third pot when PotSize > 3, otherwise
-//   half pot. CashCrusher preserves that fallback as A/P, not T source sizing.
+//   The dedicated Starting Strategy is silent for this exact BTN-v-two-player
+//   delayed node. Mature DeepCrusher explicitly adopts CrusherTBP's reviewed gap:
+//   checked-back AIR always delayed-CBets Turn, then the scenario falls through
+//   to `3wBTNv2p -> false` for all other classes. The positive AIR branch has no
+//   exact source/TBP size; the reviewed multiway Turn default supplies 33% when
+//   PotSize > 3 and 50% otherwise.
 //
 // Provenance:
 //   T = actual three-handed field and saved source-equivalent AIR class.
-//   A = CLOSED X/X/history bridge and canonical context.
-//   P = reviewed TBP gap action + mature multiway fallback size normalization.
+//   A = CLOSED X/X/history bridge + mature scenario-wide negative fallback.
+//   P = reviewed TBP AIR action + mature multiway fallback size normalization.
 // ============================================================================
 
-// Purpose: exact Turn owner after saved BTN-v-two-player AIR + CLOSED flop X/X.
-// Source/Provenance: T/A exact history/geometry around the P-reviewed gap rule.
+// Purpose: exact Turn owner after BTN checks back against two live opponents and
+// CLOSED flop X/X/X history is proven.
+// Source/Provenance: T/A exact history/geometry around the reviewed gap rule.
 ##f$cc_turn_delayed_cbet_3w_btnv2p_context##
 f$cc_turn_delayed_cbet_snapshot_valid &&
 f$cc_deal_size = 3 &&
@@ -35,7 +38,7 @@ f$cc_hero_pos_id = 4
 f$cc_turn_delayed_cbet_3w_btnv2p_context &&
 user_cc_turn_delayed_cbet_3w_btnv2p_flop_air_candidate
 
-// Purpose: exact reviewed fallback sizing for this source-silent strategy node.
+// Purpose: exact reviewed fallback sizing for the positive source-silent branch.
 // Source/Provenance: A/P mature `BetsizeTurnMultiway` fallback. No source/TBP
 // exact size exists: >3 pot units uses 33%; small residual pots use 50%.
 ##f$cc_turn_delayed_cbet_3w_btnv2p_size_id##
@@ -43,20 +46,20 @@ When !f$cc_turn_delayed_cbet_3w_btnv2p_action Return 0 Force
 When PotSize > 3 Return f$cc_turn_delayed_cbet_size_33_id Force
 When Others Return f$cc_turn_delayed_cbet_size_50_id Force
 
-// Purpose: coverage is intentionally branch-level, not whole-scenario coverage.
-// Source/Provenance: P evidence boundary: only actual saved AIR check-back is
-// reviewed; all other BTN-v-two-player skipped-CBet classes remain fail-closed.
+// Purpose: the exact native scenario is fully reviewed: saved AIR is the sole
+// positive branch and all other classes preserve mature `3wBTNv2p -> false`.
+// Source/Provenance: A/P positive gap rule + A mature negative scenario boundary.
 ##f$cc_turn_delayed_cbet_3w_btnv2p_covered##
-f$cc_turn_delayed_cbet_3w_btnv2p_action
+f$cc_turn_delayed_cbet_3w_btnv2p_context
 
-// Purpose: visible source-silent remainder within the exact three-player node.
-// Source/Provenance: X/P diagnostic; it grants no action.
+// Purpose: no residual class remains inside the exact native scenario after the
+// explicit mature false fallback is preserved.
+// Source/Provenance: A/X diagnostic; false by audited scenario completeness.
 ##f$cc_turn_delayed_cbet_3w_btnv2p_unresolved##
-f$cc_turn_delayed_cbet_3w_btnv2p_context &&
-!user_cc_turn_delayed_cbet_3w_btnv2p_flop_air_candidate
+false
 
-// Purpose: local action/size integrity.
-// Source/Provenance: P safety invariant over the reviewed 33/50 fallback.
+// Purpose: local action/size integrity, including explicit reviewed checks.
+// Source/Provenance: P safety invariant over the reviewed 33/50 positive branch.
 ##f$cc_turn_delayed_cbet_3w_btnv2p_size_consistent##
 When !f$cc_turn_delayed_cbet_3w_btnv2p_action Return f$cc_turn_delayed_cbet_3w_btnv2p_size_id = 0 Force
 When f$cc_turn_delayed_cbet_3w_btnv2p_action Return f$cc_turn_delayed_cbet_3w_btnv2p_size_id = f$cc_turn_delayed_cbet_size_33_id || f$cc_turn_delayed_cbet_3w_btnv2p_size_id = f$cc_turn_delayed_cbet_size_50_id Force
