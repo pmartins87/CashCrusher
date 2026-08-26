@@ -21,6 +21,14 @@ def executable(text: str) -> str:
     return "\n".join(line.split("//", 1)[0] for line in text.splitlines())
 
 
+def normalized_comments(text: str) -> str:
+    pieces = []
+    for line in text.splitlines():
+        if "//" in line:
+            pieces.append(line.split("//", 1)[1].strip().lower())
+    return " ".join(pieces)
+
+
 def context_contract() -> None:
     ctx = block(POL, "f$cc_turn_delayed_cbet_3w_blindsvbtn_context")
     for token in (
@@ -44,9 +52,9 @@ def negative_source_contract() -> None:
     consistent = block(POL, "f$cc_turn_delayed_cbet_3w_blindsvbtn_size_consistent")
     assert "!f$cc_turn_delayed_cbet_3w_blindsvbtn_action" in consistent
     assert "f$cc_turn_delayed_cbet_3w_blindsvbtn_size_id = 0" in consistent
-    low = POL.lower()
-    assert "scenario-wide `return false`" in low
-    assert "no hero-initiative delayed-cbet family" in low
+    comments = normalized_comments(POL)
+    assert "scenario-wide `return false`" in comments
+    assert "no hero-initiative delayed-cbet family" in comments
 
 
 def router_contract() -> None:
