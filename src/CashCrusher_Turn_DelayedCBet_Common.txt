@@ -3,12 +3,13 @@
 // Gate 12A.2 — shared Delayed-CBet current-strength / source-size vocabulary
 // ============================================================================
 // Purpose:
-//   Give Gate12A source children one contribution-aware Turn strength vocabulary
-//   and preserve exact source sizes, especially the 62.5% BTNvBB instruction.
+//   Give Gate12A source children one contribution-aware Turn strength vocabulary,
+//   preserve exact source draw-safety filters, and preserve source sizes including
+//   62.5% and the SBvBB 150%-pot overbet.
 //
 // Source/Provenance:
-//   T/A = portable hand hierarchy + mature DeepCrusher CF7 meaning.
-//   A = exact Delayed-CBet source sizes MIN/50/62.5/75/100.
+//   T/A = portable hand hierarchy + mature DeepCrusher CF7/dead/zombie meaning.
+//   A = exact Delayed-CBet source sizes MIN/50/62.5/75/100/150.
 //   P = normalized numeric IDs only.
 // ============================================================================
 
@@ -49,16 +50,16 @@ When Others Return false Force
 ##f$cc_turn_delayed_cbet_second_pair##
 IsTurn && !f$cc_hand_top_pair_or_better && f$cc_hand_second_pair_or_pocket
 
-// Purpose: source current second/third pair union below TP.
-// Source/Provenance: T/A portable pair ladder.
-##f$cc_turn_delayed_cbet_second_or_third_pair##
-f$cc_turn_delayed_cbet_second_pair || f$cc_turn_delayed_cbet_third_pair
-
 // Purpose: exact current third-pair tier.
 // Source/Provenance: T/A portable pair ladder.
 ##f$cc_turn_delayed_cbet_third_pair##
 IsTurn && !f$cc_hand_top_pair_or_better &&
 !f$cc_hand_second_pair_or_pocket && f$cc_hand_third_pair_or_pocket
+
+// Purpose: source current second/third pair union below TP.
+// Source/Provenance: T/A portable pair ladder.
+##f$cc_turn_delayed_cbet_second_or_third_pair##
+f$cc_turn_delayed_cbet_second_pair || f$cc_turn_delayed_cbet_third_pair
 
 // Purpose: source-compatible current no-made state.
 // Source/Provenance: T portable hand hierarchy.
@@ -70,10 +71,71 @@ IsTurn && f$cc_hand_no_made
 ##f$cc_turn_delayed_cbet_turn_completed##
 IsTurn && (StraightPossibleOnTurn || FlushPossibleOnTurn)
 
+// Purpose: source super-completion = both straight and flush possible on Turn.
+// Source/Provenance: T direct `f$turn_SuperCompleted` translation.
+##f$cc_turn_delayed_cbet_turn_supercompleted##
+IsTurn && StraightPossibleOnTurn && FlushPossibleOnTurn
+
 // Purpose: Turn is lower than every flop card.
 // Source/Provenance: T direct `f$turn_Under = TurnCard < LowestFlopCard`.
 ##f$cc_turn_delayed_cbet_turn_under##
 IsTurn && TurnCard < LowestFlopCard
+
+// -----------------------------------------------------------------------------
+// Gate12A exact legacy dead/zombie safety needed by native 3w draw branches
+// -----------------------------------------------------------------------------
+
+// Purpose: source straight-or-better hierarchy used by zombie exclusion.
+// Source/Provenance: T direct `f$HaveStraightOrBetter` translation.
+##f$cc_turn_delayed_cbet_source_straight_or_better##
+HaveStraight || HaveFlush || HaveFullHouse || HaveQuads || HaveStraightFlush
+
+// Purpose: source full-house-or-better hierarchy used by dead-hand exception.
+// Source/Provenance: T direct `f$HaveFullHouseOrBetter` translation.
+##f$cc_turn_delayed_cbet_source_fullhouse_or_better##
+HaveFullHouse || HaveQuads || HaveStraightFlush
+
+// Purpose: source J-high-or-better one-card flush-draw contribution. The mature
+// helper's suit-specific A/K/Q/J clauses are equivalent to unknown suited
+// overcards <=3 once a two-hole-card same-suit draw is established.
+// Source/Provenance: T direct source equivalence.
+##f$cc_turn_delayed_cbet_source_jhigh_onecard_fd##
+HaveFlushDraw && SuitsInHand = 2 && NumberOfUnknownSuitedOvercards <= 3
+
+// Purpose: exact legacy dead-hand gate: 4-flush board is dead except FH+ or a
+// J-high-or-better contributing one-card flush draw.
+// Source/Provenance: T direct `f$hand_dead` ordering.
+##f$cc_turn_delayed_cbet_source_hand_dead##
+When f$cc_turn_delayed_cbet_source_fullhouse_or_better Return false Force
+When f$cc_turn_delayed_cbet_source_jhigh_onecard_fd Return false Force
+When nsuitedcommon >= 4 Return true Force
+When Others Return false Force
+
+// Purpose: source two-broadway current board test used by the final zombie rule.
+// On Turn this is flop broadway count plus the Turn broadway card.
+// Source/Provenance: T/A exact Turn projection of `f$board_2BW`.
+##f$cc_turn_delayed_cbet_source_board_2bw##
+IsTurn && (f$cc_flop_broadway_count + ((TurnCard >= 10) ? 1 : 0)) >= 2
+
+// Purpose: exact legacy zombie gate. Board pattern tokens are native OpenPPL
+// pattern syntax carried directly from the mature source.
+// Source/Provenance: T direct `f$hand_zombie` translation.
+##f$cc_turn_delayed_cbet_source_hand_zombie##
+When MoreThanOneOneCardStraightPossible && !f$cc_turn_delayed_cbet_source_straight_or_better Return true Force
+When (board$KQJT || board$AQJT || board$AKJT || board$AKQT || board$AKQJ) && !f$cc_turn_delayed_cbet_source_straight_or_better Return true Force
+When (board$KJT9 || board$KQT9 || board$QT98 || board$KQJ9 || board$QJ98 || board$J987) && !f$cc_turn_delayed_cbet_source_straight_or_better Return true Force
+When nstraightfillcommon = 1 && !f$cc_turn_delayed_cbet_source_straight_or_better && f$cc_turn_delayed_cbet_source_board_2bw Return true Force
+When Others Return false Force
+
+// Purpose: source live-draw safety after exact dead/zombie reproduction.
+// Source/Provenance: T direct negation used by positive delayed-draw branches.
+##f$cc_turn_delayed_cbet_source_draw_live_safe##
+!f$cc_turn_delayed_cbet_source_hand_dead &&
+!f$cc_turn_delayed_cbet_source_hand_zombie
+
+// -----------------------------------------------------------------------------
+// Remaining persistent source texture helpers
+// -----------------------------------------------------------------------------
 
 // Purpose: at least two flop cards are ranks 7..K.
 // Source/Provenance: T direct `f$flop_2Cards_7_to_K` translation.
@@ -101,7 +163,7 @@ IsTurn && TurnCard < LowestFlopCard
 
 // -----------------------------------------------------------------------------
 // Normalized Gate12A size IDs
-// 1 MIN | 2 50% | 3 exact 62.5% | 4 75% | 5 100%
+// 1 MIN | 2 50% | 3 exact 62.5% | 4 75% | 5 100% | 6 150%
 // -----------------------------------------------------------------------------
 
 // Purpose: exact source minimum-bet size.
@@ -128,6 +190,12 @@ IsTurn && TurnCard < LowestFlopCard
 // Source/Provenance: A DeepCrusher `user_Turn100`.
 ##f$cc_turn_delayed_cbet_size_100_id##
 5
+
+// Purpose: exact source 150%-pot overbet used only by native 3wSBvBB limped wet
+// undercard 2P+ branch. It has no generic overbet meaning.
+// Source/Provenance: T/A DeepCrusher `user_Turn150` normalization.
+##f$cc_turn_delayed_cbet_size_150_id##
+6
 
 // ============================================================================
 // End Gate12A.2 common vocabulary.
