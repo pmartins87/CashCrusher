@@ -1,0 +1,137 @@
+// ============================================================================
+// CashCrusher_Turn_DelayedCBet_StackGeometry.txt
+// Gate 12A.16 — Turn Delayed-CBet stack-sensitive execution geometry
+// ============================================================================
+// Purpose:
+//   Measure the exact reviewed Gate12A initial-bet request against Hero balance
+//   and current HU / multiway effective stacks without creating new strategy.
+//
+// MIN handling:
+//   DeepCrusher documents TurnMin as 1bb. BetMin therefore uses exact 1bb
+//   contribution for geometry while its pot-fraction diagnostic remains -1.
+//
+// Source/Provenance:
+//   T = OpenHoldem balance/pot/currentbet semantics and source TurnMin=1bb.
+//   A = corrected HU / shallowest / deepest effective-stack architecture frozen
+//       on prior attack gates.
+//   P = stack-reach and sidepot diagnostics only.
+//
+// Safety:
+//   * clean initial Turn bet only;
+//   * shortest-only multiway reach is a sidepot diagnostic;
+//   * no 50/55/60 commitment threshold is imported into Gate12A;
+//   * no BetMax or all-in action is produced by this module.
+// ============================================================================
+
+// Purpose: simple street-start geometry is valid for this initial delayed CBet.
+// Source/Provenance: T OpenHoldem mechanics + reviewed Gate12A runtime gate.
+##f$cc_turn_delayed_cbet_stackgeom_clean##
+f$cc_turn_delayed_cbet_runtime_size_ready &&
+f$cc_turn_delayed_cbet_runtime_mapping_valid &&
+AmountToCall = 0 &&
+currentbet = 0 &&
+potplayer = 0 &&
+f$cc_round_start_pot_bb > 0 &&
+f$cc_hero_stack_round_start_bb > 0
+
+// Purpose: requested Hero contribution in BB before any Villain response.
+// Source: T source TurnMin=1bb; fixed fractions use clean initial-bet pot.
+// Provenance: T/A exact arithmetic.
+##f$cc_turn_delayed_cbet_requested_bet_bb##
+When !f$cc_turn_delayed_cbet_stackgeom_clean Return -1 Force
+When f$cc_turn_delayed_cbet_size_id = 1 Return 1.00 Force
+When f$cc_turn_delayed_cbet_requested_pot_fraction <= 0 Return -1 Force
+When Others Return (f$cc_turn_delayed_cbet_requested_pot_fraction * f$cc_round_start_pot_bb) Force
+
+// Purpose: requested bet / Hero street-start available stack.
+// Source/Provenance: T mechanical balance ratio.
+##f$cc_turn_delayed_cbet_requested_hero_balance_ratio##
+When !f$cc_turn_delayed_cbet_stackgeom_clean Return -1 Force
+When f$cc_hero_stack_round_start_bb <= 0 Return -1 Force
+When f$cc_turn_delayed_cbet_requested_bet_bb < 0 Return -1 Force
+When Others Return (f$cc_turn_delayed_cbet_requested_bet_bb / f$cc_hero_stack_round_start_bb) Force
+
+// Purpose: Hero residual stack after request, before response.
+// Source/Provenance: T arithmetic diagnostic.
+##f$cc_turn_delayed_cbet_hero_residual_after_bet_bb##
+When f$cc_turn_delayed_cbet_requested_bet_bb < 0 Return -1 Force
+When Others Return (f$cc_hero_stack_round_start_bb - f$cc_turn_delayed_cbet_requested_bet_bb) Force
+
+// Purpose: requested bet / exact current HU effective stack.
+// Source/Provenance: T/A Gate00 HU street-start effective geometry.
+##f$cc_turn_delayed_cbet_requested_hu_effective_ratio##
+When !f$cc_turn_delayed_cbet_stackgeom_clean Return -1 Force
+When !f$cc_hu Return -1 Force
+When f$cc_hu_effective_stack_round_start_bb <= 0 Return -1 Force
+When Others Return (f$cc_turn_delayed_cbet_requested_bet_bb / f$cc_hu_effective_stack_round_start_bb) Force
+
+// Purpose: requested bet / shallowest live multiway effective relation.
+// Source/Provenance: T/A corrected dual-bound multiway geometry.
+##f$cc_turn_delayed_cbet_requested_mw_shallowest_effective_ratio##
+When !f$cc_turn_delayed_cbet_stackgeom_clean Return -1 Force
+When !f$cc_multiway Return -1 Force
+When !f$cc_mw_stack_geometry_valid Return -1 Force
+When f$cc_mw_shallowest_effective_stack_round_start_bb <= 0 Return -1 Force
+When Others Return (f$cc_turn_delayed_cbet_requested_bet_bb / f$cc_mw_shallowest_effective_stack_round_start_bb) Force
+
+// Purpose: requested bet / deepest all-live multiway effective relation.
+// Source/Provenance: T/A corrected whole-field effective denominator.
+##f$cc_turn_delayed_cbet_requested_mw_deepest_effective_ratio##
+When !f$cc_turn_delayed_cbet_stackgeom_clean Return -1 Force
+When !f$cc_multiway Return -1 Force
+When !f$cc_mw_stack_geometry_valid Return -1 Force
+When f$cc_mw_deepest_effective_stack_round_start_bb <= 0 Return -1 Force
+When Others Return (f$cc_turn_delayed_cbet_requested_bet_bb / f$cc_mw_deepest_effective_stack_round_start_bb) Force
+
+// Purpose: request reaches/exceeds Hero's available balance.
+// Source/Provenance: T mechanical geometry; diagnostic only.
+##f$cc_turn_delayed_cbet_requested_reaches_hero_stack##
+f$cc_turn_delayed_cbet_requested_hero_balance_ratio >= 1.00
+
+// Purpose: request reaches exact HU effective relation.
+// Source/Provenance: T exact HU geometry; diagnostic only.
+##f$cc_turn_delayed_cbet_requested_reaches_hu_effective##
+f$cc_hu && f$cc_turn_delayed_cbet_requested_hu_effective_ratio >= 1.00
+
+// Purpose: request reaches the shallowest MW relation.
+// Source/Provenance: T/A sidepot descriptor only.
+##f$cc_turn_delayed_cbet_requested_reaches_mw_shallowest##
+f$cc_multiway && f$cc_turn_delayed_cbet_requested_mw_shallowest_effective_ratio >= 1.00
+
+// Purpose: request reaches the deepest/all-live MW relation.
+// Source/Provenance: T/A whole-field reach diagnostic only.
+##f$cc_turn_delayed_cbet_requested_reaches_mw_deepest##
+f$cc_multiway && f$cc_turn_delayed_cbet_requested_mw_deepest_effective_ratio >= 1.00
+
+// Purpose: shortest-only sidepot reach while at least one deeper live relation remains.
+// Source/Provenance: P/T safety diagnostic.
+##f$cc_turn_delayed_cbet_mw_sidepot_divergence_candidate##
+f$cc_turn_delayed_cbet_requested_reaches_mw_shallowest &&
+!f$cc_turn_delayed_cbet_requested_reaches_mw_deepest
+
+// Purpose: any natural stack boundary touched by the exact strategic request.
+// Source/Provenance: P review diagnostic; deliberately no automatic promotion.
+##f$cc_turn_delayed_cbet_stack_reach_review_required##
+When !f$cc_turn_delayed_cbet_stackgeom_clean Return false Force
+When f$cc_turn_delayed_cbet_requested_reaches_hero_stack Return true Force
+When f$cc_hu && f$cc_turn_delayed_cbet_requested_reaches_hu_effective Return true Force
+When f$cc_multiway && f$cc_turn_delayed_cbet_requested_reaches_mw_shallowest Return true Force
+When Others Return false Force
+
+// Purpose: compact exact stack-reach flags.
+// Bits: 1 Hero; 2 HU effective; 4 MW shallowest; 8 MW deepest;
+// 16 shortest-only sidepot divergence; 32 MIN; 64 exact 150%-pot request.
+// Source/Provenance: P metadata over T/A geometry.
+##f$cc_turn_delayed_cbet_stack_reach_flags_id##
+When !f$cc_turn_delayed_cbet_stackgeom_clean Return 0 Force
+When Others Return ((f$cc_turn_delayed_cbet_requested_reaches_hero_stack * 1) + ((f$cc_hu && f$cc_turn_delayed_cbet_requested_reaches_hu_effective) * 2) + ((f$cc_multiway && f$cc_turn_delayed_cbet_requested_reaches_mw_shallowest) * 4) + ((f$cc_multiway && f$cc_turn_delayed_cbet_requested_reaches_mw_deepest) * 8) + ((f$cc_multiway && f$cc_turn_delayed_cbet_mw_sidepot_divergence_candidate) * 16) + ((f$cc_turn_delayed_cbet_size_id = 1) * 32) + ((f$cc_turn_delayed_cbet_size_id = 6) * 64)) Force
+
+// Purpose: prove this gate intentionally preserves request semantics rather than
+// converting stack reach into a new strategic all-in instruction.
+// Source/Provenance: P safety invariant.
+##f$cc_turn_delayed_cbet_no_runtime_allin_promotion##
+true
+
+// ============================================================================
+// End Gate12A.16 stack geometry diagnostics.
+// ============================================================================
