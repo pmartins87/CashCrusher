@@ -1,0 +1,125 @@
+// ============================================================================
+// CashCrusher_Turn_DelayedCBet_SBVBB_Snapshot.txt
+// Gate 12A.7 — native 3wSBvBB delayed-CBet flop provenance
+// ============================================================================
+// Purpose:
+//   Persist only the exact flop classes consumed by the mature 3wSBvBB delayed-
+//   CBet tree. These are pre-action observations. CLOSED flop X/X remains the
+//   independent proof that Hero actually skipped the flop CBet.
+//
+// Source hierarchy:
+//   T = DeepCrusher Retro12A 3wSBvBB final-check writers.
+//   A = canonical SB-v-BB geometry + contribution-aware portable classes.
+//   P = persistence wrapper only.
+//
+// Safety:
+//   No snapshot flag authorizes an action by itself. The writer never returns a
+//   flop bet/check; Gate12A history must validate the later Turn consumer.
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// DC12A-SBVS.01 — exact native context
+// -----------------------------------------------------------------------------
+
+// Purpose: native 3-handed SB initiative versus BB with BTN folded preflop.
+// It covers both raised initiative and the source-explicit SB open-limp initiative.
+// Source/Provenance: A exact `game_3wSBvBB` reconstruction over T owner facts.
+##f$cc_turn_delayed_cbet_snapshot_3w_sbvbb_context##
+f$cc_turn_delayed_cbet_snapshot_capture_eligible &&
+f$cc_deal_size = 3 &&
+f$cc_flop_entry_count = 2 &&
+f$cc_hu &&
+f$cc_hero_pos_id = 5 &&
+f$cc_hu_villain_pos_id = 6
+
+// -----------------------------------------------------------------------------
+// DC12A-SBVS.02 — source flop strength/history classes
+// -----------------------------------------------------------------------------
+
+// Purpose: source CF7 TP+/OP/2P+/NutClass family on flop, reconstructed with
+// contribution guards so board-only strength cannot create stale value history.
+// Source/Provenance: T source class + A contribution-safe CF7 translation.
+##f$cc_turn_delayed_cbet_snapshot_3w_sbvbb_tpplus_candidate##
+When !f$cc_turn_delayed_cbet_snapshot_3w_sbvbb_context Return false Force
+When HaveNuts Return true Force
+When HaveStraightFlush && pokerval > pokervalcommon Return true Force
+When HaveQuads && pokerval > pokervalcommon Return true Force
+When HaveFullHouse && pokerval > pokervalcommon Return true Force
+When HaveFlush && npcbits > 0 && pokerval > pokervalcommon Return true Force
+When HaveStraight && npcbits > 0 && pokerval > pokervalcommon Return true Force
+When HaveTrips && !TripsOnBoard && npcbits > 0 Return true Force
+When HaveTwoPair && !TwoPairOnBoard && npcbits > 0 Return true Force
+When HaveOverPair && PairInHand && npcbits > 0 Return true Force
+When f$cc_hand_just_top_pair && !TwoPairOnBoard && npcbits > 0 Return true Force
+When Others Return false Force
+
+// Purpose: exact historical flop second-pair/pocket marker.
+// Source/Provenance: T/A direct portable pair-ladder translation.
+##f$cc_turn_delayed_cbet_snapshot_3w_sbvbb_secondpair_candidate##
+f$cc_turn_delayed_cbet_snapshot_3w_sbvbb_context &&
+f$cc_hand_second_pair_or_pocket
+
+// Purpose: exact source low-pair history = third OR fourth pair/pocket.
+// Source/Provenance: T/A direct Retro12A class; fifth/underpair are not added.
+##f$cc_turn_delayed_cbet_snapshot_3w_sbvbb_lowpair_candidate##
+f$cc_turn_delayed_cbet_snapshot_3w_sbvbb_context &&
+(f$cc_hand_third_pair_or_pocket || f$cc_hand_fourth_pair_or_pocket)
+
+// Purpose: source no-made real Gutshot-or-better FDSD flop history.
+// Source/Provenance: T direct `NoMadeHand && f$hand_Gutshot_or_BetterFDSD`.
+##f$cc_turn_delayed_cbet_snapshot_3w_sbvbb_draw_candidate##
+f$cc_turn_delayed_cbet_snapshot_3w_sbvbb_context &&
+f$cc_hand_no_made &&
+f$cc_turn_delayed_cbet_source_gutshot_or_better_fdsd
+
+// Purpose: exact source meaningful two-overcard helper used by Good/Medium draw.
+// Source/Provenance: T direct `f$hand_2mOC` translation.
+##f$cc_turn_delayed_cbet_source_two_meaningful_overcards##
+rankloplayer > SecondTopFlopCard && !ispair
+
+// Purpose: union of the source GoodDraws/MediumDraws flop classes. Both helpers
+// first reject dead/zombie states. Their positive union reduces to straight/flush
+// draw or Gutshot with overcard / two-meaningful-overcard support.
+// Source/Provenance: T exact union of mature `f$hand_GoodDraws || MediumDraws`.
+##f$cc_turn_delayed_cbet_snapshot_3w_sbvbb_draw_goodmedium_candidate##
+f$cc_turn_delayed_cbet_snapshot_3w_sbvbb_draw_candidate &&
+f$cc_turn_delayed_cbet_source_draw_live_safe &&
+(HaveStraightDraw || HaveFlushDraw ||
+ (f$cc_turn_delayed_cbet_source_gutshot &&
+  (Overcards > 0 || f$cc_turn_delayed_cbet_source_two_meaningful_overcards)))
+
+// Purpose: source air checked only on straight-possible flop.
+// Source/Provenance: T direct `f$hand_Air && StraightPossibleOnFlop`.
+##f$cc_turn_delayed_cbet_snapshot_3w_sbvbb_air_straight_candidate##
+f$cc_turn_delayed_cbet_snapshot_3w_sbvbb_context &&
+f$cc_turn_delayed_cbet_source_air &&
+StraightPossibleOnFlop
+
+// Purpose: source persistent wet-flop state consumed by Turn `f$board_dry`.
+// The exact native three-handed dry mechanics are shared with the BBvSB helper.
+// Source/Provenance: T exact `user_WetFlop = !f$flop_dry` equivalent.
+##f$cc_turn_delayed_cbet_snapshot_3w_sbvbb_flop_wet_candidate##
+f$cc_turn_delayed_cbet_snapshot_3w_sbvbb_context &&
+!f$cc_turn_delayed_cbet_source_3w_bbvsb_flop_dry
+
+// -----------------------------------------------------------------------------
+// DC12A-SBVS.03 — side-effect writer
+// -----------------------------------------------------------------------------
+
+// Purpose: persist exact source observations and common snapshot-seen evidence.
+// Source/Provenance: T/A observed source facts + P persistence wrapper.
+##f$cc_turn_delayed_cbet_3w_sbvbb_snapshot_writer##
+When !f$cc_turn_delayed_cbet_snapshot_3w_sbvbb_context Return false Force
+When f$cc_turn_delayed_cbet_snapshot_3w_sbvbb_context Set user_cc_turn_delayed_cbet_flop_snapshot_seen
+When f$cc_turn_delayed_cbet_snapshot_3w_sbvbb_tpplus_candidate Set user_cc_turn_delayed_cbet_3w_sbvbb_flop_tpplus_candidate
+When f$cc_turn_delayed_cbet_snapshot_3w_sbvbb_secondpair_candidate Set user_cc_turn_delayed_cbet_3w_sbvbb_flop_secondpair_candidate
+When f$cc_turn_delayed_cbet_snapshot_3w_sbvbb_lowpair_candidate Set user_cc_turn_delayed_cbet_3w_sbvbb_flop_lowpair_candidate
+When f$cc_turn_delayed_cbet_snapshot_3w_sbvbb_draw_candidate Set user_cc_turn_delayed_cbet_3w_sbvbb_flop_draw_candidate
+When f$cc_turn_delayed_cbet_snapshot_3w_sbvbb_draw_goodmedium_candidate Set user_cc_turn_delayed_cbet_3w_sbvbb_flop_draw_goodmedium_candidate
+When f$cc_turn_delayed_cbet_snapshot_3w_sbvbb_air_straight_candidate Set user_cc_turn_delayed_cbet_3w_sbvbb_flop_air_straight_candidate
+When f$cc_turn_delayed_cbet_snapshot_3w_sbvbb_flop_wet_candidate Set user_cc_turn_delayed_cbet_3w_sbvbb_flop_wet_source
+When Others Return true Force
+
+// ============================================================================
+// End Gate12A.7 native 3wSBvBB snapshot.
+// ============================================================================
