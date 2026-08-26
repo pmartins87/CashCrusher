@@ -1,0 +1,398 @@
+// ============================================================================
+// CashCrusher_Turn_DelayedCBet_3BP.txt
+// Gate 12A.13 — 4-6h plain-3BP / squeeze Turn Delayed-CBet adaptation
+// ============================================================================
+// Purpose:
+//   Cover Hero-final-3bettor 4-6 handed pots after Hero skipped the flop CBet,
+//   the entire flop checked through, and Hero now has first Turn action.
+//
+// Source boundary:
+//   Crusher/DeepCrusher supplies routing and native 2/3-handed delayed trees but
+//   no clean 4-6h plain-3BP or squeeze Delayed-CBet range tree. Exact policy here
+//   is P-heavy. Existing Gate01F 3BP survivor masks are T/A ancestry only.
+//
+// Safety:
+//   * 2/3-handed states remain owned by reviewed native source families;
+//   * plain 3BP and squeeze are separate exact parents;
+//   * opener / pre-3bet caller / post-3bet caller provenance is retained;
+//   * checked-through flop means HU may only be preflop-reduced;
+//   * no pure-air barrel without skipped-flop bluff provenance;
+//   * no random/HandPower/BetMax/commitment/stackoff shortcut.
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// DC3.01 — exact 4-6h ownership
+// -----------------------------------------------------------------------------
+
+// Purpose: common Hero-final-3bettor parent after canonical Gate12A X/X.
+// Source/Provenance: T exact 3bet chronology + Gate12A history; P 4-6h domain.
+##f$cc_turn_delayed_cbet_3bp_parent##
+f$cc_turn_delayed_cbet_base_opportunity &&
+f$cc_deal_size >= 4 && f$cc_deal_size <= 6 &&
+f$cc_pot_family_id = 3 &&
+f$cc_pf_role_3bettor &&
+f$cc_pf_3bet_order_supported &&
+f$cc_pf_3bet_final_raiser_pos_id = f$cc_hero_pos_id
+
+// Purpose: proven ordinary/plain 3BP, squeeze excluded.
+// Source/Provenance: T exact Gate00/Gate01F subtype proof.
+##f$cc_turn_delayed_cbet_plain3bp_parent##
+f$cc_turn_delayed_cbet_3bp_parent &&
+f$cc_pf_3bet_plain_proven &&
+!f$cc_pf_squeeze_proven
+
+// Purpose: proven squeeze, ordinary plain3BP excluded.
+// Source/Provenance: T exact Gate00/Gate01F subtype proof.
+##f$cc_turn_delayed_cbet_squeeze_parent##
+f$cc_turn_delayed_cbet_3bp_parent &&
+f$cc_pf_squeeze_proven &&
+!f$cc_pf_3bet_plain_proven
+
+// -----------------------------------------------------------------------------
+// DC3.02 — plain 3BP survivor provenance
+// -----------------------------------------------------------------------------
+
+// Purpose: current HU plain3BP existed already on flop; checked flop cannot reduce.
+// Source/Provenance: T exact field/HU-origin geometry.
+##f$cc_turn_delayed_cbet_plain3bp_hu_context##
+f$cc_turn_delayed_cbet_plain3bp_parent &&
+f$cc_flop_entry_count = 2 && f$cc_hu && f$cc_hu_origin_preflop_reduced
+
+// Purpose: sole plain3BP Villain is original opener-call.
+// Source/Provenance: T/A exact Gate01F survivor identity.
+##f$cc_turn_delayed_cbet_plain3bp_hu_vs_opener##
+f$cc_turn_delayed_cbet_plain3bp_hu_context &&
+f$cc_hu_3bp_villain_is_opener &&
+!f$cc_hu_3bp_villain_is_post3bet_coldcaller
+
+// Purpose: sole plain3BP Villain is a post-3bet coldcaller.
+// Source/Provenance: T/A exact Gate01F survivor identity.
+##f$cc_turn_delayed_cbet_plain3bp_hu_vs_coldcaller##
+f$cc_turn_delayed_cbet_plain3bp_hu_context &&
+f$cc_hu_3bp_villain_is_post3bet_coldcaller &&
+!f$cc_hu_3bp_villain_is_opener
+
+// Purpose: coherent unique HU plain3BP survivor family.
+// Source/Provenance: P safety partition over T exact identity.
+##f$cc_turn_delayed_cbet_plain3bp_hu_supported##
+f$cc_turn_delayed_cbet_plain3bp_hu_vs_opener ||
+f$cc_turn_delayed_cbet_plain3bp_hu_vs_coldcaller
+
+// Purpose: 3+ players remain in plain3BP after checked-through flop.
+// Source/Provenance: T exact field geometry.
+##f$cc_turn_delayed_cbet_plain3bp_mw_context##
+f$cc_turn_delayed_cbet_plain3bp_parent &&
+f$cc_flop_entry_count >= 3 && f$cc_multiway
+
+// Purpose: live original opener count.
+// Source/Provenance: T exact Gate01F live-mask intersection.
+##f$cc_turn_delayed_cbet_plain3bp_mw_opener_count##
+When !f$cc_turn_delayed_cbet_plain3bp_mw_context Return 0 Force
+When Others Return BitCount(f$cc_mw_3bp_live_opener_mask) Force
+
+// Purpose: live post-3bet coldcaller count in ordinary 3BP.
+// Source/Provenance: T/A exact Gate01F mask; pre3bet callers are impossible here.
+##f$cc_turn_delayed_cbet_plain3bp_mw_coldcaller_count##
+When !f$cc_turn_delayed_cbet_plain3bp_mw_context Return 0 Force
+When Others Return BitCount(f$cc_mw_3bp_live_post3bet_coldcaller_mask) Force
+
+// Purpose: all current opponents have a valid plain3BP origin and opener count <=1.
+// Source/Provenance: P fail-closed completeness invariant.
+##f$cc_turn_delayed_cbet_plain3bp_mw_supported##
+f$cc_turn_delayed_cbet_plain3bp_mw_context &&
+f$cc_turn_delayed_cbet_plain3bp_mw_opener_count <= 1 &&
+(f$cc_turn_delayed_cbet_plain3bp_mw_opener_count + f$cc_turn_delayed_cbet_plain3bp_mw_coldcaller_count) = (nplayersplaying - 1)
+
+// Purpose: plain3BP multiway contains a selected post-3bet coldcaller range.
+// Source/Provenance: P range-selection descriptor over T exact mask.
+##f$cc_turn_delayed_cbet_plain3bp_mw_has_coldcaller##
+f$cc_turn_delayed_cbet_plain3bp_mw_supported &&
+f$cc_turn_delayed_cbet_plain3bp_mw_coldcaller_count > 0
+
+// -----------------------------------------------------------------------------
+// DC3.03 — squeeze survivor provenance
+// -----------------------------------------------------------------------------
+
+// Purpose: current HU squeeze existed already on flop.
+// Source/Provenance: T exact checked-flop/HU-origin geometry.
+##f$cc_turn_delayed_cbet_squeeze_hu_context##
+f$cc_turn_delayed_cbet_squeeze_parent &&
+f$cc_flop_entry_count = 2 && f$cc_hu && f$cc_hu_origin_preflop_reduced
+
+// Purpose: HU squeeze survivor type ID: 1 opener | 2 pre3bet caller | 3 post3bet caller.
+// Source/Provenance: P metadata over T/A Gate01F exact survivor identities.
+##f$cc_turn_delayed_cbet_squeeze_hu_survivor_type_id##
+When !f$cc_turn_delayed_cbet_squeeze_hu_context Return 0 Force
+When f$cc_hu_3bp_villain_is_opener Return 1 Force
+When f$cc_hu_3bp_villain_is_pre3bet_coldcaller Return 2 Force
+When f$cc_hu_3bp_villain_is_post3bet_coldcaller Return 3 Force
+When Others Return 0 Force
+
+// Purpose: exactly one known squeeze survivor class owns HU policy.
+// Source/Provenance: P fail-closed unique-origin invariant.
+##f$cc_turn_delayed_cbet_squeeze_hu_supported##
+f$cc_turn_delayed_cbet_squeeze_hu_context &&
+f$cc_hu_3bp_survivor_consistent &&
+f$cc_turn_delayed_cbet_squeeze_hu_survivor_type_id >= 1 &&
+f$cc_turn_delayed_cbet_squeeze_hu_survivor_type_id <= 3
+
+// Purpose: 3+ players remain in squeeze pot after checked-through flop.
+// Source/Provenance: T exact field geometry.
+##f$cc_turn_delayed_cbet_squeeze_mw_context##
+f$cc_turn_delayed_cbet_squeeze_parent &&
+f$cc_flop_entry_count >= 3 && f$cc_multiway
+
+// Purpose: current live opener count in squeeze.
+// Source/Provenance: T exact Gate01F live mask.
+##f$cc_turn_delayed_cbet_squeeze_mw_opener_count##
+When !f$cc_turn_delayed_cbet_squeeze_mw_context Return 0 Force
+When Others Return BitCount(f$cc_mw_3bp_live_opener_mask) Force
+
+// Purpose: current live pre-3bet coldcaller count.
+// Source/Provenance: T/A exact Gate01F squeeze mask.
+##f$cc_turn_delayed_cbet_squeeze_mw_pre3bet_count##
+When !f$cc_turn_delayed_cbet_squeeze_mw_context Return 0 Force
+When Others Return BitCount(f$cc_mw_3bp_live_pre3bet_coldcaller_mask) Force
+
+// Purpose: current live post-3bet coldcaller count.
+// Source/Provenance: T/A exact Gate01F mask.
+##f$cc_turn_delayed_cbet_squeeze_mw_post3bet_count##
+When !f$cc_turn_delayed_cbet_squeeze_mw_context Return 0 Force
+When Others Return BitCount(f$cc_mw_3bp_live_post3bet_coldcaller_mask) Force
+
+// Purpose: all current squeeze opponents have exactly one known origin.
+// Source/Provenance: P fail-closed composition check over T/A masks.
+##f$cc_turn_delayed_cbet_squeeze_mw_supported##
+f$cc_turn_delayed_cbet_squeeze_mw_context &&
+f$cc_turn_delayed_cbet_squeeze_mw_opener_count <= 1 &&
+(f$cc_turn_delayed_cbet_squeeze_mw_opener_count + f$cc_turn_delayed_cbet_squeeze_mw_pre3bet_count + f$cc_turn_delayed_cbet_squeeze_mw_post3bet_count) = (nplayersplaying - 1)
+
+// Purpose: squeeze field contains at least one selected coldcaller-origin range.
+// Source/Provenance: P range-selection descriptor over exact masks.
+##f$cc_turn_delayed_cbet_squeeze_mw_has_coldcaller##
+f$cc_turn_delayed_cbet_squeeze_mw_supported &&
+(f$cc_turn_delayed_cbet_squeeze_mw_pre3bet_count + f$cc_turn_delayed_cbet_squeeze_mw_post3bet_count) > 0
+
+// -----------------------------------------------------------------------------
+// DC3.04 — shared current strength / runout
+// -----------------------------------------------------------------------------
+
+// Purpose: exact contributed two pair.
+// Source/Provenance: T/A current contribution-aware reconstruction.
+##f$cc_turn_delayed_cbet_3bp_exact_two_pair##
+IsTurn && HaveTwoPair && !TwoPairOnBoard && npcbits > 0
+
+// Purpose: robust value stronger than exact two pair.
+// Source/Provenance: A portable current-strength hierarchy; P downstream policy.
+##f$cc_turn_delayed_cbet_3bp_strong_value##
+f$cc_turn_delayed_cbet_two_pair_plus_real &&
+!f$cc_turn_delayed_cbet_3bp_exact_two_pair
+
+// Purpose: strong top pair by deterministic kicker quality.
+// Source/Provenance: A kicker-quality concept + P <=2 cash boundary.
+##f$cc_turn_delayed_cbet_3bp_strong_tp##
+f$cc_turn_delayed_cbet_top_pair_real && f$cc_number_better_kickers <= 2
+
+// Purpose: completion/four-card turn where thin value contracts.
+// Source/Provenance: A source runout caution + P 3BP application.
+##f$cc_turn_delayed_cbet_3bp_dangerous_runout##
+f$cc_turn_completed || f$cc_turn_four_card_straight_or_flush || f$cc_turn_super_completed
+
+// Purpose: clean turn complement.
+// Source/Provenance: P exact local complement.
+##f$cc_turn_delayed_cbet_3bp_clean_turn##
+!f$cc_turn_delayed_cbet_3bp_dangerous_runout
+
+// Purpose: favorable A/K pressure turn without new completion.
+// Source/Provenance: A overcard-pressure concept + P selector; no pure-air permission.
+##f$cc_turn_delayed_cbet_3bp_high_pressure_turn##
+f$cc_turn_delayed_cbet_3bp_clean_turn && f$cc_turn_overcard_to_flop &&
+!f$cc_turn_pairs_flop_rank && (f$cc_turn_is_ace || f$cc_turn_is_king)
+
+// Purpose: premium current no-made draw.
+// Source/Provenance: A cleaned draw-quality concept + P exact combination cut.
+##f$cc_turn_delayed_cbet_3bp_premium_draw##
+IsTurn && f$cc_hand_no_made &&
+(f$cc_real_combo_draw || f$cc_real_nut_fd ||
+ (f$cc_real_oesd && f$cc_two_overcards) ||
+ (f$cc_real_fd && f$cc_two_overcards))
+
+// -----------------------------------------------------------------------------
+// DC3.05 — plain 3BP P-heavy policy
+// -----------------------------------------------------------------------------
+
+// Purpose: HU plain3BP delayed action. Opener-call can be treated slightly wider
+// than a post-3bet coldcaller; OOP checking is protected.
+// Source/Provenance: P-heavy professional cash adaptation; source has no 4-6h tree.
+##f$cc_turn_delayed_cbet_plain3bp_hu_action##
+When !f$cc_turn_delayed_cbet_plain3bp_hu_supported Return false Force
+When f$cc_turn_delayed_cbet_3bp_strong_value Return true Force
+When f$cc_turn_delayed_cbet_3bp_exact_two_pair && f$cc_turn_delayed_cbet_3bp_dangerous_runout Return false Force
+When f$cc_turn_delayed_cbet_3bp_exact_two_pair Return true Force
+When f$cc_turn_delayed_cbet_overpair_real && f$cc_turn_delayed_cbet_plain3bp_hu_vs_opener && f$cc_turn_delayed_cbet_3bp_clean_turn Return true Force
+When f$cc_turn_delayed_cbet_overpair_real && f$cc_hu_ip && f$cc_turn_delayed_cbet_3bp_clean_turn Return true Force
+When f$cc_turn_delayed_cbet_overpair_real Return false Force
+When f$cc_turn_delayed_cbet_3bp_strong_tp && f$cc_turn_delayed_cbet_plain3bp_hu_vs_opener && f$cc_hu_ip && f$cc_turn_delayed_cbet_3bp_clean_turn Return true Force
+When f$cc_turn_delayed_cbet_3bp_strong_tp && f$cc_turn_delayed_cbet_plain3bp_hu_vs_opener && f$cc_hu_oop && f$cc_turn_delayed_cbet_3bp_high_pressure_turn Return true Force
+When f$cc_turn_delayed_cbet_top_pair_real Return false Force
+When f$cc_turn_delayed_cbet_second_pair Return false Force
+When f$cc_turn_delayed_cbet_third_pair Return false Force
+When f$cc_turn_delayed_cbet_3bp_premium_draw && f$cc_hu_ip && f$cc_turn_delayed_cbet_3bp_clean_turn Return true Force
+When f$cc_turn_delayed_cbet_3bp_premium_draw && f$cc_turn_delayed_cbet_plain3bp_hu_vs_opener && f$cc_hu_oop && f$cc_turn_delayed_cbet_3bp_high_pressure_turn Return true Force
+When f$cc_hand_no_made Return false Force
+When Others Return false Force
+
+// Purpose: HU plain3BP delayed sizes: strong value75, merged value/draw50.
+// Source/Provenance: P conservative 3BP cash sizing; no overbet/jam baseline.
+##f$cc_turn_delayed_cbet_plain3bp_hu_size_id##
+When !f$cc_turn_delayed_cbet_plain3bp_hu_action Return 0 Force
+When f$cc_turn_delayed_cbet_3bp_strong_value Return f$cc_turn_delayed_cbet_size_75_id Force
+When f$cc_turn_delayed_cbet_3bp_exact_two_pair Return f$cc_turn_delayed_cbet_size_75_id Force
+When f$cc_turn_delayed_cbet_overpair_real Return f$cc_turn_delayed_cbet_size_50_id Force
+When f$cc_turn_delayed_cbet_3bp_strong_tp Return f$cc_turn_delayed_cbet_size_50_id Force
+When f$cc_turn_delayed_cbet_3bp_premium_draw Return f$cc_turn_delayed_cbet_size_50_id Force
+When Others Return 0 Force
+
+// Purpose: multiway plain3BP is value-dense; selected coldcaller composition is
+// never used to widen thin one-pair. LAST premium draws may delayed-semibluff.
+// Source/Provenance: P-heavy professional multiway cash adaptation.
+##f$cc_turn_delayed_cbet_plain3bp_mw_action##
+When !f$cc_turn_delayed_cbet_plain3bp_mw_supported Return false Force
+When f$cc_turn_delayed_cbet_3bp_strong_value Return true Force
+When f$cc_turn_delayed_cbet_3bp_exact_two_pair && f$cc_turn_delayed_cbet_3bp_dangerous_runout Return false Force
+When f$cc_turn_delayed_cbet_3bp_exact_two_pair Return true Force
+When f$cc_turn_delayed_cbet_overpair_real Return false Force
+When f$cc_turn_delayed_cbet_top_pair_real Return false Force
+When f$cc_turn_delayed_cbet_3bp_premium_draw && f$cc_relpos_id = 3 && f$cc_turn_delayed_cbet_3bp_clean_turn Return true Force
+When f$cc_hand_no_made Return false Force
+When Others Return false Force
+
+// Purpose: multiway plain3BP delayed sizes: 75 strong, 50 exact2P/draw.
+// Source/Provenance: P conservative multiway cash sizing.
+##f$cc_turn_delayed_cbet_plain3bp_mw_size_id##
+When !f$cc_turn_delayed_cbet_plain3bp_mw_action Return 0 Force
+When f$cc_turn_delayed_cbet_3bp_strong_value Return f$cc_turn_delayed_cbet_size_75_id Force
+When f$cc_turn_delayed_cbet_3bp_exact_two_pair Return f$cc_turn_delayed_cbet_size_50_id Force
+When f$cc_turn_delayed_cbet_3bp_premium_draw Return f$cc_turn_delayed_cbet_size_50_id Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// DC3.06 — squeeze P-heavy policy
+// -----------------------------------------------------------------------------
+
+// Purpose: HU squeeze delayed action. Coldcaller-origin survivors are treated as
+// more selected; thin one-pair aggression is limited to opener-origin IP states.
+// Source/Provenance: P-heavy professional cash adaptation.
+##f$cc_turn_delayed_cbet_squeeze_hu_action##
+When !f$cc_turn_delayed_cbet_squeeze_hu_supported Return false Force
+When f$cc_turn_delayed_cbet_3bp_strong_value Return true Force
+When f$cc_turn_delayed_cbet_3bp_exact_two_pair && f$cc_turn_delayed_cbet_3bp_dangerous_runout Return false Force
+When f$cc_turn_delayed_cbet_3bp_exact_two_pair Return true Force
+When f$cc_turn_delayed_cbet_overpair_real && f$cc_turn_delayed_cbet_squeeze_hu_survivor_type_id = 1 && f$cc_hu_ip && f$cc_turn_delayed_cbet_3bp_clean_turn Return true Force
+When f$cc_turn_delayed_cbet_overpair_real Return false Force
+When f$cc_turn_delayed_cbet_3bp_strong_tp && f$cc_turn_delayed_cbet_squeeze_hu_survivor_type_id = 1 && f$cc_hu_ip && f$cc_turn_delayed_cbet_3bp_clean_turn Return true Force
+When f$cc_turn_delayed_cbet_top_pair_real Return false Force
+When f$cc_turn_delayed_cbet_second_pair Return false Force
+When f$cc_turn_delayed_cbet_third_pair Return false Force
+When f$cc_turn_delayed_cbet_3bp_premium_draw && f$cc_hu_ip && f$cc_turn_delayed_cbet_3bp_clean_turn Return true Force
+When f$cc_hand_no_made Return false Force
+When Others Return false Force
+
+// Purpose: HU squeeze delayed sizes: 75 strong/exact2P, 50 one-pair/draw.
+// Source/Provenance: P conservative 3BP cash sizing.
+##f$cc_turn_delayed_cbet_squeeze_hu_size_id##
+When !f$cc_turn_delayed_cbet_squeeze_hu_action Return 0 Force
+When f$cc_turn_delayed_cbet_3bp_strong_value Return f$cc_turn_delayed_cbet_size_75_id Force
+When f$cc_turn_delayed_cbet_3bp_exact_two_pair Return f$cc_turn_delayed_cbet_size_75_id Force
+When f$cc_turn_delayed_cbet_overpair_real Return f$cc_turn_delayed_cbet_size_50_id Force
+When f$cc_turn_delayed_cbet_3bp_strong_tp Return f$cc_turn_delayed_cbet_size_50_id Force
+When f$cc_turn_delayed_cbet_3bp_premium_draw Return f$cc_turn_delayed_cbet_size_50_id Force
+When Others Return 0 Force
+
+// Purpose: multiway squeeze delayed action is intentionally value-dense. Selected
+// coldcaller fields do not inherit plain3BP premium-draw aggression.
+// Source/Provenance: P-heavy professional multiway cash adaptation.
+##f$cc_turn_delayed_cbet_squeeze_mw_action##
+When !f$cc_turn_delayed_cbet_squeeze_mw_supported Return false Force
+When f$cc_turn_delayed_cbet_3bp_strong_value Return true Force
+When f$cc_turn_delayed_cbet_3bp_exact_two_pair && f$cc_turn_delayed_cbet_3bp_dangerous_runout Return false Force
+When f$cc_turn_delayed_cbet_3bp_exact_two_pair Return true Force
+When f$cc_turn_delayed_cbet_overpair_real Return false Force
+When f$cc_turn_delayed_cbet_top_pair_real Return false Force
+When f$cc_turn_delayed_cbet_3bp_premium_draw Return false Force
+When f$cc_hand_no_made Return false Force
+When Others Return false Force
+
+// Purpose: multiway squeeze size map: strong75, clean exact2P50 only.
+// Source/Provenance: P conservative multiway cash sizing.
+##f$cc_turn_delayed_cbet_squeeze_mw_size_id##
+When !f$cc_turn_delayed_cbet_squeeze_mw_action Return 0 Force
+When f$cc_turn_delayed_cbet_3bp_strong_value Return f$cc_turn_delayed_cbet_size_75_id Force
+When f$cc_turn_delayed_cbet_3bp_exact_two_pair Return f$cc_turn_delayed_cbet_size_50_id Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// DC3.07 — coverage / dispatch / safety
+// -----------------------------------------------------------------------------
+
+// Purpose: complete conservative policy coverage in coherent plain3BP contexts.
+// Source/Provenance: P explicit-check coverage metadata.
+##f$cc_turn_delayed_cbet_plain3bp_hu_covered##
+f$cc_turn_delayed_cbet_plain3bp_hu_supported
+
+// Purpose: complete conservative multiway plain3BP coverage.
+// Source/Provenance: P exact-context coverage metadata.
+##f$cc_turn_delayed_cbet_plain3bp_mw_covered##
+f$cc_turn_delayed_cbet_plain3bp_mw_supported
+
+// Purpose: complete conservative HU squeeze coverage.
+// Source/Provenance: P exact-context coverage metadata.
+##f$cc_turn_delayed_cbet_squeeze_hu_covered##
+f$cc_turn_delayed_cbet_squeeze_hu_supported
+
+// Purpose: complete conservative multiway squeeze coverage.
+// Source/Provenance: P exact-context coverage metadata.
+##f$cc_turn_delayed_cbet_squeeze_mw_covered##
+f$cc_turn_delayed_cbet_squeeze_mw_supported
+
+// Purpose: combined 4-6h 3BP/squeeze coverage.
+// Source/Provenance: P exact union.
+##f$cc_turn_delayed_cbet_3bp_covered##
+f$cc_turn_delayed_cbet_plain3bp_hu_covered ||
+f$cc_turn_delayed_cbet_plain3bp_mw_covered ||
+f$cc_turn_delayed_cbet_squeeze_hu_covered ||
+f$cc_turn_delayed_cbet_squeeze_mw_covered
+
+// Purpose: action dispatcher preserving subtype and HU/MW separation.
+// Source/Provenance: P deterministic exact-family router.
+##f$cc_turn_delayed_cbet_3bp_action##
+When f$cc_turn_delayed_cbet_plain3bp_hu_covered Return f$cc_turn_delayed_cbet_plain3bp_hu_action Force
+When f$cc_turn_delayed_cbet_plain3bp_mw_covered Return f$cc_turn_delayed_cbet_plain3bp_mw_action Force
+When f$cc_turn_delayed_cbet_squeeze_hu_covered Return f$cc_turn_delayed_cbet_squeeze_hu_action Force
+When f$cc_turn_delayed_cbet_squeeze_mw_covered Return f$cc_turn_delayed_cbet_squeeze_mw_action Force
+When Others Return false Force
+
+// Purpose: paired size dispatcher.
+// Source/Provenance: P deterministic exact-family router; checks ->0.
+##f$cc_turn_delayed_cbet_3bp_size_id##
+When f$cc_turn_delayed_cbet_plain3bp_hu_covered Return f$cc_turn_delayed_cbet_plain3bp_hu_size_id Force
+When f$cc_turn_delayed_cbet_plain3bp_mw_covered Return f$cc_turn_delayed_cbet_plain3bp_mw_size_id Force
+When f$cc_turn_delayed_cbet_squeeze_hu_covered Return f$cc_turn_delayed_cbet_squeeze_hu_size_id Force
+When f$cc_turn_delayed_cbet_squeeze_mw_covered Return f$cc_turn_delayed_cbet_squeeze_mw_size_id Force
+When Others Return 0 Force
+
+// Purpose: legal 4-6h 3BP owner with unresolved subtype/survivor provenance.
+// Source/Provenance: P/X fail-closed diagnostic.
+##f$cc_turn_delayed_cbet_3bp_unresolved##
+f$cc_turn_delayed_cbet_3bp_parent && !f$cc_turn_delayed_cbet_3bp_covered
+
+// Purpose: local action/size integrity; P 3BP palette is 50/75 only.
+// Source/Provenance: P safety invariant.
+##f$cc_turn_delayed_cbet_3bp_size_consistent##
+When f$cc_turn_delayed_cbet_3bp_covered && !f$cc_turn_delayed_cbet_3bp_action Return f$cc_turn_delayed_cbet_3bp_size_id = 0 Force
+When f$cc_turn_delayed_cbet_3bp_action Return f$cc_turn_delayed_cbet_3bp_size_id = f$cc_turn_delayed_cbet_size_50_id || f$cc_turn_delayed_cbet_3bp_size_id = f$cc_turn_delayed_cbet_size_75_id Force
+When Others Return true Force
+
+// ============================================================================
+// End Gate12A.13 4-6h plain3BP/squeeze Delayed-CBet adaptation.
+// ============================================================================
