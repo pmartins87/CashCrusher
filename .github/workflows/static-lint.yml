@@ -191,3 +191,7 @@ jobs:
         run: python tools/test_turn_delayed_cbet_coverage.py
       - name: Test Turn Delayed CBet runtime sizing and stack geometry
         run: python tools/test_turn_delayed_cbet_runtime.py
+      - name: Test Turn Delayed Float ownership history
+        run: python tools/test_turn_delayed_float_history.py
+      - name: Test native 3wBBvSB Turn Delayed Float source
+        run: python tools/test_turn_delayed_float_3w_bbvsb.py
