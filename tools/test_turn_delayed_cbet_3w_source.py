@@ -24,6 +24,19 @@ def executable(text: str) -> str:
 
 
 def snapshot_contract() -> None:
+    source_fd = block(SNAP, "f$cc_turn_delayed_cbet_source_fd")
+    assert "HaveFlushDraw && SuitsInHand = 1" in source_fd
+    assert "SuitsInHand = 2 && NumberOfUnknownSuitedOvercards <= 2" in source_fd
+    source_sd = block(SNAP, "f$cc_turn_delayed_cbet_source_sd")
+    assert "nstraightfillcommon - nstraightfill = 2" in source_sd
+    assert "HaveNutStraightDraw" in source_sd
+    broader = block(SNAP, "f$cc_turn_delayed_cbet_source_gutshot_or_better_draw")
+    assert "Overcards = 2 && (HaveBackdoorFlushDraw || HaveBackdoorStraightDraw)" in broader
+    assert "(hand$A || hand$K) && Overcards >= 1" in broader
+    source_air = block(SNAP, "f$cc_turn_delayed_cbet_source_air")
+    assert "f$cc_hand_no_made" in source_air
+    assert "!f$cc_turn_delayed_cbet_source_gutshot_or_better_draw" in source_air
+
     btn = block(SNAP, "f$cc_turn_delayed_cbet_snapshot_3w_btnvsb_context")
     for token in (
         "f$cc_deal_size = 3",
@@ -59,7 +72,8 @@ def snapshot_contract() -> None:
     assert "!StraightPossibleOnFlop Return true Force" in dry
 
     wetair = block(SNAP, "f$cc_turn_delayed_cbet_snapshot_3w_bbvsb_wetair_candidate")
-    assert "f$cc_air_no_frontdoor" in wetair
+    assert "f$cc_turn_delayed_cbet_source_air" in wetair
+    assert "f$cc_air_no_frontdoor" not in executable(wetair)
     assert "f$cc_turn_delayed_cbet_source_3w_bbvsb_flop_wet" in wetair
     special = block(SNAP, "f$cc_turn_delayed_cbet_snapshot_3w_bbvsb_air_2bworA_candidate")
     assert "f$cc_flop_2bw || AcePresentOnFlop" in special
@@ -86,7 +100,6 @@ def btnvsb_contract() -> None:
     assert "flop_mpbp_candidate && f$cc_turn_delayed_cbet_tpop_real Return true Force" in action
     assert "flop_2bw_candidate" in action
     assert "flop_1bw_candidate && user_cc_turn_delayed_cbet_3w_btnvsb_flop_pair9plus_candidate" in action
-    # No source-positive TP/draw/air transplant from BTNvBB.
     code = executable(action).lower()
     assert "flop_tpplus" not in code
     assert "flop_nomade" not in code
@@ -174,7 +187,6 @@ def safety_contract() -> None:
     ):
         assert forbidden not in code, f"forbidden delayed-CBet leak: {forbidden}"
 
-    # Dead/zombie legacy semantics must be visible as a gap, not called directly.
     assert "f$hand_dead" not in code
     assert "f$hand_zombie" not in code
     assert "translation_pending" in code
