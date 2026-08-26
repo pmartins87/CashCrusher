@@ -5,12 +5,14 @@
 // Purpose:
 //   Give Gate12A source children one contribution-aware Turn strength vocabulary,
 //   preserve exact source draw-safety filters, and preserve source sizes including
-//   62.5% and the SBvBB 150%-pot overbet.
+//   62.5% and the SBvBB 150%-pot overbet. The 33% ID is also exposed for the
+//   reviewed TBP/mature-DeepCrusher multiway fallback where no exact source size
+//   exists.
 //
 // Source/Provenance:
 //   T/A = portable hand hierarchy + mature DeepCrusher CF7/dead/zombie meaning.
 //   A = exact Delayed-CBet source sizes MIN/50/62.5/75/100/150.
-//   P = normalized numeric IDs only.
+//   A/P = 33% reviewed multiway fallback normalization, never called source-exact.
 // ============================================================================
 
 // Purpose: real current Turn top pair, excluding board-only two-pair promotion.
@@ -170,7 +172,7 @@ When Others Return false Force
 
 // -----------------------------------------------------------------------------
 // Normalized Gate12A size IDs
-// 1 MIN | 2 50% | 3 exact 62.5% | 4 75% | 5 100% | 6 150%
+// 1 MIN | 2 50% | 3 exact 62.5% | 4 75% | 5 100% | 6 150% | 7 33%
 // -----------------------------------------------------------------------------
 
 // Purpose: exact source minimum-bet size.
@@ -203,6 +205,13 @@ When Others Return false Force
 // Source/Provenance: T/A DeepCrusher `user_Turn150` normalization.
 ##f$cc_turn_delayed_cbet_size_150_id##
 6
+
+// Purpose: reviewed one-third-pot multiway fallback used by the mature source
+// only when the strategic branch itself has no exact Starting-Strategy/TBP size.
+// Source/Provenance: A/P DeepCrusher `BetsizeTurnMultiway` fallback normalization;
+// this ID must never be described as a direct source sizing instruction.
+##f$cc_turn_delayed_cbet_size_33_id##
+7
 
 // ============================================================================
 // End Gate12A.2 common vocabulary.
