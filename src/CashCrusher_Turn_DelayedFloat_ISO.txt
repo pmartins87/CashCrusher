@@ -1,0 +1,182 @@
+// ============================================================================
+// CashCrusher_Turn_DelayedFloat_ISO.txt
+// Gate 12B.7 — 4-6 handed isolation-pot Turn Delayed-Float adaptation
+// ============================================================================
+// Purpose:
+//   Extend only deliberate Gate04 ISO Float check-backs into a second checked-to
+//   Turn decision. Original limpers and post-raise cold callers remain distinct
+//   in HU; current multiway is separately tightened.
+//
+// Source boundary:
+//   No literal deep-stack multi-handed ISO Delayed-Float tree exists. HUSB direct
+//   source is quarantined by Gate12B.5 and is never used as a frequency clone.
+//
+// Provenance:
+//   T/A = proven ISO chronology/caller masks + CLOSED Gate04 check-back history.
+//   P = deterministic six-max cash delayed-stab selection and sizing.
+// ============================================================================
+
+// Purpose: reviewed 4-6h ISO check-back parent.
+// Source/Provenance: T/A exact Gate04 family, ISO history and caller role.
+##f$cc_turn_delayed_float_iso_context##
+f$cc_turn_delayed_float_base_opportunity &&
+f$cc_turn_delayed_float_gate04_checkback_valid &&
+f$cc_turn_delayed_float_gate04_family_id = 3 &&
+f$cc_deal_size >= 4 && f$cc_deal_size <= 6 &&
+f$cc_pot_family_id = 2 &&
+f$cc_pf_iso_proven &&
+f$cc_pf_role_srp_caller &&
+f$cc_flop_float_iso_hero_provenance_consistent
+
+// Purpose: HU ISO versus the proven isolation raiser.
+// Source/Provenance: T/A exact final-raiser identity retained across X/X.
+##f$cc_turn_delayed_float_iso_hu_context##
+f$cc_turn_delayed_float_iso_context &&
+f$cc_hu &&
+f$cc_hu_villain_pos_id = f$cc_pf_single_raiser_pos_id
+
+// Purpose: current multiway ISO exact-LAST state.
+// Source/Provenance: T/A field split over reviewed ISO parent.
+##f$cc_turn_delayed_float_iso_mw_context##
+f$cc_turn_delayed_float_iso_context && f$cc_multiway
+
+// Purpose: HU original-limper subtype.
+// Source/Provenance: A exact pre-raise-limper mask proof from Gate04D.
+##f$cc_turn_delayed_float_iso_hu_limper##
+f$cc_turn_delayed_float_iso_hu_context && f$cc_flop_float_iso_hero_was_limper
+
+// Purpose: HU post-raise coldcaller subtype.
+// Source/Provenance: A exact post-raise-coldcaller mask proof from Gate04D.
+##f$cc_turn_delayed_float_iso_hu_coldcaller##
+f$cc_turn_delayed_float_iso_hu_context && f$cc_flop_float_iso_hero_was_postraise_coldcaller
+
+// Purpose: original-limper second-pair thin bet on calm undercards only.
+// Source/Provenance: P wider limp-call range supports limited protection value.
+##f$cc_turn_delayed_float_iso_limper_secondpair_thin##
+f$cc_turn_delayed_float_iso_hu_limper &&
+f$cc_turn_delayed_float_second_pair &&
+f$cc_turn_delayed_float_flop_had_lower_pair &&
+f$cc_turn_undercard &&
+f$cc_turn_delayed_float_thin_value_runout
+
+// Purpose: original-limper pure-air bluff after isolator checks twice. Require
+// saved air plus a meaningful non-completing pressure card; condensed coldcaller
+// range intentionally does not inherit this bluff branch.
+// Source/Provenance: P range-aware professional delayed-stab selection.
+##f$cc_turn_delayed_float_iso_limper_air_bluff##
+f$cc_turn_delayed_float_iso_hu_limper &&
+f$cc_turn_delayed_float_no_made &&
+f$cc_turn_delayed_float_flop_had_air &&
+f$cc_turn_delayed_float_bluff_pressure_card
+
+// Purpose: HU original-limper delayed action.
+// Source/Provenance: P professional ISO fill constrained by exact T/A provenance.
+##f$cc_turn_delayed_float_iso_limper_action##
+When !f$cc_turn_delayed_float_iso_hu_limper Return false Force
+When f$cc_turn_delayed_float_two_pair_plus_real Return true Force
+When f$cc_turn_delayed_float_tpop_real && f$cc_turn_delayed_float_thin_value_runout Return true Force
+When f$cc_turn_delayed_float_tpop_real Return false Force
+When f$cc_turn_delayed_float_iso_limper_secondpair_thin Return true Force
+When f$cc_turn_delayed_float_second_pair || f$cc_turn_delayed_float_third_pair Return false Force
+When f$cc_turn_delayed_float_semibluff_candidate Return true Force
+When f$cc_turn_delayed_float_iso_limper_air_bluff Return true Force
+When Others Return false Force
+
+// Purpose: HU original-limper size map.
+// Source/Provenance: P 33/50/75 delayed-value/equity sizing.
+##f$cc_turn_delayed_float_iso_limper_size_id##
+When !f$cc_turn_delayed_float_iso_limper_action Return 0 Force
+When f$cc_turn_delayed_float_two_pair_plus_real Return f$cc_turn_delayed_float_size_75_id Force
+When f$cc_turn_delayed_float_tpop_real Return f$cc_turn_delayed_float_size_50_id Force
+When f$cc_turn_delayed_float_iso_limper_secondpair_thin Return f$cc_turn_delayed_float_size_33_id Force
+When f$cc_turn_delayed_float_semibluff_candidate Return f$cc_turn_delayed_float_size_50_id Force
+When f$cc_turn_delayed_float_iso_limper_air_bluff Return f$cc_turn_delayed_float_size_50_id Force
+When Others Return 0 Force
+
+// Purpose: HU post-raise coldcaller delayed action. This range is more condensed;
+// no pure-air baseline and no second-pair thin stab are imported from limp-call.
+// Source/Provenance: P conservative selected-range professional fill.
+##f$cc_turn_delayed_float_iso_coldcaller_action##
+When !f$cc_turn_delayed_float_iso_hu_coldcaller Return false Force
+When f$cc_turn_delayed_float_two_pair_plus_real Return true Force
+When f$cc_turn_delayed_float_tpop_real && f$cc_turn_delayed_float_thin_value_runout Return true Force
+When f$cc_turn_delayed_float_tpop_real Return false Force
+When f$cc_turn_delayed_float_second_pair || f$cc_turn_delayed_float_third_pair Return false Force
+When f$cc_turn_delayed_float_semibluff_candidate Return true Force
+When Others Return false Force
+
+// Purpose: HU post-raise coldcaller size map.
+// Source/Provenance: P selected-range 50/75 map.
+##f$cc_turn_delayed_float_iso_coldcaller_size_id##
+When !f$cc_turn_delayed_float_iso_coldcaller_action Return 0 Force
+When f$cc_turn_delayed_float_two_pair_plus_real Return f$cc_turn_delayed_float_size_75_id Force
+When f$cc_turn_delayed_float_tpop_real Return f$cc_turn_delayed_float_size_50_id Force
+When f$cc_turn_delayed_float_semibluff_candidate Return f$cc_turn_delayed_float_size_50_id Force
+When Others Return 0 Force
+
+// Purpose: exact-threeway ISO state for limited TP/equity continuation.
+// Source/Provenance: P field-size tightening over T current player count.
+##f$cc_turn_delayed_float_iso_exact_threeway##
+f$cc_turn_delayed_float_iso_mw_context && nplayersplaying = 3
+
+// Purpose: multiway ISO delayed action. Pure air and medium pairs check; exact
+// threeway may bet calm TP/OP or a safe combo draw after everyone checks twice.
+// Source/Provenance: P conservative multiway professional fill.
+##f$cc_turn_delayed_float_iso_mw_action##
+When !f$cc_turn_delayed_float_iso_mw_context Return false Force
+When f$cc_turn_delayed_float_two_pair_plus_real Return true Force
+When f$cc_turn_delayed_float_iso_exact_threeway && f$cc_turn_delayed_float_tpop_real && f$cc_turn_delayed_float_thin_value_runout Return true Force
+When f$cc_turn_delayed_float_tpop_real Return false Force
+When f$cc_turn_delayed_float_second_pair || f$cc_turn_delayed_float_third_pair Return false Force
+When f$cc_turn_delayed_float_iso_exact_threeway && f$cc_turn_delayed_float_no_made && f$cc_real_combo_draw && f$cc_turn_delayed_float_source_draw_live_safe Return true Force
+When Others Return false Force
+
+// Purpose: multiway ISO delayed size map.
+// Source/Provenance: P robust-value/equity 50/75 sizing.
+##f$cc_turn_delayed_float_iso_mw_size_id##
+When !f$cc_turn_delayed_float_iso_mw_action Return 0 Force
+When f$cc_turn_delayed_float_two_pair_plus_real Return f$cc_turn_delayed_float_size_75_id Force
+When f$cc_turn_delayed_float_tpop_real Return f$cc_turn_delayed_float_size_50_id Force
+When f$cc_real_combo_draw Return f$cc_turn_delayed_float_size_50_id Force
+When Others Return 0 Force
+
+// Purpose: ISO family dispatcher.
+// Source/Provenance: P exact caller-origin/current-field routing.
+##f$cc_turn_delayed_float_iso_action##
+When f$cc_turn_delayed_float_iso_hu_limper Return f$cc_turn_delayed_float_iso_limper_action Force
+When f$cc_turn_delayed_float_iso_hu_coldcaller Return f$cc_turn_delayed_float_iso_coldcaller_action Force
+When f$cc_turn_delayed_float_iso_mw_context Return f$cc_turn_delayed_float_iso_mw_action Force
+When Others Return false Force
+
+// Purpose: paired ISO size dispatcher.
+// Source/Provenance: P exact owner; check/outside ->0.
+##f$cc_turn_delayed_float_iso_size_id##
+When f$cc_turn_delayed_float_iso_hu_limper Return f$cc_turn_delayed_float_iso_limper_size_id Force
+When f$cc_turn_delayed_float_iso_hu_coldcaller Return f$cc_turn_delayed_float_iso_coldcaller_size_id Force
+When f$cc_turn_delayed_float_iso_mw_context Return f$cc_turn_delayed_float_iso_mw_size_id Force
+When Others Return 0 Force
+
+// Purpose: report reviewed ISO Gate12B coverage.
+// Source/Provenance: P metadata over exact T/A contexts.
+##f$cc_turn_delayed_float_iso_covered##
+f$cc_turn_delayed_float_iso_context
+
+// Purpose: caller-origin/field owners must be exclusive inside ISO.
+// Source/Provenance: P overlap guard.
+##f$cc_turn_delayed_float_iso_owner_count##
+(f$cc_turn_delayed_float_iso_hu_limper * 1) +
+(f$cc_turn_delayed_float_iso_hu_coldcaller * 1) +
+(f$cc_turn_delayed_float_iso_mw_context * 1)
+
+// Purpose: ISO size and owner integrity.
+// Source/Provenance: P fail-closed safety invariant.
+##f$cc_turn_delayed_float_iso_size_consistent##
+When !f$cc_turn_delayed_float_iso_covered Return f$cc_turn_delayed_float_iso_size_id = 0 Force
+When f$cc_turn_delayed_float_iso_covered && f$cc_turn_delayed_float_iso_owner_count != 1 Return false Force
+When f$cc_turn_delayed_float_iso_covered && !f$cc_turn_delayed_float_iso_action Return f$cc_turn_delayed_float_iso_size_id = 0 Force
+When f$cc_turn_delayed_float_iso_action Return f$cc_turn_delayed_float_iso_size_id = f$cc_turn_delayed_float_size_33_id || f$cc_turn_delayed_float_iso_size_id = f$cc_turn_delayed_float_size_50_id || f$cc_turn_delayed_float_iso_size_id = f$cc_turn_delayed_float_size_75_id Force
+When Others Return false Force
+
+// ============================================================================
+// End Gate12B.7 ISO adaptation.
+// ============================================================================
