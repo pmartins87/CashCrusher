@@ -68,6 +68,13 @@ def quality_contract() -> None:
         assert token in premium
 
 
+def assert_no_air_parent(code: str) -> None:
+    # Avoid the old substring trap: the letters "air" occur inside "pair".
+    # We ban actual saved/source AIR strategy tokens instead.
+    for token in ("source_air", "quality_air", "flop_air", "air_candidate"):
+        assert token not in code, f"pure-air parent leaked into SRP6 action: {token}"
+
+
 def hu_policy_contract() -> None:
     action = block(POL, "f$cc_turn_delayed_cbet_srp6_hu_action")
     assert "f$cc_turn_delayed_cbet_srp6_strong_value Return true Force" in action
@@ -77,10 +84,7 @@ def hu_policy_contract() -> None:
     assert "f$cc_turn_delayed_cbet_srp6_hu_ip_blind && f$cc_hero_pos_id >= 3" in action
     assert "f$cc_turn_delayed_cbet_srp6_hu_oop_nonblind && f$cc_turn_delayed_cbet_srp6_premium_draw && f$cc_turn_delayed_cbet_srp6_high_pressure_turn Return true Force" in action
     assert "f$cc_hand_no_made Return false Force" in action
-    # No pure-air positive line without an exact skipped-flop bluff snapshot.
-    code = executable(action).lower()
-    assert "air" not in code
-    assert "quality_air" not in code
+    assert_no_air_parent(executable(action).lower())
 
     size = block(POL, "f$cc_turn_delayed_cbet_srp6_hu_size_id")
     for token in (
@@ -99,7 +103,7 @@ def mw_policy_contract() -> None:
     assert "f$cc_turn_delayed_cbet_srp6_strong_tp && f$cc_relpos_id = 3" in action
     assert "f$cc_turn_delayed_cbet_srp6_premium_draw && f$cc_relpos_id = 3" in action
     assert "f$cc_hand_no_made Return false Force" in action
-    assert "air" not in executable(action).lower()
+    assert_no_air_parent(executable(action).lower())
     size = block(POL, "f$cc_turn_delayed_cbet_srp6_mw_size_id")
     assert "f$cc_turn_delayed_cbet_size_50_id" in size
     assert "f$cc_turn_delayed_cbet_size_75_id" in size
