@@ -1,0 +1,146 @@
+// ============================================================================
+// CashCrusher_Turn_DelayedFloat_SRP_6Max.txt
+// Gate 12B.6 — 4-6 handed ordinary-SRP Turn Delayed-Float adaptation
+// ============================================================================
+// Purpose:
+//   Fill source-silent ordinary-SRP caller-IP histories only after a REVIEWED
+//   Gate04 Float opportunity was deliberately checked back and the Turn checked
+//   to Hero again. This is professional six-max cash theory, not a renamed native
+//   3wBBvSB source tree.
+//
+// Strategy principles:
+//   * two checks from the PFA increase Hero's realization/value-bet opportunity;
+//   * current robust value bets; medium showdown value retains protection checks;
+//   * current live draws can semibluff;
+//   * pure air bluffs require a meaningful non-completing overcard;
+//   * multiway remains sharply tighter, with no pure-air delayed stab baseline.
+//
+// Provenance:
+//   T/A = exact ordinary-SRP role/topology + CLOSED Gate04 check-back snapshot.
+//   P = deterministic deep-cash delayed-stab policy and 33/50/75 sizing.
+// ============================================================================
+
+// Purpose: 4-6h ordinary SRP reviewed flop check-back parent.
+// Source/Provenance: T/A exact family/role/history; native 3h source is excluded.
+##f$cc_turn_delayed_float_srp6_context##
+f$cc_turn_delayed_float_base_opportunity &&
+f$cc_turn_delayed_float_gate04_checkback_valid &&
+f$cc_turn_delayed_float_gate04_family_id = 2 &&
+f$cc_deal_size >= 4 && f$cc_deal_size <= 6 &&
+f$cc_pot_family_id = 2 &&
+f$cc_pf_one_raise_ordinary_srp &&
+f$cc_pf_role_srp_caller
+
+// Purpose: exact HU 4-6h SRP delayed-float state.
+// Source/Provenance: T/A field split over reviewed SRP parent.
+##f$cc_turn_delayed_float_srp6_hu_context##
+f$cc_turn_delayed_float_srp6_context && f$cc_hu
+
+// Purpose: current multiway 4-6h SRP delayed-float state.
+// Source/Provenance: T/A field split over reviewed SRP parent.
+##f$cc_turn_delayed_float_srp6_mw_context##
+f$cc_turn_delayed_float_srp6_context && f$cc_multiway
+
+// Purpose: thin second-pair protection/value candidate in HU only. Require a
+// calm undercard and a saved lower-pair flop range; a top-pair degraded by an
+// overcard is deliberately not auto-bet.
+// Source/Provenance: P professional range-sensitive thin-value filter.
+##f$cc_turn_delayed_float_srp6_hu_secondpair_thin##
+f$cc_turn_delayed_float_srp6_hu_context &&
+f$cc_turn_delayed_float_second_pair &&
+f$cc_turn_delayed_float_flop_had_lower_pair &&
+f$cc_turn_undercard &&
+f$cc_turn_delayed_float_thin_value_runout
+
+// Purpose: HU pure-air delayed bluff candidate. The flop must already have been
+// saved as air and the Turn must be a credible pressure overcard rather than a
+// completion. This prevents generic every-air double-check stabbing.
+// Source/Provenance: P professional delayed-stab selection.
+##f$cc_turn_delayed_float_srp6_hu_air_bluff##
+f$cc_turn_delayed_float_srp6_hu_context &&
+f$cc_turn_delayed_float_no_made &&
+f$cc_turn_delayed_float_flop_had_air &&
+f$cc_turn_delayed_float_bluff_pressure_card
+
+// Purpose: HU ordinary-SRP delayed action.
+// Source/Provenance: P professional six-max fill constrained by exact T/A history.
+##f$cc_turn_delayed_float_srp6_hu_action##
+When !f$cc_turn_delayed_float_srp6_hu_context Return false Force
+When f$cc_turn_delayed_float_two_pair_plus_real Return true Force
+When f$cc_turn_delayed_float_tpop_real && f$cc_turn_delayed_float_thin_value_runout Return true Force
+When f$cc_turn_delayed_float_tpop_real Return false Force
+When f$cc_turn_delayed_float_srp6_hu_secondpair_thin Return true Force
+When f$cc_turn_delayed_float_second_pair || f$cc_turn_delayed_float_third_pair Return false Force
+When f$cc_turn_delayed_float_semibluff_candidate Return true Force
+When f$cc_turn_delayed_float_srp6_hu_air_bluff Return true Force
+When Others Return false Force
+
+// Purpose: HU ordinary-SRP delayed size map.
+// Source/Provenance: P deterministic 33/50/75 map; no all-in implication.
+##f$cc_turn_delayed_float_srp6_hu_size_id##
+When !f$cc_turn_delayed_float_srp6_hu_action Return 0 Force
+When f$cc_turn_delayed_float_two_pair_plus_real Return f$cc_turn_delayed_float_size_75_id Force
+When f$cc_turn_delayed_float_tpop_real Return f$cc_turn_delayed_float_size_50_id Force
+When f$cc_turn_delayed_float_srp6_hu_secondpair_thin Return f$cc_turn_delayed_float_size_33_id Force
+When f$cc_turn_delayed_float_semibluff_candidate Return f$cc_turn_delayed_float_size_50_id Force
+When f$cc_turn_delayed_float_srp6_hu_air_bluff Return f$cc_turn_delayed_float_size_50_id Force
+When Others Return 0 Force
+
+// Purpose: exact-threeway multiway parent where selected one-pair/draw pressure
+// can still be justified after everyone checks twice.
+// Source/Provenance: P player-count tightening over T field size.
+##f$cc_turn_delayed_float_srp6_exact_threeway##
+f$cc_turn_delayed_float_srp6_mw_context && nplayersplaying = 3
+
+// Purpose: multiway ordinary-SRP delayed action. Robust value always acts;
+// exact-threeway TP/OP may bet calm turns, and only safe combo draws semibluff.
+// Four-plus-way has no one-pair or bluff baseline.
+// Source/Provenance: P conservative professional multiway policy.
+##f$cc_turn_delayed_float_srp6_mw_action##
+When !f$cc_turn_delayed_float_srp6_mw_context Return false Force
+When f$cc_turn_delayed_float_two_pair_plus_real Return true Force
+When f$cc_turn_delayed_float_srp6_exact_threeway && f$cc_turn_delayed_float_tpop_real && f$cc_turn_delayed_float_thin_value_runout Return true Force
+When f$cc_turn_delayed_float_tpop_real Return false Force
+When f$cc_turn_delayed_float_second_pair || f$cc_turn_delayed_float_third_pair Return false Force
+When f$cc_turn_delayed_float_srp6_exact_threeway && f$cc_turn_delayed_float_no_made && f$cc_real_combo_draw && f$cc_turn_delayed_float_source_draw_live_safe Return true Force
+When Others Return false Force
+
+// Purpose: multiway ordinary-SRP delayed size map.
+// Source/Provenance: P robust-value/equity 50/75 map.
+##f$cc_turn_delayed_float_srp6_mw_size_id##
+When !f$cc_turn_delayed_float_srp6_mw_action Return 0 Force
+When f$cc_turn_delayed_float_two_pair_plus_real Return f$cc_turn_delayed_float_size_75_id Force
+When f$cc_turn_delayed_float_tpop_real Return f$cc_turn_delayed_float_size_50_id Force
+When f$cc_real_combo_draw Return f$cc_turn_delayed_float_size_50_id Force
+When Others Return 0 Force
+
+// Purpose: family dispatcher.
+// Source/Provenance: P exact HU/multiway owner split.
+##f$cc_turn_delayed_float_srp6_action##
+When f$cc_turn_delayed_float_srp6_hu_context Return f$cc_turn_delayed_float_srp6_hu_action Force
+When f$cc_turn_delayed_float_srp6_mw_context Return f$cc_turn_delayed_float_srp6_mw_action Force
+When Others Return false Force
+
+// Purpose: paired size dispatcher.
+// Source/Provenance: P exact owner; check/outside ->0.
+##f$cc_turn_delayed_float_srp6_size_id##
+When f$cc_turn_delayed_float_srp6_hu_context Return f$cc_turn_delayed_float_srp6_hu_size_id Force
+When f$cc_turn_delayed_float_srp6_mw_context Return f$cc_turn_delayed_float_srp6_mw_size_id Force
+When Others Return 0 Force
+
+// Purpose: report reviewed 4-6h SRP Gate12B coverage.
+// Source/Provenance: P coverage metadata over exact T/A contexts.
+##f$cc_turn_delayed_float_srp6_covered##
+f$cc_turn_delayed_float_srp6_context
+
+// Purpose: local size integrity.
+// Source/Provenance: P safety invariant.
+##f$cc_turn_delayed_float_srp6_size_consistent##
+When !f$cc_turn_delayed_float_srp6_covered Return f$cc_turn_delayed_float_srp6_size_id = 0 Force
+When f$cc_turn_delayed_float_srp6_covered && !f$cc_turn_delayed_float_srp6_action Return f$cc_turn_delayed_float_srp6_size_id = 0 Force
+When f$cc_turn_delayed_float_srp6_action Return f$cc_turn_delayed_float_srp6_size_id = f$cc_turn_delayed_float_size_33_id || f$cc_turn_delayed_float_srp6_size_id = f$cc_turn_delayed_float_size_50_id || f$cc_turn_delayed_float_srp6_size_id = f$cc_turn_delayed_float_size_75_id Force
+When Others Return false Force
+
+// ============================================================================
+// End Gate12B.6 ordinary-SRP adaptation.
+// ============================================================================
