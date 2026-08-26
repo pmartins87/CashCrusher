@@ -111,11 +111,18 @@ When f$cc_turn_delayed_cbet_source_jhigh_onecard_fd Return false Force
 When nsuitedcommon >= 4 Return true Force
 When Others Return false Force
 
-// Purpose: source two-broadway current board test used by the final zombie rule.
-// On Turn this is flop broadway count plus the Turn broadway card.
-// Source/Provenance: T/A exact Turn projection of `f$board_2BW`.
+// Purpose: exact count of broadway public cards on flop/turn/river.
+// Source/Provenance: T/A mechanical reconstruction supporting `f$board_2BW`.
+##f$cc_turn_delayed_cbet_source_board_broadway_count##
+f$cc_flop_broadway_count +
+(((IsTurn || IsRiver) && TurnCard >= 10) ? 1 : 0) +
+((IsRiver && RiverCard >= 10) ? 1 : 0)
+
+// Purpose: exact legacy `f$board_2BW`: precisely two broadway public cards, not
+// "two or more". This distinction matters to the final zombie rule.
+// Source/Provenance: T/A source-equivalent current-board projection.
 ##f$cc_turn_delayed_cbet_source_board_2bw##
-IsTurn && (f$cc_flop_broadway_count + ((TurnCard >= 10) ? 1 : 0)) >= 2
+f$cc_turn_delayed_cbet_source_board_broadway_count = 2
 
 // Purpose: exact legacy zombie gate. Board pattern tokens are native OpenPPL
 // pattern syntax carried directly from the mature source.
