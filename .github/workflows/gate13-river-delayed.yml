@@ -1,0 +1,35 @@
+name: Gate13 River Delayed
+
+on:
+  push:
+    branches: [gate-00-context-engine]
+    paths:
+      - 'src/CashCrusher_River_Delayed*.txt'
+      - 'src/CashCrusher_Turn_DelayedCBet_ActionHistory.txt'
+      - 'tools/test_river_delayed_*.py'
+      - 'tools/test_turn_delayed_cbet_action_history.py'
+      - '.github/workflows/gate13-river-delayed.yml'
+  pull_request:
+    paths:
+      - 'src/CashCrusher_River_Delayed*.txt'
+      - 'src/CashCrusher_Turn_DelayedCBet_ActionHistory.txt'
+      - 'tools/test_river_delayed_*.py'
+      - 'tools/test_turn_delayed_cbet_action_history.py'
+      - '.github/workflows/gate13-river-delayed.yml'
+
+jobs:
+  gate13:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Lint f$cc dependencies
+        run: python tools/lint_custom_dependencies.py
+      - name: Test Gate12A closed action provenance
+        run: python tools/test_turn_delayed_cbet_action_history.py
+      - name: Test Gate13 exact Framework ownership
+        run: python tools/test_river_delayed_history.py
+      - name: Test Gate13 native direct-source checkpoint
+        run: python tools/test_river_delayed_native_source.py
