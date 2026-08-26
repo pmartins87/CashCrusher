@@ -14,26 +14,38 @@
 //   P = naming adapter only.
 // ============================================================================
 
-// Current contribution-aware value tiers.
+// Purpose: current contribution-aware 2P+ tier.
+// Source/Provenance: T/A alias to the audited Gate12A mechanical hierarchy.
 ##f$cc_turn_delayed_float_two_pair_plus_real##
 f$cc_turn_delayed_cbet_two_pair_plus_real
 
+// Purpose: current real TP/OP tier below 2P+.
+// Source/Provenance: T/A alias to the audited Gate12A mechanical hierarchy.
 ##f$cc_turn_delayed_float_tpop_real##
 f$cc_turn_delayed_cbet_tpop_real
 
+// Purpose: current second-pair/pocket tier below TP.
+// Source/Provenance: T/A alias to the audited Gate12A mechanical hierarchy.
 ##f$cc_turn_delayed_float_second_pair##
 f$cc_turn_delayed_cbet_second_pair
 
+// Purpose: current third-pair/pocket tier below second pair.
+// Source/Provenance: T/A alias to the audited Gate12A mechanical hierarchy.
 ##f$cc_turn_delayed_float_third_pair##
 f$cc_turn_delayed_cbet_third_pair
 
+// Purpose: current source-compatible no-made state.
+// Source/Provenance: T/A alias to the audited Gate12A mechanical hierarchy.
 ##f$cc_turn_delayed_float_no_made##
 f$cc_turn_delayed_cbet_no_made
 
-// Current Turn completion and source draw-safety.
+// Purpose: source Turn completion = straight or flush possible.
+// Source/Provenance: T/A alias to audited Gate12A source translation.
 ##f$cc_turn_delayed_float_turn_completed##
 f$cc_turn_delayed_cbet_turn_completed
 
+// Purpose: exact legacy dead/zombie draw-safety gate.
+// Source/Provenance: T/A alias to audited Gate12A source translation.
 ##f$cc_turn_delayed_float_source_draw_live_safe##
 f$cc_turn_delayed_cbet_source_draw_live_safe
 
@@ -49,11 +61,13 @@ f$cc_turn_delayed_float_no_made &&
 f$cc_turn_delayed_float_real_gutshot_plus &&
 f$cc_turn_delayed_float_source_draw_live_safe
 
-// Source-size aliases. IDs retain Gate12A normalization semantics; only 50/75
-// are currently consumed by the first direct 12B source descendant.
+// Purpose: exact source half-pot strategic size ID.
+// Source/Provenance: T/A alias to Gate12A normalized source size.
 ##f$cc_turn_delayed_float_size_50_id##
 f$cc_turn_delayed_cbet_size_50_id
 
+// Purpose: exact source three-quarter-pot strategic size ID.
+// Source/Provenance: T/A alias to Gate12A normalized source size.
 ##f$cc_turn_delayed_float_size_75_id##
 f$cc_turn_delayed_cbet_size_75_id
 
