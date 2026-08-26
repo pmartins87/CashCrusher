@@ -1,0 +1,52 @@
+// ============================================================================
+// CashCrusher_Turn_DelayedCBet_3W_BlindsVBTN_Check.txt
+// Gate 12A.10 — native 3w blind versus BTN+other-blind reviewed CHECK
+// ============================================================================
+// Purpose:
+//   Close the remaining native true-multiway blind-initiative delayed-CBet node
+//   without inventing a betting tree. The supplied Starting Strategy contains no
+//   Hero-initiative delayed-CBet family for `3wBlinds_vBTN`; mature DeepCrusher
+//   makes that boundary executable with scenario-wide `Return false`.
+//
+// Provenance:
+//   T = exact three-player field, Hero blind position and CLOSED flop X/X/X.
+//   A = mature explicit negative source boundary for this source-silent family.
+//   P = routing/coverage metadata only; no professional bet frequency is added.
+// ============================================================================
+
+// Purpose: exact three-handed flop with BTN plus the other blind still live, Hero
+// in SB/BB, real initiative, and an actual full-field flop check-through.
+// Source/Provenance: T/A canonical reconstruction of `f$game_3wBlinds_vBTN`
+// intersected with Gate12A ownership/history.
+##f$cc_turn_delayed_cbet_3w_blindsvbtn_context##
+f$cc_turn_delayed_cbet_base_opportunity &&
+f$cc_deal_size = 3 &&
+f$cc_flop_entry_count = 3 &&
+f$cc_multiway &&
+(f$cc_hero_pos_id = 5 || f$cc_hero_pos_id = 6)
+
+// Purpose: preserve the mature scenario-wide negative action.
+// Source/Provenance: A explicit `When f$game_3wBlinds_vBTN Return false Force`;
+// source silence is represented as a reviewed CHECK, not converted into a bet.
+##f$cc_turn_delayed_cbet_3w_blindsvbtn_action##
+false
+
+// Purpose: reviewed CHECK owns no bet size.
+// Source/Provenance: P safety normalization of the explicit negative action.
+##f$cc_turn_delayed_cbet_3w_blindsvbtn_size_id##
+0
+
+// Purpose: whole exact native scenario is reviewed by its explicit false fallback.
+// Source/Provenance: A mature negative coverage boundary.
+##f$cc_turn_delayed_cbet_3w_blindsvbtn_covered##
+f$cc_turn_delayed_cbet_3w_blindsvbtn_context
+
+// Purpose: local CHECK/size integrity.
+// Source/Provenance: P deterministic safety invariant.
+##f$cc_turn_delayed_cbet_3w_blindsvbtn_size_consistent##
+!f$cc_turn_delayed_cbet_3w_blindsvbtn_action &&
+f$cc_turn_delayed_cbet_3w_blindsvbtn_size_id = 0
+
+// ============================================================================
+// End Gate12A.10 native 3wBlinds-v-BTN reviewed CHECK.
+// ============================================================================
