@@ -177,3 +177,5 @@ jobs:
         run: python tools/test_turn_delayed_cbet_sbvbb.py
       - name: Test reviewed 3wBTNv2p Turn Delayed CBet gap
         run: python tools/test_turn_delayed_cbet_btnv2p.py
+      - name: Test native 3wBlinds-v-BTN Turn Delayed CBet check
+        run: python tools/test_turn_delayed_cbet_blindsvbtn.py
