@@ -5,24 +5,29 @@
 // Current reviewed children:
 //   1 = direct true-HU HUSB source tree;
 //   2 = direct true-HU HUBB source tree;
-//   3 = direct native 3wBTNvBB source tree.
+//   3 = direct native 3wBTNvBB source tree;
+//   4 = direct native 3wBTNvSB source tree;
+//   5 = direct native 3wBBvSB source tree, except explicit dead/zombie gap.
 //
 // Explicitly pending:
-//   3wBTNvSB, 3wBBvSB, 3wSBvBB, native BTN-v-two-player TBP gap, 4-6h SRP,
-//   ISO, plain-3BP/squeeze, clean4BP, runtime and Gate13 River delayed plans.
+//   3wBBvSB completed-draw dead/zombie translation, 3wSBvBB, native BTN-v-two-
+//   player source-silence topology, 4-6h SRP, ISO, plain-3BP/squeeze, clean4BP,
+//   runtime and Gate13 River delayed plans.
 //
 // Rule:
 //   Gate12A ownership never grants a bet by itself. Unknown initiative descendants
 //   check/fail closed until source or professional adaptation is audited.
 // ============================================================================
 
-// Purpose: compact reviewed family ID: 1 HUSB, 2 HUBB, 3 native 3wBTNvBB.
+// Purpose: compact reviewed family ID.
 // Source/Provenance: P routing metadata over T/A direct-source children.
 ##f$cc_turn_delayed_cbet_family_id##
 When !f$cc_turn_delayed_cbet_base_opportunity Return 0 Force
 When f$cc_turn_delayed_cbet_husb_source_context Return 1 Force
 When f$cc_turn_delayed_cbet_hubb_source_context Return 2 Force
 When f$cc_turn_delayed_cbet_3w_btnvbb_source_context Return 3 Force
+When f$cc_turn_delayed_cbet_3w_btnvsb_source_covered Return 4 Force
+When f$cc_turn_delayed_cbet_3w_bbvsb_source_covered Return 5 Force
 When Others Return 0 Force
 
 // Purpose: canonical source-first Turn Delayed-CBet action.
@@ -32,6 +37,8 @@ When !f$cc_turn_delayed_cbet_base_opportunity Return false Force
 When f$cc_turn_delayed_cbet_husb_source_context Return f$cc_turn_delayed_cbet_husb_source_action Force
 When f$cc_turn_delayed_cbet_hubb_source_context Return f$cc_turn_delayed_cbet_hubb_source_action Force
 When f$cc_turn_delayed_cbet_3w_btnvbb_source_context Return f$cc_turn_delayed_cbet_3w_btnvbb_source_action Force
+When f$cc_turn_delayed_cbet_3w_btnvsb_source_covered Return f$cc_turn_delayed_cbet_3w_btnvsb_source_action Force
+When f$cc_turn_delayed_cbet_3w_bbvsb_source_covered Return f$cc_turn_delayed_cbet_3w_bbvsb_source_action Force
 When Others Return false Force
 
 // Purpose: paired strategic size ID; action false/uncovered ->0.
@@ -41,36 +48,45 @@ When !f$cc_turn_delayed_cbet_base_opportunity Return 0 Force
 When f$cc_turn_delayed_cbet_husb_source_context Return f$cc_turn_delayed_cbet_husb_source_size_id Force
 When f$cc_turn_delayed_cbet_hubb_source_context Return f$cc_turn_delayed_cbet_hubb_source_size_id Force
 When f$cc_turn_delayed_cbet_3w_btnvbb_source_context Return f$cc_turn_delayed_cbet_3w_btnvbb_source_size_id Force
+When f$cc_turn_delayed_cbet_3w_btnvsb_source_covered Return f$cc_turn_delayed_cbet_3w_btnvsb_source_size_id Force
+When f$cc_turn_delayed_cbet_3w_bbvsb_source_covered Return f$cc_turn_delayed_cbet_3w_bbvsb_source_size_id Force
 When Others Return 0 Force
 
 // Purpose: currently reviewed direct-source states, including explicit source checks.
 // Source/Provenance: P coverage metadata; does not widen ownership.
 ##f$cc_turn_delayed_cbet_strategy_covered##
-f$cc_turn_delayed_cbet_core_source_covered
+f$cc_turn_delayed_cbet_core_source_covered ||
+f$cc_turn_delayed_cbet_3w_extra_source_covered
 
-// Purpose: legal initiative + X/X opportunity awaiting audited strategy.
-// Source/Provenance: P fail-closed gap metadata.
+// Purpose: legal initiative + X/X opportunity awaiting audited strategy. This
+// includes the exact 3wBBvSB completed-draw dead/zombie translation gap.
+// Source/Provenance: P/X fail-closed gap metadata.
 ##f$cc_turn_delayed_cbet_uncovered_context##
 f$cc_turn_delayed_cbet_base_opportunity && !f$cc_turn_delayed_cbet_strategy_covered
 
-// Purpose: action/size integrity for current five-ID source palette.
+// Purpose: action/size integrity for current five-ID source size palette.
 // Source/Provenance: P safety invariant.
 ##f$cc_turn_delayed_cbet_size_consistent##
 When !f$cc_turn_delayed_cbet_router Return f$cc_turn_delayed_cbet_size_id = 0 Force
 When f$cc_turn_delayed_cbet_router Return f$cc_turn_delayed_cbet_size_id >= 1 && f$cc_turn_delayed_cbet_size_id <= 5 Force
 When Others Return false Force
 
-// Purpose: current source family exclusivity.
+// Purpose: current source family exclusivity. The BBvSB pending draw state is not
+// counted as a strategic owner until its source safety translation is certified.
 // Source/Provenance: P deterministic owner count.
 ##f$cc_turn_delayed_cbet_child_owner_count##
 (f$cc_turn_delayed_cbet_husb_source_context ? 1 : 0) +
 (f$cc_turn_delayed_cbet_hubb_source_context ? 1 : 0) +
-(f$cc_turn_delayed_cbet_3w_btnvbb_source_context ? 1 : 0)
+(f$cc_turn_delayed_cbet_3w_btnvbb_source_context ? 1 : 0) +
+(f$cc_turn_delayed_cbet_3w_btnvsb_source_covered ? 1 : 0) +
+(f$cc_turn_delayed_cbet_3w_bbvsb_source_covered ? 1 : 0)
 
 // Purpose: top-level history/owner/size consistency.
 // Source/Provenance: P safety composition.
 ##f$cc_turn_delayed_cbet_router_consistent##
 When !f$cc_turn_delayed_cbet_history_consistent Return false Force
+When !f$cc_turn_delayed_cbet_core_source_size_consistent Return false Force
+When !f$cc_turn_delayed_cbet_3w_extra_size_consistent Return false Force
 When f$cc_turn_delayed_cbet_strategy_covered && f$cc_turn_delayed_cbet_child_owner_count != 1 Return false Force
 When !f$cc_turn_delayed_cbet_strategy_covered && f$cc_turn_delayed_cbet_family_id != 0 Return false Force
 When f$cc_turn_delayed_cbet_strategy_covered && f$cc_turn_delayed_cbet_family_id <= 0 Return false Force
@@ -78,5 +94,5 @@ When !f$cc_turn_delayed_cbet_size_consistent Return false Force
 When Others Return true Force
 
 // ============================================================================
-// End Gate12A source-first foundation router.
+// End Gate12A source-first router through native 3wBBvSB.
 // ============================================================================
