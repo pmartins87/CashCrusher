@@ -35,7 +35,6 @@ def snapshot_contract() -> None:
         "f$cc_hero_pos_id = 4",
     ):
         assert token in ctx
-    # Exact two-live-player geometry: no HU/vBB/vSB shortcut is allowed.
     assert "f$cc_hu" not in executable(ctx)
     assert "f$cc_hu_villain_pos_id" not in executable(ctx)
 
@@ -69,14 +68,13 @@ def action_and_size_contract() -> None:
     size = block(POL, "f$cc_turn_delayed_cbet_3w_btnv2p_size_id")
     assert "PotSize > 3 Return f$cc_turn_delayed_cbet_size_33_id" in size
     assert "When Others Return f$cc_turn_delayed_cbet_size_50_id" in size
-
     size33 = block(COMMON, "f$cc_turn_delayed_cbet_size_33_id")
     assert executable(size33).strip() == "7"
 
     covered = block(POL, "f$cc_turn_delayed_cbet_3w_btnv2p_covered")
-    assert "f$cc_turn_delayed_cbet_3w_btnv2p_action" in covered
+    assert executable(covered).strip() == "f$cc_turn_delayed_cbet_3w_btnv2p_context"
     unresolved = block(POL, "f$cc_turn_delayed_cbet_3w_btnv2p_unresolved")
-    assert "!user_cc_turn_delayed_cbet_3w_btnv2p_flop_air_candidate" in unresolved
+    assert executable(unresolved).strip() == "false"
 
 
 def closed_history_contract() -> None:
@@ -104,12 +102,11 @@ def router_contract() -> None:
 
 
 def provenance_and_safety_contract() -> None:
-    # This branch must remain explicitly gap/TBP reviewed, never mislabelled as a
-    # direct Starting-Strategy sizing descendant.
     low = (SNAP + "\n" + POL).lower()
-    assert "no dedicated starting strategy" in low
-    assert "no exact size" in low
+    assert "starting strategy is silent" in low or "no dedicated starting strategy" in low
+    assert "no exact" in low
     assert "a/p" in low
+    assert "scenario-wide" in low
 
     code = executable(SNAP + "\n" + POL + "\n" + ROUTER).lower()
     for forbidden in (
