@@ -187,3 +187,7 @@ jobs:
         run: python tools/test_turn_delayed_cbet_3bp.py
       - name: Test clean 4-6h HU 4BP Turn Delayed CBet adaptation
         run: python tools/test_turn_delayed_cbet_4bp.py
+      - name: Test canonical Turn Delayed CBet coverage boundary
+        run: python tools/test_turn_delayed_cbet_coverage.py
+      - name: Test Turn Delayed CBet runtime sizing and stack geometry
+        run: python tools/test_turn_delayed_cbet_runtime.py
