@@ -183,3 +183,5 @@ jobs:
         run: python tools/test_turn_delayed_cbet_srp6.py
       - name: Test isolation-pot Turn Delayed CBet adaptation
         run: python tools/test_turn_delayed_cbet_iso.py
+      - name: Test 4-6h plain3BP and squeeze Turn Delayed CBet adaptation
+        run: python tools/test_turn_delayed_cbet_3bp.py
