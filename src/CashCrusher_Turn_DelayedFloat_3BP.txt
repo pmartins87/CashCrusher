@@ -1,0 +1,230 @@
+// ============================================================================
+// CashCrusher_Turn_DelayedFloat_3BP.txt
+// Gate 12B.8 — 4-6h plain-3BP and squeeze Turn Delayed-Float adaptation
+// ============================================================================
+// Purpose:
+//   Continue only deliberate Gate04 caller-side 3BP/squeeze check-backs after the
+//   final 3bettor and all other players check the Turn again. Plain 3BP and
+//   squeeze remain distinct range families.
+//
+// Source boundary:
+//   DeepCrusher has no dedicated deep-stack 3BP/squeeze Delayed-Float tree.
+//   Strategy below is P-heavy and uses no Spin stackoff implication.
+//
+// Provenance:
+//   T/A = exact Gate04 family snapshot, preflop role chronology and CLOSED X/X.
+//   P = deterministic lower-SPR six-max delayed-stab policy.
+// ============================================================================
+
+// Purpose: 4-6h reviewed plain-3BP check-back parent.
+// Source/Provenance: T/A exact Gate04 family and caller-role domain.
+##f$cc_turn_delayed_float_plain3bp_context##
+f$cc_turn_delayed_float_base_opportunity &&
+f$cc_turn_delayed_float_gate04_checkback_valid &&
+f$cc_turn_delayed_float_gate04_family_id = 4 &&
+f$cc_deal_size >= 4 && f$cc_deal_size <= 6 &&
+f$cc_pot_family_id = 3 &&
+(f$cc_pf_role_open_call_3bet || f$cc_pf_role_cold_call_3bet)
+
+// Purpose: 4-6h reviewed squeeze check-back parent.
+// Source/Provenance: T/A exact Gate04 family and squeeze chronology.
+##f$cc_turn_delayed_float_squeeze_context##
+f$cc_turn_delayed_float_base_opportunity &&
+f$cc_turn_delayed_float_gate04_checkback_valid &&
+f$cc_turn_delayed_float_gate04_family_id = 5 &&
+f$cc_deal_size >= 4 && f$cc_deal_size <= 6 &&
+f$cc_pot_family_id = 3 &&
+f$cc_pf_squeeze_proven &&
+(f$cc_pf_role_open_call_3bet || f$cc_pf_role_cold_call_3bet)
+
+// Purpose: plain-3BP HU parent.
+// Source/Provenance: T current field split over reviewed family.
+##f$cc_turn_delayed_float_plain3bp_hu_context##
+f$cc_turn_delayed_float_plain3bp_context && f$cc_hu
+
+// Purpose: plain-3BP current multiway parent.
+// Source/Provenance: T current field split over reviewed family.
+##f$cc_turn_delayed_float_plain3bp_mw_context##
+f$cc_turn_delayed_float_plain3bp_context && f$cc_multiway
+
+// Purpose: squeeze HU parent.
+// Source/Provenance: T current field split over reviewed family.
+##f$cc_turn_delayed_float_squeeze_hu_context##
+f$cc_turn_delayed_float_squeeze_context && f$cc_hu
+
+// Purpose: squeeze current multiway parent.
+// Source/Provenance: T current field split over reviewed family.
+##f$cc_turn_delayed_float_squeeze_mw_context##
+f$cc_turn_delayed_float_squeeze_context && f$cc_multiway
+
+// Purpose: plain-3BP HU thin second-pair protection on a calm undercard. Require
+// saved lower pair so a flop TP degraded by a Turn overcard is not auto-bet.
+// Source/Provenance: P condensed-range thin-value filter.
+##f$cc_turn_delayed_float_plain3bp_secondpair_thin##
+f$cc_turn_delayed_float_plain3bp_hu_context &&
+f$cc_turn_delayed_float_second_pair &&
+f$cc_turn_delayed_float_flop_had_lower_pair &&
+f$cc_turn_undercard &&
+f$cc_turn_delayed_float_thin_value_runout
+
+// Purpose: plain-3BP HU pure-air delayed bluff. Only opener-call/caller range air
+// saved by Gate04 and a credible non-completing pressure overcard may fire.
+// Source/Provenance: P professional lower-SPR delayed-stab selection.
+##f$cc_turn_delayed_float_plain3bp_air_bluff##
+f$cc_turn_delayed_float_plain3bp_hu_context &&
+f$cc_turn_delayed_float_no_made &&
+f$cc_turn_delayed_float_flop_had_air &&
+f$cc_turn_delayed_float_bluff_pressure_card
+
+// Purpose: plain-3BP HU delayed action.
+// Source/Provenance: P professional condensed-range fill over exact T/A history.
+##f$cc_turn_delayed_float_plain3bp_hu_action##
+When !f$cc_turn_delayed_float_plain3bp_hu_context Return false Force
+When f$cc_turn_delayed_float_two_pair_plus_real Return true Force
+When f$cc_turn_delayed_float_tpop_real && f$cc_turn_delayed_float_thin_value_runout Return true Force
+When f$cc_turn_delayed_float_tpop_real Return false Force
+When f$cc_turn_delayed_float_plain3bp_secondpair_thin Return true Force
+When f$cc_turn_delayed_float_second_pair || f$cc_turn_delayed_float_third_pair Return false Force
+When f$cc_turn_delayed_float_semibluff_candidate Return true Force
+When f$cc_turn_delayed_float_plain3bp_air_bluff Return true Force
+When Others Return false Force
+
+// Purpose: plain-3BP HU size map.
+// Source/Provenance: P lower-SPR 33/50/75 map; no all-in authorization.
+##f$cc_turn_delayed_float_plain3bp_hu_size_id##
+When !f$cc_turn_delayed_float_plain3bp_hu_action Return 0 Force
+When f$cc_turn_delayed_float_two_pair_plus_real Return f$cc_turn_delayed_float_size_75_id Force
+When f$cc_turn_delayed_float_tpop_real Return f$cc_turn_delayed_float_size_50_id Force
+When f$cc_turn_delayed_float_plain3bp_secondpair_thin Return f$cc_turn_delayed_float_size_33_id Force
+When f$cc_turn_delayed_float_semibluff_candidate Return f$cc_turn_delayed_float_size_50_id Force
+When f$cc_turn_delayed_float_plain3bp_air_bluff Return f$cc_turn_delayed_float_size_33_id Force
+When Others Return 0 Force
+
+// Purpose: squeeze HU delayed action. Squeeze continuation ranges are more
+// condensed: pure air and thin second-pair stabs are deliberately absent.
+// Source/Provenance: P conservative selected-range professional fill.
+##f$cc_turn_delayed_float_squeeze_hu_action##
+When !f$cc_turn_delayed_float_squeeze_hu_context Return false Force
+When f$cc_turn_delayed_float_two_pair_plus_real Return true Force
+When f$cc_turn_delayed_float_tpop_real && f$cc_turn_delayed_float_thin_value_runout Return true Force
+When f$cc_turn_delayed_float_tpop_real Return false Force
+When f$cc_turn_delayed_float_second_pair || f$cc_turn_delayed_float_third_pair Return false Force
+When f$cc_turn_delayed_float_semibluff_candidate Return true Force
+When Others Return false Force
+
+// Purpose: squeeze HU size map.
+// Source/Provenance: P selected-range 50/75 map.
+##f$cc_turn_delayed_float_squeeze_hu_size_id##
+When !f$cc_turn_delayed_float_squeeze_hu_action Return 0 Force
+When f$cc_turn_delayed_float_two_pair_plus_real Return f$cc_turn_delayed_float_size_75_id Force
+When f$cc_turn_delayed_float_tpop_real Return f$cc_turn_delayed_float_size_50_id Force
+When f$cc_turn_delayed_float_semibluff_candidate Return f$cc_turn_delayed_float_size_50_id Force
+When Others Return 0 Force
+
+// Purpose: exact-threeway plain-3BP delayed state.
+// Source/Provenance: P field-size tightening over T player count.
+##f$cc_turn_delayed_float_plain3bp_exact_threeway##
+f$cc_turn_delayed_float_plain3bp_mw_context && nplayersplaying = 3
+
+// Purpose: exact-threeway squeeze delayed state.
+// Source/Provenance: P field-size tightening over T player count.
+##f$cc_turn_delayed_float_squeeze_exact_threeway##
+f$cc_turn_delayed_float_squeeze_mw_context && nplayersplaying = 3
+
+// Purpose: plain-3BP multiway delayed action. Only 2P+, calm exact-threeway
+// TP/OP and safe exact-threeway combo draws bet. Pure air is absent.
+// Source/Provenance: P conservative lower-SPR multiway fill.
+##f$cc_turn_delayed_float_plain3bp_mw_action##
+When !f$cc_turn_delayed_float_plain3bp_mw_context Return false Force
+When f$cc_turn_delayed_float_two_pair_plus_real Return true Force
+When f$cc_turn_delayed_float_plain3bp_exact_threeway && f$cc_turn_delayed_float_tpop_real && f$cc_turn_delayed_float_thin_value_runout Return true Force
+When f$cc_turn_delayed_float_tpop_real Return false Force
+When f$cc_turn_delayed_float_plain3bp_exact_threeway && f$cc_turn_delayed_float_no_made && f$cc_real_combo_draw && f$cc_turn_delayed_float_source_draw_live_safe Return true Force
+When Others Return false Force
+
+// Purpose: plain-3BP multiway size map.
+// Source/Provenance: P 50/75 robust-value/equity sizing.
+##f$cc_turn_delayed_float_plain3bp_mw_size_id##
+When !f$cc_turn_delayed_float_plain3bp_mw_action Return 0 Force
+When f$cc_turn_delayed_float_two_pair_plus_real Return f$cc_turn_delayed_float_size_75_id Force
+When f$cc_turn_delayed_float_tpop_real Return f$cc_turn_delayed_float_size_50_id Force
+When f$cc_real_combo_draw Return f$cc_turn_delayed_float_size_50_id Force
+When Others Return 0 Force
+
+// Purpose: squeeze multiway delayed action. Exact-threeway calm TP/OP remains a
+// value candidate; combo-draw semibluff is retained only exact threeway.
+// Source/Provenance: P conservative squeeze multiway fill.
+##f$cc_turn_delayed_float_squeeze_mw_action##
+When !f$cc_turn_delayed_float_squeeze_mw_context Return false Force
+When f$cc_turn_delayed_float_two_pair_plus_real Return true Force
+When f$cc_turn_delayed_float_squeeze_exact_threeway && f$cc_turn_delayed_float_tpop_real && f$cc_turn_delayed_float_thin_value_runout Return true Force
+When f$cc_turn_delayed_float_tpop_real Return false Force
+When f$cc_turn_delayed_float_squeeze_exact_threeway && f$cc_turn_delayed_float_no_made && f$cc_real_combo_draw && f$cc_turn_delayed_float_source_draw_live_safe Return true Force
+When Others Return false Force
+
+// Purpose: squeeze multiway size map.
+// Source/Provenance: P 50/75 robust-value/equity sizing.
+##f$cc_turn_delayed_float_squeeze_mw_size_id##
+When !f$cc_turn_delayed_float_squeeze_mw_action Return 0 Force
+When f$cc_turn_delayed_float_two_pair_plus_real Return f$cc_turn_delayed_float_size_75_id Force
+When f$cc_turn_delayed_float_tpop_real Return f$cc_turn_delayed_float_size_50_id Force
+When f$cc_real_combo_draw Return f$cc_turn_delayed_float_size_50_id Force
+When Others Return 0 Force
+
+// Purpose: plain-3BP family dispatcher.
+// Source/Provenance: P exact current-field routing.
+##f$cc_turn_delayed_float_plain3bp_action##
+When f$cc_turn_delayed_float_plain3bp_hu_context Return f$cc_turn_delayed_float_plain3bp_hu_action Force
+When f$cc_turn_delayed_float_plain3bp_mw_context Return f$cc_turn_delayed_float_plain3bp_mw_action Force
+When Others Return false Force
+
+// Purpose: plain-3BP paired size dispatcher.
+// Source/Provenance: P exact owner; check/outside ->0.
+##f$cc_turn_delayed_float_plain3bp_size_id##
+When f$cc_turn_delayed_float_plain3bp_hu_context Return f$cc_turn_delayed_float_plain3bp_hu_size_id Force
+When f$cc_turn_delayed_float_plain3bp_mw_context Return f$cc_turn_delayed_float_plain3bp_mw_size_id Force
+When Others Return 0 Force
+
+// Purpose: squeeze family dispatcher.
+// Source/Provenance: P exact current-field routing.
+##f$cc_turn_delayed_float_squeeze_action##
+When f$cc_turn_delayed_float_squeeze_hu_context Return f$cc_turn_delayed_float_squeeze_hu_action Force
+When f$cc_turn_delayed_float_squeeze_mw_context Return f$cc_turn_delayed_float_squeeze_mw_action Force
+When Others Return false Force
+
+// Purpose: squeeze paired size dispatcher.
+// Source/Provenance: P exact owner; check/outside ->0.
+##f$cc_turn_delayed_float_squeeze_size_id##
+When f$cc_turn_delayed_float_squeeze_hu_context Return f$cc_turn_delayed_float_squeeze_hu_size_id Force
+When f$cc_turn_delayed_float_squeeze_mw_context Return f$cc_turn_delayed_float_squeeze_mw_size_id Force
+When Others Return 0 Force
+
+// Purpose: report reviewed plain-3BP coverage.
+// Source/Provenance: P coverage metadata over exact T/A context.
+##f$cc_turn_delayed_float_plain3bp_covered##
+f$cc_turn_delayed_float_plain3bp_context
+
+// Purpose: report reviewed squeeze coverage.
+// Source/Provenance: P coverage metadata over exact T/A context.
+##f$cc_turn_delayed_float_squeeze_covered##
+f$cc_turn_delayed_float_squeeze_context
+
+// Purpose: plain-3BP local size integrity.
+// Source/Provenance: P fail-closed safety invariant.
+##f$cc_turn_delayed_float_plain3bp_size_consistent##
+When !f$cc_turn_delayed_float_plain3bp_covered Return f$cc_turn_delayed_float_plain3bp_size_id = 0 Force
+When f$cc_turn_delayed_float_plain3bp_covered && !f$cc_turn_delayed_float_plain3bp_action Return f$cc_turn_delayed_float_plain3bp_size_id = 0 Force
+When f$cc_turn_delayed_float_plain3bp_action Return f$cc_turn_delayed_float_plain3bp_size_id = f$cc_turn_delayed_float_size_33_id || f$cc_turn_delayed_float_plain3bp_size_id = f$cc_turn_delayed_float_size_50_id || f$cc_turn_delayed_float_plain3bp_size_id = f$cc_turn_delayed_float_size_75_id Force
+When Others Return false Force
+
+// Purpose: squeeze local size integrity.
+// Source/Provenance: P fail-closed safety invariant.
+##f$cc_turn_delayed_float_squeeze_size_consistent##
+When !f$cc_turn_delayed_float_squeeze_covered Return f$cc_turn_delayed_float_squeeze_size_id = 0 Force
+When f$cc_turn_delayed_float_squeeze_covered && !f$cc_turn_delayed_float_squeeze_action Return f$cc_turn_delayed_float_squeeze_size_id = 0 Force
+When f$cc_turn_delayed_float_squeeze_action Return f$cc_turn_delayed_float_squeeze_size_id = f$cc_turn_delayed_float_size_50_id || f$cc_turn_delayed_float_squeeze_size_id = f$cc_turn_delayed_float_size_75_id Force
+When Others Return false Force
+
+// ============================================================================
+// End Gate12B.8 3BP/squeeze adaptation.
+// ============================================================================
