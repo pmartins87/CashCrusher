@@ -59,7 +59,7 @@ def union_and_owner_contract() -> None:
 
     # HUSB is reviewed source-negative, not a fake positive strategy owner.
     assert "husb" not in executable(covered).lower()
-    assert block(HUSB, "f$cc_turn_delayed_float_husb_source_action").strip() == "false"
+    assert executable(block(HUSB, "f$cc_turn_delayed_float_husb_source_action")).strip() == "false"
 
     owners = block(R, "f$cc_turn_delayed_float_child_owner_count")
     assert owners.count("* 1") == 7
