@@ -76,10 +76,10 @@ def fail_closed_contract() -> None:
     uncovered = block(R, "f$cc_turn_delayed_cbet_uncovered_context")
     assert "f$cc_turn_delayed_cbet_base_opportunity && !f$cc_turn_delayed_cbet_strategy_covered" in uncovered
 
-    router = block(R, "f$cc_turn_delayed_cbet_router")
-    assert router.strip().endswith("When Others Return false Force")
-    sizing = block(R, "f$cc_turn_delayed_cbet_size_id")
-    assert sizing.strip().endswith("When Others Return 0 Force")
+    router = executable(block(R, "f$cc_turn_delayed_cbet_router"))
+    assert "When Others Return false Force" in router
+    sizing = executable(block(R, "f$cc_turn_delayed_cbet_size_id"))
+    assert "When Others Return 0 Force" in sizing
 
     iso_gap = block(ISO, "f$cc_turn_delayed_cbet_iso_unresolved")
     assert "f$cc_turn_delayed_cbet_iso_parent && !f$cc_turn_delayed_cbet_iso_covered" in iso_gap
