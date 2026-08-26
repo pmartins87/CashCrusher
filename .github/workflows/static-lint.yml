@@ -171,3 +171,5 @@ jobs:
         run: python tools/test_river_probe_runtime.py
       - name: Test core Turn Delayed CBet source contract
         run: python tools/test_turn_delayed_cbet_source_core.py
+      - name: Test native 3wBTNvSB and BBvSB Turn Delayed CBet source
+        run: python tools/test_turn_delayed_cbet_3w_source.py
