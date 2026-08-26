@@ -185,3 +185,5 @@ jobs:
         run: python tools/test_turn_delayed_cbet_iso.py
       - name: Test 4-6h plain3BP and squeeze Turn Delayed CBet adaptation
         run: python tools/test_turn_delayed_cbet_3bp.py
+      - name: Test clean 4-6h HU 4BP Turn Delayed CBet adaptation
+        run: python tools/test_turn_delayed_cbet_4bp.py
