@@ -1,0 +1,329 @@
+// ============================================================================
+// CashCrusher_Turn_DelayedCBet_ISO.txt
+// Gate 12A.12 — isolation-pot Turn Delayed-CBet adaptation
+// ============================================================================
+// Purpose:
+//   Handle a proven 3-6 handed isolation raiser who SKIPPED the flop CBet, the
+//   entire flop checked through, and now acts first on Turn with nothing to call.
+//
+// Source boundary:
+//   DeepCrusher/Crusher has no clean dedicated ISO Delayed-CBet range tree for
+//   these exact cash states. The source contributes only A-level architecture:
+//   initiative ownership, current-strength reclassification, IP/OOP separation,
+//   runout caution and protected checks. Exact actions/sizes below are P-heavy.
+//
+// Range provenance:
+//   original pre-raise limper != post-raise coldcaller. HU and current-multiway
+//   are separate owners. Because the flop was X/X...X, a HU Turn state cannot be
+//   postflop-reduced; any such topology fails closed before policy.
+//
+// Safety:
+//   no pure-air delayed barrel without an audited skipped-flop bluff snapshot;
+//   no random/HandPower/BetMax/commitment/stackoff shortcut;
+//   no ordinary-SRP fallback may inherit this ISO family.
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// DCISO.01 — exact ISO ownership / survivor provenance
+// -----------------------------------------------------------------------------
+
+// Purpose: proven multi-handed ISO raiser after canonical Gate12A flop X/X.
+// Source/Provenance: T exact Gate00/ISO chronology + Gate12A closed history;
+// P strategy domain because the source has no dedicated ISO delayed tree.
+##f$cc_turn_delayed_cbet_iso_parent##
+f$cc_turn_delayed_cbet_base_opportunity &&
+f$cc_deal_size >= 3 && f$cc_deal_size <= 6 &&
+f$cc_pot_family_id = 2 &&
+f$cc_pf_role_pfa &&
+f$cc_pf_iso_proven &&
+f$cc_pf_single_raiser_pos_id = f$cc_hero_pos_id
+
+// Purpose: ISO pot reduced to exactly one caller before flop; checked flop cannot
+// create postflop reduction.
+// Source/Provenance: T exact field/HU-origin geometry.
+##f$cc_turn_delayed_cbet_iso_hu_context##
+f$cc_turn_delayed_cbet_iso_parent &&
+f$cc_flop_entry_count = 2 &&
+f$cc_hu &&
+f$cc_hu_origin_preflop_reduced
+
+// Purpose: HU opponent is proven original pre-raise limper.
+// Source/Provenance: T/A exact persisted limper mask from Gate01E context.
+##f$cc_turn_delayed_cbet_iso_hu_limper##
+f$cc_turn_delayed_cbet_iso_hu_context &&
+f$cc_hu_iso_villain_was_limper &&
+!f$cc_hu_iso_villain_was_postraise_coldcaller
+
+// Purpose: HU opponent is proven post-raise coldcaller.
+// Source/Provenance: T/A exact persisted post-raise caller mask.
+##f$cc_turn_delayed_cbet_iso_hu_coldcaller##
+f$cc_turn_delayed_cbet_iso_hu_context &&
+f$cc_hu_iso_villain_was_postraise_coldcaller &&
+!f$cc_hu_iso_villain_was_limper
+
+// Purpose: exact coherent HU survivor family; unknown/contradictory masks fail closed.
+// Source/Provenance: P safety partition over T exact provenance.
+##f$cc_turn_delayed_cbet_iso_hu_supported##
+f$cc_turn_delayed_cbet_iso_hu_limper ||
+f$cc_turn_delayed_cbet_iso_hu_coldcaller
+
+// Purpose: 3+ players remain after the checked-through flop.
+// Source/Provenance: T field geometry + P distinct multiway owner.
+##f$cc_turn_delayed_cbet_iso_mw_context##
+f$cc_turn_delayed_cbet_iso_parent &&
+f$cc_flop_entry_count >= 3 &&
+f$cc_multiway
+
+// Purpose: current live original-limper count in the ISO multiway field.
+// Source/Provenance: T exact persisted/current mask intersection from Gate01E.
+##f$cc_turn_delayed_cbet_iso_mw_limper_count##
+When !f$cc_turn_delayed_cbet_iso_mw_context Return 0 Force
+When Others Return f$cc_mw_iso_live_limper_count Force
+
+// Purpose: current live post-raise-coldcaller count.
+// Source/Provenance: T exact persisted/current mask intersection.
+##f$cc_turn_delayed_cbet_iso_mw_coldcaller_count##
+When !f$cc_turn_delayed_cbet_iso_mw_context Return 0 Force
+When Others Return f$cc_mw_iso_live_postraise_coldcaller_count Force
+
+// Purpose: all current opponents have exactly one proven range origin.
+// Source/Provenance: P fail-closed completeness check over T masks.
+##f$cc_turn_delayed_cbet_iso_mw_origin_complete##
+f$cc_turn_delayed_cbet_iso_mw_context &&
+(f$cc_turn_delayed_cbet_iso_mw_limper_count + f$cc_turn_delayed_cbet_iso_mw_coldcaller_count) = (nplayersplaying - 1)
+
+// Purpose: classify current ISO field: 1 all limpers | 2 mixed | 3 all coldcallers.
+// Source/Provenance: P range-composition metadata over T exact masks.
+##f$cc_turn_delayed_cbet_iso_mw_comp_id##
+When !f$cc_turn_delayed_cbet_iso_mw_origin_complete Return 0 Force
+When f$cc_turn_delayed_cbet_iso_mw_limper_count = (nplayersplaying - 1) && f$cc_turn_delayed_cbet_iso_mw_coldcaller_count = 0 Return 1 Force
+When f$cc_turn_delayed_cbet_iso_mw_limper_count > 0 && f$cc_turn_delayed_cbet_iso_mw_coldcaller_count > 0 Return 2 Force
+When f$cc_turn_delayed_cbet_iso_mw_limper_count = 0 && f$cc_turn_delayed_cbet_iso_mw_coldcaller_count = (nplayersplaying - 1) Return 3 Force
+When Others Return 0 Force
+
+// Purpose: coherent current-multiway ISO family.
+// Source/Provenance: P safety gate; no unknown range origin is admitted.
+##f$cc_turn_delayed_cbet_iso_mw_supported##
+f$cc_turn_delayed_cbet_iso_mw_origin_complete &&
+f$cc_turn_delayed_cbet_iso_mw_comp_id >= 1 &&
+f$cc_turn_delayed_cbet_iso_mw_comp_id <= 3
+
+// Purpose: all surviving opponents are original limp-call ranges.
+// Source/Provenance: P alias over exact composition metadata.
+##f$cc_turn_delayed_cbet_iso_mw_all_limpers##
+f$cc_turn_delayed_cbet_iso_mw_supported && f$cc_turn_delayed_cbet_iso_mw_comp_id = 1
+
+// Purpose: all surviving opponents are post-raise coldcall ranges.
+// Source/Provenance: P alias over exact composition metadata.
+##f$cc_turn_delayed_cbet_iso_mw_all_coldcallers##
+f$cc_turn_delayed_cbet_iso_mw_supported && f$cc_turn_delayed_cbet_iso_mw_comp_id = 3
+
+// -----------------------------------------------------------------------------
+// DCISO.02 — current-strength / runout vocabulary
+// -----------------------------------------------------------------------------
+
+// Purpose: exact contributed current two pair below stronger value.
+// Source/Provenance: T/A contribution-aware current hand reconstruction.
+##f$cc_turn_delayed_cbet_iso_exact_two_pair##
+IsTurn && HaveTwoPair && !TwoPairOnBoard && npcbits > 0
+
+// Purpose: robust 2P+ value above exact two pair.
+// Source/Provenance: A portable current-strength ladder; P downstream policy.
+##f$cc_turn_delayed_cbet_iso_strong_value##
+f$cc_turn_delayed_cbet_two_pair_plus_real &&
+!f$cc_turn_delayed_cbet_iso_exact_two_pair
+
+// Purpose: strong top-pair quality; <=2 better kickers is a deterministic P cut.
+// Source/Provenance: A source kicker-quality concept + P cash boundary.
+##f$cc_turn_delayed_cbet_iso_strong_tp##
+f$cc_turn_delayed_cbet_top_pair_real && f$cc_number_better_kickers <= 2
+
+// Purpose: medium top-pair quality below strong TP.
+// Source/Provenance: A/P deterministic quality split.
+##f$cc_turn_delayed_cbet_iso_medium_tp##
+f$cc_turn_delayed_cbet_top_pair_real &&
+f$cc_number_better_kickers > 2 && f$cc_number_better_kickers <= 4
+
+// Purpose: completion/four-card topology where thin value contracts.
+// Source/Provenance: A source runout caution + P ISO generalization.
+##f$cc_turn_delayed_cbet_iso_dangerous_runout##
+f$cc_turn_completed ||
+f$cc_turn_four_card_straight_or_flush ||
+f$cc_turn_super_completed
+
+// Purpose: clean Turn complement.
+// Source/Provenance: P local complement.
+##f$cc_turn_delayed_cbet_iso_clean_turn##
+!f$cc_turn_delayed_cbet_iso_dangerous_runout
+
+// Purpose: favorable A/K pressure card without new completion.
+// Source/Provenance: A overcard-pressure concept + P cash selector; never pure-air authorization.
+##f$cc_turn_delayed_cbet_iso_high_pressure_turn##
+f$cc_turn_delayed_cbet_iso_clean_turn &&
+f$cc_turn_overcard_to_flop &&
+!f$cc_turn_pairs_flop_rank &&
+(f$cc_turn_is_ace || f$cc_turn_is_king)
+
+// Purpose: premium current no-made draw for selective semibluffing.
+// Source/Provenance: A cleaned draw-quality concepts + P exact combination cut.
+##f$cc_turn_delayed_cbet_iso_premium_draw##
+IsTurn && f$cc_hand_no_made &&
+(f$cc_real_combo_draw || f$cc_real_nut_fd ||
+ (f$cc_real_oesd && f$cc_two_overcards) ||
+ (f$cc_real_fd && f$cc_two_overcards))
+
+// -----------------------------------------------------------------------------
+// DCISO.03 — HU versus original limper
+// -----------------------------------------------------------------------------
+
+// Purpose: P-heavy HU delayed policy versus a wider proven limp-call range.
+// Source/Provenance: P-heavy professional cash adaptation constrained by A-level
+// source architecture. Pure air is deliberately CHECK without a flop snapshot.
+##f$cc_turn_delayed_cbet_iso_hu_limper_action##
+When !f$cc_turn_delayed_cbet_iso_hu_limper Return false Force
+When f$cc_turn_delayed_cbet_iso_strong_value Return true Force
+When f$cc_turn_delayed_cbet_iso_exact_two_pair && f$cc_turn_delayed_cbet_iso_dangerous_runout Return false Force
+When f$cc_turn_delayed_cbet_iso_exact_two_pair Return true Force
+When f$cc_turn_delayed_cbet_overpair_real && f$cc_turn_delayed_cbet_iso_dangerous_runout Return false Force
+When f$cc_turn_delayed_cbet_overpair_real Return true Force
+When f$cc_turn_delayed_cbet_iso_strong_tp && f$cc_turn_delayed_cbet_iso_dangerous_runout Return false Force
+When f$cc_turn_delayed_cbet_iso_strong_tp Return true Force
+When f$cc_turn_delayed_cbet_iso_medium_tp && f$cc_hu_ip && f$cc_turn_delayed_cbet_iso_clean_turn Return true Force
+When f$cc_turn_delayed_cbet_iso_medium_tp Return false Force
+When f$cc_turn_delayed_cbet_second_pair Return false Force
+When f$cc_turn_delayed_cbet_third_pair Return false Force
+When f$cc_turn_delayed_cbet_iso_premium_draw && f$cc_hu_ip && f$cc_turn_delayed_cbet_iso_clean_turn Return true Force
+When f$cc_turn_delayed_cbet_iso_premium_draw && f$cc_hu_oop && f$cc_turn_delayed_cbet_iso_high_pressure_turn Return true Force
+When f$cc_hand_no_made Return false Force
+When Others Return false Force
+
+// Purpose: paired HU limper-origin size map: robust value75, merged value/draw50,
+// selected thin IP TP33. No pot/overbet/jam baseline.
+// Source/Provenance: P cash sizing over reviewed Gate12A 33/50/75 palette.
+##f$cc_turn_delayed_cbet_iso_hu_limper_size_id##
+When !f$cc_turn_delayed_cbet_iso_hu_limper_action Return 0 Force
+When f$cc_turn_delayed_cbet_iso_strong_value Return f$cc_turn_delayed_cbet_size_75_id Force
+When f$cc_turn_delayed_cbet_iso_exact_two_pair Return f$cc_turn_delayed_cbet_size_75_id Force
+When f$cc_turn_delayed_cbet_overpair_real Return f$cc_turn_delayed_cbet_size_50_id Force
+When f$cc_turn_delayed_cbet_iso_strong_tp Return f$cc_turn_delayed_cbet_size_50_id Force
+When f$cc_turn_delayed_cbet_iso_medium_tp Return f$cc_turn_delayed_cbet_size_33_id Force
+When f$cc_turn_delayed_cbet_iso_premium_draw Return f$cc_turn_delayed_cbet_size_50_id Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// DCISO.04 — HU versus post-raise coldcaller
+// -----------------------------------------------------------------------------
+
+// Purpose: tighter P-heavy delayed policy versus selected post-raise coldcall range.
+// Source/Provenance: P-heavy professional cash adaptation; no source-dedicated tree.
+##f$cc_turn_delayed_cbet_iso_hu_coldcaller_action##
+When !f$cc_turn_delayed_cbet_iso_hu_coldcaller Return false Force
+When f$cc_turn_delayed_cbet_iso_strong_value Return true Force
+When f$cc_turn_delayed_cbet_iso_exact_two_pair && f$cc_turn_delayed_cbet_iso_dangerous_runout Return false Force
+When f$cc_turn_delayed_cbet_iso_exact_two_pair Return true Force
+When f$cc_turn_delayed_cbet_overpair_real && f$cc_hu_ip && f$cc_turn_delayed_cbet_iso_clean_turn Return true Force
+When f$cc_turn_delayed_cbet_overpair_real Return false Force
+When f$cc_turn_delayed_cbet_iso_strong_tp && f$cc_hu_ip && f$cc_turn_delayed_cbet_iso_clean_turn Return true Force
+When f$cc_turn_delayed_cbet_top_pair_real Return false Force
+When f$cc_turn_delayed_cbet_second_pair Return false Force
+When f$cc_turn_delayed_cbet_third_pair Return false Force
+When f$cc_turn_delayed_cbet_iso_premium_draw && f$cc_hu_ip && f$cc_turn_delayed_cbet_iso_clean_turn Return true Force
+When f$cc_hand_no_made Return false Force
+When Others Return false Force
+
+// Purpose: paired coldcaller-origin size map; selected range keeps 50/75 only.
+// Source/Provenance: P conservative cash sizing.
+##f$cc_turn_delayed_cbet_iso_hu_coldcaller_size_id##
+When !f$cc_turn_delayed_cbet_iso_hu_coldcaller_action Return 0 Force
+When f$cc_turn_delayed_cbet_iso_strong_value Return f$cc_turn_delayed_cbet_size_75_id Force
+When f$cc_turn_delayed_cbet_iso_exact_two_pair Return f$cc_turn_delayed_cbet_size_75_id Force
+When f$cc_turn_delayed_cbet_overpair_real Return f$cc_turn_delayed_cbet_size_50_id Force
+When f$cc_turn_delayed_cbet_iso_strong_tp Return f$cc_turn_delayed_cbet_size_50_id Force
+When f$cc_turn_delayed_cbet_iso_premium_draw Return f$cc_turn_delayed_cbet_size_50_id Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// DCISO.05 — current multiway ISO
+// -----------------------------------------------------------------------------
+
+// Purpose: value-dense P-heavy multiway delayed policy. All-limper LAST states
+// retain the widest thin/equity branch; mixed/coldcaller fields remain tighter.
+// Source/Provenance: P-heavy professional cash adaptation under A multiway caution.
+##f$cc_turn_delayed_cbet_iso_mw_action##
+When !f$cc_turn_delayed_cbet_iso_mw_supported Return false Force
+When f$cc_turn_delayed_cbet_iso_strong_value Return true Force
+When f$cc_turn_delayed_cbet_iso_exact_two_pair && f$cc_turn_delayed_cbet_iso_dangerous_runout Return false Force
+When f$cc_turn_delayed_cbet_iso_exact_two_pair Return true Force
+When f$cc_turn_delayed_cbet_overpair_real && f$cc_relpos_id = 3 && f$cc_turn_delayed_cbet_iso_mw_all_limpers && f$cc_turn_delayed_cbet_iso_clean_turn Return true Force
+When f$cc_turn_delayed_cbet_overpair_real Return false Force
+When f$cc_turn_delayed_cbet_iso_strong_tp && f$cc_relpos_id = 3 && f$cc_turn_delayed_cbet_iso_mw_all_limpers && f$cc_turn_delayed_cbet_iso_clean_turn Return true Force
+When f$cc_turn_delayed_cbet_top_pair_real Return false Force
+When f$cc_turn_delayed_cbet_second_pair Return false Force
+When f$cc_turn_delayed_cbet_third_pair Return false Force
+When f$cc_turn_delayed_cbet_iso_premium_draw && f$cc_relpos_id = 3 && f$cc_turn_delayed_cbet_iso_mw_all_limpers && f$cc_turn_delayed_cbet_iso_clean_turn Return true Force
+When f$cc_hand_no_made Return false Force
+When Others Return false Force
+
+// Purpose: paired multiway size map: robust value75, thinner LAST branches50.
+// Source/Provenance: P conservative multiway cash sizing.
+##f$cc_turn_delayed_cbet_iso_mw_size_id##
+When !f$cc_turn_delayed_cbet_iso_mw_action Return 0 Force
+When f$cc_turn_delayed_cbet_iso_strong_value Return f$cc_turn_delayed_cbet_size_75_id Force
+When f$cc_turn_delayed_cbet_iso_exact_two_pair Return f$cc_turn_delayed_cbet_size_50_id Force
+When f$cc_turn_delayed_cbet_overpair_real Return f$cc_turn_delayed_cbet_size_50_id Force
+When f$cc_turn_delayed_cbet_iso_strong_tp Return f$cc_turn_delayed_cbet_size_50_id Force
+When f$cc_turn_delayed_cbet_iso_premium_draw Return f$cc_turn_delayed_cbet_size_50_id Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// DCISO.06 — dispatch / coverage / safety
+// -----------------------------------------------------------------------------
+
+// Purpose: exact ISO delayed action dispatcher.
+// Source/Provenance: P range-provenance router over explicit HU/MW owners.
+##f$cc_turn_delayed_cbet_iso_action##
+When f$cc_turn_delayed_cbet_iso_hu_limper Return f$cc_turn_delayed_cbet_iso_hu_limper_action Force
+When f$cc_turn_delayed_cbet_iso_hu_coldcaller Return f$cc_turn_delayed_cbet_iso_hu_coldcaller_action Force
+When f$cc_turn_delayed_cbet_iso_mw_supported Return f$cc_turn_delayed_cbet_iso_mw_action Force
+When Others Return false Force
+
+// Purpose: paired exact ISO delayed size dispatcher.
+// Source/Provenance: P safety router; explicit checks/uncovered ->0.
+##f$cc_turn_delayed_cbet_iso_size_id##
+When f$cc_turn_delayed_cbet_iso_hu_limper Return f$cc_turn_delayed_cbet_iso_hu_limper_size_id Force
+When f$cc_turn_delayed_cbet_iso_hu_coldcaller Return f$cc_turn_delayed_cbet_iso_hu_coldcaller_size_id Force
+When f$cc_turn_delayed_cbet_iso_mw_supported Return f$cc_turn_delayed_cbet_iso_mw_size_id Force
+When Others Return 0 Force
+
+// Purpose: complete reviewed ISO HU policy including explicit check classes.
+// Source/Provenance: P coverage metadata over exact coherent context.
+##f$cc_turn_delayed_cbet_iso_hu_covered##
+f$cc_turn_delayed_cbet_iso_hu_supported
+
+// Purpose: complete reviewed ISO MW policy including explicit check classes.
+// Source/Provenance: P coverage metadata over exact coherent composition.
+##f$cc_turn_delayed_cbet_iso_mw_covered##
+f$cc_turn_delayed_cbet_iso_mw_supported
+
+// Purpose: combined exact ISO Gate12A coverage.
+// Source/Provenance: P union; never widens beyond proven survivor origins.
+##f$cc_turn_delayed_cbet_iso_covered##
+f$cc_turn_delayed_cbet_iso_hu_covered ||
+f$cc_turn_delayed_cbet_iso_mw_covered
+
+// Purpose: legal ISO parent with unresolved/contradictory survivor provenance.
+// Source/Provenance: P/X fail-closed diagnostic.
+##f$cc_turn_delayed_cbet_iso_unresolved##
+f$cc_turn_delayed_cbet_iso_parent && !f$cc_turn_delayed_cbet_iso_covered
+
+// Purpose: local action/size integrity.
+// Source/Provenance: P safety invariant over 33/50/75-only P sizing.
+##f$cc_turn_delayed_cbet_iso_size_consistent##
+When f$cc_turn_delayed_cbet_iso_hu_covered && !f$cc_turn_delayed_cbet_iso_action Return f$cc_turn_delayed_cbet_iso_size_id = 0 Force
+When f$cc_turn_delayed_cbet_iso_mw_covered && !f$cc_turn_delayed_cbet_iso_action Return f$cc_turn_delayed_cbet_iso_size_id = 0 Force
+When f$cc_turn_delayed_cbet_iso_action Return f$cc_turn_delayed_cbet_iso_size_id = f$cc_turn_delayed_cbet_size_33_id || f$cc_turn_delayed_cbet_iso_size_id = f$cc_turn_delayed_cbet_size_50_id || f$cc_turn_delayed_cbet_iso_size_id = f$cc_turn_delayed_cbet_size_75_id Force
+When Others Return true Force
+
+// ============================================================================
+// End Gate12A.12 ISO Delayed-CBet adaptation.
+// ============================================================================
