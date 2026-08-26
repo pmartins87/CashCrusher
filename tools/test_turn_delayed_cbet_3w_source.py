@@ -106,7 +106,9 @@ def btnvsb_contract() -> None:
     code = executable(action).lower()
     assert "flop_tpplus" not in code
     assert "flop_nomade" not in code
-    assert "air" not in code
+    assert "flop_draw" not in code
+    assert "flop_air" not in code
+    assert "source_air" not in code
     size = block(POL, "f$cc_turn_delayed_cbet_3w_btnvsb_source_size_id")
     assert "f$cc_turn_delayed_cbet_size_75_id" in size
     assert "f$cc_turn_delayed_cbet_size_50_id" in size
