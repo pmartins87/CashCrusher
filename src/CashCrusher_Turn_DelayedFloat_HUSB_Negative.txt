@@ -1,0 +1,59 @@
+// ============================================================================
+// CashCrusher_Turn_DelayedFloat_HUSB_Negative.txt
+// Gate 12B.5 — true-HU HUSB source-negative delayed-float boundary
+// ============================================================================
+// Purpose:
+//   Prevent obsolete/removed HUSB check-back rules from re-entering Gate12B.
+//   Current reviewed Gate04 HUSB missed-ISO-CBet source bets every portable hand
+//   region: pair+, premium/good real draws and air. Therefore a clean 12B HUSB
+//   X/X history is strategy/runtime drift, not a new source-supported Turn tree.
+//
+// Source boundary:
+//   Current Gate04 `f$cc_flop_float_true_hu_husb_action` is the reviewed source
+//   owner. Historical HUSB high-MP/weak-draw check sections marked removed by New
+//   Crushfest are deliberately not resurrected here.
+//
+// Provenance:
+//   T/A = exact true-HU limp-raised HUSB topology + Gate04 current source action.
+//   X = fail-closed mismatch diagnostic; no positive action in this file.
+// ============================================================================
+
+// Purpose: exact HUSB missed-ISO-CBet topology reaching canonical 12B history.
+// Source/Provenance: A exact Gate04B topology reconstructed on Turn.
+##f$cc_turn_delayed_float_husb_source_negative_context##
+f$cc_turn_delayed_float_base_opportunity &&
+f$cc_true_hu &&
+f$cc_flop_entry_count = 2 &&
+f$cc_hu &&
+f$cc_pot_family_id = 2 &&
+f$cc_pf_hu_limp_raise_proven &&
+f$cc_pf_role_srp_caller &&
+f$cc_hero_pos_id = 5 &&
+f$cc_hu_villain_pos_id = 6 &&
+f$cc_hu_matchup_id = 56
+
+// Purpose: explicit current-source reason this 12B parent is invalid. Gate04 HUSB
+// action covers made value, source-quality real draws and no-frontdoor air; a
+// checked-back flop therefore cannot be promoted into a delayed strategy by 12B.
+// Source/Provenance: X diagnostic over A current Gate04 source coverage.
+##f$cc_turn_delayed_float_husb_source_mismatch##
+f$cc_turn_delayed_float_husb_source_negative_context
+
+// Purpose: HUSB owns no positive Gate12B action at this source checkpoint.
+// Source/Provenance: T/A source-negative result; always fail closed.
+##f$cc_turn_delayed_float_husb_source_action##
+false
+
+// Purpose: source-negative HUSB has no strategic size.
+// Source/Provenance: T/A source-negative result.
+##f$cc_turn_delayed_float_husb_source_size_id##
+0
+
+// Purpose: HUSB source-negative result is reviewed but not strategy coverage.
+// Source/Provenance: X metadata used by coverage audit.
+##f$cc_turn_delayed_float_husb_reviewed_negative##
+f$cc_turn_delayed_float_husb_source_negative_context
+
+// ============================================================================
+// End Gate12B.5 HUSB source-negative boundary.
+// ============================================================================
