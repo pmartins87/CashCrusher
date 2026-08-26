@@ -9,11 +9,12 @@
 //   preserve the mature scenario-wide CHECK; 8 preserves native 3wBlinds-v-BTN
 //   CHECK; 9/10 are P-heavy 4-6h ordinary-SRP reduced-HU/current-multiway fills;
 //   11/12 are P-heavy proven-ISO HU/current-multiway fills; 13/14 are P-heavy
-//   4-6h plain3BP HU/current-multiway; 15/16 are squeeze HU/current-multiway.
+//   4-6h plain3BP HU/current-multiway; 15/16 are squeeze HU/current-multiway;
+//   17 is the clean 4-6h HU 4BP family.
 //
-// Remaining strategic expansion:
-//   clean4BP, followed by canonical coverage, runtime/snapshot composition and
-//   Gate13 River delayed plans.
+// Remaining Gate12A closure:
+//   canonical coverage audit, runtime/snapshot composition and explicit unresolved
+//   multiway/other-caller 4BP evidence boundary; then Gate13 River delayed plans.
 //
 // Rule: ownership never grants a bet. Unknown initiative descendants fail closed.
 // ============================================================================
@@ -38,6 +39,7 @@ When f$cc_turn_delayed_cbet_plain3bp_hu_covered Return 13 Force
 When f$cc_turn_delayed_cbet_plain3bp_mw_covered Return 14 Force
 When f$cc_turn_delayed_cbet_squeeze_hu_covered Return 15 Force
 When f$cc_turn_delayed_cbet_squeeze_mw_covered Return 16 Force
+When f$cc_turn_delayed_cbet_4bp_covered Return 17 Force
 When Others Return 0 Force
 
 // Purpose: canonical source-first Turn Delayed-CBet action.
@@ -61,11 +63,12 @@ When f$cc_turn_delayed_cbet_plain3bp_hu_covered Return f$cc_turn_delayed_cbet_3b
 When f$cc_turn_delayed_cbet_plain3bp_mw_covered Return f$cc_turn_delayed_cbet_3bp_action Force
 When f$cc_turn_delayed_cbet_squeeze_hu_covered Return f$cc_turn_delayed_cbet_3bp_action Force
 When f$cc_turn_delayed_cbet_squeeze_mw_covered Return f$cc_turn_delayed_cbet_3bp_action Force
+When f$cc_turn_delayed_cbet_4bp_covered Return f$cc_turn_delayed_cbet_4bp_action Force
 When Others Return false Force
 
 // Purpose: paired strategic size ID; action false/uncovered ->0.
 // Source/Provenance: T/A exact source sizes, A/P BTNv2p fallback and P-heavy
-// 4-6h SRP/ISO/3BP normalization. Reviewed CHECK families own size 0.
+// 4-6h SRP/ISO/3BP/4BP normalization. Reviewed CHECK families own size 0.
 ##f$cc_turn_delayed_cbet_size_id##
 When !f$cc_turn_delayed_cbet_base_opportunity Return 0 Force
 When f$cc_turn_delayed_cbet_husb_source_context Return f$cc_turn_delayed_cbet_husb_source_size_id Force
@@ -84,6 +87,7 @@ When f$cc_turn_delayed_cbet_plain3bp_hu_covered Return f$cc_turn_delayed_cbet_3b
 When f$cc_turn_delayed_cbet_plain3bp_mw_covered Return f$cc_turn_delayed_cbet_3bp_size_id Force
 When f$cc_turn_delayed_cbet_squeeze_hu_covered Return f$cc_turn_delayed_cbet_3bp_size_id Force
 When f$cc_turn_delayed_cbet_squeeze_mw_covered Return f$cc_turn_delayed_cbet_3bp_size_id Force
+When f$cc_turn_delayed_cbet_4bp_covered Return f$cc_turn_delayed_cbet_4bp_size_id Force
 When Others Return 0 Force
 
 // Purpose: all currently reviewed states, including explicit negative boundaries.
@@ -96,7 +100,8 @@ f$cc_turn_delayed_cbet_3w_btnv2p_covered ||
 f$cc_turn_delayed_cbet_3w_blindsvbtn_covered ||
 f$cc_turn_delayed_cbet_srp6_covered ||
 f$cc_turn_delayed_cbet_iso_covered ||
-f$cc_turn_delayed_cbet_3bp_covered
+f$cc_turn_delayed_cbet_3bp_covered ||
+f$cc_turn_delayed_cbet_4bp_covered
 
 // Purpose: legal initiative+X/X opportunity awaiting audited source/adaptation.
 // Source/Provenance: P/X fail-closed gap metadata.
@@ -128,7 +133,8 @@ When Others Return false Force
 (f$cc_turn_delayed_cbet_plain3bp_hu_covered ? 1 : 0) +
 (f$cc_turn_delayed_cbet_plain3bp_mw_covered ? 1 : 0) +
 (f$cc_turn_delayed_cbet_squeeze_hu_covered ? 1 : 0) +
-(f$cc_turn_delayed_cbet_squeeze_mw_covered ? 1 : 0)
+(f$cc_turn_delayed_cbet_squeeze_mw_covered ? 1 : 0) +
+(f$cc_turn_delayed_cbet_4bp_covered ? 1 : 0)
 
 // Purpose: top-level history/owner/size consistency.
 // Source/Provenance: P safety composition.
@@ -142,6 +148,7 @@ When !f$cc_turn_delayed_cbet_3w_blindsvbtn_size_consistent Return false Force
 When !f$cc_turn_delayed_cbet_srp6_size_consistent Return false Force
 When !f$cc_turn_delayed_cbet_iso_size_consistent Return false Force
 When !f$cc_turn_delayed_cbet_3bp_size_consistent Return false Force
+When !f$cc_turn_delayed_cbet_4bp_size_consistent Return false Force
 When f$cc_turn_delayed_cbet_strategy_covered && f$cc_turn_delayed_cbet_child_owner_count != 1 Return false Force
 When !f$cc_turn_delayed_cbet_strategy_covered && f$cc_turn_delayed_cbet_family_id != 0 Return false Force
 When f$cc_turn_delayed_cbet_strategy_covered && f$cc_turn_delayed_cbet_family_id <= 0 Return false Force
@@ -149,5 +156,5 @@ When !f$cc_turn_delayed_cbet_size_consistent Return false Force
 When Others Return true Force
 
 // ============================================================================
-// End Gate12A router through 4-6h plain3BP/squeeze adaptation.
+// End Gate12A strategy router through clean 4-6h HU 4BP adaptation.
 // ============================================================================
