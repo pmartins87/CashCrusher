@@ -179,3 +179,5 @@ jobs:
         run: python tools/test_turn_delayed_cbet_btnv2p.py
       - name: Test native 3wBlinds-v-BTN Turn Delayed CBet check
         run: python tools/test_turn_delayed_cbet_blindsvbtn.py
+      - name: Test 4-6h ordinary-SRP Turn Delayed CBet adaptation
+        run: python tools/test_turn_delayed_cbet_srp6.py
