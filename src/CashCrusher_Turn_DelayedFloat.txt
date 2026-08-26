@@ -14,6 +14,8 @@
 //   9  4-6h squeeze HU caller                  [P]
 //   10 4-6h squeeze current multiway           [P]
 //   11 clean 4-6h HU caller-side 4BP           [P]
+//   12 4-6h unraised HU no-initiative          [P]
+//   13 4-6h unraised current multiway          [P]
 //
 // Source-negative:
 //   current true-HU HUSB missed-ISO-CBet source belongs to immediate Gate04 Float;
@@ -35,6 +37,8 @@ When f$cc_turn_delayed_float_plain3bp_mw_context Return 8 Force
 When f$cc_turn_delayed_float_squeeze_hu_context Return 9 Force
 When f$cc_turn_delayed_float_squeeze_mw_context Return 10 Force
 When f$cc_turn_delayed_float_4bp_covered Return 11 Force
+When f$cc_turn_delayed_float_unraised6_hu_context Return 12 Force
+When f$cc_turn_delayed_float_unraised6_mw_context Return 13 Force
 When Others Return 0 Force
 
 // Purpose: source-first delayed-float action router.
@@ -42,6 +46,7 @@ When Others Return 0 Force
 ##f$cc_turn_delayed_float_router##
 When !f$cc_turn_delayed_float_base_opportunity Return false Force
 When f$cc_turn_delayed_float_3w_bbvsb_source_covered Return f$cc_turn_delayed_float_3w_bbvsb_source_action Force
+When f$cc_turn_delayed_float_unraised6_covered Return f$cc_turn_delayed_float_unraised6_action Force
 When f$cc_turn_delayed_float_srp6_covered Return f$cc_turn_delayed_float_srp6_action Force
 When f$cc_turn_delayed_float_iso_covered Return f$cc_turn_delayed_float_iso_action Force
 When f$cc_turn_delayed_float_plain3bp_covered Return f$cc_turn_delayed_float_plain3bp_action Force
@@ -54,6 +59,7 @@ When Others Return false Force
 ##f$cc_turn_delayed_float_size_id##
 When !f$cc_turn_delayed_float_base_opportunity Return 0 Force
 When f$cc_turn_delayed_float_3w_bbvsb_source_covered Return f$cc_turn_delayed_float_3w_bbvsb_source_size_id Force
+When f$cc_turn_delayed_float_unraised6_covered Return f$cc_turn_delayed_float_unraised6_size_id Force
 When f$cc_turn_delayed_float_srp6_covered Return f$cc_turn_delayed_float_srp6_size_id Force
 When f$cc_turn_delayed_float_iso_covered Return f$cc_turn_delayed_float_iso_size_id Force
 When f$cc_turn_delayed_float_plain3bp_covered Return f$cc_turn_delayed_float_plain3bp_size_id Force
@@ -66,6 +72,7 @@ When Others Return 0 Force
 // Source/Provenance: P coverage metadata over exact children.
 ##f$cc_turn_delayed_float_strategy_covered##
 f$cc_turn_delayed_float_3w_bbvsb_source_covered ||
+f$cc_turn_delayed_float_unraised6_covered ||
 f$cc_turn_delayed_float_srp6_covered ||
 f$cc_turn_delayed_float_iso_covered ||
 f$cc_turn_delayed_float_plain3bp_covered ||
@@ -99,6 +106,7 @@ When Others Return false Force
 // Source/Provenance: P exact pot/family exclusivity metadata.
 ##f$cc_turn_delayed_float_child_owner_count##
 (f$cc_turn_delayed_float_3w_bbvsb_source_covered * 1) +
+(f$cc_turn_delayed_float_unraised6_covered * 1) +
 (f$cc_turn_delayed_float_srp6_covered * 1) +
 (f$cc_turn_delayed_float_iso_covered * 1) +
 (f$cc_turn_delayed_float_plain3bp_covered * 1) +
@@ -110,6 +118,7 @@ When Others Return false Force
 ##f$cc_turn_delayed_float_router_consistent##
 When !f$cc_turn_delayed_float_history_consistent Return false Force
 When !f$cc_turn_delayed_float_3w_bbvsb_size_consistent Return false Force
+When !f$cc_turn_delayed_float_unraised6_size_consistent Return false Force
 When !f$cc_turn_delayed_float_srp6_size_consistent Return false Force
 When !f$cc_turn_delayed_float_iso_size_consistent Return false Force
 When !f$cc_turn_delayed_float_plain3bp_size_consistent Return false Force
