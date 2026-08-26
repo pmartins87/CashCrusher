@@ -18,6 +18,10 @@ def block(text: str, name: str) -> str:
     return text.split(marker, 1)[1].split("##", 1)[0]
 
 
+def executable(text: str) -> str:
+    return "\n".join(line.split("//", 1)[0] for line in text.splitlines()).strip()
+
+
 def run_common_contract() -> None:
     bridge = block(COMMON, "f$cc_turn_delayed_float_gate04_checkback_valid")
     assert "f$cc_hist_flop_float_checkback_parent_valid" in bridge
@@ -67,8 +71,8 @@ def run_husb_negative_contract() -> None:
         "f$cc_flop_float_husb_air_family Return true",
     ):
         assert token in flop_action
-    assert block(HUSB, "f$cc_turn_delayed_float_husb_source_action").strip() == "false"
-    assert block(HUSB, "f$cc_turn_delayed_float_husb_source_size_id").strip() == "0"
+    assert executable(block(HUSB, "f$cc_turn_delayed_float_husb_source_action")) == "false"
+    assert executable(block(HUSB, "f$cc_turn_delayed_float_husb_source_size_id")) == "0"
     assert "f$cc_turn_delayed_float_husb_source_mismatch" in ROUTER
 
 
@@ -132,14 +136,9 @@ def run_iso_contract() -> None:
 
 
 def run_safety_contract() -> None:
-    executable = "\n".join(
-        line
-        for text in (HUSB, SRP, ISO)
-        for line in text.splitlines()
-        if not line.lstrip().startswith("//")
-    )
+    code = executable(HUSB + "\n" + SRP + "\n" + ISO)
     for forbidden in ("HandPower", "Random", "random", "BetMax", "Allin", "allin"):
-        assert forbidden not in executable, f"forbidden generic token: {forbidden}"
+        assert forbidden not in code, f"forbidden generic token: {forbidden}"
 
     family = block(ROUTER, "f$cc_turn_delayed_float_family_id")
     for pair in (
