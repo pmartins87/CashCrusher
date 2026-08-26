@@ -8,14 +8,62 @@
 //   These are observations only. CLOSED flop X/X remains mandatory on Turn.
 //
 // Source hierarchy:
-//   T = DeepCrusher Retro12A final-check writers for 3wBTNvSB / 3wBBvSB.
-//   A = canonical CashCrusher positions and portable pair/air/texture primitives.
+//   T = DeepCrusher Retro12A final-check writers and draw/air helpers.
+//   A = canonical CashCrusher positions and portable pair/texture primitives.
 //   P = side-effect persistence wrapper only.
 //
 // Safety:
 //   This module does not choose a flop action. A flag can only become strategy
 //   evidence after f$cc_turn_delayed_cbet_snapshot_valid proves actual X/X.
 // ============================================================================
+
+// -----------------------------------------------------------------------------
+// DC12A-3WS.00 — source-exact no-made draw / air vocabulary
+// -----------------------------------------------------------------------------
+
+// Purpose: source one-/two-hole flush-draw class. The second clause is equivalent
+// to source Queen-high-or-better one-card FD (`NumberOfUnknownSuitedOvercards<=2`).
+// Source/Provenance: T direct `f$hand_FD` mechanical translation.
+##f$cc_turn_delayed_cbet_source_fd##
+!IsRiver &&
+((HaveFlushDraw && SuitsInHand = 1) ||
+ (HaveFlushDraw && SuitsInHand = 2 && NumberOfUnknownSuitedOvercards <= 2))
+
+// Purpose: source straight-draw class.
+// Source/Provenance: T direct `f$hand_SD` translation.
+##f$cc_turn_delayed_cbet_source_sd##
+!IsRiver &&
+((HaveStraightDraw && (nstraightfillcommon - nstraightfill = 2)) || HaveNutStraightDraw)
+
+// Purpose: source gutshot class.
+// Source/Provenance: T direct `f$hand_Gutshot` translation.
+##f$cc_turn_delayed_cbet_source_gutshot##
+!IsRiver &&
+((HaveInsideStraightDraw && (nstraightfillcommon - nstraightfill = 2)) || HaveNutStraightDraw)
+
+// Purpose: exact direct-frontdoor source draw union used by Retro12A.
+// Source/Provenance: T `f$hand_Gutshot_or_BetterFDSD`.
+##f$cc_turn_delayed_cbet_source_gutshot_or_better_fdsd##
+f$cc_turn_delayed_cbet_source_sd ||
+f$cc_turn_delayed_cbet_source_gutshot ||
+f$cc_turn_delayed_cbet_source_fd
+
+// Purpose: broader source draw-or-backdoor exclusion used to define `f$hand_Air`.
+// Source also promotes two overcards + any backdoor and A/K-high + overcard +
+// backdoor out of the air bucket on flop.
+// Source/Provenance: T direct `f$hand_Gutshot_or_BetterDraw` translation.
+##f$cc_turn_delayed_cbet_source_gutshot_or_better_draw##
+When f$cc_turn_delayed_cbet_source_gutshot_or_better_fdsd Return true Force
+When Overcards = 2 && (HaveBackdoorFlushDraw || HaveBackdoorStraightDraw) Return true Force
+When IsFlop && (hand$A || hand$K) && Overcards >= 1 && (HaveBackdoorFlushDraw || HaveBackdoorStraightDraw) Return true Force
+When Others Return false Force
+
+// Purpose: direct source air for native BB/SB trees. The special BTNvSB
+// stackoff-draw addendum in legacy `f$hand_Air` is intentionally not applied to
+// BBvSB/SBvBB.
+// Source/Provenance: T direct first clause of source `f$hand_Air`.
+##f$cc_turn_delayed_cbet_source_air##
+f$cc_hand_no_made && !f$cc_turn_delayed_cbet_source_gutshot_or_better_draw
 
 // -----------------------------------------------------------------------------
 // DC12A-3WS.01 — exact native HU-after-preflop-fold contexts
@@ -132,10 +180,10 @@ f$cc_turn_delayed_cbet_snapshot_3w_bbvsb_context && f$cc_hand_second_pair_or_poc
 f$cc_turn_delayed_cbet_snapshot_3w_bbvsb_context && f$cc_hand_third_pair_or_pocket
 
 // Purpose: wet source air checked on flop.
-// Source/Provenance: T direct `f$hand_Air && !f$board_dry`, using source wetness.
+// Source/Provenance: T direct `f$hand_Air && !f$board_dry`, using source-exact air.
 ##f$cc_turn_delayed_cbet_snapshot_3w_bbvsb_wetair_candidate##
 f$cc_turn_delayed_cbet_snapshot_3w_bbvsb_context &&
-f$cc_air_no_frontdoor &&
+f$cc_turn_delayed_cbet_source_air &&
 f$cc_turn_delayed_cbet_source_3w_bbvsb_flop_wet
 
 // Purpose: saved source exclusion for the non-completed Turn bluff: 2BW or A-high.
