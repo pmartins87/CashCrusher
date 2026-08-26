@@ -1,0 +1,54 @@
+// ============================================================================
+// Gate12A.8C — native 3wSBvBB source dispatcher / coverage
+// ============================================================================
+// Historical flop-class order follows the mature source. A scenario-wide final
+// false makes the exact native context fully reviewed, including explicit checks.
+// ============================================================================
+
+// Purpose: exact source action dispatcher.
+// Source/Provenance: T/A direct historical-family ordering.
+##f$cc_turn_delayed_cbet_3w_sbvbb_source_action##
+When !f$cc_turn_delayed_cbet_3w_sbvbb_source_context Return false Force
+When user_cc_turn_delayed_cbet_3w_sbvbb_flop_tpplus_candidate && f$cc_turn_delayed_cbet_3w_sbvbb_2p_action Return true Force
+When user_cc_turn_delayed_cbet_3w_sbvbb_flop_tpplus_candidate && f$cc_turn_delayed_cbet_3w_sbvbb_tp_to_second_action Return true Force
+When user_cc_turn_delayed_cbet_3w_sbvbb_flop_tpplus_candidate && f$cc_turn_delayed_cbet_3w_sbvbb_tpop_action Return true Force
+When user_cc_turn_delayed_cbet_3w_sbvbb_flop_tpplus_candidate Return false Force
+When user_cc_turn_delayed_cbet_3w_sbvbb_flop_secondpair_candidate && f$cc_turn_delayed_cbet_3w_sbvbb_secondpair_action Return true Force
+When user_cc_turn_delayed_cbet_3w_sbvbb_flop_secondpair_candidate Return false Force
+When user_cc_turn_delayed_cbet_3w_sbvbb_flop_lowpair_candidate Return false Force
+When user_cc_turn_delayed_cbet_3w_sbvbb_flop_draw_candidate Return f$cc_turn_delayed_cbet_3w_sbvbb_draw_action Force
+When user_cc_turn_delayed_cbet_3w_sbvbb_flop_air_straight_candidate Return f$cc_turn_delayed_cbet_3w_sbvbb_air_action Force
+When Others Return false Force
+
+// Purpose: exact paired size dispatcher.
+// Source/Provenance: T/A same source ownership ordering.
+##f$cc_turn_delayed_cbet_3w_sbvbb_source_size_id##
+When !f$cc_turn_delayed_cbet_3w_sbvbb_source_action Return 0 Force
+When f$cc_turn_delayed_cbet_3w_sbvbb_2p_action Return f$cc_turn_delayed_cbet_3w_sbvbb_2p_size_id Force
+When f$cc_turn_delayed_cbet_3w_sbvbb_tp_to_second_action Return f$cc_turn_delayed_cbet_3w_sbvbb_tp_to_second_size_id Force
+When f$cc_turn_delayed_cbet_3w_sbvbb_tpop_action Return f$cc_turn_delayed_cbet_3w_sbvbb_tpop_size_id Force
+When f$cc_turn_delayed_cbet_3w_sbvbb_secondpair_action Return f$cc_turn_delayed_cbet_3w_sbvbb_secondpair_size_id Force
+When user_cc_turn_delayed_cbet_3w_sbvbb_flop_draw_candidate Return f$cc_turn_delayed_cbet_3w_sbvbb_draw_size_id Force
+When user_cc_turn_delayed_cbet_3w_sbvbb_flop_air_straight_candidate Return f$cc_turn_delayed_cbet_3w_sbvbb_air_size_id Force
+When Others Return 0 Force
+
+// Purpose: entire exact native context is strategically reviewed.
+// Source/Provenance: T source terminates `When f$game_3wSBvBB Return false`.
+##f$cc_turn_delayed_cbet_3w_sbvbb_source_covered##
+f$cc_turn_delayed_cbet_3w_sbvbb_source_context
+
+// Purpose: local action/size integrity including source 150%-pot ID=6.
+// Source/Provenance: P safety invariant.
+##f$cc_turn_delayed_cbet_3w_sbvbb_size_consistent##
+When !f$cc_turn_delayed_cbet_3w_sbvbb_source_action Return f$cc_turn_delayed_cbet_3w_sbvbb_source_size_id = 0 Force
+When f$cc_turn_delayed_cbet_3w_sbvbb_source_action Return f$cc_turn_delayed_cbet_3w_sbvbb_source_size_id >= 1 && f$cc_turn_delayed_cbet_3w_sbvbb_source_size_id <= 6 Force
+When Others Return false Force
+
+// Purpose: no unresolved translation remains inside the exact native source tree.
+// Source/Provenance: X diagnostic closed by source-exact helper ports.
+##f$cc_turn_delayed_cbet_3w_sbvbb_unresolved##
+false
+
+// ============================================================================
+// End Gate12A.8C.
+// ============================================================================
