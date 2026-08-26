@@ -2,19 +2,21 @@
 // CashCrusher_Turn_DelayedCBet.txt
 // Gate 12A — canonical Turn Delayed-CBet strategy router
 // ============================================================================
-// Reviewed direct-source children:
-//   1 HUSB | 2 HUBB | 3 3wBTNvBB | 4 3wBTNvSB | 5 3wBBvSB | 6 3wSBvBB.
+// Reviewed children:
+//   1 HUSB | 2 HUBB | 3 3wBTNvBB | 4 3wBTNvSB | 5 3wBBvSB | 6 3wSBvBB
+//   are native direct-source descendants; 7 is the source-silent 3wBTNv2p AIR
+//   check-back branch filled by mature CrusherTBP and explicitly labelled A/P.
 //
-// Still pending after the native source pass:
-//   native BTN-v-two-live-player source-silence topology, 4-6h ordinary SRP,
-//   ISO, plain-3BP/squeeze, clean4BP, runtime/snapshot composition, and Gate13
-//   River delayed plans.
+// Still pending after the native/source-adjacent pass:
+//   other 3wBTNv2p classes, source-silent 3wBlinds-v-BTN initiative descendants,
+//   4-6h ordinary SRP, ISO, plain-3BP/squeeze, clean4BP, runtime/snapshot
+//   composition, and Gate13 River delayed plans.
 //
 // Rule: ownership never grants a bet. Unknown initiative descendants fail closed.
 // ============================================================================
 
 // Purpose: compact reviewed family ID.
-// Source/Provenance: P routing metadata over T/A direct-source children.
+// Source/Provenance: P routing metadata over T/A/P reviewed children.
 ##f$cc_turn_delayed_cbet_family_id##
 When !f$cc_turn_delayed_cbet_base_opportunity Return 0 Force
 When f$cc_turn_delayed_cbet_husb_source_context Return 1 Force
@@ -23,10 +25,12 @@ When f$cc_turn_delayed_cbet_3w_btnvbb_source_context Return 3 Force
 When f$cc_turn_delayed_cbet_3w_btnvsb_source_covered Return 4 Force
 When f$cc_turn_delayed_cbet_3w_bbvsb_source_covered Return 5 Force
 When f$cc_turn_delayed_cbet_3w_sbvbb_source_covered Return 6 Force
+When f$cc_turn_delayed_cbet_3w_btnv2p_covered Return 7 Force
 When Others Return 0 Force
 
 // Purpose: canonical source-first Turn Delayed-CBet action.
-// Source/Provenance: T/A exact direct-source dispatcher; unknown -> check.
+// Source/Provenance: T/A direct-source dispatcher followed by the explicit A/P
+// BTNv2p gap child; unknown -> check.
 ##f$cc_turn_delayed_cbet_router##
 When !f$cc_turn_delayed_cbet_base_opportunity Return false Force
 When f$cc_turn_delayed_cbet_husb_source_context Return f$cc_turn_delayed_cbet_husb_source_action Force
@@ -35,10 +39,12 @@ When f$cc_turn_delayed_cbet_3w_btnvbb_source_context Return f$cc_turn_delayed_cb
 When f$cc_turn_delayed_cbet_3w_btnvsb_source_covered Return f$cc_turn_delayed_cbet_3w_btnvsb_source_action Force
 When f$cc_turn_delayed_cbet_3w_bbvsb_source_covered Return f$cc_turn_delayed_cbet_3w_bbvsb_source_action Force
 When f$cc_turn_delayed_cbet_3w_sbvbb_source_covered Return f$cc_turn_delayed_cbet_3w_sbvbb_source_action Force
+When f$cc_turn_delayed_cbet_3w_btnv2p_covered Return f$cc_turn_delayed_cbet_3w_btnv2p_action Force
 When Others Return false Force
 
 // Purpose: paired strategic size ID; action false/uncovered ->0.
-// Source/Provenance: T/A exact source-family size dispatcher.
+// Source/Provenance: T/A exact source-family sizes plus A/P reviewed BTNv2p
+// multiway fallback; no generic size is assigned to unsupported contexts.
 ##f$cc_turn_delayed_cbet_size_id##
 When !f$cc_turn_delayed_cbet_base_opportunity Return 0 Force
 When f$cc_turn_delayed_cbet_husb_source_context Return f$cc_turn_delayed_cbet_husb_source_size_id Force
@@ -47,36 +53,40 @@ When f$cc_turn_delayed_cbet_3w_btnvbb_source_context Return f$cc_turn_delayed_cb
 When f$cc_turn_delayed_cbet_3w_btnvsb_source_covered Return f$cc_turn_delayed_cbet_3w_btnvsb_source_size_id Force
 When f$cc_turn_delayed_cbet_3w_bbvsb_source_covered Return f$cc_turn_delayed_cbet_3w_bbvsb_source_size_id Force
 When f$cc_turn_delayed_cbet_3w_sbvbb_source_covered Return f$cc_turn_delayed_cbet_3w_sbvbb_source_size_id Force
+When f$cc_turn_delayed_cbet_3w_btnv2p_covered Return f$cc_turn_delayed_cbet_3w_btnv2p_size_id Force
 When Others Return 0 Force
 
-// Purpose: reviewed direct-source states, including explicit source checks.
+// Purpose: all currently reviewed states, including explicit source checks and
+// the branch-level BTNv2p TBP gap fill.
 // Source/Provenance: P coverage metadata; no widening beyond exact children.
 ##f$cc_turn_delayed_cbet_strategy_covered##
 f$cc_turn_delayed_cbet_core_source_covered ||
 f$cc_turn_delayed_cbet_3w_extra_source_covered ||
-f$cc_turn_delayed_cbet_3w_sbvbb_source_covered
+f$cc_turn_delayed_cbet_3w_sbvbb_source_covered ||
+f$cc_turn_delayed_cbet_3w_btnv2p_covered
 
 // Purpose: legal initiative+X/X opportunity awaiting audited source/adaptation.
 // Source/Provenance: P/X fail-closed gap metadata.
 ##f$cc_turn_delayed_cbet_uncovered_context##
 f$cc_turn_delayed_cbet_base_opportunity && !f$cc_turn_delayed_cbet_strategy_covered
 
-// Purpose: action/size integrity for source palette IDs 1..6.
+// Purpose: action/size integrity for current IDs 1..7.
 // Source/Provenance: P safety invariant.
 ##f$cc_turn_delayed_cbet_size_consistent##
 When !f$cc_turn_delayed_cbet_router Return f$cc_turn_delayed_cbet_size_id = 0 Force
-When f$cc_turn_delayed_cbet_router Return f$cc_turn_delayed_cbet_size_id >= 1 && f$cc_turn_delayed_cbet_size_id <= 6 Force
+When f$cc_turn_delayed_cbet_router Return f$cc_turn_delayed_cbet_size_id >= 1 && f$cc_turn_delayed_cbet_size_id <= 7 Force
 When Others Return false Force
 
 // Purpose: deterministic exact-family exclusivity.
-// Source/Provenance: P owner-count invariant over source contexts.
+// Source/Provenance: P owner-count invariant over reviewed contexts.
 ##f$cc_turn_delayed_cbet_child_owner_count##
 (f$cc_turn_delayed_cbet_husb_source_context ? 1 : 0) +
 (f$cc_turn_delayed_cbet_hubb_source_context ? 1 : 0) +
 (f$cc_turn_delayed_cbet_3w_btnvbb_source_context ? 1 : 0) +
 (f$cc_turn_delayed_cbet_3w_btnvsb_source_covered ? 1 : 0) +
 (f$cc_turn_delayed_cbet_3w_bbvsb_source_covered ? 1 : 0) +
-(f$cc_turn_delayed_cbet_3w_sbvbb_source_covered ? 1 : 0)
+(f$cc_turn_delayed_cbet_3w_sbvbb_source_covered ? 1 : 0) +
+(f$cc_turn_delayed_cbet_3w_btnv2p_covered ? 1 : 0)
 
 // Purpose: top-level history/owner/size consistency.
 // Source/Provenance: P safety composition.
@@ -85,6 +95,7 @@ When !f$cc_turn_delayed_cbet_history_consistent Return false Force
 When !f$cc_turn_delayed_cbet_core_source_size_consistent Return false Force
 When !f$cc_turn_delayed_cbet_3w_extra_size_consistent Return false Force
 When !f$cc_turn_delayed_cbet_3w_sbvbb_size_consistent Return false Force
+When !f$cc_turn_delayed_cbet_3w_btnv2p_size_consistent Return false Force
 When f$cc_turn_delayed_cbet_strategy_covered && f$cc_turn_delayed_cbet_child_owner_count != 1 Return false Force
 When !f$cc_turn_delayed_cbet_strategy_covered && f$cc_turn_delayed_cbet_family_id != 0 Return false Force
 When f$cc_turn_delayed_cbet_strategy_covered && f$cc_turn_delayed_cbet_family_id <= 0 Return false Force
@@ -92,5 +103,5 @@ When !f$cc_turn_delayed_cbet_size_consistent Return false Force
 When Others Return true Force
 
 // ============================================================================
-// End Gate12A source-first router through native 3wSBvBB.
+// End Gate12A router through reviewed native 3wBTNv2p AIR gap.
 // ============================================================================
