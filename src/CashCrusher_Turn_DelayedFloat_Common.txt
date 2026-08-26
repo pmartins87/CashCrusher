@@ -1,0 +1,62 @@
+// ============================================================================
+// CashCrusher_Turn_DelayedFloat_Common.txt
+// Gate 12B.2 — shared Delayed-Float current-strength / source-size vocabulary
+// ============================================================================
+// Purpose:
+//   Reuse only MECHANICAL current-Turn hand/runout/sizing translations already
+//   audited for Gate12A. No Gate12A strategic action, family or frequency is
+//   inherited. This avoids two subtly different CF7/dead/zombie reconstructions
+//   for adjacent delayed nodes while preserving strict strategy ownership.
+//
+// Provenance:
+//   T/A = aliases to Gate12A mechanical translations of current hand hierarchy,
+//         completion and legacy dead/zombie draw safety.
+//   P = naming adapter only.
+// ============================================================================
+
+// Current contribution-aware value tiers.
+##f$cc_turn_delayed_float_two_pair_plus_real##
+f$cc_turn_delayed_cbet_two_pair_plus_real
+
+##f$cc_turn_delayed_float_tpop_real##
+f$cc_turn_delayed_cbet_tpop_real
+
+##f$cc_turn_delayed_float_second_pair##
+f$cc_turn_delayed_cbet_second_pair
+
+##f$cc_turn_delayed_float_third_pair##
+f$cc_turn_delayed_cbet_third_pair
+
+##f$cc_turn_delayed_float_no_made##
+f$cc_turn_delayed_cbet_no_made
+
+// Current Turn completion and source draw-safety.
+##f$cc_turn_delayed_float_turn_completed##
+f$cc_turn_delayed_cbet_turn_completed
+
+##f$cc_turn_delayed_float_source_draw_live_safe##
+f$cc_turn_delayed_cbet_source_draw_live_safe
+
+// Purpose: source-compatible real GS/OESD/FD with no made hand.
+// Source/Provenance: T/A canonical real-frontdoor primitives.
+##f$cc_turn_delayed_float_real_gutshot_plus##
+f$cc_turn_delayed_float_no_made &&
+(f$cc_real_gutshot || f$cc_real_oesd || f$cc_real_fd)
+
+// Purpose: live source draw eligible to continue on completed Turns.
+// Source/Provenance: T/A direct conjunction of real draw and audited safety.
+##f$cc_turn_delayed_float_live_real_draw##
+f$cc_turn_delayed_float_real_gutshot_plus &&
+f$cc_turn_delayed_float_source_draw_live_safe
+
+// Source-size aliases. IDs retain Gate12A normalization semantics; only 50/75
+// are currently consumed by the first direct 12B source descendant.
+##f$cc_turn_delayed_float_size_50_id##
+f$cc_turn_delayed_cbet_size_50_id
+
+##f$cc_turn_delayed_float_size_75_id##
+f$cc_turn_delayed_cbet_size_75_id
+
+// ============================================================================
+// End Gate12B.2 common vocabulary.
+// ============================================================================
