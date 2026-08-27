@@ -9,10 +9,12 @@
 //   4 native source-negative 3wBTNvSB / 3wBBvBTN / 3wSBvBTN
 //   5 true-HU HUSB newest-Starting-Strategy air/backdoor BxB100 source subset
 //   6 native 3wBTNvBB exact positive multi-street River source subset
+//   7 native true-multiway 3wBlinds-v-BTN clean no-action source
 //
 // Still pending direct-source audit before any P fills:
 //   remaining HUSB made-hand/draw states, residual 3wBTNvBB source-negative proof,
-//   true-multiway blinds-v-BTN, then source-silent 4-6h SRP/ISO/3BP/squeeze/4BP.
+//   separate draw-donk River ancestry, then source-silent 4-6h
+//   SRP/ISO/3BP/squeeze/4BP.
 // ============================================================================
 
 // Purpose: compact Gate13 reviewed family ID.
@@ -25,6 +27,7 @@ When f$cc_river_delayed_3w_sbvbb_deldel50_parent Return 3 Force
 When f$cc_river_delayed_native_negative_covered Return 4 Force
 When f$cc_river_delayed_husb_source_covered Return 5 Force
 When f$cc_river_delayed_3w_btnvbb_source_covered Return 6 Force
+When f$cc_river_delayed_3w_blindsvbtn_source_covered Return 7 Force
 When Others Return 0 Force
 
 // Purpose: source-first Gate13 action router.
@@ -34,6 +37,7 @@ When !f$cc_river_delayed_base_opportunity Return false Force
 When f$cc_river_delayed_native_source_covered Return f$cc_river_delayed_native_source_action Force
 When f$cc_river_delayed_husb_source_covered Return f$cc_river_delayed_husb_air_bxb100_action Force
 When f$cc_river_delayed_3w_btnvbb_source_covered Return f$cc_river_delayed_3w_btnvbb_source_action Force
+When f$cc_river_delayed_3w_blindsvbtn_source_covered Return f$cc_river_delayed_3w_blindsvbtn_source_action Force
 When Others Return false Force
 
 // Purpose: paired strategic size ID.
@@ -43,6 +47,7 @@ When !f$cc_river_delayed_base_opportunity Return 0 Force
 When f$cc_river_delayed_native_source_covered Return f$cc_river_delayed_native_source_size_id Force
 When f$cc_river_delayed_husb_source_covered Return f$cc_river_delayed_husb_air_bxb100_size_id Force
 When f$cc_river_delayed_3w_btnvbb_source_covered Return f$cc_river_delayed_3w_btnvbb_source_size_id Force
+When f$cc_river_delayed_3w_blindsvbtn_source_covered Return f$cc_river_delayed_3w_blindsvbtn_source_size_id Force
 When Others Return 0 Force
 
 // Purpose: all currently reviewed positive/negative Gate13 source states.
@@ -50,7 +55,8 @@ When Others Return 0 Force
 ##f$cc_river_delayed_strategy_covered##
 f$cc_river_delayed_native_source_covered ||
 f$cc_river_delayed_husb_source_covered ||
-f$cc_river_delayed_3w_btnvbb_source_covered
+f$cc_river_delayed_3w_btnvbb_source_covered ||
+f$cc_river_delayed_3w_blindsvbtn_source_covered
 
 // Purpose: legal Framework no-action River awaiting a reviewed exact child.
 // Source/Provenance: X explicit fail-closed work queue.
@@ -66,7 +72,8 @@ f$cc_river_delayed_base_opportunity &&
 (f$cc_river_delayed_3w_sbvbb_deldel50_parent * 1) +
 (f$cc_river_delayed_native_negative_covered * 1) +
 (f$cc_river_delayed_husb_source_covered * 1) +
-(f$cc_river_delayed_3w_btnvbb_source_covered * 1)
+(f$cc_river_delayed_3w_btnvbb_source_covered * 1) +
+(f$cc_river_delayed_3w_blindsvbtn_source_covered * 1)
 
 // Purpose: strategic action and normalized size must agree.
 // Source/Provenance: P safety invariant.
@@ -82,6 +89,7 @@ When f$cc_river_delayed_parent_conflict Return false Force
 When !f$cc_river_delayed_native_source_size_consistent Return false Force
 When !f$cc_river_delayed_husb_source_size_consistent Return false Force
 When !f$cc_river_delayed_3w_btnvbb_source_size_consistent Return false Force
+When !f$cc_river_delayed_3w_blindsvbtn_source_size_consistent Return false Force
 When f$cc_river_delayed_strategy_covered && f$cc_river_delayed_child_owner_count != 1 Return false Force
 When !f$cc_river_delayed_strategy_covered && f$cc_river_delayed_family_id != 0 Return false Force
 When f$cc_river_delayed_strategy_covered && f$cc_river_delayed_family_id <= 0 Return false Force
@@ -89,5 +97,5 @@ When !f$cc_river_delayed_size_consistent Return false Force
 When Others Return true Force
 
 // ============================================================================
-// End Gate13 router — native direct-source + HUSB/3wBTNvBB checkpoint.
+// End Gate13 router — native/direct-source checkpoint through true multiway.
 // ============================================================================
