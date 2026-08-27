@@ -35,3 +35,5 @@ jobs:
         run: python tools/test_river_delayed_native_source.py
       - name: Test Gate13 HUSB newest-source BxB100
         run: python tools/test_river_delayed_husb.py
+      - name: Test Gate13 native 3wBTNvBB source
+        run: python tools/test_river_delayed_btnvbb.py
