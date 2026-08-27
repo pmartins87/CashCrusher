@@ -68,6 +68,18 @@ IsRiver &&
 !f$cc_hand_second_pair_or_pocket &&
 f$cc_hand_third_pair_or_pocket
 
+// Purpose: exact source HUSB third-or-worse pair family. It is separate from the
+// exact-third helper because other native families attach different rules to 3rd.
+// Source: mature `f$hand_3rdTopPair_or_Pocket_or_Worst`.
+// Source/Provenance: T/A direct portable pair-tier union.
+##f$cc_river_delayed_third_or_worse_pair##
+IsRiver &&
+!f$cc_hand_top_pair_or_better &&
+(f$cc_hand_third_pair_or_pocket ||
+ f$cc_hand_fourth_pair_or_pocket ||
+ f$cc_hand_fifth_pair_or_pocket ||
+ HaveUnderPair)
+
 // Purpose: current no-made class. Draw equity no longer exists on River.
 // Source/Provenance: T/A portable no-made evaluator.
 ##f$cc_river_delayed_no_made##
@@ -83,7 +95,9 @@ IsRiver &&
 
 // -----------------------------------------------------------------------------
 // Gate13 normalized source sizes
-// 1 MIN | 2 25% | 3 33% | 4 50% | 5 75% | 6 100%.
+// 1 MIN | 2 25% | 3 33% | 4 50% | 5 75% | 6 100% | 7 40% | 8 60%.
+// 40/60 are retained exactly because the authoritative HUSB River table uses
+// them; rounding to 33/50/75 would alter source strategy.
 // Historical RiverMax is deliberately NOT normalized into a fixed size ID.
 // -----------------------------------------------------------------------------
 
@@ -116,6 +130,16 @@ IsRiver &&
 // Source/Provenance: T/A source 100% semantics + P normalization.
 ##f$cc_river_delayed_size_100_id##
 6
+
+// Purpose: exact HUSB source 40%-pot River size ID.
+// Source/Provenance: T Starting Strategy HUSB River table + P normalization.
+##f$cc_river_delayed_size_40_id##
+7
+
+// Purpose: exact HUSB source 60%-pot River size ID.
+// Source/Provenance: T Starting Strategy HUSB River table + P normalization.
+##f$cc_river_delayed_size_60_id##
+8
 
 // ============================================================================
 // End Gate13B common vocabulary.
