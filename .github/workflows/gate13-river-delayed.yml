@@ -37,3 +37,5 @@ jobs:
         run: python tools/test_river_delayed_husb.py
       - name: Test Gate13 native 3wBTNvBB source
         run: python tools/test_river_delayed_btnvbb.py
+      - name: Test Gate13 true-multiway blinds-v-BTN source
+        run: python tools/test_river_delayed_blindsvbtn.py
