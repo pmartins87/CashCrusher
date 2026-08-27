@@ -1,0 +1,103 @@
+// ============================================================================
+// CashCrusher_River_Donk.txt
+// Gate 09 — canonical River Donk router
+// ============================================================================
+// Purpose:
+//   Route only River-lead states whose closed history and strategy family have
+//   been audited. A generic OOP/no-initiative router is never positive strategy.
+//
+// Current reviewed families:
+//   1 = literal true-HU HUBB flop-X/C -> turn-X/C source parent;
+//   2 = ordinary-SRP 3-6h descendants/gaps, including exact 3wSBvBB source check,
+//       reconstructible CrusherTBP 2P+ branches and professional robust-value fill;
+//   3 = proven ISO descendants retaining isolator/original-limper/post-raise-
+//       coldcaller provenance and HU/post-MW/current-MW topology;
+//   4 = supported plain-3BP/squeeze descendants retaining 3bettor/opener-call/
+//       pre-squeeze/post-3bet coldcaller provenance and exact topology;
+//   5 = clean supported HU 4BP descendants, including opener4/cold4/call4 range
+//       parents and node-local low-SPR review without generic one-pair leading.
+//
+// Deliberately unowned for now:
+//   * multiway/post-multiway/reversed/other-caller 4BP and all 5BP+ histories;
+//   * source branches that require defense-written historical Turn price/draw/class
+//     provenance which CashCrusher cannot yet prove.
+//
+// Source/Provenance:
+//   T/A = Gate09A exact history + Gate09B source branch + earlier context engines.
+//   P = Gate09C-F six-max topology/value gap fill + fail-closed ownership.
+// ============================================================================
+
+// Purpose: compact current River-Donk family ID.
+// Source/Provenance: P router over audited children only.
+##f$cc_river_donk_family_id##
+When !f$cc_river_donk_base_opportunity Return 0 Force
+When f$cc_river_donk_hubb_covered Return 1 Force
+When f$cc_river_donk_srp_gap_covered Return 2 Force
+When f$cc_river_donk_iso_covered Return 3 Force
+When f$cc_river_donk_3bp_covered Return 4 Force
+When f$cc_river_donk_4bp_covered Return 5 Force
+When Others Return 0 Force
+
+// Purpose: canonical River Donk action.
+// Source/Provenance: exact audited child; all other states check/fail closed.
+##f$cc_river_donk_router##
+When !f$cc_river_donk_base_opportunity Return false Force
+When f$cc_river_donk_hubb_covered Return f$cc_river_donk_hubb_action Force
+When f$cc_river_donk_srp_gap_covered Return f$cc_river_donk_srp_gap_action Force
+When f$cc_river_donk_iso_covered Return f$cc_river_donk_iso_action Force
+When f$cc_river_donk_3bp_covered Return f$cc_river_donk_3bp_action Force
+When f$cc_river_donk_4bp_covered Return f$cc_river_donk_4bp_action Force
+When Others Return false Force
+
+// Purpose: canonical local strategic size ID.
+// IDs: 1=25 2=30 3=33 4=50 5=75 6=100.
+// Source/Provenance: exact child size.
+##f$cc_river_donk_size_id##
+When !f$cc_river_donk_base_opportunity Return 0 Force
+When f$cc_river_donk_hubb_covered Return f$cc_river_donk_hubb_size_id Force
+When f$cc_river_donk_srp_gap_covered Return f$cc_river_donk_srp_gap_size_id Force
+When f$cc_river_donk_iso_covered Return f$cc_river_donk_iso_size_id Force
+When f$cc_river_donk_3bp_covered Return f$cc_river_donk_3bp_size_id Force
+When f$cc_river_donk_4bp_covered Return f$cc_river_donk_4bp_size_id Force
+When Others Return 0 Force
+
+// Purpose: current River Donk state has an audited strategic owner.
+// Source/Provenance: P coverage union.
+##f$cc_river_donk_strategy_covered##
+f$cc_river_donk_hubb_covered ||
+f$cc_river_donk_srp_gap_covered ||
+f$cc_river_donk_iso_covered ||
+f$cc_river_donk_3bp_covered ||
+f$cc_river_donk_4bp_covered
+
+// Purpose: reviewed owner count.
+// Source/Provenance: P exclusivity invariant.
+##f$cc_river_donk_reviewed_family_count##
+(f$cc_river_donk_hubb_covered * 1) +
+(f$cc_river_donk_srp_gap_covered * 1) +
+(f$cc_river_donk_iso_covered * 1) +
+(f$cc_river_donk_3bp_covered * 1) +
+(f$cc_river_donk_4bp_covered * 1)
+
+// Purpose: audited River Donk states have exactly one owner; unowned have zero.
+// Source/Provenance: P fail-closed safety.
+##f$cc_river_donk_family_exclusive##
+When !f$cc_river_donk_strategy_covered Return f$cc_river_donk_reviewed_family_count = 0 Force
+When Others Return f$cc_river_donk_reviewed_family_count = 1 Force
+
+// Purpose: positive River Donk action must own one positive local size.
+// Source/Provenance: P action/size integrity.
+##f$cc_river_donk_size_consistent##
+When !f$cc_river_donk_family_exclusive Return false Force
+When !f$cc_river_donk_router Return f$cc_river_donk_size_id = 0 Force
+When f$cc_river_donk_router Return f$cc_river_donk_size_id >= 1 && f$cc_river_donk_size_id <= 6 Force
+When Others Return false Force
+
+// Purpose: visible River-Donk opportunity not yet owned by an audited child.
+// Source/Provenance: P development diagnostic.
+##f$cc_river_donk_uncovered_context##
+f$cc_river_donk_base_opportunity && !f$cc_river_donk_strategy_covered
+
+// ============================================================================
+// End Gate09 River Donk router.
+// ============================================================================

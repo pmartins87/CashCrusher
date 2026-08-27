@@ -1,0 +1,245 @@
+// ============================================================================
+// CashCrusher_Turn_PostFlopReducedHU_Context.txt
+// Gate 02D.3 context — flop MULTIWAY -> turn HU after an executed CBet
+// ============================================================================
+// Purpose:
+//   Preserve the range origin when several players entered the flop but only one
+//   opponent survives to the turn.  Current HU is NOT ordinary flop-HU merely
+//   because `headsupchair` now identifies one Villain.
+//
+// Why this exists:
+//   Legacy 3-handed `f$game_*` labels are dynamic shells.  After BTN CBet into
+//   SB+BB and one blind folds, the old label can become `3wBTNvSB`/`3wBTNvBB`
+//   on turn even though the surviving range CALLED a multiway flop CBet.  That
+//   selected range must not inherit a heads-up-flop second-barrel tree.
+//
+// Source/Provenance:
+//   T = persisted `playersdealtbits`/`foldbits1`, current opponentsplayingbits,
+//       canonical chair mapping and Gate01N executed-flop history.
+//   A = DeepCrusher cross-street provenance principle: preserve how the range
+//       arrived at the turn instead of reclassifying history from current state.
+//   P = canonical survivor/composition keys for six-max gap policy.
+//
+// Safety:
+//   * no betting policy lives in this file;
+//   * current opponent mask must be a subset of the reconstructed flop entrants;
+//   * current HU Villain must be one of the original flop opponents;
+//   * ordinary SRP additionally requires proof that the survivor called preflop;
+//   * all functions use flat complete WHEN rules where actions are required.
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// PH.01 — Canonical opponent positions that ENTERED the flop
+// -----------------------------------------------------------------------------
+
+// Purpose: canonical UTG opponent was among the reconstructed flop entrants.
+// Source/Provenance: T `f$cc_flop_entry_bits` projected through `utgchair`.
+##f$cc_flop_entry_opp_utg##
+When f$cc_hero_pos_id = 1 Return false Force
+When f$cc_deal_size != 6 Return false Force
+When Others Return (((f$cc_flop_entry_bits >> utgchair) BitAnd 1) = 1) Force
+
+// Purpose: canonical HJ/MP3 opponent entered the flop.
+// Source/Provenance: T persisted flop-entry bits with handedness guard.
+##f$cc_flop_entry_opp_hj##
+When f$cc_hero_pos_id = 2 Return false Force
+When f$cc_deal_size < 5 Return false Force
+When Others Return (((f$cc_flop_entry_bits >> mp3chair) BitAnd 1) = 1) Force
+
+// Purpose: canonical CO opponent entered the flop.
+// Source/Provenance: T persisted flop-entry bits with handedness guard.
+##f$cc_flop_entry_opp_co##
+When f$cc_hero_pos_id = 3 Return false Force
+When f$cc_deal_size < 4 Return false Force
+When Others Return (((f$cc_flop_entry_bits >> cutoffchair) BitAnd 1) = 1) Force
+
+// Purpose: canonical BTN opponent entered the flop.
+// Source/Provenance: T persisted flop-entry bits; deal>=3 avoids HU BTN/SB alias.
+##f$cc_flop_entry_opp_btn##
+When f$cc_hero_pos_id = 4 Return false Force
+When f$cc_deal_size < 3 Return false Force
+When Others Return (((f$cc_flop_entry_bits >> dealerchair) BitAnd 1) = 1) Force
+
+// Purpose: SB opponent entered the flop.
+// Source/Provenance: T persisted flop-entry bits projected through smallblindchair.
+##f$cc_flop_entry_opp_sb##
+When f$cc_hero_pos_id = 5 Return false Force
+When smallblindchair < 0 Return false Force
+When Others Return (((f$cc_flop_entry_bits >> smallblindchair) BitAnd 1) = 1) Force
+
+// Purpose: BB opponent entered the flop.
+// Source/Provenance: T persisted flop-entry bits projected through bigblindchair.
+##f$cc_flop_entry_opp_bb##
+When f$cc_hero_pos_id = 6 Return false Force
+When bigblindchair < 0 Return false Force
+When Others Return (((f$cc_flop_entry_bits >> bigblindchair) BitAnd 1) = 1) Force
+
+// Purpose: canonical six-bit mask of every OPPONENT who entered the flop.
+// Source/Provenance: A mechanical adapter over T persisted flop-entry facts.
+##f$cc_flop_entry_opp_mask##
+(f$cc_flop_entry_opp_utg * 1) +
+(f$cc_flop_entry_opp_hj * 2) +
+(f$cc_flop_entry_opp_co * 4) +
+(f$cc_flop_entry_opp_btn * 8) +
+(f$cc_flop_entry_opp_sb * 16) +
+(f$cc_flop_entry_opp_bb * 32)
+
+// Purpose: validate canonical flop-opponent mask against persisted entrant count
+// and current live-opponent mask.
+// Source/Provenance: P safety invariant over T/A masks.
+// Safety: a current player can never be invented outside the flop-entry set.
+##f$cc_flop_entry_opp_mask_consistent##
+When IsPreflop Return false Force
+When BitCount(f$cc_flop_entry_opp_mask) != (f$cc_flop_entry_count - 1) Return false Force
+When (f$cc_opp_live_mask BitAnd f$cc_flop_entry_opp_mask) != f$cc_opp_live_mask Return false Force
+When Others Return true Force
+
+// -----------------------------------------------------------------------------
+// PH.02 — Generic postflop-reduced HU turn provenance
+// -----------------------------------------------------------------------------
+
+// Purpose: prove a turn decision that is HU now but whose flop began multiway.
+// Source/Provenance: A Gate00 HU-origin distinction + T Gate01N closed flop.
+##f$cc_turn_postmw_hu_context##
+IsTurn &&
+f$cc_hu_origin_postflop_reduced &&
+f$cc_hist_turn_standard_cbet_parent &&
+f$cc_flop_entry_opp_mask_consistent &&
+f$cc_hu_villain_pos_bit > 0
+
+// Purpose: current sole Villain is proven to have been one of the flop entrants.
+// Source/Provenance: T/A exact canonical mask intersection.
+##f$cc_turn_postmw_survivor_was_flop_opponent##
+f$cc_turn_postmw_hu_context &&
+((f$cc_flop_entry_opp_mask BitAnd f$cc_hu_villain_pos_bit) > 0)
+
+// Purpose: mask of opponents who entered flop but are no longer live on turn.
+// Source/Provenance: T/A set subtraction after subset consistency proof.
+// Safety: available only in a proven post-multiway HU turn context.
+##f$cc_turn_postmw_folded_opp_mask##
+When !f$cc_turn_postmw_hu_context Return 0 Force
+When !f$cc_turn_postmw_survivor_was_flop_opponent Return 0 Force
+When Others Return (f$cc_flop_entry_opp_mask - f$cc_opp_live_mask) Force
+
+// Purpose: number of flop opponents who disappeared before turn.
+// Source/Provenance: T BitCount over exact folded-opponent mask.
+##f$cc_turn_postmw_folded_opp_count##
+When !f$cc_turn_postmw_hu_context Return 0 Force
+When Others Return BitCount(f$cc_turn_postmw_folded_opp_mask) Force
+
+// Purpose: blind/nonblind count among ALL flop opponents.
+// Source/Provenance: T/A canonical bit groups: nonblind=1+2+4+8, blinds=16+32.
+##f$cc_turn_postmw_flop_blind_opp_count##
+When !f$cc_turn_postmw_hu_context Return 0 Force
+When Others Return BitCount(f$cc_flop_entry_opp_mask BitAnd 48) Force
+
+// Purpose: nonblind count among all flop opponents.
+// Source/Provenance: T/A canonical mask arithmetic.
+##f$cc_turn_postmw_flop_nonblind_opp_count##
+When !f$cc_turn_postmw_hu_context Return 0 Force
+When Others Return BitCount(f$cc_flop_entry_opp_mask BitAnd 15) Force
+
+// Purpose: classify sole turn survivor: 1 BB | 2 SB | 3 nonblind | 0 invalid.
+// Source/Provenance: P range-parent metadata over T exact Villain position.
+##f$cc_turn_postmw_survivor_type_id##
+When !f$cc_turn_postmw_survivor_was_flop_opponent Return 0 Force
+When f$cc_hu_villain_pos_id = 6 Return 1 Force
+When f$cc_hu_villain_pos_id = 5 Return 2 Force
+When f$cc_hu_villain_pos_id >= 1 && f$cc_hu_villain_pos_id <= 4 Return 3 Force
+When Others Return 0 Force
+
+// Purpose: shorthand for sole surviving BB after multiway flop.
+// Source/Provenance: P metadata alias over exact survivor ID.
+##f$cc_turn_postmw_survivor_bb##
+f$cc_turn_postmw_survivor_type_id = 1
+
+// Purpose: shorthand for sole surviving SB after multiway flop.
+// Source/Provenance: P metadata alias over exact survivor ID.
+##f$cc_turn_postmw_survivor_sb##
+f$cc_turn_postmw_survivor_type_id = 2
+
+// Purpose: shorthand for sole surviving nonblind cold caller after multiway flop.
+// Source/Provenance: P metadata alias over exact survivor ID.
+##f$cc_turn_postmw_survivor_nonblind##
+f$cc_turn_postmw_survivor_type_id = 3
+
+// -----------------------------------------------------------------------------
+// PH.03 — Ordinary-SRP survivor proof
+// -----------------------------------------------------------------------------
+
+// Purpose: prove that current HU Villain had a preflop CALL bit in the ordinary
+// one-raise pot. This prevents an impossible/non-caller range from entering SRP policy.
+// Source/Provenance: T persisted `callbits1` projected by exact Villain position.
+##f$cc_turn_postmw_survivor_called_preflop##
+When !f$cc_turn_postmw_hu_context Return false Force
+When f$cc_hu_villain_pos_id = 1 Return f$cc_pf_call_utg Force
+When f$cc_hu_villain_pos_id = 2 Return f$cc_pf_call_hj Force
+When f$cc_hu_villain_pos_id = 3 Return f$cc_pf_call_co Force
+When f$cc_hu_villain_pos_id = 4 Return f$cc_pf_call_btn Force
+When f$cc_hu_villain_pos_id = 5 Return f$cc_pf_call_sb Force
+When f$cc_hu_villain_pos_id = 6 Return f$cc_pf_call_bb Force
+When Others Return false Force
+
+// Purpose: exact ordinary-SRP Turn-CBet family that began flop multiway and is HU now.
+// Source: no legacy `f$game_*` label preserves this history reliably after a fold.
+// Provenance: A history-preservation requirement + P six-max family definition.
+// Safety: requires actual standard flop CBet history and proven preflop caller survivor.
+##f$cc_turn_srp_postmw_hu_context##
+f$cc_turn_cbet_ordinary_srp_context &&
+f$cc_turn_postmw_hu_context &&
+f$cc_turn_postmw_survivor_was_flop_opponent &&
+f$cc_turn_postmw_survivor_called_preflop
+
+// Purpose: strongest legacy-shape donor: BTN PFA entered flop versus BOTH blinds,
+// then exactly one blind survived the multiway flop CBet to turn.
+// Source: mature CrusherTBP `3wBTNv2p` turn branch is the nearest A donor, but
+// it did not explicitly encode the one-fold/one-call transition.
+// Provenance: A/P, never T; survivor's flop-call range is more selected than the
+// old still-threeway state and must be adapted conservatively.
+##f$cc_turn_srp_postmw_btn_both_blinds_origin##
+f$cc_turn_srp_postmw_hu_context &&
+f$cc_flop_entry_count = 3 &&
+f$cc_hero_pos_id = 4 &&
+f$cc_flop_entry_opp_mask = 48 &&
+(f$cc_turn_postmw_survivor_bb || f$cc_turn_postmw_survivor_sb)
+
+// Purpose: all other ordinary-SRP multiway-flop -> HU-turn origins.
+// Source: no literal DeepCrusher/Starting Strategy turn-CBet range.
+// Provenance: P-heavy explicit gap family.
+##f$cc_turn_srp_postmw_other_origin##
+f$cc_turn_srp_postmw_hu_context && !f$cc_turn_srp_postmw_btn_both_blinds_origin
+
+// Purpose: mark especially selected four-way-or-more flop origins.
+// Source/Provenance: P range-strength descriptor; no direct Crusher ancestor.
+##f$cc_turn_srp_postmw_flop4plus_origin##
+f$cc_turn_srp_postmw_hu_context && f$cc_flop_entry_count >= 4
+
+// Purpose: identify a large flop CBet plan (75% or pot) before one caller survived.
+// Source: Gate01 size snapshot; larger multiway flop size generally selects a
+// stronger continuing range.
+// Provenance: P professional-theory range-selection modifier.
+##f$cc_turn_srp_postmw_large_flop_cbet##
+f$cc_turn_srp_postmw_hu_context && f$cc_hist_flop_cbet_plan_size_id >= 3
+
+// Purpose: exact auditable context key retaining origin, survivor and flop size.
+// Format: H F MM V S Q = HeroPos, flop entrants, flop-opponent mask, VillainPos,
+// flop size ID, current relative position.
+// Source/Provenance: P engineering metadata over T/A exact inputs.
+// Safety: key is diagnostic/routing metadata, never a solved-strategy lookup alone.
+##f$cc_turn_srp_postmw_exact_context_key##
+When !f$cc_turn_srp_postmw_hu_context Return 0 Force
+When Others Return ((f$cc_hero_pos_id * 10000000) + (f$cc_flop_entry_count * 1000000) + (f$cc_flop_entry_opp_mask * 10000) + (f$cc_hu_villain_pos_id * 100) + (f$cc_hist_flop_cbet_plan_size_id * 10) + f$cc_relpos_id) Force
+
+// Purpose: final internal consistency contract for this cross-street family.
+// Source/Provenance: P safety invariant.
+##f$cc_turn_srp_postmw_context_consistent##
+When !f$cc_turn_srp_postmw_hu_context Return false Force
+When f$cc_turn_postmw_survivor_type_id <= 0 Return false Force
+When f$cc_turn_postmw_folded_opp_count != (f$cc_flop_entry_count - 2) Return false Force
+When BitCount(f$cc_opp_live_mask) != 1 Return false Force
+When f$cc_turn_srp_postmw_exact_context_key <= 0 Return false Force
+When Others Return true Force
+
+// ============================================================================
+// End Gate 02D.3 cross-street survivor context.
+// ============================================================================

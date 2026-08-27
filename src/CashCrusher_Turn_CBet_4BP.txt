@@ -1,0 +1,199 @@
+// ============================================================================
+// CashCrusher_Turn_CBet_4BP.txt
+// Gate 02I — clean HU 4-bet-pot Turn CBet
+// ============================================================================
+// Source boundary:
+//   No dedicated deep-stack 4BP Turn-CBet source exists. Exact policy is P-heavy,
+//   constrained by A current-strength/IP-OOP/runout/check-range architecture.
+//
+// Stack-depth contract:
+//   4BP can reach naturally low SPR at 100bb. Low SPR is therefore a legitimate
+//   strategic input here. It still does NOT turn TP/OP into an unconditional
+//   stackoff class. This node only chooses turn bet/check + requested size.
+//   A requested size that exhausts stack can later execute as a natural all-in;
+//   no generic historical 50/55/60% promotion is embedded here.
+// ============================================================================
+
+// Purpose: dangerous/completed 4BP turn for one-pair value.
+// Source/Provenance: A runout caution + P 4BP application.
+##f$cc_turn_4bp_dangerous_runout##
+f$cc_turn_new_completion || f$cc_turn_four_card_straight_or_flush || f$cc_turn_super_completed
+
+// Purpose: clean 4BP turn.
+// Source/Provenance: A/P complement of dangerous runout.
+##f$cc_turn_4bp_clean_turn##
+!f$cc_turn_4bp_dangerous_runout
+
+// Purpose: clean A/K high-pressure 4BP turn.
+// Source/Provenance: P range-advantage selector; not an automatic bluff trigger.
+##f$cc_turn_4bp_high_pressure_turn##
+f$cc_turn_4bp_clean_turn && f$cc_turn_overcard_to_flop && !f$cc_turn_pairs_flop_rank && (f$cc_turn_is_ace || f$cc_turn_is_king)
+
+// -----------------------------------------------------------------------------
+// 4T.01 — OPENER 4BET versus original 3bettor-call
+// Includes true-HU and reduced-HU; exact true-HU range remains separately tagged.
+// -----------------------------------------------------------------------------
+
+// Purpose: P-heavy second barrel after Hero opened, faced 3bet, 4bet and was called.
+// Source: no 4BP source tree; HUSB/other initiative branches provide A structure only.
+// Provenance: P professional 4BP cash fill.
+// Logic: naturally low SPR keeps robust OP/strong TP valuable on clean turns;
+// completion runouts still protect checks if meaningful depth remains. Medium TP
+// is low-SPR/IP dependent. Premium draws remain active; pure air is narrow and IP.
+// Safety: a positive barrel does not pre-authorize calling a turn raise.
+##f$cc_turn_4bp_opener4_action##
+When !f$cc_turn_4bp_context_consistent Return false Force
+When !(f$cc_turn_4bp_truehu_opener4_vs_threebettor || f$cc_turn_4bp_opener4_vs_threebettor) Return false Force
+When f$cc_hand_trips_or_better Return true Force
+When HaveTwoPair && f$cc_turn_4bp_dangerous_runout && !f$cc_turn_4bp_spr_below_15 Return false Force
+When HaveTwoPair Return true Force
+When f$cc_turn_cbet_overpair && f$cc_turn_4bp_dangerous_runout && !f$cc_turn_4bp_spr_below_15 Return false Force
+When f$cc_turn_cbet_overpair Return true Force
+When f$cc_turn_cbet_strong_top_pair && f$cc_turn_4bp_dangerous_runout && !f$cc_turn_4bp_spr_below_1 Return false Force
+When f$cc_turn_cbet_strong_top_pair Return true Force
+When f$cc_turn_cbet_medium_top_pair && f$cc_hu_ip && f$cc_turn_4bp_clean_turn && f$cc_turn_4bp_spr_below_2 Return true Force
+When f$cc_turn_cbet_medium_top_pair && f$cc_pair_plus_draw && f$cc_turn_4bp_spr_below_15 && !f$cc_turn_super_completed Return true Force
+When f$cc_turn_cbet_medium_top_pair Return false Force
+When f$cc_turn_cbet_weak_top_pair Return false Force
+When f$cc_turn_cbet_second_pair && f$cc_pair_plus_draw && f$cc_hu_ip && f$cc_turn_4bp_spr_below_1 Return true Force
+When f$cc_turn_cbet_second_pair Return false Force
+When f$cc_turn_cbet_third_or_worse_pair Return false Force
+When f$cc_hand_no_made && f$cc_turn_cbet_premium_draw && !f$cc_turn_super_completed Return true Force
+When f$cc_hand_no_made && f$cc_turn_cbet_good_draw && f$cc_hu_ip && f$cc_turn_4bp_clean_turn && f$cc_turn_4bp_spr_below_15 Return true Force
+When f$cc_hand_no_made && f$cc_real_frontdoor_draw Return false Force
+When f$cc_turn_cbet_air && f$cc_hu_ip && !f$cc_turn_4bp_strong_selection && user_cc_flop_cbet_had_quality_air && f$cc_hist_flop_cbet_plan_size_id = 1 && f$cc_turn_4bp_high_pressure_turn Return true Force
+When Others Return false Force
+
+// Purpose: requested turn size after opener4-v-3bettor.
+// Source/Provenance: P lower-SPR 33/50/75 palette. 75 may naturally exhaust the
+// remaining stack; it is still a strategic size request, not blanket BetMax.
+##f$cc_turn_4bp_opener4_size_id##
+When !f$cc_turn_4bp_opener4_action Return 0 Force
+When f$cc_hand_trips_or_better && f$cc_turn_4bp_spr_below_1 Return f$cc_turn_size_75_id Force
+When f$cc_hand_trips_or_better Return f$cc_turn_size_50_id Force
+When HaveTwoPair Return f$cc_turn_size_50_id Force
+When f$cc_turn_cbet_overpair && f$cc_turn_4bp_spr_below_1 Return f$cc_turn_size_75_id Force
+When f$cc_turn_cbet_overpair Return f$cc_turn_size_50_id Force
+When f$cc_turn_cbet_strong_top_pair && f$cc_turn_4bp_spr_below_1 Return f$cc_turn_size_75_id Force
+When f$cc_turn_cbet_strong_top_pair Return f$cc_turn_size_50_id Force
+When f$cc_turn_cbet_medium_top_pair Return f$cc_turn_size_33_id Force
+When f$cc_turn_cbet_second_pair Return f$cc_turn_size_33_id Force
+When f$cc_hand_no_made && f$cc_turn_cbet_premium_draw && f$cc_turn_4bp_spr_below_1 Return f$cc_turn_size_75_id Force
+When f$cc_hand_no_made && f$cc_turn_cbet_premium_draw Return f$cc_turn_size_50_id Force
+When f$cc_hand_no_made && f$cc_turn_cbet_good_draw Return f$cc_turn_size_50_id Force
+When f$cc_turn_cbet_air Return f$cc_turn_size_50_id Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// 4T.02 — COLD 4BET versus original OPENER
+// -----------------------------------------------------------------------------
+
+// Purpose: P-heavy second barrel after cold4bet and opener continues.
+// Source: no DeepCrusher equivalent range family.
+// Provenance: P strong/condensed continuation baseline.
+// Logic: one-pair and no-made ranges are tighter than opener4-v-3bettor; robust
+// value continues, OP/strong TP need clean/low-SPR support, premium draws mostly IP;
+// no pure-air baseline.
+##f$cc_turn_4bp_cold4_vs_opener_action##
+When !f$cc_turn_4bp_context_consistent Return false Force
+When !f$cc_turn_4bp_cold4_vs_opener Return false Force
+When f$cc_hand_trips_or_better Return true Force
+When HaveTwoPair && f$cc_turn_4bp_dangerous_runout && !f$cc_turn_4bp_spr_below_1 Return false Force
+When HaveTwoPair Return true Force
+When f$cc_turn_cbet_overpair && f$cc_turn_4bp_clean_turn Return true Force
+When f$cc_turn_cbet_overpair && f$cc_turn_4bp_dangerous_runout && f$cc_turn_4bp_spr_below_1 Return true Force
+When f$cc_turn_cbet_overpair Return false Force
+When f$cc_turn_cbet_strong_top_pair && f$cc_turn_4bp_clean_turn && f$cc_hu_ip && f$cc_turn_4bp_spr_below_2 Return true Force
+When f$cc_turn_cbet_strong_top_pair && f$cc_turn_4bp_clean_turn && f$cc_hu_oop && f$cc_turn_4bp_spr_below_1 Return true Force
+When f$cc_turn_cbet_top_pair Return false Force
+When f$cc_turn_cbet_second_pair Return false Force
+When f$cc_turn_cbet_third_or_worse_pair Return false Force
+When f$cc_hand_no_made && f$cc_turn_cbet_premium_draw && f$cc_hu_ip && !f$cc_turn_super_completed Return true Force
+When f$cc_hand_no_made && f$cc_turn_cbet_premium_draw && f$cc_hu_oop && f$cc_turn_4bp_high_pressure_turn && f$cc_turn_4bp_spr_below_1 Return true Force
+When f$cc_hand_no_made && f$cc_real_frontdoor_draw Return false Force
+When f$cc_turn_cbet_air Return false Force
+When Others Return false Force
+
+// Purpose: requested cold4-v-opener turn size.
+// Source/Provenance: P 50/75 low-SPR value/equity map.
+##f$cc_turn_4bp_cold4_vs_opener_size_id##
+When !f$cc_turn_4bp_cold4_vs_opener_action Return 0 Force
+When f$cc_hand_trips_or_better && f$cc_turn_4bp_spr_below_1 Return f$cc_turn_size_75_id Force
+When f$cc_hand_trips_or_better Return f$cc_turn_size_50_id Force
+When HaveTwoPair Return f$cc_turn_size_50_id Force
+When f$cc_turn_cbet_overpair && f$cc_turn_4bp_spr_below_1 Return f$cc_turn_size_75_id Force
+When f$cc_turn_cbet_overpair Return f$cc_turn_size_50_id Force
+When f$cc_turn_cbet_strong_top_pair Return f$cc_turn_size_50_id Force
+When f$cc_hand_no_made && f$cc_turn_cbet_premium_draw Return f$cc_turn_size_50_id Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// 4T.03 — COLD 4BET versus original 3BETTOR
+// -----------------------------------------------------------------------------
+
+// Purpose: P-heavy second barrel after cold4bet and original 3bettor survives.
+// Source: no literal DeepCrusher range family.
+// Provenance: P selected 3bettor-continuation baseline.
+// Logic: similar to cold4-v-opener but allows slightly broader clean IP strong-TP/
+// premium-draw pressure; medium TP and pure air still absent in first baseline.
+##f$cc_turn_4bp_cold4_vs_threebettor_action##
+When !f$cc_turn_4bp_context_consistent Return false Force
+When !f$cc_turn_4bp_cold4_vs_threebettor Return false Force
+When f$cc_hand_trips_or_better Return true Force
+When HaveTwoPair && f$cc_turn_4bp_dangerous_runout && !f$cc_turn_4bp_spr_below_1 Return false Force
+When HaveTwoPair Return true Force
+When f$cc_turn_cbet_overpair && f$cc_turn_4bp_clean_turn Return true Force
+When f$cc_turn_cbet_overpair && f$cc_turn_4bp_dangerous_runout && f$cc_turn_4bp_spr_below_1 Return true Force
+When f$cc_turn_cbet_overpair Return false Force
+When f$cc_turn_cbet_strong_top_pair && f$cc_turn_4bp_clean_turn && f$cc_hu_ip Return true Force
+When f$cc_turn_cbet_strong_top_pair && f$cc_turn_4bp_clean_turn && f$cc_hu_oop && f$cc_turn_4bp_spr_below_1 Return true Force
+When f$cc_turn_cbet_top_pair Return false Force
+When f$cc_turn_cbet_second_pair Return false Force
+When f$cc_turn_cbet_third_or_worse_pair Return false Force
+When f$cc_hand_no_made && f$cc_turn_cbet_premium_draw && f$cc_hu_ip && !f$cc_turn_super_completed Return true Force
+When f$cc_hand_no_made && f$cc_turn_cbet_premium_draw && f$cc_hu_oop && f$cc_turn_4bp_high_pressure_turn && f$cc_turn_4bp_spr_below_1 Return true Force
+When f$cc_hand_no_made && f$cc_real_frontdoor_draw Return false Force
+When f$cc_turn_cbet_air Return false Force
+When Others Return false Force
+
+// Purpose: requested cold4-v-3bettor turn size.
+// Source/Provenance: P 50/75 lower-SPR map.
+##f$cc_turn_4bp_cold4_vs_threebettor_size_id##
+When !f$cc_turn_4bp_cold4_vs_threebettor_action Return 0 Force
+When f$cc_hand_trips_or_better && f$cc_turn_4bp_spr_below_1 Return f$cc_turn_size_75_id Force
+When f$cc_hand_trips_or_better Return f$cc_turn_size_50_id Force
+When HaveTwoPair Return f$cc_turn_size_50_id Force
+When f$cc_turn_cbet_overpair && f$cc_turn_4bp_spr_below_1 Return f$cc_turn_size_75_id Force
+When f$cc_turn_cbet_overpair Return f$cc_turn_size_50_id Force
+When f$cc_turn_cbet_strong_top_pair Return f$cc_turn_size_50_id Force
+When f$cc_hand_no_made && f$cc_turn_cbet_premium_draw Return f$cc_turn_size_50_id Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// 4T.04 — Dispatch / coverage
+// -----------------------------------------------------------------------------
+
+// Purpose: exact clean HU 4BP Turn-CBet action dispatcher.
+// Source/Provenance: P/A exact range router; unsupported 4BP histories fail closed.
+##f$cc_turn_4bp_action##
+When (f$cc_turn_4bp_truehu_opener4_vs_threebettor || f$cc_turn_4bp_opener4_vs_threebettor) && f$cc_turn_4bp_context_consistent Return f$cc_turn_4bp_opener4_action Force
+When f$cc_turn_4bp_cold4_vs_opener && f$cc_turn_4bp_context_consistent Return f$cc_turn_4bp_cold4_vs_opener_action Force
+When f$cc_turn_4bp_cold4_vs_threebettor && f$cc_turn_4bp_context_consistent Return f$cc_turn_4bp_cold4_vs_threebettor_action Force
+When Others Return false Force
+
+// Purpose: paired clean HU 4BP turn size dispatcher.
+// Source/Provenance: P/A safety router; check/uncovered -> 0.
+##f$cc_turn_4bp_size_id##
+When (f$cc_turn_4bp_truehu_opener4_vs_threebettor || f$cc_turn_4bp_opener4_vs_threebettor) && f$cc_turn_4bp_context_consistent Return f$cc_turn_4bp_opener4_size_id Force
+When f$cc_turn_4bp_cold4_vs_opener && f$cc_turn_4bp_context_consistent Return f$cc_turn_4bp_cold4_vs_opener_size_id Force
+When f$cc_turn_4bp_cold4_vs_threebettor && f$cc_turn_4bp_context_consistent Return f$cc_turn_4bp_cold4_vs_threebettor_size_id Force
+When Others Return 0 Force
+
+// Purpose: coverage flag for Gate02I clean HU 4BP Turn CBet.
+// Source/Provenance: P engineering metadata.
+##f$cc_turn_4bp_covered##
+f$cc_turn_4bp_context_consistent && f$cc_turn_4bp_family_id > 0
+
+// ============================================================================
+// End Gate 02I.
+// ============================================================================

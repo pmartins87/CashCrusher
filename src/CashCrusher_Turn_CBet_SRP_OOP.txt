@@ -1,0 +1,141 @@
+// ============================================================================
+// CashCrusher_Turn_CBet_SRP_OOP.txt
+// Gate 02C — source-anchored HU Turn CBet, Hero OOP
+// ============================================================================
+// Implemented source-anchored subsets:
+//   1) TRUE HU BB PFA OOP after SB/Button limp -> BB raise -> call.
+//   2) 3-6h ordinary SRP SB PFA OOP versus BB.
+//
+// Important source difference:
+//   HUSB/IP barrels many made hands; 3wSBvBB after an actual flop CBet often
+//   CHECKS TP+ on turn to induce/protect an X/R range. CashCrusher therefore
+//   refuses a generic "PFA still has initiative -> barrel TP+" fallback.
+//
+// Source/Provenance:
+//   A = HUBB ordinary-CBet and 3wSBvBB executed-CBet branches.
+//   P = cash-depth caution where source branches depend on Spin SPR/commitment.
+//
+// Stack-depth safety:
+//   historical low-SPR `TurnShove` is not copied here as a generic action. It is
+//   preserved for exact-node commitment review later; normal value-bet branches
+//   are allowed without implying response versus a raise.
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// OOP.00 — Exact contexts
+// -----------------------------------------------------------------------------
+
+// Purpose: true-HU BB PFA OOP after SB/Button limp-call of BB raise.
+// Source: HUBB ordinary-CBet branch is the strongest direct parent.
+// Provenance: A/P because current CashCrusher flop policy was adapted for cash.
+##f$cc_turn_srp_oop_true_hu_limpraised_context##
+f$cc_turn_cbet_hu_opportunity &&
+f$cc_true_hu &&
+f$cc_pot_family_id = 2 &&
+f$cc_pf_role_pfa &&
+f$cc_pf_hu_limp_raise_proven &&
+f$cc_hu_oop &&
+f$cc_hu_matchup_id = 65
+
+// Purpose: 3-6h ordinary SRP SB PFA OOP versus BB after actual flop CBet.
+// Source: direct `3wSBvBB` parent.
+// Provenance: A high positional ancestry.
+##f$cc_turn_srp_oop_sb_vs_bb_context##
+f$cc_turn_cbet_hu_opportunity &&
+f$cc_hu_origin_preflop_reduced &&
+f$cc_pot_family_id = 2 &&
+f$cc_pf_role_pfa &&
+f$cc_pf_one_raise_ordinary_srp &&
+f$cc_hu_oop &&
+f$cc_hu_matchup_id = 56
+
+// -----------------------------------------------------------------------------
+// OOP.01 — TRUE HU limp-raised BB PFA
+// -----------------------------------------------------------------------------
+
+// Purpose: ordinary-HUBB-source Turn CBet after true-HU BB PFA flop CBet.
+// Source: audited HUBB standard-CBet branch, explicitly excluding flop X/R.
+// Provenance: A branch direction/sizing; P cash ownership of future commitment.
+// Decision logic:
+//   * current 2P+/OP/TP: 75 on completed turn, 33 on non-completed turn;
+//   * no-made real draw: 50 per human-reviewed TBP resolution;
+//   * lower pair / air contracts depended on old exact flop-min markers and are
+//     left closed until mapped to the CashCrusher flop plan rather than guessed.
+// Safety: source `SPR<1.6 -> shove` is NOT silently applied; an exact low-SPR jam
+// may be restored later after hand/range/board response audit.
+##f$cc_turn_srp_oop_true_hu_limpraised_action##
+When !f$cc_turn_srp_oop_true_hu_limpraised_context Return false Force
+When f$cc_turn_cbet_two_pair_plus Return true Force
+When f$cc_turn_cbet_overpair Return true Force
+When f$cc_turn_cbet_top_pair Return true Force
+When f$cc_hand_no_made && f$cc_real_frontdoor_draw Return true Force
+When Others Return false Force
+
+// Purpose: size true-HU limp-raised ordinary-HUBB second barrel.
+// Source: HUBB 75 completed / 33 non-completed made value; draws 30-50 resolved
+// by mature TBP to 50.
+// Provenance: A direct source map; no automatic jam conversion.
+##f$cc_turn_srp_oop_true_hu_limpraised_size_id##
+When !f$cc_turn_srp_oop_true_hu_limpraised_action Return 0 Force
+When (f$cc_turn_cbet_two_pair_plus || f$cc_turn_cbet_overpair || f$cc_turn_cbet_top_pair) && f$cc_turn_completed Return f$cc_turn_size_75_id Force
+When (f$cc_turn_cbet_two_pair_plus || f$cc_turn_cbet_overpair || f$cc_turn_cbet_top_pair) Return f$cc_turn_size_33_id Force
+When f$cc_hand_no_made && f$cc_real_frontdoor_draw Return f$cc_turn_size_50_id Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// OOP.02 — Reduced HU SB PFA versus BB
+// -----------------------------------------------------------------------------
+
+// Purpose: source-safe second barrel subset for 3wSBvBB descendant.
+// Source: audited `3wSBvBB` branch after an ACTUAL flop CBet:
+//   * general TP+ checks to induce/XR;
+//   * a turn that newly makes straight possible is the explicit direct 100% bet;
+//   * raised-pot draw CBet did not own the source draw-barrel tail;
+//   * flop-air CBet never automatically 2Bars.
+// Provenance: A direct source subset. We intentionally do not invent a broad
+// deep-cash value barrel to replace the source check architecture in this Gate.
+// Safety: check here is strategic line ownership, not surrender; future turn
+// facing-bet/XR nodes own Hero's response after the check.
+##f$cc_turn_srp_oop_sb_vs_bb_action##
+When !f$cc_turn_srp_oop_sb_vs_bb_context Return false Force
+When f$cc_hand_top_pair_or_better && f$cc_turn_new_straight_completion Return true Force
+When f$cc_hand_top_pair_or_better Return false Force
+When f$cc_hand_no_made && f$cc_real_frontdoor_draw Return false Force
+When f$cc_turn_cbet_air Return false Force
+When Others Return false Force
+
+// Purpose: source size for the explicit SB-v-BB straight-completing turn barrel.
+// Source: `3wSBvBB` uses 100% to target pair+draw-heavy continuing range.
+// Provenance: A direct source size. Pot-size is not all-in and has no automatic
+// commitment meaning at 100bb.
+##f$cc_turn_srp_oop_sb_vs_bb_size_id##
+When !f$cc_turn_srp_oop_sb_vs_bb_action Return 0 Force
+When f$cc_hand_top_pair_or_better && f$cc_turn_new_straight_completion Return f$cc_turn_size_100_id Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// OOP.03 — Dispatchers / coverage
+// -----------------------------------------------------------------------------
+
+// Purpose: route only currently source-audited OOP SRP descendants.
+// Source/Provenance: A exact-family dispatcher; no PFA-OOP generic fallback.
+##f$cc_turn_srp_oop_source_anchored_action##
+When f$cc_turn_srp_oop_true_hu_limpraised_context Return f$cc_turn_srp_oop_true_hu_limpraised_action Force
+When f$cc_turn_srp_oop_sb_vs_bb_context Return f$cc_turn_srp_oop_sb_vs_bb_action Force
+When Others Return false Force
+
+// Purpose: paired OOP size dispatcher.
+// Source/Provenance: A safety router; unsupported/check -> 0.
+##f$cc_turn_srp_oop_source_anchored_size_id##
+When f$cc_turn_srp_oop_true_hu_limpraised_context Return f$cc_turn_srp_oop_true_hu_limpraised_size_id Force
+When f$cc_turn_srp_oop_sb_vs_bb_context Return f$cc_turn_srp_oop_sb_vs_bb_size_id Force
+When Others Return 0 Force
+
+// Purpose: coverage flag for implemented OOP source-anchored subset.
+// Source/Provenance: P engineering metadata.
+##f$cc_turn_srp_oop_source_anchored_covered##
+f$cc_turn_srp_oop_true_hu_limpraised_context || f$cc_turn_srp_oop_sb_vs_bb_context
+
+// ============================================================================
+// End source-anchored OOP Turn CBet subset.
+// ============================================================================

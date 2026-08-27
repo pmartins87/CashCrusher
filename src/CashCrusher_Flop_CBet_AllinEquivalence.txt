@@ -1,0 +1,119 @@
+// ============================================================================
+// CashCrusher_Flop_CBet_AllinEquivalence.txt
+// Gate 01K.3B — mechanically equivalent CBet all-in execution
+// ============================================================================
+// Purpose:
+//   Separate two mechanically forced/equivalent cases from STRATEGIC all-in
+//   promotion.  This module is deliberately narrower than DeepCrusher's 50/55/60
+//   percent commitment mechanisms.
+//
+// Case 1 — HERO-BALANCE REACH:
+//   the requested reviewed CBet is at least Hero's available street-start stack.
+//   The requested size cannot be executed without exhausting Hero's balance.
+//
+// Case 2 — ALL-LIVE-EFFECTIVE REACH:
+//   the requested reviewed CBet reaches the deepest effective relationship.
+//   Every currently live opponent is already covered by the requested amount.
+//   If Hero covers all opponents, pushing Hero's displayed stack risks no extra
+//   matched chips; unmatched excess is not part of an opponent's callable amount.
+//
+// Source/Provenance:
+//   T — OpenHoldem balance cap / poker effective-stack arithmetic.
+//   A — uses the reviewed CashCrusher requested CBet and exact HU/deepest-MW
+//       effective geometry.
+//   X/PENDING — DeepCrusher's strategic ~50/~55/~60 promotion thresholds are NOT
+//       authorized here. Gate 01K.3C keeps them as source diagnostics/candidates
+//       and requires any true strategic jam to be owned by an exact strategy node.
+//
+// History integration:
+//   Before returning the final CBet execution size, this module records the
+//   intended strategic size ID and whether Gate01K.3B itself expected BetMax.
+//   Those are PRE-ACTION plan markers only. Gate01N compares them later with
+//   OpenHoldem's closed-street `did*round2` history; they never assert execution.
+//
+// Safety:
+//   * short-only sidepot reach is NOT enough in multiway;
+//   * no TP+/draw/hand-class condition appears here because this is execution
+//     equivalence after strategy has already chosen the CBet and size;
+//   * invalid geometry falls back to the ordinary native requested size;
+//   * `f$Raise_Committed` is outside this module and remains defense-owned.
+// ============================================================================
+
+// Purpose: requested CBet equals/exceeds Hero's available street-start stack.
+// Source/Provenance: T balance geometry over reviewed requested bet.
+##f$cc_cbet_requested_reaches_hero_stack##
+When !f$cc_cbet_stackgeom_clean Return false Force
+When f$cc_cbet_requested_hero_balance_ratio < 0 Return false Force
+When f$cc_cbet_requested_hero_balance_ratio >= 1.00 Return true Force
+When Others Return false Force
+
+// Purpose: requested CBet reaches the sole HU effective relationship.
+// Source/Provenance: T exact HU effective-stack geometry.
+##f$cc_cbet_requested_reaches_all_live_effective_hu##
+When !f$cc_hu Return false Force
+When !f$cc_cbet_stackgeom_clean Return false Force
+When f$cc_cbet_requested_hu_effective_ratio < 0 Return false Force
+When f$cc_cbet_requested_hu_effective_ratio >= 1.00 Return true Force
+When Others Return false Force
+
+// Purpose: requested CBet reaches the deepest effective relation in multiway,
+// which means it reaches every shallower live effective relation as well.
+// Source/Provenance: T/A dual-bound multiway geometry.
+// Safety: explicitly refuses shortest-only sidepot reach.
+##f$cc_cbet_requested_reaches_all_live_effective_mw##
+When !f$cc_multiway Return false Force
+When !f$cc_cbet_stackgeom_clean Return false Force
+When !f$cc_mw_stack_geometry_valid Return false Force
+When f$cc_cbet_requested_mw_deepest_effective_ratio < 0 Return false Force
+When f$cc_cbet_requested_mw_deepest_effective_ratio >= 1.00 Return true Force
+When Others Return false Force
+
+// Purpose: unified all-live-effective reach across HU and multiway.
+// Source/Provenance: T/A dispatcher; current handedness determines exact geometry.
+##f$cc_cbet_requested_reaches_all_live_effective##
+When f$cc_hu && f$cc_cbet_requested_reaches_all_live_effective_hu Return true Force
+When f$cc_multiway && f$cc_cbet_requested_reaches_all_live_effective_mw Return true Force
+When Others Return false Force
+
+// Purpose: identify only mechanically forced/equivalent BetMax execution cases.
+// Source/Provenance: T/A execution equivalence, not a strategic commitment rule.
+// Safety: sidepot-divergence alone does not qualify.
+##f$cc_cbet_natural_allin_equivalent##
+When !f$cc_flop_cbet_native_size_ready Return false Force
+When !f$cc_cbet_stackgeom_clean Return false Force
+When f$cc_cbet_requested_reaches_hero_stack Return true Force
+When f$cc_cbet_requested_reaches_all_live_effective Return true Force
+When Others Return false Force
+
+// Purpose: final local CBet execution size after purely mechanical all-in
+// equivalence, while leaving strategic promotion to explicit future node policy.
+// Source: T native OpenPPL BetMax + existing native betpot adapter.
+// Provenance: T/A; Gate01N plan markers are P diagnostics over this exact plan.
+// Safety: this function deliberately does not implement historical 50/55/60% rules.
+// The `user_*` writes below record intention only; actual execution is confirmed
+// next street from `did*round2` and `lastraised2`.
+##f$cc_flop_cbet_execution_betsize##
+When !f$cc_flop_cbet_native_size_ready Return 0 Force
+When f$cc_flop_cbet_native_size_ready Set user_cc_flop_cbet_opportunity_seen
+When f$cc_flop_cbet_native_size_ready Set user_cc_flop_cbet_plan_bet_seen
+When f$cc_flop_cbet_native_size_ready Set user_cc_flop_cbet_plan_size_recorded
+When f$cc_flop_cbet_size_id = 1 Set user_cc_flop_cbet_plan_size_33
+When f$cc_flop_cbet_size_id = 2 Set user_cc_flop_cbet_plan_size_50
+When f$cc_flop_cbet_size_id = 3 Set user_cc_flop_cbet_plan_size_75
+When f$cc_flop_cbet_size_id = 4 Set user_cc_flop_cbet_plan_size_100
+When f$cc_cbet_natural_allin_equivalent Set user_cc_flop_cbet_plan_expected_allin
+When f$cc_cbet_natural_allin_equivalent Return BetMax Force
+When Others Return f$cc_flop_cbet_native_betsize Force
+
+// Purpose: explicit proof that shortest-only sidepot reach cannot trigger the
+// local BetMax equivalence path while a deeper live opponent remains uncovered.
+// Source/Provenance: P engineering invariant over T dual-bound geometry.
+##f$cc_cbet_sidepot_divergence_not_promoted##
+When !f$cc_cbet_mw_sidepot_divergence_candidate Return true Force
+When f$cc_cbet_natural_allin_equivalent Return false Force
+When Others Return true Force
+
+// ============================================================================
+// End Gate 01K.3B.
+// Strategic near-all-in promotion remains exact-node owned after Gate 01K.3C.
+// ============================================================================

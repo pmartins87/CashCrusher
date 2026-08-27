@@ -1,0 +1,197 @@
+name: CashCrusher static lint
+
+on:
+  push:
+    branches: [main, gate-00-context-engine]
+  pull_request:
+
+jobs:
+  custom-dependencies:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Lint f$cc dependencies
+        run: python tools/lint_custom_dependencies.py
+      - name: Test multiway stack geometry contract
+        run: python tools/test_multiway_stack_geometry.py
+      - name: Test flop action history contract
+        run: python tools/test_flop_action_history.py
+      - name: Test Turn CBet source-boundary contract
+        run: python tools/test_turn_cbet_contract.py
+      - name: Test post-multiway HU Turn CBet contract
+        run: python tools/test_turn_postmultiway_hu.py
+      - name: Test ordinary-SRP multiway Turn CBet contract
+        run: python tools/test_turn_multiway_srp.py
+      - name: Test isolation-pot Turn CBet contract
+        run: python tools/test_turn_iso.py
+      - name: Test plain 3bet-pot Turn CBet contract
+        run: python tools/test_turn_plain3bp.py
+      - name: Test squeeze-pot Turn CBet contract
+        run: python tools/test_turn_squeeze.py
+      - name: Test clean HU 4bet-pot Turn CBet contract
+        run: python tools/test_turn_4bp.py
+      - name: Test Turn CBet coverage boundary
+        run: python tools/test_turn_cbet_coverage.py
+      - name: Test Turn CBet runtime sizing contract
+        run: python tools/test_turn_cbet_runtime.py
+      - name: Test closed Turn action-history contract
+        run: python tools/test_turn_action_history.py
+      - name: Test River CBet source/provenance contract
+        run: python tools/test_river_cbet_source_contract.py
+      - name: Test six-max SRP River CBet gaps
+        run: python tools/test_river_cbet_srp_gaps.py
+      - name: Test ISO 3BP squeeze 4BP River CBet
+        run: python tools/test_river_cbet_other_pots.py
+      - name: Test canonical River CBet coverage boundary
+        run: python tools/test_river_cbet_coverage.py
+      - name: Test River CBet runtime sizing contract
+        run: python tools/test_river_cbet_runtime.py
+      - name: Test Flop Float source and topology contract
+        run: python tools/test_flop_float_contract.py
+      - name: Test Flop Float coverage boundary
+        run: python tools/test_flop_float_coverage.py
+      - name: Test Flop Float runtime sizing contract
+        run: python tools/test_flop_float_runtime.py
+      - name: Test closed Flop Float action-history contract
+        run: python tools/test_flop_float_history.py
+      - name: Test lastraised final-aggressor and 3BP caller repair
+        run: python tools/test_final_aggressor_context.py
+      - name: Test Turn Float history/opportunity contract
+        run: python tools/test_turn_float_history.py
+      - name: Test Turn Float direct-source strategy contract
+        run: python tools/test_turn_float_source.py
+      - name: Test Turn Float coverage/provenance contract
+        run: python tools/test_turn_float_coverage.py
+      - name: Test Turn Float runtime sizing contract
+        run: python tools/test_turn_float_runtime.py
+      - name: Test closed Turn Float action-history contract
+        run: python tools/test_turn_float_action_history.py
+      - name: Test River Float history/source ownership contract
+        run: python tools/test_river_float_history.py
+      - name: Test River Float direct-source strategy contract
+        run: python tools/test_river_float_source.py
+      - name: Test ordinary-SRP River Float six-max gaps
+        run: python tools/test_river_float_srp_gaps.py
+      - name: Test ISO River Float gaps
+        run: python tools/test_river_float_iso.py
+      - name: Test plain 3BP and squeeze River Float gaps
+        run: python tools/test_river_float_3bp.py
+      - name: Test clean HU 4BP River Float gaps
+        run: python tools/test_river_float_4bp.py
+      - name: Test canonical River Float coverage boundary
+        run: python tools/test_river_float_coverage.py
+      - name: Test River Float runtime sizing contract
+        run: python tools/test_river_float_runtime.py
+      - name: Test direct-source Flop Donk contract
+        run: python tools/test_flop_donk_source.py
+      - name: Test 4-6h BTN plus blinds Flop Donk adaptation
+        run: python tools/test_flop_donk_6max.py
+      - name: Test HU Flop Donk reviewed-check baseline
+        run: python tools/test_flop_donk_hu.py
+      - name: Test residual multiway SRP Flop Donk baseline
+        run: python tools/test_flop_donk_multiway_srp.py
+      - name: Test isolation-pot Flop Donk baseline
+        run: python tools/test_flop_donk_iso.py
+      - name: Test 3BP and squeeze Flop Donk baseline
+        run: python tools/test_flop_donk_3bp.py
+      - name: Test residual unraised multiway Flop Donk policy
+        run: python tools/test_flop_donk_unraised_multiway.py
+      - name: Test clean HU caller-side 4BP Flop Donk baseline
+        run: python tools/test_flop_donk_4bp.py
+      - name: Test Flop Donk runtime sizing contract
+        run: python tools/test_flop_donk_runtime.py
+      - name: Test closed Flop Donk action-history contract
+        run: python tools/test_flop_donk_history.py
+      - name: Test Turn Donk ownership/history contract
+        run: python tools/test_turn_donk_history.py
+      - name: Test direct native Turn Donk source strategy
+        run: python tools/test_turn_donk_source.py
+      - name: Test HUBB Turn Donk source/provenance contract
+        run: python tools/test_turn_donk_hubb.py
+      - name: Test SBvBTN Turn Donk source/provenance contract
+        run: python tools/test_turn_donk_sbvbtn.py
+      - name: Test SBvBB Turn Donk source/provenance contract
+        run: python tools/test_turn_donk_sbvbb.py
+      - name: Test BBvBTN Turn Donk source/provenance contract
+        run: python tools/test_turn_donk_bbvbtn.py
+      - name: Test Turn Donk residual/other-pot/runtime/history contracts
+        run: python tools/test_turn_donk_gaps_runtime_history.py
+      - name: Test River Donk history and true-HU HUBB source
+        run: python tools/test_river_donk_history_source.py
+      - name: Test ordinary-SRP River Donk six-max gaps
+        run: python tools/test_river_donk_srp_gaps.py
+      - name: Test ISO and 3BP/squeeze River Donk gaps
+        run: python tools/test_river_donk_iso_3bp.py
+      - name: Test clean HU 4BP and River Donk runtime
+        run: python tools/test_river_donk_4bp_runtime.py
+      - name: Test Turn Probe ownership snapshot and HUBB source
+        run: python tools/test_turn_probe_history_source.py
+      - name: Test native 3-handed Turn Probe source descendants
+        run: python tools/test_turn_probe_3w_source.py
+      - name: Test SBvBTN Turn Probe reviewed TBP gaps
+        run: python tools/test_turn_probe_sbvbtn_gaps.py
+      - name: Test native multiway Turn Probe reviewed gaps
+        run: python tools/test_turn_probe_multiway_gaps.py
+      - name: Test ordinary-SRP Turn Probe six-max gaps
+        run: python tools/test_turn_probe_srp_gaps.py
+      - name: Test canonical Turn Probe coverage boundary
+        run: python tools/test_turn_probe_coverage.py
+      - name: Test isolation-pot Turn Probe contract
+        run: python tools/test_turn_probe_iso.py
+      - name: Test 3BP and squeeze Turn Probe contract
+        run: python tools/test_turn_probe_3bp.py
+      - name: Test clean caller-side 4BP Turn Probe contract
+        run: python tools/test_turn_probe_4bp.py
+      - name: Test Turn Probe runtime sizing/all-in contract
+        run: python tools/test_turn_probe_runtime.py
+      - name: Test River Probe closed history and native source subset
+        run: python tools/test_river_probe_history_source.py
+      - name: Test true-HU HUBB River Probe source tree
+        run: python tools/test_river_probe_hubb.py
+      - name: Test native 3wBBvBTN River Probe source tree
+        run: python tools/test_river_probe_bbvbtn.py
+      - name: Test native 3wSBvBB River Probe provenance contract
+        run: python tools/test_river_probe_sbvbb.py
+      - name: Test native true-multiway River Probe source contract
+        run: python tools/test_river_probe_native_multiway.py
+      - name: Test ordinary-SRP River Probe six-max gaps
+        run: python tools/test_river_probe_srp_gaps.py
+      - name: Test isolation-pot River Probe contract
+        run: python tools/test_river_probe_iso.py
+      - name: Test plain-3BP and squeeze River Probe contract
+        run: python tools/test_river_probe_3bp.py
+      - name: Test clean-HU 4BP River Probe contract
+        run: python tools/test_river_probe_4bp.py
+      - name: Test canonical River Probe coverage boundary
+        run: python tools/test_river_probe_coverage.py
+      - name: Test River Probe runtime sizing/all-in contract
+        run: python tools/test_river_probe_runtime.py
+      - name: Test core Turn Delayed CBet source contract
+        run: python tools/test_turn_delayed_cbet_source_core.py
+      - name: Test native 3wBTNvSB and BBvSB Turn Delayed CBet source
+        run: python tools/test_turn_delayed_cbet_3w_source.py
+      - name: Test native 3wSBvBB Turn Delayed CBet source
+        run: python tools/test_turn_delayed_cbet_sbvbb.py
+      - name: Test reviewed 3wBTNv2p Turn Delayed CBet gap
+        run: python tools/test_turn_delayed_cbet_btnv2p.py
+      - name: Test native 3wBlinds-v-BTN Turn Delayed CBet check
+        run: python tools/test_turn_delayed_cbet_blindsvbtn.py
+      - name: Test 4-6h ordinary-SRP Turn Delayed CBet adaptation
+        run: python tools/test_turn_delayed_cbet_srp6.py
+      - name: Test isolation-pot Turn Delayed CBet adaptation
+        run: python tools/test_turn_delayed_cbet_iso.py
+      - name: Test 4-6h plain3BP and squeeze Turn Delayed CBet adaptation
+        run: python tools/test_turn_delayed_cbet_3bp.py
+      - name: Test clean 4-6h HU 4BP Turn Delayed CBet adaptation
+        run: python tools/test_turn_delayed_cbet_4bp.py
+      - name: Test canonical Turn Delayed CBet coverage boundary
+        run: python tools/test_turn_delayed_cbet_coverage.py
+      - name: Test Turn Delayed CBet runtime sizing and stack geometry
+        run: python tools/test_turn_delayed_cbet_runtime.py
+      - name: Test Turn Delayed Float ownership history
+        run: python tools/test_turn_delayed_float_history.py
+      - name: Test native 3wBBvSB Turn Delayed Float source
+        run: python tools/test_turn_delayed_float_3w_bbvsb.py

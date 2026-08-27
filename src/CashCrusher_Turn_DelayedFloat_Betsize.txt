@@ -1,0 +1,98 @@
+// ============================================================================
+// CashCrusher_Turn_DelayedFloat_Betsize.txt
+// Gate 12B.12 — canonical Turn Delayed-Float runtime betsize adapter
+// ============================================================================
+// Purpose:
+//   Translate an already-reviewed Gate12B strategic size ID into one exact
+//   OpenPPL initial-Turn bet request without widening strategy or creating a jam.
+//
+// Current legal size IDs:
+//   7 -> 33% -> BetThirdPot    [P six-max only]
+//   2 -> 50% -> BetHalfPot    [T direct source + P]
+//   4 -> 75% -> BetThreeFourthPot [A/P value reclassification + P]
+//
+// Safety:
+//   * no fallback size for any other ID;
+//   * no BetMax / strategic all-in promotion;
+//   * stack reach is persisted only as diagnostic provenance;
+//   * plan markers never prove execution.
+// ============================================================================
+
+// Purpose: router owns one positive reviewed action and legal Gate12B size.
+// Source/Provenance: P runtime ownership gate over T/A/P reviewed strategy.
+##f$cc_turn_delayed_float_runtime_size_ready##
+f$cc_turn_delayed_float_router &&
+f$cc_turn_delayed_float_router_consistent &&
+f$cc_turn_delayed_float_size_consistent &&
+(f$cc_turn_delayed_float_size_id = f$cc_turn_delayed_float_size_33_id ||
+ f$cc_turn_delayed_float_size_id = f$cc_turn_delayed_float_size_50_id ||
+ f$cc_turn_delayed_float_size_id = f$cc_turn_delayed_float_size_75_id)
+
+// Purpose: requested pot fraction for exact runtime geometry.
+// Source/Provenance: T exact 50 source + A/P reviewed 75 and P 33 normalization.
+##f$cc_turn_delayed_float_requested_pot_fraction##
+When !f$cc_turn_delayed_float_runtime_size_ready Return -1 Force
+When f$cc_turn_delayed_float_size_id = f$cc_turn_delayed_float_size_33_id Return 0.333 Force
+When f$cc_turn_delayed_float_size_id = f$cc_turn_delayed_float_size_50_id Return 0.50 Force
+When f$cc_turn_delayed_float_size_id = f$cc_turn_delayed_float_size_75_id Return 0.75 Force
+When Others Return -1 Force
+
+// Purpose: exact OpenPPL requested bet action before any stack-reach diagnostics.
+// Source/Provenance: T OpenPPL canonical fixed-pot actions.
+##f$cc_turn_delayed_float_requested_betsize##
+When !f$cc_turn_delayed_float_runtime_size_ready Return 0 Force
+When f$cc_turn_delayed_float_size_id = f$cc_turn_delayed_float_size_33_id Return BetThirdPot Force
+When f$cc_turn_delayed_float_size_id = f$cc_turn_delayed_float_size_50_id Return BetHalfPot Force
+When f$cc_turn_delayed_float_size_id = f$cc_turn_delayed_float_size_75_id Return BetThreeFourthPot Force
+When Others Return 0 Force
+
+// Purpose: prove every admitted strategic ID has one numeric/runtime mapping.
+// Source/Provenance: P fail-closed mapping invariant.
+##f$cc_turn_delayed_float_runtime_mapping_valid##
+When !f$cc_turn_delayed_float_runtime_size_ready Return false Force
+When f$cc_turn_delayed_float_size_id = f$cc_turn_delayed_float_size_33_id Return f$cc_turn_delayed_float_requested_pot_fraction = 0.333 Force
+When f$cc_turn_delayed_float_size_id = f$cc_turn_delayed_float_size_50_id Return f$cc_turn_delayed_float_requested_pot_fraction = 0.50 Force
+When f$cc_turn_delayed_float_size_id = f$cc_turn_delayed_float_size_75_id Return f$cc_turn_delayed_float_requested_pot_fraction = 0.75 Force
+When Others Return false Force
+
+// Purpose: execute only the reviewed normal bet request and persist PRE-ACTION
+// plan provenance. Stack reach is recorded but never converted to BetMax here.
+// Source/Provenance: T OpenPPL user variables + P cross-street audit architecture.
+##f$cc_turn_delayed_float_execution_betsize##
+When !f$cc_turn_delayed_float_runtime_size_ready Return 0 Force
+When !f$cc_turn_delayed_float_runtime_mapping_valid Return 0 Force
+When f$cc_turn_delayed_float_runtime_size_ready Set user_cc_turn_delayed_float_plan_bet_seen
+When f$cc_turn_delayed_float_runtime_size_ready Set user_cc_turn_delayed_float_plan_size_recorded
+When f$cc_turn_delayed_float_size_id = f$cc_turn_delayed_float_size_33_id Set user_cc_turn_delayed_float_plan_size_33
+When f$cc_turn_delayed_float_size_id = f$cc_turn_delayed_float_size_50_id Set user_cc_turn_delayed_float_plan_size_50
+When f$cc_turn_delayed_float_size_id = f$cc_turn_delayed_float_size_75_id Set user_cc_turn_delayed_float_plan_size_75
+When f$cc_turn_delayed_float_requested_reaches_hero_stack Set user_cc_turn_delayed_float_plan_reaches_hero_stack
+When f$cc_turn_delayed_float_stack_reach_review_required Set user_cc_turn_delayed_float_plan_stack_reach_review
+When Others Return f$cc_turn_delayed_float_requested_betsize Force
+
+// Purpose: count mutually-exclusive requested size markers.
+// Source/Provenance: P integrity arithmetic over persistent user variables.
+##f$cc_turn_delayed_float_plan_size_marker_count##
+(user_cc_turn_delayed_float_plan_size_33 * 1) +
+(user_cc_turn_delayed_float_plan_size_50 * 1) +
+(user_cc_turn_delayed_float_plan_size_75 * 1)
+
+// Purpose: validate persisted normal-bet plan markers independently of execution.
+// Source/Provenance: P cross-street fail-closed marker invariant.
+##f$cc_turn_delayed_float_plan_markers_consistent##
+When user_cc_turn_delayed_float_plan_size_recorded && !user_cc_turn_delayed_float_plan_bet_seen Return false Force
+When user_cc_turn_delayed_float_plan_bet_seen && !user_cc_turn_delayed_float_plan_size_recorded Return false Force
+When user_cc_turn_delayed_float_plan_size_recorded && f$cc_turn_delayed_float_plan_size_marker_count != 1 Return false Force
+When !user_cc_turn_delayed_float_plan_size_recorded && f$cc_turn_delayed_float_plan_size_marker_count != 0 Return false Force
+When user_cc_turn_delayed_float_plan_reaches_hero_stack && !user_cc_turn_delayed_float_plan_size_recorded Return false Force
+When user_cc_turn_delayed_float_plan_stack_reach_review && !user_cc_turn_delayed_float_plan_size_recorded Return false Force
+When Others Return true Force
+
+// Purpose: prove this adapter never locally promotes strategy to all-in.
+// Source/Provenance: P explicit safety invariant.
+##f$cc_turn_delayed_float_no_runtime_allin_promotion##
+true
+
+// ============================================================================
+// End Gate12B.12 runtime betsize adapter.
+// ============================================================================

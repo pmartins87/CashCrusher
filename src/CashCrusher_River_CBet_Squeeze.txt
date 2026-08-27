@@ -1,0 +1,162 @@
+// ============================================================================
+// CashCrusher_River_CBet_Squeeze.txt
+// Gate 03F — squeeze-pot River CBet
+// ============================================================================
+// Source boundary: no dedicated deep-stack squeeze 3Bar source. Exact policy is
+// P-heavy, retaining A current-strength/runout/multiway constraints.
+// Range origins remain opener / pre3bet caller / post3bet caller.
+// No BetMax or inherited commitment shortcut is owned here.
+// ============================================================================
+
+// Purpose: clean enough squeeze River for one-pair value.
+// Source/Provenance: A runout caution + P squeeze abstraction.
+##f$cc_river_squeeze_clean##
+IsRiver && !f$cc_river_completed && !f$cc_river_four_card_completion
+
+// Purpose: clean meaningful-OC squeeze pressure River.
+// Source/Provenance: P range-advantage selector; no action alone.
+##f$cc_river_squeeze_high_pressure##
+f$cc_river_squeeze_clean && f$cc_river_meaningful_overcard && !f$cc_river_pairs_previous_board
+
+// -----------------------------------------------------------------------------
+// RSQ.01 — HU versus original OPENER
+// -----------------------------------------------------------------------------
+
+// Purpose: P-heavy squeeze River versus opener-call survivor.
+// Logic: robust value broad; OP/strong TP require clean or naturally low SPR;
+// narrow IP missed-premium-draw bluff only from HU Turn, low selection and high
+// pressure with A/K blocker structure.
+// Provenance: P professional cash fill.
+##f$cc_river_squeeze_hu_opener_action##
+When !f$cc_river_squeeze_hu_context_consistent Return false Force
+When !f$cc_river_squeeze_hu_vs_opener Return false Force
+When f$cc_river_two_pair_plus Return true Force
+When f$cc_river_overpair && f$cc_river_squeeze_clean Return true Force
+When f$cc_river_overpair && f$cc_river_hu_spr_below_1 Return true Force
+When f$cc_river_overpair Return false Force
+When f$cc_river_strong_top_pair && f$cc_river_squeeze_clean && f$cc_river_hu_spr_below_2 Return true Force
+When f$cc_river_strong_top_pair && f$cc_river_hu_spr_below_1 Return true Force
+When f$cc_river_top_pair Return false Force
+When f$cc_river_second_pair Return false Force
+When f$cc_river_no_made && user_cc_turn_state_had_premium_draw && f$cc_hu_ip && f$cc_river_squeeze_hu_from_hu_turn && !f$cc_river_squeeze_hu_strong_selection && f$cc_river_turn_plan_size_id <= 4 && f$cc_river_squeeze_high_pressure && (f$cc_hole_has_ace || f$cc_hole_has_king) Return true Force
+When f$cc_river_no_made Return false Force
+When Others Return false Force
+
+// Purpose: opener-survivor squeeze River sizes.
+// Source/Provenance: P 75 robust/polar / 50 one-pair.
+##f$cc_river_squeeze_hu_opener_size_id##
+When !f$cc_river_squeeze_hu_opener_action Return 0 Force
+When f$cc_river_two_pair_plus Return f$cc_river_size_75_id Force
+When f$cc_river_overpair || f$cc_river_top_pair Return f$cc_river_size_50_id Force
+When f$cc_river_no_made Return f$cc_river_size_75_id Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// RSQ.02 — HU versus PRE-3BET coldcaller continued vs squeeze
+// -----------------------------------------------------------------------------
+
+// Purpose: River versus very selected flat-open -> call-squeeze -> call-flop ->
+// call-Turn path.
+// Source/Provenance: P-heavy selected range; no pure-air baseline.
+##f$cc_river_squeeze_hu_pre3bet_action##
+When !f$cc_river_squeeze_hu_context_consistent Return false Force
+When !f$cc_river_squeeze_hu_vs_pre3bet Return false Force
+When f$cc_river_straight_or_better Return true Force
+When f$cc_river_two_pair_plus && !f$cc_river_super_completed Return true Force
+When f$cc_river_two_pair_plus && f$cc_river_hu_spr_below_1 Return true Force
+When f$cc_river_overpair && f$cc_river_squeeze_clean && f$cc_river_hu_spr_below_15 Return true Force
+When f$cc_river_strong_top_pair && f$cc_river_squeeze_clean && f$cc_river_hu_spr_below_1 Return true Force
+When f$cc_river_top_pair Return false Force
+When f$cc_river_no_made Return false Force
+When Others Return false Force
+
+// Purpose: pre3bet-coldcaller squeeze River sizes.
+// Source/Provenance: P value-heavy 75/50 map.
+##f$cc_river_squeeze_hu_pre3bet_size_id##
+When !f$cc_river_squeeze_hu_pre3bet_action Return 0 Force
+When f$cc_river_straight_or_better || f$cc_river_two_pair_plus Return f$cc_river_size_75_id Force
+When f$cc_river_overpair || f$cc_river_top_pair Return f$cc_river_size_50_id Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// RSQ.03 — HU versus POST-3BET coldcaller
+// -----------------------------------------------------------------------------
+
+// Purpose: River versus selected post-squeeze coldcaller.
+// Source/Provenance: P-heavy; no pure-air baseline.
+##f$cc_river_squeeze_hu_post3bet_action##
+When !f$cc_river_squeeze_hu_context_consistent Return false Force
+When !f$cc_river_squeeze_hu_vs_post3bet Return false Force
+When f$cc_river_straight_or_better Return true Force
+When f$cc_river_two_pair_plus && !f$cc_river_super_completed Return true Force
+When f$cc_river_two_pair_plus && f$cc_river_hu_spr_below_1 Return true Force
+When f$cc_river_overpair && f$cc_river_squeeze_clean && f$cc_river_hu_spr_below_15 Return true Force
+When f$cc_river_strong_top_pair && f$cc_river_squeeze_clean && f$cc_river_hu_spr_below_1 Return true Force
+When f$cc_river_top_pair Return false Force
+When f$cc_river_no_made Return false Force
+When Others Return false Force
+
+// Purpose: post3bet-coldcaller squeeze River sizes.
+// Source/Provenance: P value-heavy 75/50 map.
+##f$cc_river_squeeze_hu_post3bet_size_id##
+When !f$cc_river_squeeze_hu_post3bet_action Return 0 Force
+When f$cc_river_straight_or_better || f$cc_river_two_pair_plus Return f$cc_river_size_75_id Force
+When f$cc_river_overpair || f$cc_river_top_pair Return f$cc_river_size_50_id Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// RSQ.04 — Current MULTIWAY squeeze River
+// -----------------------------------------------------------------------------
+
+// Purpose: strongly value-heavy multiway squeeze third barrel.
+// Source: no direct source; mature multiway selectivity is A constraint only.
+// Provenance: P-heavy; deepest-effective SPR controls low-SPR exceptions.
+##f$cc_river_squeeze_mw_action##
+When !f$cc_river_squeeze_mw_context_consistent Return false Force
+When f$cc_river_straight_or_better && !f$cc_river_super_completed Return true Force
+When f$cc_river_straight_or_better && f$cc_river_squeeze_mw_all_effective_spr_below_1 Return true Force
+When f$cc_river_two_pair_plus && f$cc_river_squeeze_clean && f$cc_river_squeeze_mw_comp_id = 1 Return true Force
+When f$cc_river_two_pair_plus && f$cc_river_squeeze_mw_all_effective_spr_below_1 Return true Force
+When f$cc_river_overpair && f$cc_river_squeeze_mw_comp_id = 1 && f$cc_river_squeeze_clean && f$cc_river_squeeze_mw_all_effective_spr_below_1 Return true Force
+When f$cc_river_top_pair Return false Force
+When f$cc_river_no_made Return false Force
+When Others Return false Force
+
+// Purpose: multiway squeeze River sizes.
+// Source/Provenance: P robust 75 / one-pair 50.
+##f$cc_river_squeeze_mw_size_id##
+When !f$cc_river_squeeze_mw_action Return 0 Force
+When f$cc_river_straight_or_better || f$cc_river_two_pair_plus Return f$cc_river_size_75_id Force
+When f$cc_river_overpair Return f$cc_river_size_50_id Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// RSQ.05 — Dispatch / coverage
+// -----------------------------------------------------------------------------
+
+// Purpose: exact squeeze River action dispatcher.
+// Source/Provenance: P/A survivor/composition router.
+##f$cc_river_squeeze_action##
+When f$cc_river_squeeze_hu_vs_opener && f$cc_river_squeeze_hu_context_consistent Return f$cc_river_squeeze_hu_opener_action Force
+When f$cc_river_squeeze_hu_vs_pre3bet && f$cc_river_squeeze_hu_context_consistent Return f$cc_river_squeeze_hu_pre3bet_action Force
+When f$cc_river_squeeze_hu_vs_post3bet && f$cc_river_squeeze_hu_context_consistent Return f$cc_river_squeeze_hu_post3bet_action Force
+When f$cc_river_squeeze_mw_context_consistent Return f$cc_river_squeeze_mw_action Force
+When Others Return false Force
+
+// Purpose: paired squeeze River size dispatcher.
+// Source/Provenance: P/A safety router; check/uncovered ->0.
+##f$cc_river_squeeze_size_id##
+When f$cc_river_squeeze_hu_vs_opener && f$cc_river_squeeze_hu_context_consistent Return f$cc_river_squeeze_hu_opener_size_id Force
+When f$cc_river_squeeze_hu_vs_pre3bet && f$cc_river_squeeze_hu_context_consistent Return f$cc_river_squeeze_hu_pre3bet_size_id Force
+When f$cc_river_squeeze_hu_vs_post3bet && f$cc_river_squeeze_hu_context_consistent Return f$cc_river_squeeze_hu_post3bet_size_id Force
+When f$cc_river_squeeze_mw_context_consistent Return f$cc_river_squeeze_mw_size_id Force
+When Others Return 0 Force
+
+// Purpose: Gate03F squeeze River coverage flag.
+// Source/Provenance: P engineering metadata.
+##f$cc_river_squeeze_covered##
+(f$cc_river_squeeze_hu_context_consistent && f$cc_river_squeeze_hu_survivor_type_id > 0) || f$cc_river_squeeze_mw_context_consistent
+
+// ============================================================================
+// End Gate03F squeeze River CBet.
+// ============================================================================

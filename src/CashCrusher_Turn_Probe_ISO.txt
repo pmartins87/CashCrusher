@@ -1,0 +1,294 @@
+// ============================================================================
+// CashCrusher_Turn_Probe_ISO.txt
+// Gate 10G — isolation-pot Turn Probe
+// ============================================================================
+// Purpose:
+//   Give proven ISO caller ranges an explicit Turn-Probe owner after the entire
+//   flop checked through. Original limper and post-raise coldcaller provenance is
+//   retained; HU and current-multiway fields are separate policies.
+//
+// Source boundary:
+//   DeepCrusher has no dedicated deep-stack ISO Turn-Probe strategy tree. The
+//   source contributes ownership concepts and exact history mechanics only.
+//
+// Provenance:
+//   T = Gate00/01E persisted ISO chronology, Gate10 closed history/snapshot and
+//       current hand/board facts.
+//   A = original-limper versus post-raise-coldcaller separation.
+//   P = conservative 100bb six-max cash action/sizing policy.
+//   X = generic air pressure across all ISO ranges, generic TP stackoff, future
+//       raise-defense/River plan and any shortest-stack all-in promotion.
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// TPISO.01 — Hero caller provenance
+// -----------------------------------------------------------------------------
+
+// Purpose: canonical Hero-position bit for preflop caller-mask intersections.
+// Source/Provenance: T/A Gate00 canonical position mapping.
+##f$cc_turn_probe_iso_hero_pos_bit##
+When f$cc_hero_pos_id = 1 Return 1 Force
+When f$cc_hero_pos_id = 2 Return 2 Force
+When f$cc_hero_pos_id = 3 Return 4 Force
+When f$cc_hero_pos_id = 4 Return 8 Force
+When f$cc_hero_pos_id = 5 Return 16 Force
+When f$cc_hero_pos_id = 6 Return 32 Force
+When Others Return 0 Force
+
+// Purpose: Hero limped before the sole isolation raise.
+// Source/Provenance: A exact intersection with Gate01E limper mask.
+##f$cc_turn_probe_iso_hero_was_limper##
+f$cc_pf_iso_proven &&
+f$cc_turn_probe_iso_hero_pos_bit > 0 &&
+((f$cc_pf_pre_raise_limper_mask BitAnd f$cc_turn_probe_iso_hero_pos_bit) > 0)
+
+// Purpose: Hero entered only after the isolation raise.
+// Source/Provenance: A exact intersection with Gate01E post-raise mask.
+##f$cc_turn_probe_iso_hero_was_postraise_coldcaller##
+f$cc_pf_iso_proven &&
+f$cc_turn_probe_iso_hero_pos_bit > 0 &&
+((f$cc_pf_post_raise_coldcaller_mask BitAnd f$cc_turn_probe_iso_hero_pos_bit) > 0)
+
+// Purpose: caller stage must be singular and proven.
+// Source/Provenance: P fail-closed invariant over A exact masks.
+##f$cc_turn_probe_iso_hero_origin_consistent##
+When !f$cc_pf_iso_proven Return false Force
+When f$cc_turn_probe_iso_hero_was_limper && f$cc_turn_probe_iso_hero_was_postraise_coldcaller Return false Force
+When f$cc_turn_probe_iso_hero_was_limper || f$cc_turn_probe_iso_hero_was_postraise_coldcaller Return true Force
+When Others Return false Force
+
+// Purpose: canonical ISO Probe context.
+// Source/Provenance: T/A exact history owner + P caller-stage requirement.
+##f$cc_turn_probe_iso_context##
+f$cc_turn_probe_base_opportunity &&
+f$cc_turn_probe_snapshot_valid &&
+f$cc_pot_family_id = 2 &&
+f$cc_pf_iso_proven &&
+f$cc_pf_role_srp_caller &&
+f$cc_turn_probe_iso_hero_origin_consistent
+
+// -----------------------------------------------------------------------------
+// TPISO.02 — field / aggressor provenance
+// -----------------------------------------------------------------------------
+
+// Purpose: sole isolation raiser remains in current live field.
+// Source/Provenance: T/A exact canonical position/live-mask proof.
+##f$cc_turn_probe_iso_raiser_live##
+When !f$cc_turn_probe_iso_context Return false Force
+When f$cc_pf_single_raiser_pos_id = 1 Return (f$cc_opp_live_mask BitAnd 1) > 0 Force
+When f$cc_pf_single_raiser_pos_id = 2 Return (f$cc_opp_live_mask BitAnd 2) > 0 Force
+When f$cc_pf_single_raiser_pos_id = 3 Return (f$cc_opp_live_mask BitAnd 4) > 0 Force
+When f$cc_pf_single_raiser_pos_id = 4 Return (f$cc_opp_live_mask BitAnd 8) > 0 Force
+When f$cc_pf_single_raiser_pos_id = 5 Return (f$cc_opp_live_mask BitAnd 16) > 0 Force
+When f$cc_pf_single_raiser_pos_id = 6 Return (f$cc_opp_live_mask BitAnd 32) > 0 Force
+When Others Return false Force
+
+// Purpose: HU original-limper versus actual isolator.
+// Source/Provenance: A exact range-origin context.
+##f$cc_turn_probe_iso_hu_limper_context##
+f$cc_turn_probe_iso_context &&
+f$cc_turn_probe_hu_opportunity &&
+f$cc_hu_origin_preflop_reduced &&
+f$cc_turn_probe_iso_hero_was_limper &&
+f$cc_turn_probe_iso_raiser_live &&
+f$cc_hu_villain_pos_id = f$cc_pf_single_raiser_pos_id
+
+// Purpose: HU post-raise coldcaller versus actual isolator.
+// Source/Provenance: A exact selected caller-range context.
+##f$cc_turn_probe_iso_hu_coldcaller_context##
+f$cc_turn_probe_iso_context &&
+f$cc_turn_probe_hu_opportunity &&
+f$cc_hu_origin_preflop_reduced &&
+f$cc_turn_probe_iso_hero_was_postraise_coldcaller &&
+f$cc_turn_probe_iso_raiser_live &&
+f$cc_hu_villain_pos_id = f$cc_pf_single_raiser_pos_id
+
+// Purpose: current multiway ISO Probe with isolator still live.
+// Source/Provenance: A/T exact field preservation + P separate multiway owner.
+##f$cc_turn_probe_iso_multiway_context##
+f$cc_turn_probe_iso_context &&
+f$cc_turn_probe_multiway_opportunity &&
+f$cc_turn_probe_iso_raiser_live
+
+// -----------------------------------------------------------------------------
+// TPISO.03 — shared quality descriptors
+// -----------------------------------------------------------------------------
+
+// Purpose: conservative four-card bluff-pressure veto.
+// Source: paired/A/2+BW pressure principle from source Probe material.
+// Provenance: A source concept + P completed-board cash caution.
+##f$cc_turn_probe_iso_bad_bluff_turn##
+PairOnBoard ||
+AcePresentOnFlop ||
+f$cc_turn_is_ace ||
+user_cc_turn_probe_flop_had_2plusbw ||
+(user_cc_turn_probe_flop_had_1bw && f$cc_turn_is_broadway) ||
+f$cc_turn_completed
+
+// Purpose: strong exact TP for value/protection probes.
+// Source/Provenance: A DeepCrusher kicker stratification + P <=2 split.
+##f$cc_turn_probe_iso_strong_tp##
+f$cc_hand_just_top_pair && f$cc_number_better_kickers <= 2
+
+// Purpose: premium no-made draw, no stackoff implication.
+// Source/Provenance: A/P cleaned high-equity draw family.
+##f$cc_turn_probe_iso_premium_draw##
+f$cc_hand_no_made &&
+(f$cc_real_combo_draw || f$cc_real_nut_fd ||
+ (f$cc_real_oesd && f$cc_two_overcards) ||
+ (f$cc_real_fd && f$cc_two_overcards))
+
+// Purpose: late isolator band where original-limper air pressure is least unsafe.
+// Source/Provenance: P six-max range-strength grouping; exact raiser ID retained.
+##f$cc_turn_probe_iso_late_raiser##
+f$cc_pf_single_raiser_pos_id = 4 ||
+f$cc_pf_single_raiser_pos_id = 5 ||
+f$cc_pf_single_raiser_pos_id = 6
+
+// Purpose: narrow original-limper selected air candidate.
+// Source: general Probe pressure principle after missed flop aggression.
+// Provenance: P-heavy; requires late isolator + saved backdoor + favorable Turn.
+##f$cc_turn_probe_iso_limper_selected_air##
+f$cc_turn_probe_iso_hu_limper_context &&
+f$cc_turn_probe_iso_late_raiser &&
+f$cc_turn_probe_flop_had_air &&
+f$cc_turn_probe_flop_had_backdoor &&
+f$cc_turn_probe_air &&
+!f$cc_turn_probe_iso_bad_bluff_turn
+
+// -----------------------------------------------------------------------------
+// TPISO.04 — HU original-limper policy
+// -----------------------------------------------------------------------------
+
+// Purpose: wider limp-call range can probe somewhat more thinly after isolator
+// checks flop, but robust source-style board veto still constrains air.
+// Source/Provenance: P professional cash fill over A range origin.
+##f$cc_turn_probe_iso_hu_limper_action##
+When !f$cc_turn_probe_iso_hu_limper_context Return false Force
+When f$cc_hand_two_pair_or_better Return true Force
+When HaveOverPair && !f$cc_hand_two_pair_or_better Return true Force
+When f$cc_turn_probe_iso_strong_tp Return true Force
+When f$cc_turn_probe_second_pair && !f$cc_turn_probe_iso_bad_bluff_turn Return true Force
+When f$cc_turn_probe_low_pair Return false Force
+When f$cc_turn_probe_iso_premium_draw && !f$cc_turn_probe_iso_bad_bluff_turn Return true Force
+When f$cc_turn_probe_iso_limper_selected_air Return true Force
+When f$cc_turn_probe_air Return false Force
+When Others Return false Force
+
+// Purpose: HU original-limper size map.
+// Source/Provenance: P 33/50/75 mapping; no generic pot/jam promotion.
+##f$cc_turn_probe_iso_hu_limper_size_id##
+When !f$cc_turn_probe_iso_hu_limper_action Return 0 Force
+When f$cc_hand_two_pair_or_better && f$cc_turn_completed Return f$cc_turn_probe_size_75_id Force
+When f$cc_hand_two_pair_or_better Return f$cc_turn_probe_size_50_id Force
+When HaveOverPair && !f$cc_hand_two_pair_or_better Return f$cc_turn_probe_size_50_id Force
+When f$cc_turn_probe_iso_strong_tp Return f$cc_turn_probe_size_50_id Force
+When f$cc_turn_probe_second_pair Return f$cc_turn_probe_size_33_id Force
+When f$cc_turn_probe_iso_premium_draw Return f$cc_turn_probe_size_50_id Force
+When f$cc_turn_probe_iso_limper_selected_air Return f$cc_turn_probe_size_33_id Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// TPISO.05 — HU post-raise coldcaller policy
+// -----------------------------------------------------------------------------
+
+// Purpose: selected coldcaller range receives no pure-air baseline and less thin
+// pair probing than original limper.
+// Source/Provenance: P professional range-condensation fill.
+##f$cc_turn_probe_iso_hu_coldcaller_action##
+When !f$cc_turn_probe_iso_hu_coldcaller_context Return false Force
+When f$cc_hand_two_pair_or_better Return true Force
+When HaveOverPair && !f$cc_hand_two_pair_or_better Return true Force
+When f$cc_turn_probe_iso_strong_tp && !f$cc_turn_completed Return true Force
+When f$cc_hand_top_pair_or_better Return false Force
+When f$cc_turn_probe_second_pair Return false Force
+When f$cc_turn_probe_low_pair Return false Force
+When f$cc_turn_probe_iso_premium_draw && !f$cc_turn_probe_iso_bad_bluff_turn Return true Force
+When f$cc_turn_probe_air Return false Force
+When Others Return false Force
+
+// Purpose: HU coldcaller size map.
+// Source/Provenance: P 50/75 selected-range sizing.
+##f$cc_turn_probe_iso_hu_coldcaller_size_id##
+When !f$cc_turn_probe_iso_hu_coldcaller_action Return 0 Force
+When f$cc_hand_two_pair_or_better && f$cc_turn_completed Return f$cc_turn_probe_size_75_id Force
+When f$cc_hand_two_pair_or_better Return f$cc_turn_probe_size_50_id Force
+When HaveOverPair && !f$cc_hand_two_pair_or_better Return f$cc_turn_probe_size_50_id Force
+When f$cc_turn_probe_iso_strong_tp Return f$cc_turn_probe_size_50_id Force
+When f$cc_turn_probe_iso_premium_draw Return f$cc_turn_probe_size_50_id Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// TPISO.06 — current multiway policy
+// -----------------------------------------------------------------------------
+
+// Purpose: multiway ISO check-through range remains less capped collectively;
+// pure air/lower pairs check, with exact three-way allowing strong TP/premium draw.
+// Source/Provenance: P conservative multiway cash fill.
+##f$cc_turn_probe_iso_multiway_action##
+When !f$cc_turn_probe_iso_multiway_context Return false Force
+When f$cc_hand_two_pair_or_better Return true Force
+When nplayersplaying = 3 && f$cc_turn_probe_iso_strong_tp && !f$cc_turn_completed Return true Force
+When f$cc_hand_top_pair_or_better Return false Force
+When f$cc_turn_probe_second_pair Return false Force
+When f$cc_turn_probe_low_pair Return false Force
+When nplayersplaying = 3 && f$cc_turn_probe_iso_premium_draw && !f$cc_turn_probe_iso_bad_bluff_turn Return true Force
+When nplayersplaying >= 4 && f$cc_real_combo_draw && f$cc_hand_no_made && !f$cc_turn_completed Return true Force
+When f$cc_turn_probe_air Return false Force
+When Others Return false Force
+
+// Purpose: multiway ISO size map.
+// Source/Provenance: P 50/75 robust-value/equity sizing.
+##f$cc_turn_probe_iso_multiway_size_id##
+When !f$cc_turn_probe_iso_multiway_action Return 0 Force
+When f$cc_hand_two_pair_or_better && f$cc_turn_completed Return f$cc_turn_probe_size_75_id Force
+When f$cc_hand_two_pair_or_better Return f$cc_turn_probe_size_50_id Force
+When f$cc_turn_probe_iso_strong_tp Return f$cc_turn_probe_size_50_id Force
+When f$cc_turn_probe_iso_premium_draw || (f$cc_real_combo_draw && f$cc_hand_no_made) Return f$cc_turn_probe_size_50_id Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// TPISO.07 — dispatcher / coverage
+// -----------------------------------------------------------------------------
+
+// Purpose: complete reviewed ISO context union.
+// Source/Provenance: P coverage metadata.
+##f$cc_turn_probe_iso_covered##
+f$cc_turn_probe_iso_hu_limper_context ||
+f$cc_turn_probe_iso_hu_coldcaller_context ||
+f$cc_turn_probe_iso_multiway_context
+
+// Purpose: exact range/field action dispatcher.
+// Source/Provenance: A/P.
+##f$cc_turn_probe_iso_action##
+When f$cc_turn_probe_iso_hu_limper_context Return f$cc_turn_probe_iso_hu_limper_action Force
+When f$cc_turn_probe_iso_hu_coldcaller_context Return f$cc_turn_probe_iso_hu_coldcaller_action Force
+When f$cc_turn_probe_iso_multiway_context Return f$cc_turn_probe_iso_multiway_action Force
+When Others Return false Force
+
+// Purpose: paired strategic size dispatcher.
+// Source/Provenance: A/P.
+##f$cc_turn_probe_iso_size_id##
+When f$cc_turn_probe_iso_hu_limper_context Return f$cc_turn_probe_iso_hu_limper_size_id Force
+When f$cc_turn_probe_iso_hu_coldcaller_context Return f$cc_turn_probe_iso_hu_coldcaller_size_id Force
+When f$cc_turn_probe_iso_multiway_context Return f$cc_turn_probe_iso_multiway_size_id Force
+When Others Return 0 Force
+
+// Purpose: legal ISO Probe state with unresolved range/live-raiser provenance.
+// Source/Provenance: P fail-closed diagnostic.
+##f$cc_turn_probe_iso_uncovered_context##
+f$cc_turn_probe_base_opportunity &&
+f$cc_pot_family_id = 2 &&
+f$cc_pf_iso_proven &&
+!f$cc_turn_probe_iso_covered
+
+// Purpose: action/size consistency.
+// Source/Provenance: P invariant.
+##f$cc_turn_probe_iso_size_consistent##
+When !f$cc_turn_probe_iso_action Return f$cc_turn_probe_iso_size_id = 0 Force
+When f$cc_turn_probe_iso_action Return f$cc_turn_probe_iso_size_id >= 1 && f$cc_turn_probe_iso_size_id <= 7 Force
+When Others Return false Force
+
+// ============================================================================
+// End Gate10G ISO Turn Probe.
+// ============================================================================

@@ -1,0 +1,33 @@
+name: Gate12B Turn Delayed Float
+
+on:
+  push:
+    branches: [gate-00-context-engine]
+  pull_request:
+
+jobs:
+  gate12b:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Lint f$cc dependencies
+        run: python tools/lint_custom_dependencies.py
+      - name: Test Gate12B ownership history
+        run: python tools/test_turn_delayed_float_history.py
+      - name: Test native 3wBBvSB source
+        run: python tools/test_turn_delayed_float_3w_bbvsb.py
+      - name: Test HUSB boundary and six-max SRP ISO
+        run: python tools/test_turn_delayed_float_sixmax.py
+      - name: Test six-max 3BP squeeze and clean 4BP
+        run: python tools/test_turn_delayed_float_3bp4bp.py
+      - name: Test six-max unraised family
+        run: python tools/test_turn_delayed_float_unraised.py
+      - name: Test canonical Gate12B coverage
+        run: python tools/test_turn_delayed_float_coverage.py
+      - name: Test Gate12B runtime sizing and stack geometry
+        run: python tools/test_turn_delayed_float_runtime.py
+      - name: Test closed Gate12B action history
+        run: python tools/test_turn_delayed_float_action_history.py

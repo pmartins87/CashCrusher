@@ -1,0 +1,361 @@
+// ============================================================================
+// CashCrusher_River_CBet_SRP_Source.txt
+// Gate 03B — source-anchored canonical SRP River CBet descendants
+// ============================================================================
+// Implemented source descendants:
+//   1) TRUE HU HUSB: SB/Button PFA IP vs BB;
+//   2) reduced-HU BTN PFA IP vs BB;
+//   3) reduced-HU BTN PFA IP vs SB;
+//   4) TRUE HU HUBB ordinary CBet: BB PFA OOP vs SB/Button limp-call;
+//   5) reduced-HU SB PFA OOP vs BB, only the exact provable Turn100
+//      straight-completion lineage.
+//
+// Source boundary:
+//   A = DeepCrusher SOURCE-FIDELITY RETRO03 normal-CBet River table.
+//   P = cash-depth adaptation where source uses RiverMax / broad short-stack
+//       no-made continuation or where current strength/runout must be re-evaluated.
+//
+// Critical safety:
+//   * every context requires Gate02N VALID executed Turn history;
+//   * Turn-HU must remain the same HU matchup;
+//   * current River strength supersedes stale Turn hand class;
+//   * historical RiverMax is NOT blindly mapped to BetMax;
+//   * a River value bet with TP/OP does not own response versus a raise;
+//   * unknown source history checks instead of falling into another descendant.
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// RS.00 — Exact source-family contexts
+// -----------------------------------------------------------------------------
+
+// Purpose: true-HU HUSB standard three-street lineage.
+// Source: HUSB is direct full-HU source parent.
+// Provenance: A high ancestry; true-HU ranges remain distinct from 6-max reduced HU.
+##f$cc_river_srp_husb_context##
+f$cc_river_turn_hu_still_hu &&
+f$cc_river_turn_family_id = 1 &&
+f$cc_true_hu &&
+f$cc_deal_size = 2 &&
+f$cc_hero_pos_id = 5 &&
+f$cc_river_turn_live_opp_mask = 32 &&
+f$cc_opp_live_mask = 32 &&
+f$cc_hu_ip
+
+// Purpose: reduced-HU BTN PFA IP versus BB standard CBet lineage.
+// Source: direct `3wBTNvBB` River normal-CBet table.
+// Provenance: A high ancestry.
+##f$cc_river_srp_btn_vs_bb_context##
+f$cc_river_turn_hu_still_hu &&
+f$cc_river_turn_family_id = 1 &&
+f$cc_deal_size >= 3 &&
+f$cc_hero_pos_id = 4 &&
+f$cc_river_turn_live_opp_mask = 32 &&
+f$cc_opp_live_mask = 32 &&
+f$cc_hu_ip
+
+// Purpose: reduced-HU BTN PFA IP versus SB standard CBet lineage.
+// Source: direct `3wBTNvSB` River normal-CBet table.
+// Provenance: A high ancestry.
+##f$cc_river_srp_btn_vs_sb_context##
+f$cc_river_turn_hu_still_hu &&
+f$cc_river_turn_family_id = 1 &&
+f$cc_deal_size >= 3 &&
+f$cc_hero_pos_id = 4 &&
+f$cc_river_turn_live_opp_mask = 16 &&
+f$cc_opp_live_mask = 16 &&
+f$cc_hu_ip
+
+// Purpose: true-HU HUBB ordinary-CBet lineage after SB/Button limp-call of BB raise.
+// Source: HUBB ordinary-CBet Retro03 branch; complete river table is TBP gap fill.
+// Provenance: A/P because binding source itself is human-reviewed gap interpretation.
+##f$cc_river_srp_hubb_context##
+f$cc_river_turn_hu_still_hu &&
+f$cc_river_turn_family_id = 3 &&
+f$cc_true_hu &&
+f$cc_deal_size = 2 &&
+f$cc_hero_pos_id = 6 &&
+f$cc_river_turn_live_opp_mask = 16 &&
+f$cc_opp_live_mask = 16 &&
+f$cc_hu_oop
+
+// Purpose: reduced-HU SB PFA OOP versus BB standard CBet lineage.
+// Source: direct `3wSBvBB` positional source. Only an exact Turn-plan subset is
+// consumed below because most source river states rely on historical markers
+// not reconstructed in CashCrusher.
+// Provenance: A exact context; action coverage is narrower/fail-closed.
+##f$cc_river_srp_sb_vs_bb_context##
+f$cc_river_turn_hu_still_hu &&
+f$cc_river_turn_family_id = 3 &&
+f$cc_deal_size >= 3 &&
+f$cc_hero_pos_id = 5 &&
+f$cc_river_turn_live_opp_mask = 32 &&
+f$cc_opp_live_mask = 32 &&
+f$cc_hu_oop
+
+// Purpose: exactly one source-anchored SRP descendant owns current River state.
+// Source/Provenance: P safety invariant over A exact contexts.
+##f$cc_river_srp_source_context_count##
+(f$cc_river_srp_husb_context * 1) +
+(f$cc_river_srp_btn_vs_bb_context * 1) +
+(f$cc_river_srp_btn_vs_sb_context * 1) +
+(f$cc_river_srp_hubb_context * 1) +
+(f$cc_river_srp_sb_vs_bb_context * 1)
+
+// Purpose: global consistency for this source module.
+// Source/Provenance: P fail-closed guard.
+##f$cc_river_srp_source_context_consistent##
+When !f$cc_river_cbet_opportunity Return false Force
+When f$cc_river_srp_source_context_count != 1 Return false Force
+When Others Return true Force
+
+// -----------------------------------------------------------------------------
+// RS.01 — HUSB true-HU source lineage
+// -----------------------------------------------------------------------------
+
+// Purpose: identify exact source-shaped flop-TP -> Turn meaningful-OC smaller
+// 50 barrel lineage.
+// Source: HUSB `FlopTP_Overcard_50_50` family.
+// Provenance: A reconstruction from persistent flop TP, Turn lower-pair/current
+// provenance, Turn 50 plan and persistent Turn-card mOC fact.
+##f$cc_river_husb_demoted_tp_50_50_line##
+f$cc_river_srp_husb_context &&
+user_cc_flop_cbet_had_top_pair &&
+f$cc_river_turn_had_lower_pair &&
+f$cc_river_turn_plan_size_id = 4 &&
+f$cc_river_turn_was_meaningful_overcard
+
+// Purpose: true-HU HUSB River third-barrel decision.
+// Source: Retro03 HUSB normal-CBet table + pre-merge completed+mOC correction.
+// Provenance: A direction for exact source line; A/P current-strength-first cash
+// adaptation when old marker would otherwise barrel a demoted one-pair blindly.
+// Decision logic:
+//   * current 2P+ value always reclassifies first;
+//   * carried TP/OP source line checks completed+mOC pressure;
+//   * 50-vs-75 Turn value plan repeats corresponding source River size;
+//   * lower-pair/draw/air Turn origins only continue when River improves to TP+;
+//   * missed draw/air checks by explicit source default.
+##f$cc_river_srp_husb_action##
+When !f$cc_river_srp_husb_context Return false Force
+When !f$cc_river_srp_source_context_consistent Return false Force
+When f$cc_river_two_pair_plus Return true Force
+When f$cc_river_husb_demoted_tp_50_50_line && f$cc_river_husb_completed_moc_pressure Return false Force
+When f$cc_river_turn_had_tp_or_op && f$cc_river_husb_completed_moc_pressure Return false Force
+When f$cc_river_husb_demoted_tp_50_50_line && f$cc_river_tp_or_op Return true Force
+When f$cc_river_turn_had_tp_or_op && f$cc_river_turn_plan_size_id = 4 && f$cc_river_tp_or_op Return true Force
+When f$cc_river_turn_had_tp_or_op && f$cc_river_turn_plan_size_id = 6 && f$cc_river_tp_or_op Return true Force
+When f$cc_river_turn_had_2pplus && f$cc_river_top_pair_plus Return true Force
+When f$cc_river_turn_had_lower_pair && f$cc_river_tp_or_op Return true Force
+When f$cc_river_turn_had_lower_pair Return false Force
+When f$cc_river_turn_had_draw && f$cc_river_tp_or_op Return true Force
+When f$cc_river_turn_had_draw Return false Force
+When f$cc_river_turn_had_air && f$cc_river_tp_or_op Return true Force
+When f$cc_river_turn_had_air Return false Force
+When Others Return false Force
+
+// Purpose: HUSB source-shaped River size.
+// Source: 75 TP+/2P+, 50 demoted-TP / improved MP-draw-air to TP/OP.
+// Provenance: A source sizes; no historical optional overbet/Max promotion.
+##f$cc_river_srp_husb_size_id##
+When !f$cc_river_srp_husb_action Return 0 Force
+When f$cc_river_two_pair_plus Return f$cc_river_size_75_id Force
+When f$cc_river_husb_demoted_tp_50_50_line && f$cc_river_tp_or_op Return f$cc_river_size_50_id Force
+When f$cc_river_turn_had_tp_or_op && f$cc_river_turn_plan_size_id = 4 Return f$cc_river_size_50_id Force
+When f$cc_river_turn_had_tp_or_op && f$cc_river_turn_plan_size_id = 6 Return f$cc_river_size_75_id Force
+When f$cc_river_turn_had_2pplus Return f$cc_river_size_75_id Force
+When f$cc_river_turn_had_lower_pair && f$cc_river_tp_or_op Return f$cc_river_size_50_id Force
+When f$cc_river_turn_had_draw && f$cc_river_tp_or_op Return f$cc_river_size_50_id Force
+When f$cc_river_turn_had_air && f$cc_river_tp_or_op Return f$cc_river_size_50_id Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// RS.02 — Reduced-HU BTN vs BB
+// -----------------------------------------------------------------------------
+
+// Purpose: source-exact normal-CBet River direction for BTN-v-BB value table.
+// Source: Retro03 `3wBTNvBB`:
+// 2P+ blocker 50, other 2P+ 75, OP75, just TP needs TPGK+, nCPL, then 50.
+// Provenance: A high fidelity for made-value region.
+// Safety: exact source no-made multi-street plan markers were not copied, so
+// no-made fails closed instead of being guessed from size alone.
+##f$cc_river_srp_btn_vs_bb_action##
+When !f$cc_river_srp_btn_vs_bb_context Return false Force
+When !f$cc_river_srp_source_context_consistent Return false Force
+When f$cc_river_two_pair_plus Return true Force
+When f$cc_river_overpair Return true Force
+When f$cc_river_top_pair && !f$cc_river_tpgk_source Return false Force
+When f$cc_river_top_pair && f$cc_river_completed Return false Force
+When f$cc_river_top_pair && f$cc_river_tpgk_source Return true Force
+When f$cc_river_no_made Return false Force
+When Others Return false Force
+
+// Purpose: exact BTN-v-BB source size map for supported value region.
+// Source/Provenance: A direct Retro03 sizes.
+##f$cc_river_srp_btn_vs_bb_size_id##
+When !f$cc_river_srp_btn_vs_bb_action Return 0 Force
+When f$cc_river_2pplus_blocks_top_pair_rank Return f$cc_river_size_50_id Force
+When f$cc_river_two_pair_plus Return f$cc_river_size_75_id Force
+When f$cc_river_overpair Return f$cc_river_size_75_id Force
+When f$cc_river_top_pair && f$cc_river_tpgk_source Return f$cc_river_size_50_id Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// RS.03 — Reduced-HU BTN vs SB
+// -----------------------------------------------------------------------------
+
+// Purpose: source weak-TP two-street Turn plan (Turn50 -> River check unless 2P+).
+// Source: `user_DC2R_3wBTNvSB_WeakTP_CheckRiver` lineage.
+// Provenance: A reconstruction from exact family, Turn TP class and size50 plan.
+##f$cc_river_btn_vs_sb_weak_tp_two_street_line##
+f$cc_river_srp_btn_vs_sb_context &&
+f$cc_river_turn_had_top_pair &&
+f$cc_river_turn_plan_size_id = 4
+
+// Purpose: source strong-value Turn75 lineage.
+// Source: `StrongValue3BarPlan`; historical River action is `RiverMax`.
+// Provenance: A lineage reconstruction; cash River sizing/action is A/P below.
+##f$cc_river_btn_vs_sb_strong_three_street_line##
+f$cc_river_srp_btn_vs_sb_context &&
+f$cc_river_turn_plan_size_id = 6 &&
+(f$cc_river_turn_had_2pplus || f$cc_river_turn_had_overpair || f$cc_river_turn_had_top_pair)
+
+// Purpose: BTN-v-SB River action with source two-v-three-street distinction.
+// Source: direct Retro03 direction.
+// Provenance: A for weak line; A/P for historical strong-value `RiverMax` at
+// cash depth. Current River value/runout is reclassified before betting.
+// Safety: completed/super-completed one-pair can check at meaningful deep SPR;
+// no automatic shove is imported.
+##f$cc_river_srp_btn_vs_sb_action##
+When !f$cc_river_srp_btn_vs_sb_context Return false Force
+When !f$cc_river_srp_source_context_consistent Return false Force
+When f$cc_river_two_pair_plus Return true Force
+When f$cc_river_btn_vs_sb_weak_tp_two_street_line Return false Force
+When !f$cc_river_btn_vs_sb_strong_three_street_line Return false Force
+When f$cc_river_overpair && f$cc_river_super_completed && f$cc_river_hu_high_spr Return false Force
+When f$cc_river_overpair Return true Force
+When f$cc_river_top_pair && f$cc_river_completed && f$cc_river_hu_high_spr Return false Force
+When f$cc_river_strong_top_pair Return true Force
+When f$cc_river_medium_top_pair && !f$cc_river_completed && !f$cc_river_hu_high_spr Return true Force
+When f$cc_river_top_pair Return false Force
+When Others Return false Force
+
+// Purpose: cash-adapted BTN-v-SB River sizing.
+// Source historical strong line = RiverMax; weak line improves to 2P+ ->75.
+// Provenance: A/P. Robust value uses 75; completed one-pair uses 50 when still
+// selected to bet. Exact all-in remains a separate River stack-geometry gate.
+##f$cc_river_srp_btn_vs_sb_size_id##
+When !f$cc_river_srp_btn_vs_sb_action Return 0 Force
+When f$cc_river_two_pair_plus Return f$cc_river_size_75_id Force
+When f$cc_river_overpair && f$cc_river_completed Return f$cc_river_size_50_id Force
+When f$cc_river_overpair Return f$cc_river_size_75_id Force
+When f$cc_river_top_pair && f$cc_river_completed Return f$cc_river_size_50_id Force
+When f$cc_river_top_pair Return f$cc_river_size_75_id Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// RS.04 — TRUE HU HUBB ordinary CBet
+// -----------------------------------------------------------------------------
+
+// Purpose: ordinary HUBB River action after clean flop+Turn CBet history.
+// Source: human-reviewed CrusherTBP is binding gap interpreter in Retro03.
+// Provenance: A/P: source direction/value sizes retained where defensible; broad
+// no-made 50/100 continuation is quarantined until a blocker-aware cash bluff
+// selector exists. Historical nCPL 2P+ RiverMax is adapted, not erased.
+##f$cc_river_srp_hubb_action##
+When !f$cc_river_srp_hubb_context Return false Force
+When !f$cc_river_srp_source_context_consistent Return false Force
+When f$cc_river_completed && f$cc_river_straight_or_better Return true Force
+When f$cc_river_completed && f$cc_river_top_pair_plus Return true Force
+When !f$cc_river_completed && f$cc_river_two_pair_plus Return true Force
+When f$cc_river_tp_or_op Return true Force
+When f$cc_river_turn_had_draw && f$cc_river_no_made Return false Force
+When f$cc_river_no_made Return false Force
+When Others Return false Force
+
+// Purpose: HUBB ordinary-CBet cash River size map.
+// Source: completed straight+75; completed TP+33; TP/OP33; nCPL 2P+ historical Max.
+// Provenance: A direct sizes except historical Max adapted to 100 at low SPR and
+// 75 otherwise. Pot-size is not synonymous with all-in.
+##f$cc_river_srp_hubb_size_id##
+When !f$cc_river_srp_hubb_action Return 0 Force
+When f$cc_river_completed && f$cc_river_straight_or_better Return f$cc_river_size_75_id Force
+When f$cc_river_completed && f$cc_river_top_pair_plus Return f$cc_river_size_33_id Force
+When !f$cc_river_completed && f$cc_river_two_pair_plus && f$cc_river_hu_spr_below_2 Return f$cc_river_size_100_id Force
+When !f$cc_river_completed && f$cc_river_two_pair_plus Return f$cc_river_size_75_id Force
+When f$cc_river_tp_or_op Return f$cc_river_size_33_id Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// RS.05 — Reduced-HU SB vs BB exact Turn100 straight-completion lineage
+// -----------------------------------------------------------------------------
+
+// Purpose: prove the exact source lineage currently reconstructible from
+// CashCrusher Gate02: SB-v-BB TP+ bet POT only when Turn newly made straight
+// possible. This corresponds to Retro03 `StraightCompleted_2Bar100` family.
+// Source: 3wSBvBB Turn source + River Retro03 state.
+// Provenance: A exact cross-street reconstruction.
+##f$cc_river_sb_vs_bb_straightcompleted_turn100_line##
+f$cc_river_srp_sb_vs_bb_context &&
+f$cc_river_turn_plan_size_id = 7 &&
+!StraightPossibleOnFlop && StraightPossibleOnTurn &&
+(f$cc_river_turn_had_2pplus || f$cc_river_turn_had_overpair || f$cc_river_turn_had_top_pair)
+
+// Purpose: River action for exact SB-v-BB Turn100 source lineage.
+// Source: source uses RiverMax for 2P+/OP/TP with <=4 better kickers; weak TP50.
+// Provenance: A direction + A/P cash sizing/commitment adaptation.
+// Safety: Max is not blindly copied. Current below-TP value checks.
+##f$cc_river_srp_sb_vs_bb_action##
+When !f$cc_river_sb_vs_bb_straightcompleted_turn100_line Return false Force
+When !f$cc_river_srp_source_context_consistent Return false Force
+When f$cc_river_two_pair_plus Return true Force
+When f$cc_river_overpair Return true Force
+When f$cc_river_top_pair && f$cc_number_better_kickers <= 4 Return true Force
+When f$cc_river_top_pair Return true Force
+When Others Return false Force
+
+// Purpose: cash-adapted SB-v-BB Turn100 River size.
+// Source historical Max for stronger TP+/OP/2P+, 50 weak TP.
+// Provenance: A/P. Strong value uses pot at SPR<1.5, otherwise 75; a future
+// River natural-all-in layer may mechanically turn pot/75 into BetMax if reached.
+##f$cc_river_srp_sb_vs_bb_size_id##
+When !f$cc_river_srp_sb_vs_bb_action Return 0 Force
+When f$cc_river_top_pair && f$cc_number_better_kickers > 4 Return f$cc_river_size_50_id Force
+When f$cc_river_hu_spr_below_15 Return f$cc_river_size_100_id Force
+When f$cc_river_two_pair_plus || f$cc_river_overpair || f$cc_river_top_pair Return f$cc_river_size_75_id Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// RS.06 — Dispatch / coverage
+// -----------------------------------------------------------------------------
+
+// Purpose: action dispatcher only for audited source-anchored SRP descendants.
+// Source/Provenance: A exact-family router; unknown source residue checks.
+##f$cc_river_srp_source_action##
+When f$cc_river_srp_husb_context Return f$cc_river_srp_husb_action Force
+When f$cc_river_srp_btn_vs_bb_context Return f$cc_river_srp_btn_vs_bb_action Force
+When f$cc_river_srp_btn_vs_sb_context Return f$cc_river_srp_btn_vs_sb_action Force
+When f$cc_river_srp_hubb_context Return f$cc_river_srp_hubb_action Force
+When f$cc_river_srp_sb_vs_bb_context Return f$cc_river_srp_sb_vs_bb_action Force
+When Others Return false Force
+
+// Purpose: paired size dispatcher for source-anchored SRP descendants.
+// Source/Provenance: A/P safety router; check/uncovered -> 0.
+##f$cc_river_srp_source_size_id##
+When f$cc_river_srp_husb_context Return f$cc_river_srp_husb_size_id Force
+When f$cc_river_srp_btn_vs_bb_context Return f$cc_river_srp_btn_vs_bb_size_id Force
+When f$cc_river_srp_btn_vs_sb_context Return f$cc_river_srp_btn_vs_sb_size_id Force
+When f$cc_river_srp_hubb_context Return f$cc_river_srp_hubb_size_id Force
+When f$cc_river_srp_sb_vs_bb_context Return f$cc_river_srp_sb_vs_bb_size_id Force
+When Others Return 0 Force
+
+// Purpose: coverage flag for source-anchored SRP River descendants.
+// Source/Provenance: P engineering metadata over explicit contexts.
+##f$cc_river_srp_source_covered##
+f$cc_river_srp_husb_context ||
+f$cc_river_srp_btn_vs_bb_context ||
+f$cc_river_srp_btn_vs_sb_context ||
+f$cc_river_srp_hubb_context ||
+f$cc_river_srp_sb_vs_bb_context
+
+// ============================================================================
+// End Gate03B source-anchored SRP River CBet.
+// ============================================================================

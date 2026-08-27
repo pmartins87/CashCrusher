@@ -1,0 +1,153 @@
+// ============================================================================
+// CashCrusher_River_Float_StackGeometry.txt
+// Gate 06H.2 — mechanical River-Float stack-sensitive execution geometry
+// ============================================================================
+// Purpose:
+//   Measure a reviewed River Float against Hero balance and exact HU / dual-bound
+//   multiway effective stacks without converting historical Spin thresholds into
+//   strategic action.
+//
+// Source boundary:
+//   DeepCrusher contains RiverMax and global ~50/55/60 near-all-in promotion
+//   mechanisms. They remain historical diagnostics, not one universal cash rule.
+//
+// Source/Provenance:
+//   T = OpenHoldem pot/currentbet/balance/effective-stack semantics.
+//   A = historical threshold diagnostics retained for later exact-node review.
+//   P = dual-bound sidepot safety; no BetMax returned in this file.
+//
+// Safety:
+//   * canonical River Float is an initial checked-to bet;
+//   * reaching only the shortest MW opponent is not whole-field commitment;
+//   * deepest effective relationship controls all-live equivalence;
+//   * response to a later River raise is defense-owned.
+// ============================================================================
+
+// Purpose: requested River Float is a clean initial street bet whose simple
+// fraction*street-start-pot geometry is valid.
+// Source/Provenance: T OpenHoldem currentbet/potplayer/AmountToCall semantics.
+##f$cc_river_float_stackgeom_clean##
+f$cc_river_float_runtime_size_ready &&
+f$cc_river_float_runtime_mapping_valid &&
+AmountToCall = 0 &&
+currentbet = 0 &&
+potplayer = 0 &&
+f$cc_round_start_pot_bb > 0 &&
+f$cc_hero_stack_round_start_bb > 0
+
+// Purpose: requested River Float contribution in big blinds.
+// Source/Provenance: T/A exact initial-bet arithmetic.
+##f$cc_river_float_requested_bet_bb##
+When !f$cc_river_float_stackgeom_clean Return -1 Force
+When f$cc_river_float_requested_pot_fraction <= 0 Return -1 Force
+When Others Return (f$cc_river_float_requested_pot_fraction * f$cc_round_start_pot_bb) Force
+
+// Purpose: Hero residual stack after requested River Float.
+// Source/Provenance: T stack arithmetic; negative means request exceeds balance.
+##f$cc_river_float_hero_residual_after_bet_bb##
+When f$cc_river_float_requested_bet_bb < 0 Return -1 Force
+When Others Return (f$cc_hero_stack_round_start_bb - f$cc_river_float_requested_bet_bb) Force
+
+// Purpose: requested Float / Hero available street-start stack.
+// Source/Provenance: T exact balance geometry.
+##f$cc_river_float_requested_hero_balance_ratio##
+When !f$cc_river_float_stackgeom_clean Return -1 Force
+When f$cc_hero_stack_round_start_bb <= 0 Return -1 Force
+When Others Return (f$cc_river_float_requested_bet_bb / f$cc_hero_stack_round_start_bb) Force
+
+// Purpose: historical ~50%-Hero-stack review signal only.
+// Source/Provenance: A DeepCrusher threshold evidence, never action.
+##f$cc_river_float_hist_hero_balance_50_trigger##
+f$cc_river_float_requested_hero_balance_ratio >= 0.50
+
+// Purpose: historical ~60%-Hero-stack sizing-promotion signal only.
+// Source/Provenance: A diagnostic preserved for future exact-node audit.
+##f$cc_river_float_hist_hero_stack_60_trigger##
+f$cc_river_float_requested_hero_balance_ratio >= 0.60
+
+// Purpose: requested Float / exact current HU effective stack.
+// Source/Provenance: T/A exact HU street-start geometry.
+##f$cc_river_float_requested_hu_effective_ratio##
+When !f$cc_river_float_stackgeom_clean Return -1 Force
+When !f$cc_hu Return -1 Force
+When f$cc_hu_effective_stack_round_start_bb <= 0 Return -1 Force
+When Others Return (f$cc_river_float_requested_bet_bb / f$cc_hu_effective_stack_round_start_bb) Force
+
+// Purpose: historical ~50%-effective HU review signal only.
+// Source/Provenance: A source callback ancestry; no action follows.
+##f$cc_river_float_hist_hu_effective_50_trigger##
+f$cc_river_float_requested_hu_effective_ratio >= 0.50
+
+// Purpose: requested Float / shallowest MW effective relation.
+// Source/Provenance: T/A dual-bound geometry; may represent only one sidepot.
+##f$cc_river_float_requested_mw_shallowest_effective_ratio##
+When !f$cc_river_float_stackgeom_clean Return -1 Force
+When !f$cc_multiway Return -1 Force
+When !f$cc_mw_stack_geometry_valid Return -1 Force
+When f$cc_mw_shallowest_effective_stack_round_start_bb <= 0 Return -1 Force
+When Others Return (f$cc_river_float_requested_bet_bb / f$cc_mw_shallowest_effective_stack_round_start_bb) Force
+
+// Purpose: requested Float / deepest current MW effective relation.
+// Source/Provenance: T/A whole-field effective-depth denominator.
+##f$cc_river_float_requested_mw_deepest_effective_ratio##
+When !f$cc_river_float_stackgeom_clean Return -1 Force
+When !f$cc_multiway Return -1 Force
+When !f$cc_mw_stack_geometry_valid Return -1 Force
+When f$cc_mw_deepest_effective_stack_round_start_bb <= 0 Return -1 Force
+When Others Return (f$cc_river_float_requested_bet_bb / f$cc_mw_deepest_effective_stack_round_start_bb) Force
+
+// Purpose: historical ~50%-effective MW signal using deepest/all-live relation.
+// Source/Provenance: A semantic-migration diagnostic; no action implied.
+##f$cc_river_float_hist_mw_effective_50_trigger##
+f$cc_river_float_requested_mw_deepest_effective_ratio >= 0.50
+
+// Purpose: requested size reaches Hero's whole available stack.
+// Source/Provenance: T mechanical balance geometry.
+##f$cc_river_float_requested_reaches_hero_stack##
+f$cc_river_float_requested_hero_balance_ratio >= 1.00
+
+// Purpose: requested size reaches exact HU effective relationship.
+// Source/Provenance: T exact HU arithmetic.
+##f$cc_river_float_requested_reaches_hu_effective##
+f$cc_hu && f$cc_river_float_requested_hu_effective_ratio >= 1.00
+
+// Purpose: requested size reaches shortest MW effective relation.
+// Source/Provenance: T/A sidepot descriptor only.
+##f$cc_river_float_requested_reaches_mw_shallowest##
+f$cc_multiway && f$cc_river_float_requested_mw_shallowest_effective_ratio >= 1.00
+
+// Purpose: requested size reaches deepest/all-live MW effective relation.
+// Source/Provenance: T/A whole-field mechanical descriptor.
+##f$cc_river_float_requested_reaches_mw_deepest##
+f$cc_multiway && f$cc_river_float_requested_mw_deepest_effective_ratio >= 1.00
+
+// Purpose: shortest-only sidepot reach while a deeper live opponent remains.
+// Source/Provenance: P/T diagnostic; must never trigger whole-field BetMax.
+##f$cc_river_float_mw_sidepot_divergence_candidate##
+f$cc_river_float_requested_reaches_mw_shallowest && !f$cc_river_float_requested_reaches_mw_deepest
+
+// Purpose: visible review flag when historical or natural stack-sensitive geometry
+// is engaged. True means REVIEW, never shove.
+// Source/Provenance: A/P metadata over T geometry.
+##f$cc_river_float_stack_sensitive_review_required##
+When !f$cc_river_float_stackgeom_clean Return false Force
+When f$cc_river_float_hist_hero_balance_50_trigger Return true Force
+When f$cc_hu && f$cc_river_float_hist_hu_effective_50_trigger Return true Force
+When f$cc_multiway && f$cc_river_float_hist_mw_effective_50_trigger Return true Force
+When f$cc_river_float_requested_reaches_hero_stack Return true Force
+When f$cc_hu && f$cc_river_float_requested_reaches_hu_effective Return true Force
+When f$cc_multiway && f$cc_river_float_requested_reaches_mw_shallowest Return true Force
+When Others Return false Force
+
+// Purpose: compact diagnostic flags.
+// Bits: 1 Hero>=50; 2 Hero>=60; 4 HU-effective>=50; 8 reaches HU effective;
+// 16 reaches MW shallowest; 32 MW-deepest>=50; 64 reaches MW deepest;
+// 128 shortest-only sidepot divergence.
+// Source/Provenance: P metadata over A/T diagnostics.
+##f$cc_river_float_stack_review_flags_id##
+When !f$cc_river_float_stackgeom_clean Return 0 Force
+When Others Return ((f$cc_river_float_hist_hero_balance_50_trigger * 1) + (f$cc_river_float_hist_hero_stack_60_trigger * 2) + ((f$cc_hu && f$cc_river_float_hist_hu_effective_50_trigger) * 4) + ((f$cc_hu && f$cc_river_float_requested_reaches_hu_effective) * 8) + ((f$cc_multiway && f$cc_river_float_requested_reaches_mw_shallowest) * 16) + ((f$cc_multiway && f$cc_river_float_hist_mw_effective_50_trigger) * 32) + ((f$cc_multiway && f$cc_river_float_requested_reaches_mw_deepest) * 64) + ((f$cc_multiway && f$cc_river_float_mw_sidepot_divergence_candidate) * 128)) Force
+
+// ============================================================================
+// End Gate06H.2. No all-in action is encoded here.
+// ============================================================================

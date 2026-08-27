@@ -1,0 +1,111 @@
+// ============================================================================
+// CashCrusher_Turn_DelayedCBet_History.txt
+// Gate 12A.1 — canonical Turn Delayed-CBet ownership from CLOSED flop X/X
+// ============================================================================
+// Purpose:
+//   Own the first Turn decision after Hero held real flop initiative, checked,
+//   and the entire flop checked through. Unlike Turn Probe, Delayed CBet may be
+//   FIRST/MIDDLE or LAST: initiative, not relative position, is the owner split.
+//
+// Source routing:
+//   Framework/DeepCrusher routes checked-flop turn-noaction as:
+//     initiative Hero -> Delayed CBet;
+//     no initiative + FIRST/MIDDLE -> Probe;
+//     no initiative + LAST -> Delayed Float/stab.
+//   Mature source explicitly repairs `user_Flop_Init_Hero` to include
+//   `f$pot_Limped_Initiative`.
+//
+// Provenance:
+//   T = Gate10 closed flop X/X counters + current first-Turn-action facts.
+//   A = source initiative ownership, including exact native limped initiative.
+//   P = pot-family/domain firewalls only.
+// ============================================================================
+
+// Purpose: reuse the already-audited CLOSED flop check-through proof. The name
+// contains `turn_probe` for historical reasons; the mechanical predicate itself
+// is node-neutral: Hero checked exactly once, raisbits2=0, field unchanged.
+// Source/Provenance: T/A alias over Gate10A closed history.
+##f$cc_hist_turn_delayed_cbet_flop_checkthrough_clean##
+f$cc_hist_turn_probe_flop_checkthrough_clean
+
+// Purpose: Hero owns raised initiative in currently supported postflop pot families.
+// 1R PFA, final 3bettor, final 4bettor are source initiative roles.
+// Source/Provenance: A exact initiative role split over Gate00 taxonomy.
+##f$cc_turn_delayed_cbet_raised_initiative##
+When f$cc_pf_role_pfa Return true Force
+When f$cc_pf_role_3bettor Return true Force
+When f$cc_pf_role_4bettor Return true Force
+When Others Return false Force
+
+// Purpose: source-supported initiative includes exact native open-limp families.
+// Source/Provenance: A direct `f$Init_Hero || f$pot_Limped_Initiative` equivalent.
+##f$cc_turn_delayed_cbet_preflop_initiative##
+f$cc_turn_delayed_cbet_raised_initiative || f$cc_native_limped_initiative
+
+// Purpose: initiative domain accepted by Gate12A. Raised source owners are
+// mechanically classified through 4BP; exact native limped initiative is unraised.
+// 5bet+ remains outside current postflop certification.
+// Source/Provenance: P fail-closed domain boundary over A initiative.
+##f$cc_turn_delayed_cbet_initiative_supported##
+When !f$cc_turn_delayed_cbet_preflop_initiative Return false Force
+When f$cc_pot_family_id >= 1 && f$cc_pot_family_id <= 4 Return true Force
+When Others Return false Force
+
+// Purpose: first Hero Turn decision with no wager facing. All relative positions
+// 1/2/3 are valid Delayed-CBet ownership states.
+// Source/Provenance: T OpenHoldem current-round action facts.
+##f$cc_turn_delayed_cbet_first_turn_action_clean##
+IsTurn &&
+BotsActionsOnThisRoundIncludingChecks = 0 &&
+AmountToCall = 0 &&
+balance > 0 &&
+(f$cc_relpos_id >= 1 && f$cc_relpos_id <= 3)
+
+// Purpose: canonical Gate12A ownership.
+// Source/Provenance: T/A/P exact source routing after executed flop X/X.
+##f$cc_turn_delayed_cbet_base_opportunity##
+When !f$cc_context_valid Return false Force
+When !f$cc_turn_delayed_cbet_first_turn_action_clean Return false Force
+When !f$cc_hist_turn_delayed_cbet_flop_checkthrough_clean Return false Force
+When !f$cc_turn_delayed_cbet_initiative_supported Return false Force
+When Others Return true Force
+
+// Purpose: current HU owner with origin retained.
+// Source/Provenance: T/A current field split.
+##f$cc_turn_delayed_cbet_hu_opportunity##
+f$cc_turn_delayed_cbet_base_opportunity && f$cc_hu
+
+// Purpose: current multiway owner after full flop X/X...X.
+// Source/Provenance: T/A field split; field cannot have reduced on checked flop.
+##f$cc_turn_delayed_cbet_multiway_opportunity##
+f$cc_turn_delayed_cbet_base_opportunity && f$cc_multiway
+
+// Purpose: explicit anti-overlap with Turn Probe.
+// Source/Provenance: P invariant over A mutually-exclusive initiative split.
+##f$cc_turn_delayed_cbet_probe_overlap##
+f$cc_turn_delayed_cbet_base_opportunity && f$cc_turn_probe_base_opportunity
+
+// Purpose: no-initiative LAST belongs future Gate12B Delayed Float, never Gate12A.
+// Source/Provenance: A Framework positional/initiative split diagnostic.
+##f$cc_turn_delayed_cbet_delayed_float_overlap_candidate##
+f$cc_turn_delayed_cbet_base_opportunity &&
+!f$cc_turn_delayed_cbet_preflop_initiative &&
+f$cc_relpos_id = 3
+
+// Purpose: check-through means no postflop field reduction before Turn.
+// Source/Provenance: T/P invariant.
+##f$cc_turn_delayed_cbet_postflop_reduced_hu_impossible##
+f$cc_turn_delayed_cbet_hu_opportunity && f$cc_hu_origin_postflop_reduced
+
+// Purpose: ownership sanity before any strategy child is allowed.
+// Source/Provenance: P fail-closed invariant.
+##f$cc_turn_delayed_cbet_history_consistent##
+When f$cc_turn_delayed_cbet_probe_overlap Return false Force
+When f$cc_turn_delayed_cbet_delayed_float_overlap_candidate Return false Force
+When f$cc_turn_delayed_cbet_postflop_reduced_hu_impossible Return false Force
+When f$cc_turn_delayed_cbet_base_opportunity && !f$cc_turn_delayed_cbet_preflop_initiative Return false Force
+When Others Return true Force
+
+// ============================================================================
+// End Gate12A.1 ownership/history.
+// ============================================================================

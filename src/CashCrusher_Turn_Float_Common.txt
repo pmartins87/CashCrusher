@@ -1,0 +1,90 @@
+// ============================================================================
+// CashCrusher_Turn_Float_Common.txt
+// Gate 05B — common Turn Float strategic descriptors
+// ============================================================================
+// Purpose:
+//   Define source-compatible current-hand groups and an independent Turn-Float
+//   sizing palette. This file does not decide which pot/range family bets.
+//
+// Source/Provenance:
+//   T = current CashCrusher made-hand/frontdoor-draw primitives.
+//   A = audited DeepCrusher Turn-Float hand categories and size families.
+//   P = engineering IDs only; no professional gap strategy is introduced here.
+//
+// Safety:
+//   A Turn Float is never promoted to all-in in this file. Size IDs are strategic
+//   intentions only; future runtime geometry owns any mechanical BetMax result.
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// TFC.01 — current no-made split
+// -----------------------------------------------------------------------------
+
+// Purpose: no made hand with a real turn frontdoor straight/flush draw.
+// Source: DeepCrusher `NoMadeHand && Gutshot_or_BetterFDSD` direct Turn-Float
+// branches; CashCrusher uses contribution-aware real draw primitives.
+// Provenance: T/A exact strategic category replacement.
+##f$cc_turn_float_current_real_draw##
+f$cc_hand_no_made && f$cc_real_frontdoor_draw
+
+// Purpose: no made hand without a real frontdoor draw.
+// Source: DeepCrusher `hand_Air` / A-K-high-backdoor-air Turn-Float family.
+// Provenance: T/A cleaned source category; includes high-card air intentionally.
+##f$cc_turn_float_current_air##
+f$cc_hand_no_made && !f$cc_real_frontdoor_draw
+
+// Purpose: reconstruct the source `user_AirCalledRaiseOTF` domain without using
+// the legacy user variable. In source it was written when Hero had NO MADE HAND
+// plus Gutshot-or-better draw before calling a BTN flop X/R.
+// Source/Provenance: A exact marker-domain reconstruction from Gate01 snapshot.
+// Safety: flop pure-air CBet/XR/call is not silently treated as that source state.
+##f$cc_turn_float_btnadv_flop_draw_marker_analog##
+user_cc_flop_cbet_had_no_made &&
+(user_cc_flop_cbet_had_premium_draw || user_cc_flop_cbet_had_good_draw || user_cc_flop_cbet_had_weak_draw)
+
+// Purpose: flop draw-marker domain that has improved to a current made hand.
+// Source: current audited DeepCrusher lets the residual `user_AirCalledRaiseOTF`
+// branch bet 50 after excluding current air/A-high and still-live real draws.
+// Provenance: A current-DeepCrusher behavior; primary BTN Advanced PDF is silent
+// on the exact made-improvement sizing, so this must not be labelled primary-source.
+##f$cc_turn_float_btnadv_made_improvement##
+f$cc_turn_float_btnadv_flop_draw_marker_analog && f$cc_hand_pair_or_better
+
+// -----------------------------------------------------------------------------
+// TFC.02 — strategic size IDs
+// -----------------------------------------------------------------------------
+
+// Purpose: source/professional small quarter-pot family.
+// Source/Provenance: A sizing palette; current Gate05B source does not use it yet.
+##f$cc_turn_float_size_25_id##
+1
+
+// Purpose: ~33% pot source size, inside BTN Advanced's explicit 25-40 interval.
+// Source/Provenance: A direct audited DeepCrusher choice within primary interval.
+##f$cc_turn_float_size_33_id##
+2
+
+// Purpose: 50% pot Turn Float family used explicitly by 3wBBvSB source.
+// Source/Provenance: A direct source size.
+##f$cc_turn_float_size_50_id##
+3
+
+// Purpose: 75% large value/equity family reserved for later audited gaps.
+// Source/Provenance: A/P engineering palette only; no action implication.
+##f$cc_turn_float_size_75_id##
+4
+
+// Purpose: pot-sized polar family reserved for later exact nodes.
+// Source/Provenance: P engineering palette only.
+##f$cc_turn_float_size_100_id##
+5
+
+// Purpose: union canonical Gate05A opportunity with the narrow LP source repair.
+// Source/Provenance: A direct-source ownership union; repair does not widen any
+// ordinary 3BP/ISO/donk family.
+##f$cc_turn_float_source_any_opportunity##
+f$cc_turn_float_opportunity || f$cc_turn_float_source_limped_bbv_sb_opportunity
+
+// ============================================================================
+// End common Turn Float descriptors.
+// ============================================================================

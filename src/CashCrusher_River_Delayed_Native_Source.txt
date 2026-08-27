@@ -1,0 +1,210 @@
+// ============================================================================
+// CashCrusher_River_Delayed_Native_Source.txt
+// Gate 13C — first direct native f$river_lead_noaction descendants
+// ============================================================================
+// Implemented source children:
+//   * true-HU HUBB exact Gate12A Del-Del parent;
+//   * native 3wBBvSB exact Gate12A/Gate12B Turn-check BxB source parent;
+//   * native 3wSBvBB exact Gate12A low-pair / connected-draw Del-Del parents;
+//   * native 3wBTNvSB, 3wBBvBTN and 3wSBvBTN scenario-wide source CHECK.
+//
+// Source boundary:
+//   HUSB, 3wBTNvBB and true-multiway blinds-v-BTN still contain positive source
+//   branches requiring separate provenance audits and are NOT generalized here.
+//
+// Provenance:
+//   T = mature DeepCrusher f$river_lead_noaction ordering/actions/sizes.
+//   A = canonical native geometry + CLOSED Gate12A/12B parent bridges.
+//   P = normalized fixed-size IDs / routing metadata only.
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// RDNS.01 — true-HU HUBB exact Retro12A Del-Del source
+// -----------------------------------------------------------------------------
+
+// Purpose: exact HUBB no-action River after a source Gate12A third-pair or air
+// Del-Del Turn CHECK and actual Turn X/X.
+// Source/Provenance: T/A direct source lineage + exact true-HU geometry.
+##f$cc_river_delayed_hubb_deldel_context##
+f$cc_river_delayed_base_opportunity &&
+f$cc_true_hu && f$cc_hu &&
+f$cc_hero_pos_id = 6 && f$cc_hu_villain_pos_id = 5 &&
+f$cc_hist_river_delayed_cbet_hubb_deldel_valid
+
+// Purpose: direct HUBB Del-Del current-strength-first action tree.
+// Source: TP/OP/2P+ value; second pair; exact third pair; historical air parent
+// with current no-made; all residual states check.
+// Source/Provenance: T direct mature source ordering.
+##f$cc_river_delayed_hubb_deldel_action##
+When !f$cc_river_delayed_hubb_deldel_context Return false Force
+When f$cc_river_delayed_two_pair_plus_real Return true Force
+When f$cc_river_delayed_tpop_real Return true Force
+When f$cc_river_delayed_second_pair Return true Force
+When f$cc_river_delayed_third_pair Return true Force
+When f$cc_hist_river_delayed_cbet_hubb_air_deldel_valid && f$cc_river_delayed_no_made Return true Force
+When Others Return false Force
+
+// Purpose: exact HUBB Del-Del sizes: value CPL50/nCPL100; second pair CPL25/
+// nCPL50; third pair MIN; air Del-Del current no-made50.
+// Source/Provenance: T direct source sizes.
+##f$cc_river_delayed_hubb_deldel_size_id##
+When !f$cc_river_delayed_hubb_deldel_action Return 0 Force
+When (f$cc_river_delayed_two_pair_plus_real || f$cc_river_delayed_tpop_real) && f$cc_river_delayed_completed Return f$cc_river_delayed_size_50_id Force
+When (f$cc_river_delayed_two_pair_plus_real || f$cc_river_delayed_tpop_real) Return f$cc_river_delayed_size_100_id Force
+When f$cc_river_delayed_second_pair && f$cc_river_delayed_completed Return f$cc_river_delayed_size_25_id Force
+When f$cc_river_delayed_second_pair Return f$cc_river_delayed_size_50_id Force
+When f$cc_river_delayed_third_pair Return f$cc_river_delayed_size_min_id Force
+When f$cc_hist_river_delayed_cbet_hubb_air_deldel_valid && f$cc_river_delayed_no_made Return f$cc_river_delayed_size_50_id Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// RDNS.02 — native 3wBBvSB Turn-check BxB source
+// -----------------------------------------------------------------------------
+
+// Purpose: exact native 3wBBvSB topology at River.
+// Source/Provenance: A direct legacy game reconstruction.
+##f$cc_river_delayed_3w_bbvsb_context##
+f$cc_river_delayed_base_opportunity &&
+f$cc_deal_size = 3 && f$cc_flop_entry_count = 2 && f$cc_hu &&
+f$cc_hero_pos_id = 6 && f$cc_hu_villain_pos_id = 5
+
+// Purpose: exact BxB50 positive parent from Gate12A or Gate12B actual Turn CHECK.
+// Source/Provenance: T/A future-plan bridge + CLOSED round-3 proof.
+##f$cc_river_delayed_3w_bbvsb_bxb50_parent##
+f$cc_river_delayed_3w_bbvsb_context &&
+(f$cc_hist_river_delayed_cbet_bbvsb_bxb50_valid ||
+ f$cc_hist_river_delayed_float_source_bxb_river50_valid)
+
+// Purpose: exact Gate12B AKx source skip parent.
+// Source/Provenance: T/A direct native exception + CLOSED Turn check-back proof.
+##f$cc_river_delayed_3w_bbvsb_skip_parent##
+f$cc_river_delayed_3w_bbvsb_context &&
+f$cc_hist_river_delayed_float_source_skip_bxb_valid
+
+// Purpose: direct BBvSB BxB source action. Gate12B skip always checks; the older
+// Gate12A BxB marker also checks exact AK-flop no-made; otherwise current no-made
+// executes River50. Current made residuals are source scenario CHECK.
+// Source/Provenance: T direct mature source ordering.
+##f$cc_river_delayed_3w_bbvsb_source_action##
+When f$cc_river_delayed_3w_bbvsb_skip_parent Return false Force
+When f$cc_river_delayed_3w_bbvsb_bxb50_parent && f$cc_hist_river_delayed_cbet_bbvsb_bxb50_valid && f$cc_river_delayed_flop_had_ak && f$cc_river_delayed_no_made Return false Force
+When f$cc_river_delayed_3w_bbvsb_bxb50_parent && f$cc_river_delayed_no_made Return true Force
+When Others Return false Force
+
+// Purpose: exact native BxB fixed half-pot size.
+// Source/Provenance: T direct River50 source instruction.
+##f$cc_river_delayed_3w_bbvsb_source_size_id##
+When f$cc_river_delayed_3w_bbvsb_source_action Return f$cc_river_delayed_size_50_id Force
+When Others Return 0 Force
+
+// Purpose: source-reviewed BBvSB child includes both positive BxB and explicit
+// skip exception; unrelated no-action histories remain outside this child.
+// Source/Provenance: P coverage union over T exact plan parents.
+##f$cc_river_delayed_3w_bbvsb_source_covered##
+f$cc_river_delayed_3w_bbvsb_bxb50_parent ||
+f$cc_river_delayed_3w_bbvsb_skip_parent
+
+// -----------------------------------------------------------------------------
+// RDNS.03 — native 3wSBvBB exact Gate12A Del-Del source
+// -----------------------------------------------------------------------------
+
+// Purpose: native 3wSBvBB no-action River topology.
+// Source/Provenance: A exact legacy game reconstruction.
+##f$cc_river_delayed_3w_sbvbb_context##
+f$cc_river_delayed_base_opportunity &&
+f$cc_deal_size = 3 && f$cc_flop_entry_count = 2 && f$cc_hu &&
+f$cc_hero_pos_id = 5 && f$cc_hu_villain_pos_id = 6
+
+// Purpose: exact low-pair and connected-draw Del-Del River50 source parents.
+// Source/Provenance: T/A Gate12A source-plan markers + CLOSED X/X proof.
+##f$cc_river_delayed_3w_sbvbb_deldel50_parent##
+f$cc_river_delayed_3w_sbvbb_context &&
+(f$cc_hist_river_delayed_cbet_sbvbb_lowpair_deldel50_valid ||
+ f$cc_hist_river_delayed_cbet_sbvbb_draw_deldel50_valid)
+
+// Purpose: direct native SBvBB Del-Del action.
+// Source: both exact historical states write River50 before scenario fallback.
+// Source/Provenance: T direct source instruction; no current-class widening.
+##f$cc_river_delayed_3w_sbvbb_deldel_action##
+f$cc_river_delayed_3w_sbvbb_deldel50_parent
+
+// Purpose: exact SBvBB Del-Del fixed half-pot size.
+// Source/Provenance: T direct River50 source size.
+##f$cc_river_delayed_3w_sbvbb_deldel_size_id##
+When f$cc_river_delayed_3w_sbvbb_deldel_action Return f$cc_river_delayed_size_50_id Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// RDNS.04 — native scenario-wide source-negative no-action children
+// -----------------------------------------------------------------------------
+
+// Purpose: native 3wBTNvSB no-action River. Source scenario ends false after its
+// explicit negative air branch; no generic delayed River bluff is supplied.
+// Source/Provenance: T/A direct scenario-wide source CHECK.
+##f$cc_river_delayed_3w_btnvsb_negative_context##
+f$cc_river_delayed_base_opportunity &&
+f$cc_deal_size = 3 && f$cc_flop_entry_count = 2 && f$cc_hu &&
+f$cc_hero_pos_id = 4 && f$cc_hu_villain_pos_id = 5
+
+// Purpose: native 3wBBvBTN no-action River not stolen from Gate11 Probe.
+// Source: OOP flop-call histories are excluded by Gate13 ownership; remaining
+// source no-action scenario has no positive tree.
+// Source/Provenance: T/A direct scenario-wide source CHECK.
+##f$cc_river_delayed_3w_bbvbtn_negative_context##
+f$cc_river_delayed_base_opportunity &&
+f$cc_deal_size = 3 && f$cc_flop_entry_count = 2 && f$cc_hu &&
+f$cc_hero_pos_id = 6 && f$cc_hu_villain_pos_id = 4
+
+// Purpose: native 3wSBvBTN source has no generic delayed-river tree after no-action.
+// Source/Provenance: T/A direct scenario-wide source CHECK.
+##f$cc_river_delayed_3w_sbvbtn_negative_context##
+f$cc_river_delayed_base_opportunity &&
+f$cc_deal_size = 3 && f$cc_flop_entry_count = 2 && f$cc_hu &&
+f$cc_hero_pos_id = 5 && f$cc_hu_villain_pos_id = 4
+
+// Purpose: union of direct source-negative native scenarios.
+// Source/Provenance: P coverage metadata over T direct CHECK children.
+##f$cc_river_delayed_native_negative_covered##
+f$cc_river_delayed_3w_btnvsb_negative_context ||
+f$cc_river_delayed_3w_bbvbtn_negative_context ||
+f$cc_river_delayed_3w_sbvbtn_negative_context
+
+// -----------------------------------------------------------------------------
+// RDNS.05 — source router / coverage
+// -----------------------------------------------------------------------------
+
+// Purpose: first direct-source Gate13 action dispatcher.
+// Source/Provenance: T/A source-first exact-family routing.
+##f$cc_river_delayed_native_source_action##
+When f$cc_river_delayed_hubb_deldel_context Return f$cc_river_delayed_hubb_deldel_action Force
+When f$cc_river_delayed_3w_bbvsb_source_covered Return f$cc_river_delayed_3w_bbvsb_source_action Force
+When f$cc_river_delayed_3w_sbvbb_deldel50_parent Return f$cc_river_delayed_3w_sbvbb_deldel_action Force
+When f$cc_river_delayed_native_negative_covered Return false Force
+When Others Return false Force
+
+// Purpose: paired direct-source size dispatcher.
+// Source/Provenance: T/A exact owner; CHECK/uncovered ->0.
+##f$cc_river_delayed_native_source_size_id##
+When f$cc_river_delayed_hubb_deldel_context Return f$cc_river_delayed_hubb_deldel_size_id Force
+When f$cc_river_delayed_3w_bbvsb_source_covered Return f$cc_river_delayed_3w_bbvsb_source_size_id Force
+When f$cc_river_delayed_3w_sbvbb_deldel50_parent Return f$cc_river_delayed_3w_sbvbb_deldel_size_id Force
+When Others Return 0 Force
+
+// Purpose: reviewed direct-source Gate13 coverage at this checkpoint.
+// Source/Provenance: P union over T/A direct children.
+##f$cc_river_delayed_native_source_covered##
+f$cc_river_delayed_hubb_deldel_context ||
+f$cc_river_delayed_3w_bbvsb_source_covered ||
+f$cc_river_delayed_3w_sbvbb_deldel50_parent ||
+f$cc_river_delayed_native_negative_covered
+
+// Purpose: local direct-source action/size integrity.
+// Source/Provenance: P fail-closed invariant.
+##f$cc_river_delayed_native_source_size_consistent##
+When !f$cc_river_delayed_native_source_action Return f$cc_river_delayed_native_source_size_id = 0 Force
+When f$cc_river_delayed_native_source_action Return f$cc_river_delayed_native_source_size_id >= 1 && f$cc_river_delayed_native_source_size_id <= 6 Force
+When Others Return false Force
+
+// ============================================================================
+// End Gate13C first native direct-source descendants.
+// ============================================================================

@@ -1,0 +1,249 @@
+// ============================================================================
+// CashCrusher_River_Donk_HUBB.txt
+// Gate 09B.1 — source-anchored TRUE-HU HUBB River Donk
+// ============================================================================
+// Purpose:
+//   Port only River-Donk decisions that can be proved from current River cards plus
+//   Gate09A's exact true-HU BB-v-SB/Button flop-X/C -> turn-X/C history.
+//
+// Source hierarchy:
+//   1) mature DeepCrusher Retro09 / NOVO CRUSHFEST HUBB River Donk;
+//   2) older HUBB BETA table only where the mature source explicitly retains it;
+//   3) portable OpenPPL mechanical hand/board symbols.
+//
+// Critical provenance boundary:
+//   DeepCrusher writes Turn-call markers AFTER the resolved defensive decision:
+//     * prior TP/OP;
+//     * prior 2P+;
+//     * called GOOD DRAW;
+//     * MP/BP+draw;
+//     * exact Turn price below 50% pot.
+//   CashCrusher defense is not implemented yet, so those facts cannot be safely
+//   reconstructed on River. Every branch needing them remains BLOCKED here.
+//   Current River strength never fabricates historical Turn provenance.
+//
+// Source/Provenance:
+//   T = exact source mechanical categories/sizings where reconstructible.
+//   A = conservative contribution filters used to avoid board-only made hands.
+//   P = fail-closed source-gap firewall only; no new bluff frequency.
+//   X = generic old-PDF/HandPower River air bluff without exact called-draw proof.
+//
+// Size IDs local to River Donk:
+//   0 CHECK | 1=25% | 2=30% | 3=33% | 4=50% | 5=75% | 6=100%.
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// RDHUBB.01 — portable source-shaped current River hand descriptors
+// -----------------------------------------------------------------------------
+
+// Purpose: source 2-hole-card straight contribution.
+// Source: DeepCrusher `f$hand_2HC_Straight` exact definition.
+// Provenance: T mechanical descriptor.
+##f$cc_river_donk_2hc_straight##
+HaveStraight && (nstraightfillcommon - nstraightfill = 2)
+
+// Purpose: source 2-hole-card flush contribution.
+// Source: DeepCrusher `f$hand_2HC_Flush` exact definition.
+// Provenance: T mechanical descriptor.
+##f$cc_river_donk_2hc_flush##
+HaveFlush && SuitsInHand = 1 && nsuitedcommon = 3
+
+// Purpose: source one-hole-card straight class.
+// Source/Provenance: T exact complement of 2HC straight.
+##f$cc_river_donk_1hc_straight##
+HaveStraight && !f$cc_river_donk_2hc_straight
+
+// Purpose: source one-hole-card flush class.
+// Source/Provenance: T exact complement of 2HC flush.
+##f$cc_river_donk_1hc_flush##
+HaveFlush && !f$cc_river_donk_2hc_flush
+
+// Purpose: one-card straight that is the under-straight class.
+// Source: `f$HaveOneCardUnderStraight = f$hand_1HC_Straight && HaveUnderStraight`.
+// Provenance: T.
+##f$cc_river_donk_1hc_understraight##
+f$cc_river_donk_1hc_straight && HaveUnderStraight
+
+// Purpose: one-card straight that is not under-straight.
+// Source: exact DeepCrusher helper.
+// Provenance: T.
+##f$cc_river_donk_1hc_straight_not_under##
+f$cc_river_donk_1hc_straight && !HaveUnderStraight
+
+// Purpose: K-high-or-better contributing card in a 1HC flush.
+// Source: DeepCrusher `f$KingHighContributingToOnlyOneCardFlush`.
+// Provenance: T; rewritten as flat WHENs so indentation has no semantics.
+##f$cc_river_donk_1hc_flush_khigh_or_better##
+When !f$cc_river_donk_1hc_flush Return false Force
+When nsuitedcommon > 3 && tsuitcommon = 0 && (hand$Ah || hand$Kh) Return true Force
+When nsuitedcommon > 3 && tsuitcommon = 1 && (hand$Ad || hand$Kd) Return true Force
+When nsuitedcommon > 3 && tsuitcommon = 2 && (hand$Ac || hand$Kc) Return true Force
+When nsuitedcommon > 3 && tsuitcommon = 3 && (hand$As || hand$Ks) Return true Force
+When nsuitedcommon > 3 && NumberOfUnknownSuitedOvercards <= 1 Return true Force
+When Others Return false Force
+
+// Purpose: Q/J/T/9 contributing card in the one-card flush suit.
+// Source: DeepCrusher `f$NineToQueenContributingToOnlyOneCardFlush`.
+// Provenance: T, flat parser-safe translation.
+##f$cc_river_donk_1hc_flush_9_to_q##
+When !f$cc_river_donk_1hc_flush Return false Force
+When SuitsInHand = 2 && tsuitcommon = 0 && (hand$Qh || hand$Jh || hand$Th || hand$9h) Return true Force
+When SuitsInHand = 2 && tsuitcommon = 1 && (hand$Qd || hand$Jd || hand$Td || hand$9d) Return true Force
+When SuitsInHand = 2 && tsuitcommon = 2 && (hand$Qc || hand$Jc || hand$Tc || hand$9c) Return true Force
+When SuitsInHand = 2 && tsuitcommon = 3 && (hand$Qs || hand$Js || hand$Ts || hand$9s) Return true Force
+When Others Return false Force
+
+// Purpose: <=8 contributing 1HC flush bucket after K+ and 9-Q buckets.
+// Source: DeepCrusher LowMiddle helper plus source branch precedence.
+// Provenance: T/A conservative disjoint bucket.
+##f$cc_river_donk_1hc_flush_low##
+f$cc_river_donk_1hc_flush &&
+!f$cc_river_donk_1hc_flush_khigh_or_better &&
+!f$cc_river_donk_1hc_flush_9_to_q
+
+// Purpose: source river-completed descriptor.
+// Source: DeepCrusher `f$river_Completed = FlushPossible || StraightPossible`.
+// Provenance: T.
+##f$cc_river_donk_completed##
+FlushPossible || StraightPossible
+
+// Purpose: source river-super-completed descriptor retained for later branches.
+// Source: DeepCrusher exact definition.
+// Provenance: T.
+##f$cc_river_donk_super_completed##
+FlushPossible && StraightPossible
+
+// Purpose: source River underboard descriptor needed once Turn-call provenance is
+// written by the future defense gate.
+// Source: DeepCrusher `f$river_UnderBoard` exact definition.
+// Provenance: T mechanical only.
+##f$cc_river_donk_underboard##
+(RiverCard < LowestFlopCard) && (RiverCard < TurnCard)
+
+// Purpose: conservative exact-two-pair contribution subset that excludes a board
+// already showing two pair; avoids treating board-only two pair as Hero value.
+// Source: DeepCrusher uses contribution-aware CF7_ExactTwoPair.
+// Provenance: A conservative subset pending a direct CF7 equivalent.
+##f$cc_river_donk_contributed_exact_two_pair##
+HaveTwoPair && !TwoPairOnBoard
+
+// Purpose: literal contributed set is directly reconstructible without CF7.
+// Source/Provenance: T OpenPPL HaveSet; subset of source `(CF7_RealTrips||HaveSet)`.
+##f$cc_river_donk_source_set##
+HaveSet
+
+// -----------------------------------------------------------------------------
+// RDHUBB.02 — future defense-owned Turn-call provenance firewall
+// -----------------------------------------------------------------------------
+
+// Purpose: prior Turn TP/OP call is intentionally unavailable until defense writes
+// an explicit post-decision marker.
+// Source: DeepCrusher Retro09 writer records only after `f$turn_Call&&!f$turn_Raise`.
+// Provenance: P/T evidence-boundary placeholder.
+##f$cc_river_donk_hubb_turn_tp_call_proven##
+0
+
+// Purpose: prior Turn 2P+ call evidence placeholder.
+// Source/Provenance: same Retro09 writer boundary, currently unavailable.
+##f$cc_river_donk_hubb_turn_2pplus_call_proven##
+0
+
+// Purpose: exact called GOOD DRAW evidence placeholder.
+// Source: OESD/FD/(GS+2mOC) was snapshotted by mature DeepCrusher before River.
+// Provenance: T source requirement; disabled until defensive writer exists.
+##f$cc_river_donk_hubb_turn_good_draw_call_proven##
+0
+
+// Purpose: MP/BP+draw turn-call evidence placeholder.
+// Source/Provenance: T source requirement, unavailable today.
+##f$cc_river_donk_hubb_turn_lower_pair_draw_call_proven##
+0
+
+// Purpose: exact `<50% pot` Turn call price evidence placeholder.
+// Source: mature Retro09 corrected an older ~52% proxy to exact <50.
+// Provenance: T source requirement, unavailable after the fact.
+##f$cc_river_donk_hubb_turn_below50_call_proven##
+0
+
+// Purpose: prove no provenance-dependent source branch can become live accidentally
+// before the defense gate owns its writers.
+// Source/Provenance: P safety invariant.
+##f$cc_river_donk_hubb_turn_provenance_blocked##
+!f$cc_river_donk_hubb_turn_tp_call_proven &&
+!f$cc_river_donk_hubb_turn_2pplus_call_proven &&
+!f$cc_river_donk_hubb_turn_good_draw_call_proven &&
+!f$cc_river_donk_hubb_turn_lower_pair_draw_call_proven &&
+!f$cc_river_donk_hubb_turn_below50_call_proven
+
+// -----------------------------------------------------------------------------
+// RDHUBB.03 — source strategy currently provable
+// -----------------------------------------------------------------------------
+
+// Purpose: literal source HUBB action using only evidence available today.
+// Source precedence mirrors mature DeepCrusher Retro09.
+// Provenance: T/A branch-by-branch; source-silent/provenance-missing ->CHECK.
+##f$cc_river_donk_hubb_action##
+When !f$cc_river_donk_hubb_source_parent_valid Return false Force
+
+// 2HC made straight/flush: source River100.
+When f$cc_river_donk_2hc_straight || f$cc_river_donk_2hc_flush Return true Force
+
+// 1HC flush exact source table: A/K=100, 9-Q=50, <=8=30.
+When f$cc_river_donk_1hc_flush_khigh_or_better Return true Force
+When f$cc_river_donk_1hc_flush_9_to_q Return true Force
+When f$cc_river_donk_1hc_flush_low Return true Force
+
+// 1HC straight exact source table: under=30, not-under=50.
+When f$cc_river_donk_1hc_understraight Return true Force
+When f$cc_river_donk_1hc_straight_not_under Return true Force
+
+// Source set branch: completed River leads 100; non-completed checks/XR.
+When f$cc_river_donk_source_set && f$cc_river_donk_completed Return true Force
+When f$cc_river_donk_source_set && !f$cc_river_donk_completed Return false Force
+
+// Conservative contribution-aware 2P subset: source generic completed branch 75;
+// non-completed needs prior-Turn provenance for the 100 exception, otherwise check.
+When f$cc_river_donk_contributed_exact_two_pair && f$cc_river_donk_completed Return true Force
+When f$cc_river_donk_contributed_exact_two_pair Return false Force
+
+// Prior TP/OP, prior 2P+, missed-good-draw bluff and MP/BP+draw branches are NOT
+// reconstructed from current River strength. They remain blocked until defense.
+When Others Return false Force
+
+// Purpose: exact source size paired with the action above.
+// Source/Provenance: T source sizings; A only on conservative 2P contribution.
+##f$cc_river_donk_hubb_size_id##
+When !f$cc_river_donk_hubb_source_parent_valid Return 0 Force
+When f$cc_river_donk_2hc_straight || f$cc_river_donk_2hc_flush Return 6 Force
+When f$cc_river_donk_1hc_flush_khigh_or_better Return 6 Force
+When f$cc_river_donk_1hc_flush_9_to_q Return 4 Force
+When f$cc_river_donk_1hc_flush_low Return 2 Force
+When f$cc_river_donk_1hc_understraight Return 2 Force
+When f$cc_river_donk_1hc_straight_not_under Return 4 Force
+When f$cc_river_donk_source_set && f$cc_river_donk_completed Return 6 Force
+When f$cc_river_donk_contributed_exact_two_pair && f$cc_river_donk_completed Return 5 Force
+When Others Return 0 Force
+
+// Purpose: current literal HUBB source parent is strategically reviewed even if
+// the correct answer for the current hand is CHECK.
+// Source/Provenance: T/A source-parent coverage; missing Turn provenance branches
+// remain intentionally conservative, not falsely "known" as positive actions.
+##f$cc_river_donk_hubb_covered##
+f$cc_river_donk_hubb_source_parent_valid
+
+// Purpose: action/size consistency for Gate09B local palette.
+// Source/Provenance: P invariant.
+##f$cc_river_donk_hubb_size_consistent##
+When !f$cc_river_donk_hubb_action Return f$cc_river_donk_hubb_size_id = 0 Force
+When f$cc_river_donk_hubb_action Return f$cc_river_donk_hubb_size_id >= 1 && f$cc_river_donk_hubb_size_id <= 6 Force
+When Others Return false Force
+
+// Purpose: expose source branches not yet reachable because Turn defense has no
+// history writer, rather than filling them with current-card guesses.
+// Source/Provenance: P audit diagnostic.
+##f$cc_river_donk_hubb_defense_provenance_pending##
+f$cc_river_donk_hubb_source_parent_valid && f$cc_river_donk_hubb_turn_provenance_blocked
+
+// ============================================================================
+// End Gate09B.1 source-anchored HUBB River Donk.
+// ============================================================================

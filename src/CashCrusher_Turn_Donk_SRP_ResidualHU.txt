@@ -1,0 +1,181 @@
+// ============================================================================
+// CashCrusher_Turn_Donk_SRP_ResidualHU.txt
+// Gate 08D.1 — residual ordinary-SRP HU Turn Donk coverage
+// ============================================================================
+// Purpose:
+//   Close ordinary-SRP HU Turn-Donk states that are NOT owned by a direct/high-
+//   ancestry source family, without manufacturing a generic lead merely because
+//   Hero is OOP and no longer owns flop initiative.
+//
+// Scope:
+//   * current Turn is HU and Hero OOP;
+//   * one-raise ordinary SRP;
+//   * actual clean X/C parent already proved by Gate08A;
+//   * may have entered flop HU or become HU after a multiway flop;
+//   * Hero may be the preflop caller OR a PFA who checked/called a later-position
+//     stab and therefore surrendered final flop initiative.
+//
+// Source/high-ancestry families are explicitly excluded even when their current
+// strategy is fail-closed for missing defense/price provenance. This prevents a
+// generic P CHECK baseline from hiding an unresolved source descendant.
+//
+// Professional-theory review:
+//   In deep cash, turn leads after flop X/C do exist on selected range-shifting
+//   cards, but their frequency/composition is highly sensitive to exact opener/
+//   caller ranges, flop texture, flop sizing and Turn card. The residual ranges
+//   here are structurally more diverse than the dedicated Crusher families.
+//
+//   Without solver/data support for each matchup, the robust deterministic cash
+//   baseline is therefore CHECK. This is a reviewed P action, not `unknown` and
+//   not a claim that equilibrium donk frequency is universally zero.
+//
+// Provenance:
+//   A/T = Gate00/08 exact pot, role, HU-origin and closed X/C history.
+//   P   = deliberate residual-HU CHECK baseline after range/topology review.
+//   X   = broad `all OOP no-initiative -> donk` generalization.
+//
+// Safety:
+//   This file has no positive bet and no size. Source ancestry with missing
+//   defense provenance remains uncovered by its own child rather than swallowed.
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// TDSRPHU.01 — protect every already identified source/high-ancestry family
+// -----------------------------------------------------------------------------
+
+// Purpose: native `(BBorSB)v2pp` flop families remain source-adjacent even when
+// a particular Turn descendant is waiting on defense provenance.
+// Source/Provenance: A Gate07 history firewall.
+##f$cc_turn_donk_srp_hu_native_source_ancestry##
+(f$cc_hist_flop_donk_family_id = 1) ||
+(f$cc_hist_flop_donk_family_id = 2)
+
+// Purpose: union of exact dedicated Turn-Donk ancestry contexts, independent of
+// whether their strategy is currently `covered`.
+// Source/Provenance: P ownership firewall over T/A source mappings.
+##f$cc_turn_donk_srp_hu_dedicated_source_ancestry##
+f$cc_turn_donk_hubb_context ||
+f$cc_turn_donk_sbvbtn_context ||
+f$cc_turn_donk_sbvbb_context ||
+f$cc_turn_donk_bbvbtn_context
+
+// Purpose: any source/high-ancestry state that residual HU SRP must not absorb.
+// Source/Provenance: P safety union.
+##f$cc_turn_donk_srp_hu_source_ancestry##
+f$cc_turn_donk_srp_hu_native_source_ancestry ||
+f$cc_turn_donk_srp_hu_dedicated_source_ancestry
+
+// -----------------------------------------------------------------------------
+// TDSRPHU.02 — exact residual ordinary-SRP HU owner
+// -----------------------------------------------------------------------------
+
+// Purpose: canonical residual HU ordinary-SRP Turn-Donk context.
+// Source/Provenance: A/T exact one-raise/HU/closed-history owner + P exclusion.
+##f$cc_turn_donk_srp_residual_hu_context##
+f$cc_turn_donk_opportunity &&
+f$cc_hu &&
+f$cc_hu_oop &&
+f$cc_pot_family_id = 2 &&
+f$cc_pf_one_raise_ordinary_srp &&
+!f$cc_turn_donk_srp_hu_source_ancestry
+
+// Purpose: residual decision entered flop already HU after preflop folds.
+// Source/Provenance: T Gate00 HU origin + P logging subtype.
+##f$cc_turn_donk_srp_residual_hu_preflop_reduced##
+f$cc_turn_donk_srp_residual_hu_context &&
+f$cc_hu_origin_preflop_reduced
+
+// Purpose: residual decision started flop multiway and reached Turn HU.
+// Source/Provenance: T Gate00 origin + P range-provenance subtype.
+##f$cc_turn_donk_srp_residual_hu_postflop_reduced##
+f$cc_turn_donk_srp_residual_hu_context &&
+f$cc_hu_origin_postflop_reduced
+
+// Purpose: true-HU ordinary-SRP residual diagnostic. In practice the standard
+// SB-open/BB-call source ancestry belongs HUBB, so any residual true-HU state is
+// intentionally visible rather than silently treated as a six-max descendant.
+// Source/Provenance: T origin + P diagnostic.
+##f$cc_turn_donk_srp_residual_hu_truehu##
+f$cc_turn_donk_srp_residual_hu_context &&
+f$cc_true_hu
+
+// -----------------------------------------------------------------------------
+// TDSRPHU.03 — preserve Hero's preflop range role after actual X/C
+// -----------------------------------------------------------------------------
+
+// Purpose: Hero defended versus the single preflop opener and then X/C flop.
+// Source/Provenance: T/A role + actual Gate08 history.
+##f$cc_turn_donk_srp_residual_hu_hero_was_caller##
+f$cc_turn_donk_srp_residual_hu_context &&
+f$cc_pf_role_srp_caller
+
+// Purpose: Hero was PFA, checked flop, called a later-position stab, and no longer
+// owns final flop aggression. This is a real Turn-lead ownership state even though
+// its range differs sharply from a standard preflop defender.
+// Source/Provenance: A/T role/history reconstruction.
+##f$cc_turn_donk_srp_residual_hu_hero_was_pfa##
+f$cc_turn_donk_srp_residual_hu_context &&
+f$cc_pf_role_pfa
+
+// Purpose: exact flop aggressor is the original PFA.
+// Source/Provenance: T final-aggressor identity + A position comparison.
+##f$cc_turn_donk_srp_residual_hu_flop_aggressor_was_pfa##
+f$cc_turn_donk_srp_residual_hu_context &&
+f$cc_turn_donk_flop_aggressor_pos_id = f$cc_pf_single_raiser_pos_id
+
+// Purpose: PFA checked and another preflop caller/stabber became actual flop
+// aggressor. Distinguish this condensed stab range from normal PFA CBet ancestry.
+// Source/Provenance: A exact complement inside proven one-raise history.
+##f$cc_turn_donk_srp_residual_hu_flop_aggressor_was_stabber##
+f$cc_turn_donk_srp_residual_hu_context &&
+f$cc_turn_donk_flop_aggressor_pos_id != f$cc_pf_single_raiser_pos_id
+
+// Purpose: role must be one of the two reviewed ordinary-SRP ranges.
+// Source/Provenance: P integrity guard; anything else stays uncovered.
+##f$cc_turn_donk_srp_residual_hu_role_valid##
+f$cc_turn_donk_srp_residual_hu_hero_was_caller ||
+f$cc_turn_donk_srp_residual_hu_hero_was_pfa
+
+// -----------------------------------------------------------------------------
+// TDSRPHU.04 — professional baseline: CHECK
+// -----------------------------------------------------------------------------
+
+// Purpose: deliberate residual-HU Turn Donk action.
+// Professional-theory rationale:
+//   * flop X/C range is condensed and contains many bluff-catchers/draws;
+//   * Villain's final flop-aggressor range retains substantial strong value;
+//   * solver donks, where present, are turn-card/range-specific and often mixed;
+//   * a deterministic broad lead risks severe over-donking across UTG/HJ/CO/
+//     blind matchups and across PFA-check/call versus defender-check/call ranges.
+// Provenance: P reviewed CHECK baseline, not source T.
+##f$cc_turn_donk_srp_residual_hu_action##
+When !f$cc_turn_donk_srp_residual_hu_context Return false Force
+When !f$cc_turn_donk_srp_residual_hu_role_valid Return false Force
+When Others Return false Force
+
+// Purpose: CHECK baseline has no strategic bet size.
+// Source/Provenance: P paired action/size invariant.
+##f$cc_turn_donk_srp_residual_hu_size_id##
+0
+
+// Purpose: residual HU state is reviewed only when role provenance is valid.
+// Source/Provenance: P coverage contract.
+##f$cc_turn_donk_srp_residual_hu_covered##
+f$cc_turn_donk_srp_residual_hu_context &&
+f$cc_turn_donk_srp_residual_hu_role_valid
+
+// Purpose: residual HU ordinary-SRP state exists but exact role is not one of the
+// reviewed caller/PFA families.
+// Source/Provenance: P fail-closed diagnostic.
+##f$cc_turn_donk_srp_residual_hu_uncovered_context##
+f$cc_turn_donk_srp_residual_hu_context &&
+!f$cc_turn_donk_srp_residual_hu_covered
+
+// Purpose: action/size integrity.
+// Source/Provenance: P safety invariant.
+##f$cc_turn_donk_srp_residual_hu_size_consistent##
+!f$cc_turn_donk_srp_residual_hu_action && f$cc_turn_donk_srp_residual_hu_size_id = 0
+
+// ============================================================================
+// End Gate08D.1 residual ordinary-SRP HU Turn Donk.
+// ============================================================================

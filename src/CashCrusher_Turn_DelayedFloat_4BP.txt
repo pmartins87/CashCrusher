@@ -1,0 +1,81 @@
+// ============================================================================
+// CashCrusher_Turn_DelayedFloat_4BP.txt
+// Gate 12B.9 — clean caller-IP four-bet-pot Turn Delayed-Float adaptation
+// ============================================================================
+// Purpose:
+//   Continue only the one Gate04 clean caller-IP 4BP chronology that was already
+//   strongly proven and deliberately checked back on flop. Reversed/cold4/
+//   unresolved 4BP histories remain fail closed.
+//
+// Source boundary:
+//   No dedicated deep-stack 4BP Delayed-Float source exists. Strategy is P-heavy.
+//   Naturally low SPR does not convert TP/OP into automatic stackoff or jam.
+//
+// Provenance:
+//   T/A = exact Gate04 family6 chronology + CLOSED X/X history.
+//   P = deterministic condensed-range delayed-value/equity policy.
+// ============================================================================
+
+// Purpose: exact clean 4-6h HU caller-side 4BP reviewed check-back parent.
+// Source/Provenance: T/A Gate04 family6 and clean opener4-v-Hero3bettor proof.
+##f$cc_turn_delayed_float_4bp_context##
+f$cc_turn_delayed_float_base_opportunity &&
+f$cc_turn_delayed_float_gate04_checkback_valid &&
+f$cc_turn_delayed_float_gate04_family_id = 6 &&
+f$cc_deal_size >= 4 && f$cc_deal_size <= 6 &&
+f$cc_pot_family_id = 4 &&
+f$cc_pf_role_call_4bet &&
+f$cc_flop_float_4bp_opener4_vs_hero3bettor_proven &&
+f$cc_hu &&
+f$cc_hu_villain_pos_id = f$cc_flop_float_4bp_other_raiser_pos_id &&
+f$cc_hu_ip
+
+// Purpose: current robust-value 4BP delayed bet.
+// Source/Provenance: P current-strength selection over T/A condensed-range parent.
+##f$cc_turn_delayed_float_4bp_value_action##
+When !f$cc_turn_delayed_float_4bp_context Return false Force
+When f$cc_turn_delayed_float_two_pair_plus_real Return true Force
+When f$cc_turn_delayed_float_tpop_real && f$cc_turn_delayed_float_thin_value_runout Return true Force
+When Others Return false Force
+
+// Purpose: current safe real-draw 4BP semibluff. Medium/air-only holdings remain
+// checks even after the opener4 checks twice.
+// Source/Provenance: P conservative equity-first lower-SPR fill.
+##f$cc_turn_delayed_float_4bp_draw_action##
+f$cc_turn_delayed_float_4bp_context &&
+f$cc_turn_delayed_float_semibluff_candidate
+
+// Purpose: clean HU 4BP delayed action.
+// Source/Provenance: P union of robust value and real draw; no pure-air baseline.
+##f$cc_turn_delayed_float_4bp_action##
+When !f$cc_turn_delayed_float_4bp_context Return false Force
+When f$cc_turn_delayed_float_4bp_value_action Return true Force
+When f$cc_turn_delayed_float_4bp_draw_action Return true Force
+When Others Return false Force
+
+// Purpose: clean HU 4BP size map. 2P+ uses 75; TP/OP and draws use 50. These are
+// ordinary requested bet sizes, never direct all-in instructions.
+// Source/Provenance: P deterministic 50/75 condensed-range sizing.
+##f$cc_turn_delayed_float_4bp_size_id##
+When !f$cc_turn_delayed_float_4bp_action Return 0 Force
+When f$cc_turn_delayed_float_two_pair_plus_real Return f$cc_turn_delayed_float_size_75_id Force
+When f$cc_turn_delayed_float_tpop_real Return f$cc_turn_delayed_float_size_50_id Force
+When f$cc_turn_delayed_float_4bp_draw_action Return f$cc_turn_delayed_float_size_50_id Force
+When Others Return 0 Force
+
+// Purpose: report reviewed clean 4BP Gate12B coverage.
+// Source/Provenance: P coverage metadata over exact T/A chronology.
+##f$cc_turn_delayed_float_4bp_covered##
+f$cc_turn_delayed_float_4bp_context
+
+// Purpose: 4BP local action/size integrity.
+// Source/Provenance: P fail-closed safety invariant.
+##f$cc_turn_delayed_float_4bp_size_consistent##
+When !f$cc_turn_delayed_float_4bp_covered Return f$cc_turn_delayed_float_4bp_size_id = 0 Force
+When f$cc_turn_delayed_float_4bp_covered && !f$cc_turn_delayed_float_4bp_action Return f$cc_turn_delayed_float_4bp_size_id = 0 Force
+When f$cc_turn_delayed_float_4bp_action Return f$cc_turn_delayed_float_4bp_size_id = f$cc_turn_delayed_float_size_50_id || f$cc_turn_delayed_float_4bp_size_id = f$cc_turn_delayed_float_size_75_id Force
+When Others Return false Force
+
+// ============================================================================
+// End Gate12B.9 clean 4BP adaptation.
+// ============================================================================

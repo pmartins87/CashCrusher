@@ -1,0 +1,146 @@
+// ============================================================================
+// CashCrusher_River_Delayed_Common.txt
+// Gate 13B — current River value/texture and normalized source-size vocabulary
+// ============================================================================
+// Purpose:
+//   Provide contribution-aware current River classes for f$river_lead_noaction
+//   descendants. These helpers are mechanical only and never grant Gate13 action.
+//
+// Provenance:
+//   T/A = OpenPPL made-hand/public-board mechanics and prior CashCrusher CF7-safe
+//         contribution architecture.
+//   P = normalized fixed River size IDs.
+// ============================================================================
+
+// Purpose: source completed River = straight or flush is possible on public board.
+// Source/Provenance: T direct mature `f$river_Completed` translation.
+##f$cc_river_delayed_completed##
+IsRiver && (FlushPossible || StraightPossible)
+
+// Purpose: contribution-aware current River 2P+ / nut tier. Board-only made hands
+// do not silently become source value.
+// Source/Provenance: T/A CF7-safe mechanical hierarchy.
+##f$cc_river_delayed_two_pair_plus_real##
+When !IsRiver Return false Force
+When HaveNuts Return true Force
+When HaveStraightFlush && pokerval > pokervalcommon Return true Force
+When HaveQuads && pokerval > pokervalcommon Return true Force
+When HaveFullHouse && pokerval > pokervalcommon Return true Force
+When HaveFlush && npcbits > 0 && pokerval > pokervalcommon Return true Force
+When HaveStraight && npcbits > 0 && pokerval > pokervalcommon Return true Force
+When HaveTrips && !TripsOnBoard && npcbits > 0 Return true Force
+When HaveTwoPair && !TwoPairOnBoard && npcbits > 0 Return true Force
+When Others Return false Force
+
+// Purpose: current real top pair below 2P+.
+// Source/Provenance: T/A contribution-aware pair hierarchy.
+##f$cc_river_delayed_top_pair_real##
+IsRiver &&
+f$cc_hand_just_top_pair &&
+!TwoPairOnBoard &&
+npcbits > 0 &&
+!f$cc_river_delayed_two_pair_plus_real
+
+// Purpose: current real overpair below 2P+.
+// Source/Provenance: T/A contribution-aware pocket-pair hierarchy.
+##f$cc_river_delayed_overpair_real##
+IsRiver &&
+HaveOverPair && PairInHand && npcbits > 0 &&
+!f$cc_river_delayed_two_pair_plus_real
+
+// Purpose: source TP/OP current-value union.
+// Source/Provenance: A mechanical convenience union.
+##f$cc_river_delayed_tpop_real##
+f$cc_river_delayed_top_pair_real || f$cc_river_delayed_overpair_real
+
+// Purpose: current second-pair/pocket tier below TP.
+// Source/Provenance: T/A portable pair ladder.
+##f$cc_river_delayed_second_pair##
+IsRiver &&
+!f$cc_hand_top_pair_or_better &&
+f$cc_hand_second_pair_or_pocket
+
+// Purpose: exact current third-pair/pocket tier used by HUBB source MIN rule.
+// Source/Provenance: T/A portable pair ladder; fourth/worse deliberately excluded.
+##f$cc_river_delayed_third_pair##
+IsRiver &&
+!f$cc_hand_top_pair_or_better &&
+!f$cc_hand_second_pair_or_pocket &&
+f$cc_hand_third_pair_or_pocket
+
+// Purpose: exact source HUSB third-or-worse pair family. It is separate from the
+// exact-third helper because other native families attach different rules to 3rd.
+// Source: mature `f$hand_3rdTopPair_or_Pocket_or_Worst`.
+// Source/Provenance: T/A direct portable pair-tier union.
+##f$cc_river_delayed_third_or_worse_pair##
+IsRiver &&
+!f$cc_hand_top_pair_or_better &&
+(f$cc_hand_third_pair_or_pocket ||
+ f$cc_hand_fourth_pair_or_pocket ||
+ f$cc_hand_fifth_pair_or_pocket ||
+ HaveUnderPair)
+
+// Purpose: current no-made class. Draw equity no longer exists on River.
+// Source/Provenance: T/A portable no-made evaluator.
+##f$cc_river_delayed_no_made##
+IsRiver && f$cc_hand_no_made
+
+// Purpose: exact AK presence on the FLOP only, not later board cards.
+// Source: native 3wBBvSB Gate13 skip exception checks Ace+King on flop.
+// Source/Provenance: T direct persisted flop-card ranks.
+##f$cc_river_delayed_flop_had_ak##
+IsRiver &&
+(FirstFlopCard = ace || SecondFlopCard = ace || ThirdFlopCard = ace) &&
+(FirstFlopCard = king || SecondFlopCard = king || ThirdFlopCard = king)
+
+// -----------------------------------------------------------------------------
+// Gate13 normalized source sizes
+// 1 MIN | 2 25% | 3 33% | 4 50% | 5 75% | 6 100% | 7 40% | 8 60%.
+// 40/60 are retained exactly because the authoritative HUSB River table uses
+// them; rounding to 33/50/75 would alter source strategy.
+// Historical RiverMax is deliberately NOT normalized into a fixed size ID.
+// -----------------------------------------------------------------------------
+
+// Purpose: exact source minimum River bet ID.
+// Source/Provenance: T/A source MIN semantics + P normalization.
+##f$cc_river_delayed_size_min_id##
+1
+
+// Purpose: exact source quarter-pot River bet ID.
+// Source/Provenance: T/A source 25% semantics + P normalization.
+##f$cc_river_delayed_size_25_id##
+2
+
+// Purpose: exact source one-third-pot River bet ID.
+// Source/Provenance: T/A source 33% semantics + P normalization.
+##f$cc_river_delayed_size_33_id##
+3
+
+// Purpose: exact source half-pot River bet ID.
+// Source/Provenance: T/A source 50% semantics + P normalization.
+##f$cc_river_delayed_size_50_id##
+4
+
+// Purpose: exact source three-quarter-pot River bet ID.
+// Source/Provenance: T/A source 75% semantics + P normalization.
+##f$cc_river_delayed_size_75_id##
+5
+
+// Purpose: exact source pot-size River bet ID.
+// Source/Provenance: T/A source 100% semantics + P normalization.
+##f$cc_river_delayed_size_100_id##
+6
+
+// Purpose: exact HUSB source 40%-pot River size ID.
+// Source/Provenance: T Starting Strategy HUSB River table + P normalization.
+##f$cc_river_delayed_size_40_id##
+7
+
+// Purpose: exact HUSB source 60%-pot River size ID.
+// Source/Provenance: T Starting Strategy HUSB River table + P normalization.
+##f$cc_river_delayed_size_60_id##
+8
+
+// ============================================================================
+// End Gate13B common vocabulary.
+// ============================================================================

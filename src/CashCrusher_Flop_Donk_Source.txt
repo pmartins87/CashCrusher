@@ -1,0 +1,259 @@
+// ============================================================================
+// CashCrusher_Flop_Donk_Source.txt
+// Gate 07B — direct/high-ancestry `(BBorSB)v2pp` Flop Donk strategy
+// ============================================================================
+// Purpose:
+//   Translate the dedicated Starting Strategy for the native 3-handed blind-vs-
+//   BTN+other-blind flop without importing unrelated router families.
+//
+// Source hierarchy:
+//   T/A = dedicated Starting Strategy action/sizing and current OpenPPL facts.
+//   A   = mature DeepCrusher contribution-aware strength / deepest-effective SPR
+//         interpretation where it agrees with the Starting Strategy.
+//   X   = CrusherTBP low-pair completed-board inversion, because the dedicated
+//         source explicitly says low pair Donks only on NON-completed boards.
+//
+// Safety:
+//   * this file owns only Gate07A native source context;
+//   * 4-6 handed same-shape adaptation is not source coverage;
+//   * future Turn jam / response to Donk raise is not owned here;
+//   * no HandPower/random/BetMax/commitment helper.
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// FDS.01 — board descriptors used literally by the source table
+// -----------------------------------------------------------------------------
+
+// Purpose: count T/J/Q/K/A cards on the flop for 0/1/2+BW source sizing.
+// Source/Provenance: T source broadway definition translated mechanically.
+##f$cc_flop_donk_source_broadway_count##
+((FirstFlopCard >= 10) * 1) + ((SecondFlopCard >= 10) * 1) + ((ThirdFlopCard >= 10) * 1)
+
+// Purpose: source 2BW family; 3BW is included because it contains at least two BW.
+// Source/Provenance: T/A dedicated Starting Strategy category.
+##f$cc_flop_donk_source_two_plus_bw##
+f$cc_flop_donk_source_broadway_count >= 2
+
+// Purpose: source 1BW family.
+// Source/Provenance: T/A exact category.
+##f$cc_flop_donk_source_one_bw##
+f$cc_flop_donk_source_broadway_count = 1
+
+// Purpose: source No-BW / 9-high-or-lower family.
+// Source: all flop ranks below Ten; equivalent to rankhicommon <=9.
+// Provenance: T/A exact category.
+##f$cc_flop_donk_source_zero_bw##
+f$cc_flop_donk_source_broadway_count = 0 && rankhicommon <= 9
+
+// Purpose: source CPL/"completed" flop.
+// Source: DeepCrusher `f$flop_Completed = FlushPossibleOnFlop || StraightPossibleOnFlop`.
+// Provenance: T/A exact source primitive.
+##f$cc_flop_donk_source_completed##
+FlushPossibleOnFlop || StraightPossibleOnFlop
+
+// Purpose: source dynamic straight+flush-draw board.
+// Source: dedicated strategy says draw-heavy means straight AND flush draw possible.
+// Provenance: T/A exact mature translation.
+##f$cc_flop_donk_source_straight_flush_draw_heavy##
+FlushDrawPossible && OpenEndedStraightDrawPossibleOnFlop
+
+// Purpose: full source draw-heavy parent: completed OR simultaneous straight+FD.
+// Source/Provenance: T/A dedicated Starting Strategy wording.
+##f$cc_flop_donk_source_draw_heavy##
+f$cc_flop_donk_source_completed || f$cc_flop_donk_source_straight_flush_draw_heavy
+
+// Purpose: deepest/all-live source SPR is around 1:1, using the mature <=1.25
+// threshold and corrected CashCrusher multiway deepest-effective denominator.
+// Source: DeepCrusher uses biggest-active-opponent effective / pot <=1.25.
+// Provenance: A exact semantic migration to corrected T multiway geometry.
+// Safety: this selects POT sizing only; it does not authorize the source Turn jam plan.
+##f$cc_flop_donk_source_drawheavy_low_spr##
+f$cc_flop_donk_source_native_context &&
+f$cc_mw_spr_bounds_valid &&
+f$cc_mw_spr_deepest_round_start >= 0 &&
+f$cc_mw_spr_deepest_round_start <= 1.25
+
+// -----------------------------------------------------------------------------
+// FDS.02 — source made-hand and low-pair classes
+// -----------------------------------------------------------------------------
+
+// Purpose: contribution-aware TP/OP/2P+ source value family.
+// Source: Starting Strategy `TOPPAIR OR BETTER`; mature DeepCrusher uses real TP,
+// real OP and contribution-aware 2P+ rather than board-only strength.
+// Provenance: A source-shaped union over CashCrusher contribution-aware helpers.
+##f$cc_flop_donk_source_top_pair_plus##
+f$cc_hand_two_pair_or_better ||
+f$cc_cbet_flop_overpair ||
+f$cc_hand_just_top_pair
+
+// Purpose: Hero contributes a pair rank 7 or lower while remaining below TP.
+// Source: dedicated MP/BP rule `7 or lower pair`.
+// Provenance: A/T mechanical contributing-rank reconstruction; pocket pairs use
+// their shared rank, non-pockets require an actual hole-card/flop-rank match.
+##f$cc_flop_donk_source_low_pair##
+When !f$cc_flop_donk_source_native_context Return false Force
+When f$cc_flop_donk_source_top_pair_plus Return false Force
+When ispair && rankhiplayer <= 7 Return true Force
+When !ispair && RankOfFirstHoleCard <= 7 && (RankOfFirstHoleCard = FirstFlopCard || RankOfFirstHoleCard = SecondFlopCard || RankOfFirstHoleCard = ThirdFlopCard) Return true Force
+When !ispair && RankOfSecondHoleCard <= 7 && (RankOfSecondHoleCard = FirstFlopCard || RankOfSecondHoleCard = SecondFlopCard || RankOfSecondHoleCard = ThirdFlopCard) Return true Force
+When Others Return false Force
+
+// Purpose: residual real pair below TP that does not belong to source low-pair
+// positive family.
+// Source: higher MP/BP checks; low pair on completed board also checks by action.
+// Provenance: A current pair-tier negative descriptor.
+##f$cc_flop_donk_source_other_pair_below_tp##
+f$cc_flop_donk_source_native_context &&
+!f$cc_flop_donk_source_top_pair_plus &&
+!f$cc_flop_donk_source_low_pair &&
+(f$cc_hand_middle_or_bottom_pair || HaveUnderPair)
+
+// -----------------------------------------------------------------------------
+// FDS.03 — source good/medium draw family
+// -----------------------------------------------------------------------------
+
+// Purpose: source good+medium no-made draws while excluding naked GS without OC.
+// Source: GoodDraws + MediumDraws = FD/OESD and GS with overcard support.
+// Provenance: A union of CashCrusher real-draw tiers plus source GS+OC condition.
+##f$cc_flop_donk_source_good_medium_draw##
+f$cc_hand_no_made &&
+(f$cc_cbet_flop_premium_draw ||
+ f$cc_cbet_flop_good_draw ||
+ (f$cc_real_gutshot && Overcards > 0))
+
+// Purpose: source draw CHECK family has precedence over paired/other positive
+// properties: Axx, completed, or 2+BW.
+// Source/Provenance: T exact Starting Strategy priority, confirmed by DeepCrusher.
+##f$cc_flop_donk_source_draw_check_parent##
+f$cc_flop_donk_source_good_medium_draw &&
+(AcePresentOnFlop || f$cc_flop_donk_source_completed || f$cc_flop_donk_source_two_plus_bw)
+
+// Purpose: source positive draw Donk family after the check parent is excluded:
+// one BW, 9-high-or-lower, or paired board.
+// Source/Provenance: T exact dedicated strategy category.
+##f$cc_flop_donk_source_draw_bet_parent##
+f$cc_flop_donk_source_good_medium_draw &&
+!f$cc_flop_donk_source_draw_check_parent &&
+(f$cc_flop_donk_source_one_bw || f$cc_flop_donk_source_zero_bw || PairOnFlop)
+
+// -----------------------------------------------------------------------------
+// FDS.04 — source strategic size IDs
+// -----------------------------------------------------------------------------
+
+// Purpose: source 50% Donk size ID.
+// Source/Provenance: T dedicated source sizing.
+##f$cc_flop_donk_size_50_id##
+1
+
+// Purpose: source 75% Donk size ID.
+// Source/Provenance: T dedicated source sizing.
+##f$cc_flop_donk_size_75_id##
+2
+
+// Purpose: source 100% POT Donk size ID; not synonymous with all-in.
+// Source/Provenance: T draw-heavy low-SPR source sizing.
+##f$cc_flop_donk_size_100_id##
+3
+
+// -----------------------------------------------------------------------------
+// FDS.05 — source actions
+// -----------------------------------------------------------------------------
+
+// Purpose: TP/OP/2P+ source action with Axx exception.
+// Source: always Donk TP+ except Axx.
+// Provenance: T/A direct source translation.
+##f$cc_flop_donk_source_value_action##
+When !f$cc_flop_donk_source_native_context Return false Force
+When !f$cc_flop_donk_source_top_pair_plus Return false Force
+When AcePresentOnFlop Return false Force
+When Others Return true Force
+
+// Purpose: source value sizing by board structure and corrected deepest SPR.
+// Source: draw-heavy POT around 1:1 else75; non-heavy 2BW75/1BW50/NoBW75.
+// Provenance: T sizing + A corrected multiway SPR denominator.
+##f$cc_flop_donk_source_value_size_id##
+When !f$cc_flop_donk_source_value_action Return 0 Force
+When f$cc_flop_donk_source_draw_heavy && f$cc_flop_donk_source_drawheavy_low_spr Return f$cc_flop_donk_size_100_id Force
+When f$cc_flop_donk_source_draw_heavy Return f$cc_flop_donk_size_75_id Force
+When f$cc_flop_donk_source_two_plus_bw Return f$cc_flop_donk_size_75_id Force
+When f$cc_flop_donk_source_one_bw Return f$cc_flop_donk_size_50_id Force
+When f$cc_flop_donk_source_zero_bw Return f$cc_flop_donk_size_75_id Force
+When Others Return f$cc_flop_donk_size_75_id Force
+
+// Purpose: low MP/BP source semibluff Donk: <=7 pair only on non-completed board.
+// Source/Provenance: T direct Starting Strategy rule.
+##f$cc_flop_donk_source_lowpair_action##
+f$cc_flop_donk_source_native_context &&
+f$cc_flop_donk_source_low_pair &&
+!f$cc_flop_donk_source_completed
+
+// Purpose: low-pair source size is exactly 50%.
+// Source/Provenance: T direct source sizing.
+##f$cc_flop_donk_source_lowpair_size_id##
+When f$cc_flop_donk_source_lowpair_action Return f$cc_flop_donk_size_50_id Force
+When Others Return 0 Force
+
+// Purpose: good/medium draw source Donk after explicit check-family priority.
+// Source/Provenance: T direct source rule.
+##f$cc_flop_donk_source_draw_action##
+f$cc_flop_donk_source_native_context && f$cc_flop_donk_source_draw_bet_parent
+
+// Purpose: positive source draw Donk uses 75%.
+// Source/Provenance: T direct source sizing.
+##f$cc_flop_donk_source_draw_size_id##
+When f$cc_flop_donk_source_draw_action Return f$cc_flop_donk_size_75_id Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// FDS.06 — source dispatcher / coverage
+// -----------------------------------------------------------------------------
+
+// Purpose: direct source action dispatcher.
+// Source/Provenance: T/A exact branch ordering: value -> low pair -> draw -> check.
+// Safety: low-pair completed, higher pairs, draw-check parent, weak draws, high-card
+// backdoors and air all remain source-reviewed checks.
+##f$cc_flop_donk_source_action##
+When !f$cc_flop_donk_source_native_context Return false Force
+When f$cc_flop_donk_source_value_action Return true Force
+When f$cc_flop_donk_source_lowpair_action Return true Force
+When f$cc_flop_donk_source_draw_action Return true Force
+When Others Return false Force
+
+// Purpose: paired direct source size dispatcher.
+// Source/Provenance: T/A exact owner; reviewed checks ->0.
+##f$cc_flop_donk_source_size_id##
+When !f$cc_flop_donk_source_action Return 0 Force
+When f$cc_flop_donk_source_value_action Return f$cc_flop_donk_source_value_size_id Force
+When f$cc_flop_donk_source_lowpair_action Return f$cc_flop_donk_source_lowpair_size_id Force
+When f$cc_flop_donk_source_draw_action Return f$cc_flop_donk_source_draw_size_id Force
+When Others Return 0 Force
+
+// Purpose: entire native source context is reviewed, including source checks.
+// Source: dedicated Starting Strategy plus mature explicit tail check.
+// Provenance: A source coverage metadata.
+##f$cc_flop_donk_source_covered##
+f$cc_flop_donk_source_native_context
+
+// Purpose: compact source branch ID: 1 value bet; 2 low-pair bet; 3 draw bet;
+// 4 Axx value check; 5 pair check; 6 draw check; 7 residual/air check; 0 outside.
+// Source/Provenance: P audit metadata over T/A source branches.
+##f$cc_flop_donk_source_branch_id##
+When !f$cc_flop_donk_source_native_context Return 0 Force
+When f$cc_flop_donk_source_value_action Return 1 Force
+When f$cc_flop_donk_source_lowpair_action Return 2 Force
+When f$cc_flop_donk_source_draw_action Return 3 Force
+When f$cc_flop_donk_source_top_pair_plus && AcePresentOnFlop Return 4 Force
+When f$cc_flop_donk_source_low_pair || f$cc_flop_donk_source_other_pair_below_tp Return 5 Force
+When f$cc_flop_donk_source_draw_check_parent || f$cc_real_frontdoor_draw Return 6 Force
+When Others Return 7 Force
+
+// Purpose: source action/size integrity.
+// Source/Provenance: P engineering invariant over T/A source policy.
+##f$cc_flop_donk_source_size_consistent##
+When !f$cc_flop_donk_source_action Return f$cc_flop_donk_source_size_id = 0 Force
+When f$cc_flop_donk_source_action Return f$cc_flop_donk_source_size_id >= 1 && f$cc_flop_donk_source_size_id <= 3 Force
+When Others Return false Force
+
+// ============================================================================
+// End Gate07B direct source strategy.
+// ============================================================================

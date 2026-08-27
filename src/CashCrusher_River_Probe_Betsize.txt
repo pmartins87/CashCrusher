@@ -1,0 +1,75 @@
+// ============================================================================
+// CashCrusher_River_Probe_Betsize.txt
+// Gate 11L.1 — OpenPPL runtime adapter for reviewed River-Probe size IDs
+// ============================================================================
+// Purpose:
+//   Translate canonical River-Probe strategic size IDs to exact OpenPPL initial
+//   bet actions without adding strategy or stack commitment.
+//
+// Runtime facts:
+//   * canonical River Probe is Hero's first River action with AmountToCall=0;
+//   * BetMin is the verified minimum-bet action; geometry treats it as 1bb;
+//   * 33/50/75/100 use native OpenPPL pot-size actions;
+//   * 25% and source-specific 30% use RaiseBy percentage syntax. With no call
+//     amount, these are exact initial bets of the requested pot fraction;
+//   * River30 remains distinct from 33% because the audited HUBB source uses 30.
+//
+// Size IDs:
+//   1 MIN | 2 25 | 3 33 | 4 50 | 5 75 | 6 100 | 7 exact 30.
+//
+// Source/Provenance:
+//   T = OpenHoldem/OpenPPL sizing semantics audited in prior runtime gates.
+//   A = Gate11 normalized River-Probe palette including source River30.
+//   P = MIN fraction sentinel and strict mapping/coverage guards.
+//
+// Safety: no BetMax here; natural all-in equivalence is Gate11L.3 only.
+// ============================================================================
+
+// Purpose: positive reviewed River Probe owns one supported canonical size.
+// Source/Provenance: P guard over reviewed router/exclusivity/size integrity.
+##f$cc_river_probe_runtime_size_ready##
+When !f$cc_river_probe_router Return false Force
+When !f$cc_river_probe_router_consistent Return false Force
+When !f$cc_river_probe_size_consistent Return false Force
+When f$cc_river_probe_size_id >= 1 && f$cc_river_probe_size_id <= 7 Return true Force
+When Others Return false Force
+
+// Purpose: requested pot fraction for fixed-fraction sizes. MIN uses -1 because
+// a 1bb minimum is not a stable fraction of the River pot.
+// Source/Provenance: A exact Gate11 palette + P explicit MIN sentinel.
+##f$cc_river_probe_requested_pot_fraction##
+When !f$cc_river_probe_runtime_size_ready Return 0 Force
+When f$cc_river_probe_size_id = 1 Return -1 Force
+When f$cc_river_probe_size_id = 2 Return 0.25 Force
+When f$cc_river_probe_size_id = 3 Return 0.333 Force
+When f$cc_river_probe_size_id = 4 Return 0.50 Force
+When f$cc_river_probe_size_id = 5 Return 0.75 Force
+When f$cc_river_probe_size_id = 6 Return 1.00 Force
+When f$cc_river_probe_size_id = 7 Return 0.30 Force
+When Others Return 0 Force
+
+// Purpose: translate strategic size ID to exact OpenPPL action.
+// Source/Provenance: T native/percentage actions + A Gate11 size palette.
+##f$cc_river_probe_requested_betsize##
+When !f$cc_river_probe_runtime_size_ready Return 0 Force
+When f$cc_river_probe_size_id = 1 Return BetMin Force
+When f$cc_river_probe_size_id = 2 RaiseBy 25% Force
+When f$cc_river_probe_size_id = 3 Return BetThirdPot Force
+When f$cc_river_probe_size_id = 4 Return BetHalfPot Force
+When f$cc_river_probe_size_id = 5 Return BetThreeFourthPot Force
+When f$cc_river_probe_size_id = 6 Return BetPot Force
+When f$cc_river_probe_size_id = 7 RaiseBy 30% Force
+When Others Return 0 Force
+
+// Purpose: validate special MIN sentinel versus all fixed-fraction sizes.
+// Source/Provenance: P invariant over T/A mapping.
+##f$cc_river_probe_runtime_mapping_valid##
+When !f$cc_river_probe_router Return f$cc_river_probe_requested_pot_fraction = 0 Force
+When !f$cc_river_probe_runtime_size_ready Return false Force
+When f$cc_river_probe_size_id = 1 && f$cc_river_probe_requested_pot_fraction = -1 Return true Force
+When f$cc_river_probe_size_id >= 2 && f$cc_river_probe_size_id <= 7 && f$cc_river_probe_requested_pot_fraction > 0 Return true Force
+When Others Return false Force
+
+// ============================================================================
+// End Gate11L.1 River-Probe runtime size adapter.
+// ============================================================================

@@ -1,0 +1,179 @@
+// ============================================================================
+// CashCrusher_Turn_DelayedCBet_4BP.txt
+// Gate 12A.14 — clean 4-6h HU 4BP Turn Delayed-CBet adaptation
+// ============================================================================
+// Purpose:
+//   Cover only mechanically clean four-bet pots where Hero is the final 4bettor,
+//   the hand was already HU before flop, Hero skipped the flop CBet, the flop
+//   checked through, and Hero now has first Turn action with nothing to call.
+//
+// Source boundary:
+//   Crusher/DeepCrusher has no clean 4-6h four-bet Delayed-CBet range tree.
+//   Gate01I supplies exact chronology/survivor evidence; exact strategy is P-heavy.
+//
+// Safety:
+//   * deal size 4-6 only; native true-HU remains source-owned elsewhere;
+//   * only subtype 1 opener4 and subtype 2 cold4 are admitted;
+//   * only original opener or original 3bettor survivor is admitted;
+//   * multiway 4BP and other-caller survivor remain explicit unresolved gaps;
+//   * no pure-air barrel, no random/HandPower/BetMax, no SPR stackoff shortcut.
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// DC4.01 — broad clean 4BP owner and exact supported HU families
+// -----------------------------------------------------------------------------
+
+// Purpose: legal 4-6h final-4bettor Delayed-CBet parent with clean subtype proof.
+// Source/Provenance: T/A Gate01I chronology + Gate12A closed X/X history.
+##f$cc_turn_delayed_cbet_4bp_parent##
+f$cc_turn_delayed_cbet_base_opportunity &&
+f$cc_deal_size >= 4 && f$cc_deal_size <= 6 &&
+f$cc_pot_family_id = 4 &&
+f$cc_pf_role_4bettor &&
+f$cc_pf_4bet_subtype_id > 0 &&
+f$cc_pf_4bet_final_pos_id = f$cc_hero_pos_id
+
+// Purpose: supported clean HU 4BP existed already before flop; checked flop cannot
+// produce a postflop-reduced HU state.
+// Source/Provenance: T/A exact field/HU-origin/survivor geometry.
+##f$cc_turn_delayed_cbet_4bp_hu_context##
+f$cc_turn_delayed_cbet_4bp_parent &&
+f$cc_flop_entry_count = 2 &&
+f$cc_hu && f$cc_hu_origin_preflop_reduced &&
+f$cc_hu_4bp_survivor_consistent &&
+f$cc_hu_4bp_survivor_type_id > 0 && f$cc_hu_4bp_survivor_type_id < 3
+
+// Purpose: standard opener4 versus original 3bettor-call.
+// Source/Provenance: T/A clean subtype + exact current survivor identity.
+##f$cc_turn_delayed_cbet_4bp_opener4_vs_threebettor##
+f$cc_turn_delayed_cbet_4bp_hu_context &&
+f$cc_pf_4bet_standard_opener4_proven &&
+f$cc_hu_4bp_villain_is_threebettor
+
+// Purpose: cold4 versus original opener-call.
+// Source/Provenance: T/A clean subtype + P distinct selected range family.
+##f$cc_turn_delayed_cbet_4bp_cold4_vs_opener##
+f$cc_turn_delayed_cbet_4bp_hu_context &&
+f$cc_pf_4bet_standard_cold4_proven &&
+f$cc_hu_4bp_villain_is_opener
+
+// Purpose: cold4 versus original 3bettor-call.
+// Source/Provenance: T/A clean subtype + P distinct selected range family.
+##f$cc_turn_delayed_cbet_4bp_cold4_vs_threebettor##
+f$cc_turn_delayed_cbet_4bp_hu_context &&
+f$cc_pf_4bet_standard_cold4_proven &&
+f$cc_hu_4bp_villain_is_threebettor
+
+// Purpose: local family ID 1 opener4-v-3bettor | 2 cold4-v-opener |
+// 3 cold4-v-3bettor | 0 unsupported.
+// Source/Provenance: P deterministic metadata over exact T/A families.
+##f$cc_turn_delayed_cbet_4bp_family_id##
+When f$cc_turn_delayed_cbet_4bp_opener4_vs_threebettor Return 1 Force
+When f$cc_turn_delayed_cbet_4bp_cold4_vs_opener Return 2 Force
+When f$cc_turn_delayed_cbet_4bp_cold4_vs_threebettor Return 3 Force
+When Others Return 0 Force
+
+// Purpose: exact supported clean HU 4BP union.
+// Source/Provenance: P safety gate over exact family ID.
+##f$cc_turn_delayed_cbet_4bp_supported##
+f$cc_turn_delayed_cbet_4bp_hu_context &&
+f$cc_turn_delayed_cbet_4bp_family_id >= 1 &&
+f$cc_turn_delayed_cbet_4bp_family_id <= 3
+
+// -----------------------------------------------------------------------------
+// DC4.02 — current strength / runout vocabulary
+// -----------------------------------------------------------------------------
+
+// Purpose: exact contributed current two pair.
+// Source/Provenance: T/A contribution-aware current hand reconstruction.
+##f$cc_turn_delayed_cbet_4bp_exact_two_pair##
+IsTurn && HaveTwoPair && !TwoPairOnBoard && npcbits > 0
+
+// Purpose: robust value stronger than exact two pair.
+// Source/Provenance: A portable current-strength hierarchy; P downstream policy.
+##f$cc_turn_delayed_cbet_4bp_strong_value##
+f$cc_turn_delayed_cbet_two_pair_plus_real &&
+!f$cc_turn_delayed_cbet_4bp_exact_two_pair
+
+// Purpose: strong top pair by deterministic kicker quality.
+// Source/Provenance: A kicker-quality concept + P <=2 cash boundary.
+##f$cc_turn_delayed_cbet_4bp_strong_tp##
+f$cc_turn_delayed_cbet_top_pair_real && f$cc_number_better_kickers <= 2
+
+// Purpose: completion/four-card turn where one-pair value contracts.
+// Source/Provenance: A source runout caution + P 4BP application.
+##f$cc_turn_delayed_cbet_4bp_dangerous_runout##
+f$cc_turn_completed || f$cc_turn_four_card_straight_or_flush || f$cc_turn_super_completed
+
+// Purpose: clean turn complement.
+// Source/Provenance: P exact local complement.
+##f$cc_turn_delayed_cbet_4bp_clean_turn##
+!f$cc_turn_delayed_cbet_4bp_dangerous_runout
+
+// Purpose: premium current no-made draw; never implies commitment.
+// Source/Provenance: A cleaned draw-quality concepts + P exact combination cut.
+##f$cc_turn_delayed_cbet_4bp_premium_draw##
+IsTurn && f$cc_hand_no_made &&
+(f$cc_real_combo_draw || f$cc_real_nut_fd ||
+ (f$cc_real_oesd && f$cc_two_overcards) ||
+ (f$cc_real_fd && f$cc_two_overcards))
+
+// -----------------------------------------------------------------------------
+// DC4.03 — P-heavy clean HU policy
+// -----------------------------------------------------------------------------
+
+// Purpose: conservative 4BP delayed action. Robust value continues; clean
+// overpairs can value bet. Strong TP and premium draws require IP. Cold4 families
+// do not get a wider thin-value exception solely because their preflop range is strong.
+// Source/Provenance: P-heavy professional cash adaptation; no source 4-6h tree.
+##f$cc_turn_delayed_cbet_4bp_action##
+When !f$cc_turn_delayed_cbet_4bp_supported Return false Force
+When f$cc_turn_delayed_cbet_4bp_strong_value Return true Force
+When f$cc_turn_delayed_cbet_4bp_exact_two_pair && f$cc_turn_delayed_cbet_4bp_dangerous_runout Return false Force
+When f$cc_turn_delayed_cbet_4bp_exact_two_pair Return true Force
+When f$cc_turn_delayed_cbet_overpair_real && f$cc_turn_delayed_cbet_4bp_clean_turn Return true Force
+When f$cc_turn_delayed_cbet_overpair_real Return false Force
+When f$cc_turn_delayed_cbet_4bp_strong_tp && f$cc_hu_ip && f$cc_turn_delayed_cbet_4bp_clean_turn Return true Force
+When f$cc_turn_delayed_cbet_top_pair_real Return false Force
+When f$cc_turn_delayed_cbet_second_pair Return false Force
+When f$cc_turn_delayed_cbet_third_pair Return false Force
+When f$cc_turn_delayed_cbet_4bp_premium_draw && f$cc_hu_ip && f$cc_turn_delayed_cbet_4bp_clean_turn Return true Force
+When f$cc_hand_no_made Return false Force
+When Others Return false Force
+
+// Purpose: clean 4BP delayed size map: robust value75, merged one-pair/draw50.
+// Source/Provenance: P conservative 4BP cash sizing; no pot/overbet/jam baseline.
+##f$cc_turn_delayed_cbet_4bp_size_id##
+When !f$cc_turn_delayed_cbet_4bp_action Return 0 Force
+When f$cc_turn_delayed_cbet_4bp_strong_value Return f$cc_turn_delayed_cbet_size_75_id Force
+When f$cc_turn_delayed_cbet_4bp_exact_two_pair Return f$cc_turn_delayed_cbet_size_75_id Force
+When f$cc_turn_delayed_cbet_overpair_real Return f$cc_turn_delayed_cbet_size_50_id Force
+When f$cc_turn_delayed_cbet_4bp_strong_tp Return f$cc_turn_delayed_cbet_size_50_id Force
+When f$cc_turn_delayed_cbet_4bp_premium_draw Return f$cc_turn_delayed_cbet_size_50_id Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// DC4.04 — coverage / unresolved evidence / safety
+// -----------------------------------------------------------------------------
+
+// Purpose: complete conservative policy in the exact clean-HU supported family.
+// Source/Provenance: P explicit-check coverage metadata.
+##f$cc_turn_delayed_cbet_4bp_covered##
+f$cc_turn_delayed_cbet_4bp_supported
+
+// Purpose: legal clean 4BP parent outside exact supported HU survivor families.
+// Includes multiway, other-caller survivor and contradictory/unresolved HU origin.
+// Source/Provenance: P/X fail-closed diagnostic; no strategy inherits it.
+##f$cc_turn_delayed_cbet_4bp_unresolved##
+f$cc_turn_delayed_cbet_4bp_parent && !f$cc_turn_delayed_cbet_4bp_covered
+
+// Purpose: local action/size integrity; P 4BP palette is 50/75 only.
+// Source/Provenance: P safety invariant.
+##f$cc_turn_delayed_cbet_4bp_size_consistent##
+When f$cc_turn_delayed_cbet_4bp_covered && !f$cc_turn_delayed_cbet_4bp_action Return f$cc_turn_delayed_cbet_4bp_size_id = 0 Force
+When f$cc_turn_delayed_cbet_4bp_action Return f$cc_turn_delayed_cbet_4bp_size_id = f$cc_turn_delayed_cbet_size_50_id || f$cc_turn_delayed_cbet_4bp_size_id = f$cc_turn_delayed_cbet_size_75_id Force
+When Others Return true Force
+
+// ============================================================================
+// End Gate12A.14 clean 4-6h HU 4BP Delayed-CBet adaptation.
+// ============================================================================

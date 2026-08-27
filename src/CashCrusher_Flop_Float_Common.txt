@@ -1,0 +1,176 @@
+// ============================================================================
+// CashCrusher_Flop_Float_Common.txt
+// Gate 04A/04B — common checked-to Flop Float descriptors
+// ============================================================================
+// Purpose:
+//   Define the initial-Flop checked-to caller opportunity and shared hand/board/
+//   size descriptors. This file owns no matchup-specific Float frequency.
+//
+// Source boundary:
+//   T = OpenPPL action-history/position facts and CashCrusher mechanical context.
+//   A = DeepCrusher `f$move_flop_floatbet` role: non-initiator acts after expected
+//       aggressor checks.
+//   P = conservative six-max LAST-only ownership and cash texture abstractions.
+//
+// OpenPPL safety:
+//   Every WHEN is flat and complete. `BotsActionsOnThisRoundIncludingChecks = 0`
+//   is used deliberately because ordinary BotsActionsOnThisRound excludes checks.
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// FF.01 — Canonical checked-to opportunity
+// -----------------------------------------------------------------------------
+
+// Purpose: Hero has a preflop CALLER role that can legitimately face a missed
+// flop CBet from a previous aggressor.
+// Source/Provenance: A/P role union over Gate00 exact pot-role taxonomy.
+// Safety: unraised limpers/check-option and final aggressors are excluded.
+##f$cc_flop_float_caller_role##
+f$cc_pf_role_srp_caller ||
+f$cc_pf_role_open_call_3bet ||
+f$cc_pf_role_cold_call_3bet ||
+f$cc_pf_role_call_4bet
+
+// Purpose: prove Hero has not already acted on this flop.
+// Source: OpenPPL BotsActionsOnThisRoundIncludingChecks includes didchec/call/
+// didbetsize/didrais, unlike the basic counter which excludes checks.
+// Provenance: T runtime gate.
+##f$cc_flop_float_first_hero_action##
+IsFlop && BotsActionsOnThisRoundIncludingChecks = 0
+
+// Purpose: broad mechanically legal checked-to Float opportunity.
+// Source: DeepCrusher float = caller/non-initiator, no bet to call, positional
+// opportunity after aggressor skipped betting.
+// Provenance: A/T with P LAST-only six-max safety.
+// Safety: MIDDLE is intentionally excluded; a live player behind receives its own
+// future node rather than inheriting a last-to-act Float policy.
+##f$cc_flop_float_opportunity##
+When !IsFlop Return false Force
+When !f$cc_context_valid Return false Force
+When !f$cc_flop_float_caller_role Return false Force
+When AmountToCall > 0 Return false Force
+When !f$cc_flop_float_first_hero_action Return false Force
+When f$cc_relpos_id != 3 Return false Force
+When f$cc_hu && !f$cc_hu_ip Return false Force
+When Others Return true Force
+
+// Purpose: exact HU checked-to opportunity.
+// Source/Provenance: T handedness split over canonical Float gate.
+##f$cc_flop_float_hu_opportunity##
+f$cc_flop_float_opportunity && f$cc_hu && f$cc_hu_ip
+
+// Purpose: exact multiway LAST checked-to opportunity.
+// Source/Provenance: T/P. AmountToCall=0 at exact LAST means all live players
+// before Hero have declined to bet; strategy remains separate from HU Float.
+##f$cc_flop_float_multiway_opportunity##
+f$cc_flop_float_opportunity && f$cc_multiway && f$cc_relpos_id = 3
+
+// -----------------------------------------------------------------------------
+// FF.02 — Source-compatible pair tiers
+// -----------------------------------------------------------------------------
+
+// Purpose: source `2ndTopPair_high`: second-pair/pocket tier whose relevant pair
+// rank is 8 or higher.
+// Source: Crusher Framework 5 / CrusherTBP explicit definition.
+// Provenance: T/A port onto CashCrusher repaired pair-tier primitive.
+##f$cc_flop_float_second_pair_high##
+f$cc_hand_second_pair_or_pocket &&
+((SecondBestBoardCard >= eight) || (ispair && rankhiplayer >= eight)) &&
+!f$cc_hand_top_pair_or_better
+
+// Purpose: source `2ndTopPair_low`: same tier with relevant rank 7 or lower.
+// Source/Provenance: T/A direct source boundary.
+##f$cc_flop_float_second_pair_low##
+f$cc_hand_second_pair_or_pocket &&
+((SecondBestBoardCard <= seven) || (ispair && rankhiplayer <= seven)) &&
+!f$cc_hand_top_pair_or_better
+
+// Purpose: source-like bottom/third-or-worse pair with board bottom rank 8+.
+// Source: Crusher Framework `BP_high` uses ThirdFlopCard >= 8.
+// Provenance: A port over CashCrusher lower-pair aggregation.
+##f$cc_flop_float_bottom_pair_high##
+f$cc_hand_middle_or_bottom_pair &&
+!f$cc_hand_second_pair_or_pocket &&
+ThirdFlopCard >= eight &&
+!f$cc_hand_top_pair_or_better
+
+// Purpose: source-like bottom/third-or-worse pair with board bottom rank <=7.
+// Source/Provenance: A direct `BP_low` rank boundary over repaired pair tiers.
+##f$cc_flop_float_bottom_pair_low##
+f$cc_hand_middle_or_bottom_pair &&
+!f$cc_hand_second_pair_or_pocket &&
+ThirdFlopCard <= seven &&
+!f$cc_hand_top_pair_or_better
+
+// -----------------------------------------------------------------------------
+// FF.03 — Board/draw abstractions
+// -----------------------------------------------------------------------------
+
+// Purpose: conservative CashCrusher equivalent of the source dry family.
+// Source: legacy `f$board_dry` excludes draw-heavy/connected structures.
+// Provenance: A source concept + P use of Gate01 audited pressure parents.
+// Safety: intentionally narrower than every legacy `board_dry` edge case.
+##f$cc_flop_float_dry_parent##
+f$cc_flop_static_high_parent ||
+f$cc_flop_static_lowmid_parent ||
+(f$cc_flop_paired_parent && !f$cc_flop_monotone && !f$cc_flop_oesd_possible)
+
+// Purpose: complement used where source explicitly says `!board_dry`.
+// Source/Provenance: A/P conservative wet/dynamic Float parent.
+##f$cc_flop_float_wet_parent##
+IsFlop && !f$cc_flop_float_dry_parent
+
+// Purpose: exact source `gutshot or better FDSD` direction without importing
+// backdoor/high-card extensions from the broader historical helper.
+// Source: current DeepCrusher 3wBBvSB Float uses real GS/OESD/FD.
+// Provenance: A over T/A real-frontdoor primitives.
+##f$cc_flop_float_real_gutshot_plus##
+f$cc_hand_no_made && (f$cc_real_gutshot || f$cc_real_oesd || f$cc_real_fd)
+
+// Purpose: strongest no-made Float semibluff subset for P-heavy six-max gaps.
+// Source/Provenance: A draw ingredients + P professional equity-rich selection.
+##f$cc_flop_float_premium_draw##
+f$cc_hand_no_made && (f$cc_real_combo_draw || f$cc_real_nut_fd || (f$cc_real_oesd && f$cc_two_overcards) || (f$cc_real_fd && f$cc_two_overcards))
+
+// Purpose: useful but non-premium real draw.
+// Source/Provenance: A/P deterministic quality split; no stackoff implication.
+##f$cc_flop_float_good_draw##
+f$cc_hand_no_made && !f$cc_flop_float_premium_draw && f$cc_flop_float_real_gutshot_plus
+
+// Purpose: no-made hand without real frontdoor draw.
+// Source/Provenance: T/A canonical air family; child decides whether to stab.
+##f$cc_flop_float_air##
+f$cc_air_no_frontdoor
+
+// -----------------------------------------------------------------------------
+// FF.04 — Strategic size IDs
+// -----------------------------------------------------------------------------
+
+// Purpose: source small 25% Float family.
+// Source/Provenance: A exact DeepCrusher/Crusher size family.
+##f$cc_flop_float_size_25_id##
+1
+
+// Purpose: ~33% small checked-to pressure family.
+// Source/Provenance: A/P source 25/33 family kept distinct for source descendants.
+##f$cc_flop_float_size_33_id##
+2
+
+// Purpose: 50% medium Float family.
+// Source/Provenance: A direct common source size.
+##f$cc_flop_float_size_50_id##
+3
+
+// Purpose: 75% large value/equity Float family.
+// Source/Provenance: A source family; exact 100bb use is child-specific.
+##f$cc_flop_float_size_75_id##
+4
+
+// Purpose: pot-sized family reserved for future exact nodes.
+// Source/Provenance: P engineering ID; no current source child assumes it.
+##f$cc_flop_float_size_100_id##
+5
+
+// ============================================================================
+// End common Flop Float descriptors.
+// ============================================================================

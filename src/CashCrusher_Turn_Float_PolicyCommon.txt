@@ -1,0 +1,146 @@
+// ============================================================================
+// CashCrusher_Turn_Float_PolicyCommon.txt
+// Gate 05C+ — professional-gap Turn Float descriptors
+// ============================================================================
+// Purpose:
+//   Provide deterministic current-turn strength, runout and geometry ingredients
+//   for source-silent six-max Turn-Float states. These helpers do not decide an
+//   action by themselves.
+//
+// Source/Provenance:
+//   T = portable current hand/draw and exact SPR/player facts.
+//   A = same current-strength-first architecture audited in DeepCrusher/CashCrusher.
+//   P = conservative cash-game quality buckets used only where source is silent.
+//
+// Important:
+//   These are "tapa-buraco" ingredients. Any child using them must be documented
+//   as P-heavy and must yield to `f$cc_turn_float_source_exact_covered` first.
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// TFP.01 — current hand aliases
+// -----------------------------------------------------------------------------
+
+// Purpose: current robust two-pair-or-better value class.
+// Source/Provenance: T/A alias over the portable hand ladder.
+##f$cc_turn_float_two_pair_plus##
+IsTurn && f$cc_hand_two_pair_or_better
+
+// Purpose: current overpair exactly, excluding 2P+.
+// Source/Provenance: T/A mechanical current hand class.
+##f$cc_turn_float_overpair##
+IsTurn && HaveOverPair && !f$cc_hand_two_pair_or_better
+
+// Purpose: current strong top pair, using the already-audited CashCrusher <=2
+// better-kicker engineering split.
+// Source/Provenance: A/P alias; cutoff is not claimed as universal GTO truth.
+##f$cc_turn_float_strong_top_pair##
+f$cc_turn_cbet_strong_top_pair
+
+// Purpose: current medium top pair.
+// Source/Provenance: A/P alias over audited current Turn tier.
+##f$cc_turn_float_medium_top_pair##
+f$cc_turn_cbet_medium_top_pair
+
+// Purpose: current weak top pair.
+// Source/Provenance: A/P alias over audited current Turn tier.
+##f$cc_turn_float_weak_top_pair##
+f$cc_turn_cbet_weak_top_pair
+
+// Purpose: current second-pair/pocket tier below top pair.
+// Source/Provenance: T/A alias.
+##f$cc_turn_float_second_pair##
+f$cc_turn_cbet_second_pair
+
+// Purpose: current third-or-worse/underpair tier.
+// Source/Provenance: T/A alias.
+##f$cc_turn_float_third_or_worse_pair##
+f$cc_turn_cbet_third_or_worse_pair
+
+// -----------------------------------------------------------------------------
+// TFP.02 — current no-made equity aliases
+// -----------------------------------------------------------------------------
+
+// Purpose: premium current turn draw without stack-off semantics.
+// Source/Provenance: A/P alias over audited Turn draw-quality tier.
+##f$cc_turn_float_premium_draw##
+f$cc_hand_no_made && f$cc_turn_cbet_premium_draw
+
+// Purpose: useful non-premium current draw.
+// Source/Provenance: A/P alias.
+##f$cc_turn_float_good_draw##
+f$cc_hand_no_made && f$cc_turn_cbet_good_draw
+
+// Purpose: residual weak real draw.
+// Source/Provenance: A/P alias.
+##f$cc_turn_float_weak_draw##
+f$cc_hand_no_made && f$cc_turn_cbet_weak_draw
+
+// Purpose: source-silent high-card air candidate for HU P-heavy gap fills.
+// Source: no literal source frequency. Professional principle: after OOP
+// aggression stops, IP can pressure selected scare-card/high-card blockers.
+// Provenance: P deterministic selector, deliberately much narrower than all air.
+// Safety: never overrides BTNvSB source no-bluff lock.
+##f$cc_turn_float_quality_air_hu##
+f$cc_turn_float_current_air &&
+!f$cc_turn_super_completed &&
+f$cc_turn_overcard_to_flop &&
+(f$cc_hole_has_ace || f$cc_hole_has_king)
+
+// -----------------------------------------------------------------------------
+// TFP.03 — runout / geometry caution
+// -----------------------------------------------------------------------------
+
+// Purpose: highly coordinated current turn where one-pair thin betting is reduced.
+// Source/Provenance: T/A source super-completed/four-card structures + P grouping.
+##f$cc_turn_float_hostile_runout##
+f$cc_turn_super_completed || f$cc_turn_four_card_straight_or_flush
+
+// Purpose: calmer turn for ordinary thin-value/protection candidates.
+// Source/Provenance: P complement of the exact hostile descriptor.
+##f$cc_turn_float_calm_runout##
+IsTurn && !f$cc_turn_float_hostile_runout
+
+// Purpose: valid exact HU SPR for Turn-Float child policies.
+// Source/Provenance: T Gate00 effective-stack geometry.
+##f$cc_turn_float_hu_spr_valid##
+f$cc_hu && f$cc_spr_round_start >= 0
+
+// Purpose: naturally low HU turn SPR below 3; geometry only.
+// Source/Provenance: P/T engineering bucket; no automatic stackoff.
+##f$cc_turn_float_hu_low_spr##
+f$cc_turn_float_hu_spr_valid && f$cc_spr_round_start < 3
+
+// Purpose: very low HU turn SPR below 1.5; geometry only.
+// Source/Provenance: P/T engineering bucket, still not a jam command.
+##f$cc_turn_float_hu_very_low_spr##
+f$cc_turn_float_hu_spr_valid && f$cc_spr_round_start < 1.5
+
+// Purpose: materially deep HU turn SPR for one-pair pot-building caution.
+// Source/Provenance: P engineering bucket at SPR >=6.
+##f$cc_turn_float_hu_high_spr##
+f$cc_turn_float_hu_spr_valid && f$cc_spr_round_start >= 6
+
+// Purpose: valid deepest-effective multiway SPR.
+// Source/Provenance: T/A Gate00 dual-bound geometry.
+##f$cc_turn_float_mw_deep_spr_valid##
+f$cc_multiway && f$cc_mw_stack_geometry_valid && f$cc_mw_spr_deepest_round_start >= 0
+
+// -----------------------------------------------------------------------------
+// TFP.04 — Hero canonical position bit for ISO provenance
+// -----------------------------------------------------------------------------
+
+// Purpose: canonical Hero position bit used to intersect persisted limper/caller masks.
+// Source/Provenance: T/A position-ID mapping.
+##f$cc_turn_float_hero_pos_bit##
+When f$cc_hero_pos_id = 1 Return 1 Force
+When f$cc_hero_pos_id = 2 Return 2 Force
+When f$cc_hero_pos_id = 3 Return 4 Force
+When f$cc_hero_pos_id = 4 Return 8 Force
+When f$cc_hero_pos_id = 5 Return 16 Force
+When f$cc_hero_pos_id = 6 Return 32 Force
+When Others Return 0 Force
+
+// ============================================================================
+// End Gate05C+ professional-gap descriptors.
+// ============================================================================

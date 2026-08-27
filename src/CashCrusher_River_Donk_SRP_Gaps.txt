@@ -1,0 +1,283 @@
+// ============================================================================
+// CashCrusher_River_Donk_SRP_Gaps.txt
+// Gate 09C — ordinary-SRP River Donk 3-6h adaptation
+// ============================================================================
+// Purpose:
+//   Extend River Donk beyond literal true-HU HUBB while preserving the exact
+//   OOP X/C-flop -> X/C-turn history, absolute positions, ordinary-SRP role and
+//   HU/multiway origin. This file deliberately distinguishes source descendants,
+//   professional gap fills and unresolved historical-price branches.
+//
+// Source audit:
+//   * mature DeepCrusher explicitly CHECKS `3wSBvBB` in River Donk;
+//   * for the remaining non-HUBB/non-SBvBB cases, DeepCrusher adopts a reviewed
+//     CrusherTBP 2P+ article as the preferred source-gap interpreter;
+//   * that TBP tree depends heavily on historical Turn price and whether a flush
+//     draw was possible on Turn. CashCrusher cannot reconstruct those facts after
+//     the fact until defense writes them, so only source branches independent of
+//     those missing facts are activated here.
+//
+// Professional-theory fill:
+//   In deep 6max, after two OOP X/C streets, TP/OP and weak showdown hands retain
+//   showdown value and do not become automatic River leads. Positive gap action
+//   is restricted to robust current value / range-shifting runouts. Missed draws
+//   do not bluff without exact Turn-call draw/blocker provenance.
+//
+// Provenance:
+//   T = exact 3wSBvBB negative source + mechanical TBP runout definitions.
+//   A = contribution-aware translation of reconstructible TBP 2P+ branches.
+//   P = 4-6h range/topology adaptation and robust-value fallback.
+//   X = current no-made -> bluff; generic 2P+ -> stackoff; inferred Turn price.
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// RDSRP.01 — ordinary-SRP topology
+// -----------------------------------------------------------------------------
+
+// Purpose: ordinary one-raise SRP River-Donk owner with normal PFA/caller role.
+// Source/Provenance: T/A Gate00 pot/role + Gate09A closed history.
+##f$cc_river_donk_srp_context##
+f$cc_river_donk_base_opportunity &&
+f$cc_pot_family_id = 2 &&
+f$cc_pf_one_raise_ordinary_srp &&
+(f$cc_pf_role_pfa || f$cc_pf_role_srp_caller)
+
+// Purpose: exact original 3-handed SB-v-BB descendant explicitly checked by
+// mature DeepCrusher `When f$game_3wSBvBB Return false`.
+// Source/Provenance: T/A exact mapping from legacy game label to deal/positions.
+##f$cc_river_donk_srp_exact_3w_sbvbb##
+f$cc_river_donk_srp_context &&
+f$cc_deal_size = 3 &&
+f$cc_hu &&
+f$cc_hu_oop &&
+f$cc_hero_pos_id = 5 &&
+f$cc_river_donk_turn_aggressor_pos_id = 6 &&
+headsupchair = bigblindchair &&
+f$cc_flop_entry_count = 2
+
+// Purpose: clean HU ordinary-SRP gap that started the flop HU and is neither
+// literal true-HU HUBB nor exact source-negative 3wSBvBB.
+// Source/Provenance: T topology + A/P residual ownership.
+##f$cc_river_donk_srp_clean_hu_gap##
+f$cc_river_donk_srp_context &&
+f$cc_hu &&
+f$cc_hu_oop &&
+f$cc_flop_entry_count = 2 &&
+f$cc_river_donk_hu_opportunity &&
+!f$cc_river_donk_hubb_source_parent_valid &&
+!f$cc_river_donk_srp_exact_3w_sbvbb
+
+// Purpose: flop entered multiway but River is now HU. Whether the actual Turn
+// X/C happened HU or multiway is not fully snapshotted, so this remains a more
+// selected range family than clean HU.
+// Source/Provenance: T flop/current counts + P information-boundary owner.
+##f$cc_river_donk_srp_postmultiway_now_hu##
+f$cc_river_donk_srp_context &&
+f$cc_hu &&
+f$cc_hu_oop &&
+f$cc_flop_entry_count >= 3 &&
+f$cc_river_donk_hu_opportunity
+
+// Purpose: River remains multiway after a clean single-aggressor Turn X/C.
+// Source/Provenance: T current field + P six-max selected-range family.
+##f$cc_river_donk_srp_current_multiway##
+f$cc_river_donk_srp_context &&
+f$cc_river_donk_multiway_opportunity &&
+f$cc_mw_stack_geometry_valid
+
+// Purpose: compact topology ID.
+// 1 exact 3wSBvBB negative source | 2 clean HU gap | 3 post-MW now HU |
+// 4 current multiway | 0 unsupported.
+// Source/Provenance: P audit metadata.
+##f$cc_river_donk_srp_topology_id##
+When !f$cc_river_donk_srp_context Return 0 Force
+When f$cc_river_donk_srp_exact_3w_sbvbb Return 1 Force
+When f$cc_river_donk_srp_postmultiway_now_hu Return 3 Force
+When f$cc_river_donk_srp_current_multiway Return 4 Force
+When f$cc_river_donk_srp_clean_hu_gap Return 2 Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// RDSRP.02 — exact TBP runout descriptors that do NOT need Turn-price history
+// -----------------------------------------------------------------------------
+
+// Purpose: River paired any earlier community-card rank.
+// Source: exact CrusherTBP `f$river_Paired`.
+// Provenance: T mechanical translation.
+##f$cc_river_donk_srp_river_paired##
+(FirstFlopCard = RiverCard) ||
+(SecondFlopCard = RiverCard) ||
+(ThirdFlopCard = RiverCard) ||
+(TurnCard = RiverCard)
+
+// Purpose: source medium/overcard river descriptor.
+// Source: exact Crusher Framework `f$river_mOC`.
+// Provenance: T mechanical translation.
+##f$cc_river_donk_srp_river_moc##
+(SecondTopFlopCard < RiverCard) || (RiverCardIsOvercardToBoard > 0)
+
+// Purpose: exact source top-card pairing class.
+// Source: Crusher Framework/CrusherTBP `f$river_Paired_TopCard`.
+// Provenance: T parser-safe complete expression.
+##f$cc_river_donk_srp_paired_top_card##
+((TopFlopCard > TurnCard) && TopFlopCardPairedOnRiver) ||
+((TurnCard > TopFlopCard) && TurnCardPaired)
+
+// Purpose: exact source fourth-card pairing class.
+// Source: Crusher Framework/CrusherTBP `f$river_Paired_4thTopCard`.
+// Provenance: T parser-safe complete expression.
+##f$cc_river_donk_srp_paired_fourth_card##
+((LowestFlopCard < TurnCard) && (LowestFlopCard = RiverCard)) ||
+((TurnCard < LowestFlopCard) && TurnCardPaired)
+
+// Purpose: River newly makes a public flush possible when Turn did not.
+// Source: reconstructible component of the TBP tree.
+// Provenance: T current/Turn board symbols.
+##f$cc_river_donk_srp_new_flush_possible##
+!FlushPossibleOnTurn && FlushPossible
+
+// Purpose: contribution-aware current strong value subset for the TBP 2P+ tree.
+// Source: DeepCrusher explicitly replaced broad old `TwoPairsOrBetter` with CF7
+// contribution-aware 2P+. CashCrusher uses only reconstructible contributing
+// subsets rather than board-only strength.
+// Provenance: A conservative source-shaped subset.
+##f$cc_river_donk_srp_contributed_2pplus##
+f$cc_river_donk_contributed_exact_two_pair ||
+HaveSet ||
+f$cc_river_donk_2hc_straight ||
+f$cc_river_donk_1hc_straight ||
+f$cc_river_donk_2hc_flush ||
+f$cc_river_donk_1hc_flush
+
+// -----------------------------------------------------------------------------
+// RDSRP.03 — reconstructible TBP decisions
+// -----------------------------------------------------------------------------
+
+// Purpose: source-explicit exact 3wSBvBB CHECK.
+// Source/Provenance: T negative decision.
+##f$cc_river_donk_srp_source_negative_action##
+When f$cc_river_donk_srp_exact_3w_sbvbb Return false Force
+When Others Return false Force
+
+// Purpose: TBP branch with source-known action AND size independent of missing
+// Turn-price history: non-paired, no newly-completed flush, mOC -> River50.
+// Source/Provenance: A contribution-aware translation of exact TBP branch.
+##f$cc_river_donk_srp_tbp_moc_value##
+f$cc_river_donk_srp_clean_hu_gap &&
+f$cc_river_donk_srp_contributed_2pplus &&
+!f$cc_river_donk_srp_river_paired &&
+!f$cc_river_donk_srp_new_flush_possible &&
+f$cc_river_donk_srp_river_moc
+
+// Purpose: TBP explicitly checks current 2P+ when River pairs the top board rank.
+// Source/Provenance: A exact negative source branch with contribution filter.
+##f$cc_river_donk_srp_tbp_paired_top_check##
+f$cc_river_donk_srp_clean_hu_gap &&
+f$cc_river_donk_srp_contributed_2pplus &&
+f$cc_river_donk_srp_paired_top_card
+
+// Purpose: TBP explicitly checks current 2P+ when River pairs the fourth board
+// rank. This remains source-negative regardless of missing Turn-price marker.
+// Source/Provenance: A exact negative branch.
+##f$cc_river_donk_srp_tbp_paired_fourth_check##
+f$cc_river_donk_srp_clean_hu_gap &&
+f$cc_river_donk_srp_contributed_2pplus &&
+f$cc_river_donk_srp_paired_fourth_card
+
+// Purpose: identify source-TBP branches whose ACTION is positive but exact size
+// depends on unavailable Turn-price history; do not silently invent that price.
+// Source: paired/new-flush branches switch 50/100/Max by `user_faced_lowbet_OTT`.
+// Provenance: T/A evidence-boundary diagnostic.
+##f$cc_river_donk_srp_tbp_price_provenance_missing##
+f$cc_river_donk_srp_clean_hu_gap &&
+f$cc_river_donk_srp_contributed_2pplus &&
+(f$cc_river_donk_srp_river_paired || f$cc_river_donk_srp_new_flush_possible) &&
+!f$cc_river_donk_srp_tbp_paired_top_check &&
+!f$cc_river_donk_srp_tbp_paired_fourth_check
+
+// -----------------------------------------------------------------------------
+// RDSRP.04 — professional 6max value fallback
+// -----------------------------------------------------------------------------
+
+// Purpose: exact robust value for source-silent clean-HU states.
+// Professional rationale:
+//   after X/C flop + X/C Turn, one-pair bluff catchers prefer showdown/check;
+//   nutty value can lead on River, especially where the River changes nut/range
+//   distribution. This threshold is a BET threshold only, never stackoff.
+// Provenance: P deep-cash gap fill.
+##f$cc_river_donk_srp_hu_robust_value##
+When !f$cc_river_donk_srp_clean_hu_gap Return false Force
+When HaveNuts Return true Force
+When f$cc_river_four_card_completion && (HaveSet || f$cc_river_donk_2hc_straight || f$cc_river_donk_2hc_flush) Return true Force
+When f$cc_river_four_card_completion Return false Force
+When f$cc_river_completed && (f$cc_river_donk_2hc_straight || f$cc_river_donk_2hc_flush || HaveSet) Return true Force
+When f$cc_river_completed Return false Force
+When f$cc_river_donk_contributed_exact_two_pair || HaveSet Return true Force
+When Others Return false Force
+
+// Purpose: post-multiway/current-multiway robust threshold is stricter because
+// Hero survived two calls against multiple live/selected ranges.
+// Provenance: P professional multiway adjustment.
+##f$cc_river_donk_srp_multiway_origin_robust_value##
+When !(f$cc_river_donk_srp_postmultiway_now_hu || f$cc_river_donk_srp_current_multiway) Return false Force
+When HaveNuts Return true Force
+When f$cc_river_four_card_completion Return false Force
+When f$cc_river_completed && (f$cc_river_donk_2hc_straight || f$cc_river_donk_2hc_flush) Return true Force
+When f$cc_river_completed Return false Force
+When HaveSet Return true Force
+When Others Return false Force
+
+// Purpose: no generic River bluff without exact Turn-call draw provenance.
+// Source: mature HUBB bluff requires called GOOD DRAW marker.
+// Provenance: A source lesson + P blocker/provenance safety.
+##f$cc_river_donk_srp_nomade_bluff_blocked##
+f$cc_river_donk_srp_context && f$cc_river_no_made
+
+// -----------------------------------------------------------------------------
+// RDSRP.05 — action / sizing / coverage
+// -----------------------------------------------------------------------------
+
+// Purpose: reviewed ordinary-SRP gap action.
+// Source/Provenance: T/A exact negatives/positive TBP subset, then P robust value.
+##f$cc_river_donk_srp_gap_action##
+When f$cc_river_donk_srp_topology_id <= 0 Return false Force
+When f$cc_river_donk_srp_exact_3w_sbvbb Return false Force
+When f$cc_river_donk_srp_tbp_paired_top_check Return false Force
+When f$cc_river_donk_srp_tbp_paired_fourth_check Return false Force
+When f$cc_river_donk_srp_tbp_moc_value Return true Force
+When f$cc_river_donk_srp_tbp_price_provenance_missing Return false Force
+When f$cc_river_donk_srp_hu_robust_value Return true Force
+When f$cc_river_donk_srp_multiway_origin_robust_value Return true Force
+When Others Return false Force
+
+// Purpose: paired gap size in River-Donk local ID palette.
+// TBP mOC exact source = 50. P robust value uses 75 for nuts, otherwise 50.
+// Source/Provenance: A exact TBP + P cash adaptation.
+##f$cc_river_donk_srp_gap_size_id##
+When !f$cc_river_donk_srp_gap_action Return 0 Force
+When f$cc_river_donk_srp_tbp_moc_value Return 4 Force
+When HaveNuts Return 5 Force
+When Others Return 4 Force
+
+// Purpose: distinguish reviewed CHECK from unknown topology. Price-dependent TBP
+// branches remain reviewed CHECK today but explicitly expose missing provenance.
+// Source/Provenance: P coverage contract.
+##f$cc_river_donk_srp_gap_covered##
+f$cc_river_donk_srp_topology_id > 0
+
+// Purpose: positive action has one valid River-Donk local size.
+// Source/Provenance: P invariant.
+##f$cc_river_donk_srp_gap_size_consistent##
+When !f$cc_river_donk_srp_gap_action Return f$cc_river_donk_srp_gap_size_id = 0 Force
+When f$cc_river_donk_srp_gap_action Return f$cc_river_donk_srp_gap_size_id >= 1 && f$cc_river_donk_srp_gap_size_id <= 6 Force
+When Others Return false Force
+
+// Purpose: proven ordinary-SRP River Donk opportunity not classifiable by current
+// topology. Remains fail-closed and visible.
+// Source/Provenance: P evidence-boundary diagnostic.
+##f$cc_river_donk_srp_unresolved##
+f$cc_river_donk_srp_context && !f$cc_river_donk_srp_gap_covered && !f$cc_river_donk_hubb_covered
+
+// ============================================================================
+// End Gate09C ordinary-SRP River Donk adaptation.
+// ============================================================================

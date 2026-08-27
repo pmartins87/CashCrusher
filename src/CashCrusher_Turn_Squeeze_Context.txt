@@ -1,0 +1,145 @@
+// ============================================================================
+// CashCrusher_Turn_Squeeze_Context.txt
+// Gate 02H.0 — squeeze-pot Turn-CBet provenance
+// ============================================================================
+// Purpose:
+//   Preserve opener / pre-3bet-coldcaller / post-3bet-coldcaller range origin on
+//   the turn after an ACTUAL squeeze flop CBet, in HU or current multiway states.
+//
+// Source/Provenance:
+//   T = persisted 3BP/squeeze masks + Gate01N action history + current live mask.
+//   A = DeepCrusher cross-street history/range-provenance architecture.
+//   P = exact six-max squeeze selection/composition metadata.
+//
+// Safety:
+//   No strategy here. Squeeze proof is mandatory; plain3BP cannot enter.
+// ============================================================================
+
+// Purpose: generic squeeze Turn-CBet context after a standard executed flop CBet.
+// Source/Provenance: A/T exact subtype/role/history gate.
+##f$cc_turn_squeeze_context##
+f$cc_turn_cbet_squeeze_context && f$cc_pf_squeeze_proven && !f$cc_pf_3bet_plain_proven
+
+// -----------------------------------------------------------------------------
+// SQ.01 — HU survivor provenance
+// -----------------------------------------------------------------------------
+
+// Purpose: sole current Villain is the original opener who continued versus squeeze.
+// Source/Provenance: T/A existing exact opener bit + current HU Villain identity.
+##f$cc_turn_squeeze_hu_vs_opener##
+f$cc_turn_squeeze_context && f$cc_hu && f$cc_hu_3bp_villain_is_opener
+
+// Purpose: sole Villain is a pre-3bet coldcaller who continued versus squeeze.
+// Source/Provenance: T/A exact persisted pre3bet-caller mask.
+##f$cc_turn_squeeze_hu_vs_pre3bet_coldcaller##
+f$cc_turn_squeeze_context && f$cc_hu && f$cc_hu_3bp_villain_is_pre3bet_coldcaller
+
+// Purpose: sole Villain is a post-3bet coldcaller who entered after squeeze.
+// Source/Provenance: T/A exact persisted post3bet-caller mask.
+##f$cc_turn_squeeze_hu_vs_post3bet_coldcaller##
+f$cc_turn_squeeze_context && f$cc_hu && f$cc_hu_3bp_villain_is_post3bet_coldcaller
+
+// Purpose: HU squeeze arose only after a multiway flop was CBet.
+// Source/Provenance: T/A HU-origin selection modifier.
+##f$cc_turn_squeeze_hu_postmw_origin##
+f$cc_turn_squeeze_context && f$cc_hu_origin_postflop_reduced
+
+// Purpose: stable current-HU squeeze survivor ID: 1 opener | 2 pre3bet caller |
+// 3 post3bet caller | 0 invalid.
+// Source/Provenance: P engineering ID over T exact provenance.
+##f$cc_turn_squeeze_hu_survivor_type_id##
+When f$cc_turn_squeeze_hu_vs_opener Return 1 Force
+When f$cc_turn_squeeze_hu_vs_pre3bet_coldcaller Return 2 Force
+When f$cc_turn_squeeze_hu_vs_post3bet_coldcaller Return 3 Force
+When Others Return 0 Force
+
+// Purpose: current HU squeeze survivor classification is unique and coherent.
+// Source/Provenance: P fail-closed invariant.
+##f$cc_turn_squeeze_hu_context_consistent##
+When !f$cc_turn_squeeze_context Return false Force
+When !f$cc_hu Return false Force
+When (f$cc_turn_squeeze_hu_vs_opener + f$cc_turn_squeeze_hu_vs_pre3bet_coldcaller + f$cc_turn_squeeze_hu_vs_post3bet_coldcaller) != 1 Return false Force
+When f$cc_turn_squeeze_hu_survivor_type_id <= 0 Return false Force
+When f$cc_turn_squeeze_hu_postmw_origin && f$cc_flop_entry_count < 3 Return false Force
+When Others Return true Force
+
+// Purpose: selected squeeze HU range after coldcaller origin, post-multiway flop,
+// or large 75/pot flop CBet.
+// Source/Provenance: P professional-theory selection modifier.
+##f$cc_turn_squeeze_hu_strong_selection##
+f$cc_turn_squeeze_hu_context_consistent &&
+(f$cc_turn_squeeze_hu_survivor_type_id >= 2 || f$cc_turn_squeeze_hu_postmw_origin || f$cc_hist_flop_cbet_plan_size_id >= 3)
+
+// -----------------------------------------------------------------------------
+// SQ.02 — Current multiway composition
+// -----------------------------------------------------------------------------
+
+// Purpose: current live original opener count in a multiway squeeze pot.
+// Source/Provenance: T exact live opener mask.
+##f$cc_turn_squeeze_mw_live_opener_count##
+When !f$cc_turn_squeeze_context || !f$cc_multiway Return 0 Force
+When Others Return BitCount(f$cc_mw_3bp_live_opener_mask) Force
+
+// Purpose: current live pre3bet-coldcaller count in multiway squeeze.
+// Source/Provenance: T exact live pre3bet-caller mask.
+##f$cc_turn_squeeze_mw_live_pre3bet_count##
+When !f$cc_turn_squeeze_context || !f$cc_multiway Return 0 Force
+When Others Return BitCount(f$cc_mw_3bp_live_pre3bet_coldcaller_mask) Force
+
+// Purpose: current live post3bet-coldcaller count in multiway squeeze.
+// Source/Provenance: T exact live post3bet-caller mask.
+##f$cc_turn_squeeze_mw_live_post3bet_count##
+When !f$cc_turn_squeeze_context || !f$cc_multiway Return 0 Force
+When Others Return BitCount(f$cc_mw_3bp_live_post3bet_coldcaller_mask) Force
+
+// Purpose: total current opponents with an exact squeeze range origin.
+// Source/Provenance: T/P exact-count aggregation.
+##f$cc_turn_squeeze_mw_classified_count##
+When !f$cc_turn_squeeze_context || !f$cc_multiway Return 0 Force
+When Others Return (f$cc_turn_squeeze_mw_live_opener_count + f$cc_turn_squeeze_mw_live_pre3bet_count + f$cc_turn_squeeze_mw_live_post3bet_count) Force
+
+// Purpose: multiway squeeze composition ID:
+// 1 opener + no coldcallers | 2 opener + selected coldcaller(s) |
+// 3 coldcaller-origin field without opener | 0 invalid.
+// Source/Provenance: P range-composition metadata over T exact masks.
+##f$cc_turn_squeeze_mw_comp_id##
+When !f$cc_turn_squeeze_context || !f$cc_multiway Return 0 Force
+When f$cc_turn_squeeze_mw_live_opener_count = 1 && f$cc_turn_squeeze_mw_live_pre3bet_count = 0 && f$cc_turn_squeeze_mw_live_post3bet_count = 0 && f$cc_turn_squeeze_mw_classified_count = (nplayersplaying - 1) Return 1 Force
+When f$cc_turn_squeeze_mw_live_opener_count = 1 && (f$cc_turn_squeeze_mw_live_pre3bet_count + f$cc_turn_squeeze_mw_live_post3bet_count) > 0 && f$cc_turn_squeeze_mw_classified_count = (nplayersplaying - 1) Return 2 Force
+When f$cc_turn_squeeze_mw_live_opener_count = 0 && (f$cc_turn_squeeze_mw_live_pre3bet_count + f$cc_turn_squeeze_mw_live_post3bet_count) = (nplayersplaying - 1) Return 3 Force
+When Others Return 0 Force
+
+// Purpose: validate current multiway squeeze provenance and stack envelope.
+// Source/Provenance: P fail-closed invariant over T/A exact inputs.
+##f$cc_turn_squeeze_mw_context_consistent##
+When !f$cc_turn_squeeze_context || !f$cc_multiway Return false Force
+When !f$cc_mw_spr_bounds_valid Return false Force
+When f$cc_turn_squeeze_mw_comp_id <= 0 Return false Force
+When f$cc_turn_squeeze_mw_classified_count != (nplayersplaying - 1) Return false Force
+When Others Return true Force
+
+// Purpose: current MW squeeze includes at least one selected coldcaller origin.
+// Source/Provenance: P range-selection descriptor.
+##f$cc_turn_squeeze_mw_has_selected_coldcaller##
+f$cc_turn_squeeze_mw_context_consistent && (f$cc_turn_squeeze_mw_live_pre3bet_count + f$cc_turn_squeeze_mw_live_post3bet_count) > 0
+
+// Purpose: strong multiway squeeze selection from coldcaller field, 4way+ flop
+// origin, or large flop CBet.
+// Source/Provenance: P professional-theory selection descriptor.
+##f$cc_turn_squeeze_mw_strong_selection##
+f$cc_turn_squeeze_mw_context_consistent &&
+(f$cc_turn_squeeze_mw_has_selected_coldcaller || f$cc_flop_entry_count >= 4 || f$cc_hist_flop_cbet_plan_size_id >= 3)
+
+// Purpose: all live multiway squeeze effective relationships have SPR <4.
+// Source/Provenance: T/P deepest-effective geometry fact only.
+##f$cc_turn_squeeze_mw_all_effective_spr_below_4##
+f$cc_turn_squeeze_mw_context_consistent && f$cc_mw_spr_deepest_round_start >= 0 && f$cc_mw_spr_deepest_round_start < 4
+
+// Purpose: all live multiway squeeze effective relationships have SPR <3.
+// Source/Provenance: T/P geometry fact, no stackoff implication.
+##f$cc_turn_squeeze_mw_all_effective_spr_below_3##
+f$cc_turn_squeeze_mw_context_consistent && f$cc_mw_spr_deepest_round_start >= 0 && f$cc_mw_spr_deepest_round_start < 3
+
+// ============================================================================
+// End Gate 02H.0.
+// ============================================================================

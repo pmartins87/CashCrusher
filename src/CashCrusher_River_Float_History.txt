@@ -1,0 +1,262 @@
+// ============================================================================
+// CashCrusher_River_Float_History.txt
+// Gate 06A — canonical River Float history/source ownership
+// ============================================================================
+// Purpose:
+//   Define WHICH closed-turn histories may reach River Float before any river
+//   hand-strength policy is written.
+//
+// Critical ownership correction:
+//   River Float = Hero CALLED Villain turn aggression, then Villain checks river.
+//   Hero Turn-Float BET -> Villain call -> river is continuation of HERO aggression
+//   and is NOT River Float.
+//
+// Source/Provenance:
+//   T = OpenHoldem round-3 did* counters, raisbits3, lastraised3, live chairs and
+//       current river position/action facts.
+//   A = DeepCrusher f$move_river_floatbet router meaning + audited 3wBBvSB source.
+//   P = six-max clean-parent/exclusivity and unresolved-origin fail-closed rules.
+//
+// Safety:
+//   No betting strategy, no size and no BetMax exist in Gate06A.
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// RFH.00 — repair misleading Gate05 alias without deleting history facts
+// -----------------------------------------------------------------------------
+
+// Purpose: correctly named alias for an executed normal Turn Float where Hero
+// remained final turn aggressor.
+// Source/Provenance: T/A Gate05H closed execution history.
+// Safety: this state belongs to continuation-of-Hero-aggression, never River Float.
+##f$cc_river_after_turn_float_standard_parent_valid##
+f$cc_hist_river_float_standard_parent_valid
+
+// Purpose: correctly named alias for the source barrel plan created by Turn Float.
+// Source/Provenance: A Gate05 source plan + T actual Turn-Float execution.
+##f$cc_river_after_turn_float_source_barrel_plan_valid##
+f$cc_hist_turn_float_source_barrel_plan_valid
+
+// Purpose: correctly named alias for the source give-up plan created by Turn Float.
+// Source/Provenance: A Gate05 source plan + T actual Turn-Float execution.
+##f$cc_river_after_turn_float_source_giveup_plan_valid##
+f$cc_hist_turn_float_source_giveup_plan_valid
+
+// Purpose: explicit River-Float exclusion for the misleading old Gate05 name.
+// Source/Provenance: A/P ownership correction frozen by Gate06A.
+##f$cc_river_float_excluded_executed_turn_float##
+f$cc_river_after_turn_float_standard_parent_valid
+
+// -----------------------------------------------------------------------------
+// RFH.01 — actual final TURN aggressor identity
+// -----------------------------------------------------------------------------
+
+// Purpose: validate closed-turn lastraised3 chair before bit operations.
+// Source/Provenance: T OpenHoldem previous-round aggressor history.
+##f$cc_river_float_turn_aggressor_chair_valid##
+When !IsRiver Return false Force
+When lastraised3 < 0 Return false Force
+When lastraised3 >= 10 Return false Force
+When Others Return true Force
+
+// Purpose: prove lastraised3 is independently present in persisted raisbits3.
+// Source/Provenance: T OpenHoldem history cross-check.
+##f$cc_river_float_turn_aggressor_history_valid##
+When !f$cc_river_float_turn_aggressor_chair_valid Return false Force
+When (((raisbits3 >> lastraised3) BitAnd 1) = 0) Return false Force
+When Others Return true Force
+
+// Purpose: canonical six-max position ID of actual final turn aggressor.
+// Source/Provenance: T chair aliases + A Gate00 2-6h position mapping.
+// True-HU safety: dealer=SB maps to position 5, never BTN 4.
+##f$cc_river_float_turn_aggressor_pos_id##
+When !f$cc_river_float_turn_aggressor_history_valid Return 0 Force
+When f$cc_deal_size = 6 && lastraised3 = utgchair Return 1 Force
+When f$cc_deal_size >= 5 && lastraised3 = mp3chair Return 2 Force
+When f$cc_deal_size >= 4 && lastraised3 = cutoffchair Return 3 Force
+When f$cc_deal_size >= 3 && lastraised3 = dealerchair Return 4 Force
+When lastraised3 = smallblindchair Return 5 Force
+When lastraised3 = bigblindchair Return 6 Force
+When Others Return 0 Force
+
+// Purpose: final turn aggressor remains a live opponent on river.
+// Source/Provenance: T current playersplayingbits + historical chair identity.
+##f$cc_river_float_turn_aggressor_live_opponent##
+When !f$cc_river_float_turn_aggressor_chair_valid Return false Force
+When lastraised3 = userchair Return false Force
+When (((playersplayingbits >> lastraised3) BitAnd 1) = 0) Return false Force
+When Others Return true Force
+
+// Purpose: clean Turn parent had exactly one aggressive opponent chair.
+// Source/Provenance: T BitCount over raisbits3.
+// Safety: multi-aggressor turn histories need a separate future parent.
+##f$cc_river_float_single_turn_aggressor##
+IsRiver && BitCount(raisbits3) = 1
+
+// -----------------------------------------------------------------------------
+// RFH.02 — Hero closed TURN action: one call only
+// -----------------------------------------------------------------------------
+
+// Purpose: Hero's entire closed turn action was exactly one call and no
+// check/aggression/all-in action.
+// Source/Provenance: T OpenHoldem round-3 Hero action counters.
+##f$cc_river_float_turn_call_only##
+When !IsRiver Return false Force
+When didcallround3 != 1 Return false Force
+When didchecround3 != 0 Return false Force
+When didraisround3 != 0 Return false Force
+When didbetsizeround3 != 0 Return false Force
+When didalliround3 != 0 Return false Force
+When Others Return true Force
+
+// Purpose: canonical clean River-Float parent: Hero called one opponent turn
+// aggressor and did nothing aggressive himself.
+// Source: DeepCrusher River no-initiative/LAST router -> f$move_river_floatbet.
+// Provenance: A ownership + T exact turn history.
+##f$cc_river_float_parent_called_turn_aggressor##
+f$cc_river_float_turn_call_only &&
+f$cc_river_float_single_turn_aggressor &&
+f$cc_river_float_turn_aggressor_history_valid &&
+f$cc_river_float_turn_aggressor_live_opponent &&
+f$cc_river_float_turn_aggressor_pos_id > 0 &&
+!f$cc_river_float_excluded_executed_turn_float
+
+// Purpose: number of currently supported River-Float history parents.
+// Source/Provenance: P exclusivity invariant; Gate06A has one clean parent only.
+##f$cc_river_float_parent_count##
+f$cc_river_float_parent_called_turn_aggressor * 1
+
+// Purpose: stable River-Float parent ID: 1=clean called-turn-aggressor, 0=unknown.
+// Source/Provenance: P engineering metadata over T/A exact history.
+##f$cc_river_float_parent_id##
+When f$cc_river_float_parent_count != 1 Return 0 Force
+When f$cc_river_float_parent_called_turn_aggressor Return 1 Force
+When Others Return 0 Force
+
+// Purpose: parent histories must remain exclusive before future strategy.
+// Source/Provenance: P fail-closed invariant.
+##f$cc_river_float_parent_exclusive##
+f$cc_river_float_parent_count <= 1
+
+// -----------------------------------------------------------------------------
+// RFH.03 — current RIVER checked-to opportunity
+// -----------------------------------------------------------------------------
+
+// Purpose: Hero has not acted on river; checks count.
+// Source/Provenance: T OpenPPL IncludingChecks semantics.
+##f$cc_river_float_first_hero_action##
+IsRiver && BotsActionsOnThisRoundIncludingChecks = 0
+
+// Purpose: canonical River Float opportunity after clean turn-call parent.
+// Source: DeepCrusher River no-initiative LAST/MIDDLE router sends no-current-bet
+// state to f$move_river_floatbet; CashCrusher narrows to exact LAST.
+// Provenance: A source ownership + T river facts + P exact-LAST safety.
+##f$cc_river_float_opportunity##
+When !IsRiver Return false Force
+When !f$cc_context_valid Return false Force
+When balance <= 0 Return false Force
+When !f$cc_river_float_first_hero_action Return false Force
+When AmountToCall > 0 Return false Force
+When f$cc_relpos_id != 3 Return false Force
+When f$cc_hu && !f$cc_hu_ip Return false Force
+When !f$cc_river_float_parent_exclusive Return false Force
+When f$cc_river_float_parent_id <= 0 Return false Force
+When f$cc_river_float_excluded_executed_turn_float Return false Force
+When Others Return true Force
+
+// Purpose: HU River Float after a hand that entered flop HU.
+// Source/Provenance: T/A safe clean-HU-origin descriptor.
+##f$cc_river_float_current_hu_from_hu_flop##
+f$cc_river_float_opportunity && f$cc_hu && f$cc_flop_entry_count = 2
+
+// Purpose: current River Float remains true multiway.
+// Source/Provenance: T current live-player state.
+##f$cc_river_float_current_multiway##
+f$cc_river_float_opportunity && f$cc_multiway
+
+// Purpose: current river is HU but flop entered multiway; without a turn-call
+// player-count snapshot Gate06A cannot prove whether the call itself was HU or MW.
+// Source/Provenance: P explicit information-gap flag.
+// Safety: later HU strategy must not consume this state until origin is resolved.
+##f$cc_river_float_hu_multiway_origin_unresolved##
+f$cc_river_float_opportunity && f$cc_hu && f$cc_flop_entry_count >= 3
+
+// Purpose: in HU, actual turn aggressor is the current sole Villain.
+// Source/Provenance: T chair identity cross-check.
+##f$cc_river_float_hu_aggressor_is_current_villain##
+When !f$cc_river_float_opportunity Return false Force
+When !f$cc_hu Return false Force
+When !f$cc_river_float_turn_aggressor_chair_valid Return false Force
+When lastraised3 = headsupchair Return true Force
+When Others Return false Force
+
+// -----------------------------------------------------------------------------
+// RFH.04 — direct 3wBBvSB source candidate and provenance blocker
+// -----------------------------------------------------------------------------
+
+// Purpose: geometry/history candidate for the explicit 3wBBvSB called-2Bar
+// busted-draw River Float source line.
+// Source: DeepCrusher Retro06 / primary 3wBBvSB Facing-Bet ancestry.
+// Provenance: A high-ancestry topology + T canonical call parent.
+// Safety: this proves only geometry, NOT the required turn-draw call provenance.
+##f$cc_river_float_source_bbv_sb_geometry_candidate##
+f$cc_river_float_opportunity &&
+f$cc_river_float_parent_id = 1 &&
+f$cc_river_float_current_hu_from_hu_flop &&
+f$cc_river_float_hu_aggressor_is_current_villain &&
+f$cc_pot_family_id = 2 &&
+f$cc_pf_one_raise_ordinary_srp &&
+f$cc_pf_role_srp_caller &&
+f$cc_hero_pos_id = 6 &&
+f$cc_pf_rt_final_aggressor_pos_id = 5 &&
+f$cc_river_float_turn_aggressor_pos_id = 5
+
+// Purpose: future defensive-history marker required to certify that the original
+// flop high-air/backdoor family improved to a real turn draw and Hero actually
+// called the source-supported 2Bar.
+// Source/Provenance: A exact source semantic; writer intentionally absent in 06A.
+// Safety: user marker defaults false, so exact source branch stays fail-closed.
+##f$cc_river_float_source_bbv_sb_turn_draw_call_proven##
+f$cc_river_float_source_bbv_sb_geometry_candidate &&
+user_cc_river_float_src_bbv_sb_turn_draw_called2bar
+
+// Purpose: exact source parent is executable only after future turn-call writer
+// proves the missing semantic history.
+// Source/Provenance: A/T fail-closed source contract.
+##f$cc_river_float_source_bbv_sb_exact_parent_ready##
+f$cc_river_float_source_bbv_sb_turn_draw_call_proven
+
+// Purpose: diagnostic state where source geometry matches but the decisive turn
+// draw/call provenance is still unavailable.
+// Source/Provenance: P engineering blocker, not poker action.
+##f$cc_river_float_source_bbv_sb_waiting_defense_snapshot##
+f$cc_river_float_source_bbv_sb_geometry_candidate &&
+!f$cc_river_float_source_bbv_sb_turn_draw_call_proven
+
+// -----------------------------------------------------------------------------
+// RFH.05 — explicit non-owner diagnostics
+// -----------------------------------------------------------------------------
+
+// Purpose: Hero finished turn as aggressor through a normal Turn Float.
+// Source/Provenance: A Gate06A correction; River Float must reject this.
+##f$cc_river_float_nonowner_turn_float_standard##
+f$cc_river_float_excluded_executed_turn_float
+
+// Purpose: Hero checked back an available Turn Float; no turn call occurred.
+// Source/Provenance: A/T delayed/no-action future owner.
+##f$cc_river_float_nonowner_turn_float_checkback##
+f$cc_hist_turn_float_checkback_parent_valid
+
+// Purpose: Hero standard Turn CBet retained turn aggression; River CBet owns it.
+// Source/Provenance: A/T Gate02N owner separator.
+##f$cc_river_float_nonowner_turn_cbet_standard##
+f$cc_hist_turn_standard_cbet_parent
+
+// Purpose: unresolved multiple-aggressor turn call history.
+// Source/Provenance: P fail-closed diagnostic.
+##f$cc_river_float_uncovered_multiaggressor_turn##
+IsRiver && f$cc_river_float_turn_call_only && BitCount(raisbits3) > 1
+
+// ============================================================================
+// End Gate06A. Strategy begins only after this history boundary remains green.
+// ============================================================================

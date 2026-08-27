@@ -1,0 +1,119 @@
+// ============================================================================
+// CashCrusher_River_ISO_Context.txt
+// Gate 03D.0 — isolation-pot River-CBet current survivor/composition provenance
+// ============================================================================
+// Purpose:
+//   Carry Gate02 ISO family 9 into River without losing original limper versus
+//   post-raise coldcaller range origin or Turn HU/multiway selection history.
+//
+// Source/Provenance:
+//   T = persisted preflop ISO masks + Gate02N Turn live/current River live masks.
+//   A = cross-street range-provenance principle.
+//   P = River selection/composition IDs and safety invariants.
+//
+// Safety: no betting policy lives here. Every current live opponent must be
+// explainable by exactly one ISO preflop range-origin mask.
+// ============================================================================
+
+// Purpose: generic River ISO CBet family after valid standard Turn CBet.
+// Source/Provenance: T/P exact Gate02 family carry-forward.
+##f$cc_river_iso_base_context##
+f$cc_river_cbet_opportunity && f$cc_river_turn_family_id = 9 && f$cc_river_live_mask_subset_of_turn
+
+// Purpose: current HU Villain is an original pre-raise limper.
+// Source/Provenance: T exact current Villain bit intersected with persisted mask.
+##f$cc_river_iso_hu_villain_is_limper##
+f$cc_river_iso_base_context && f$cc_hu && f$cc_hu_villain_pos_bit > 0 && ((f$cc_pf_pre_raise_limper_mask BitAnd f$cc_hu_villain_pos_bit) > 0)
+
+// Purpose: current HU Villain is a post-raise coldcaller.
+// Source/Provenance: T exact current Villain bit intersected with persisted mask.
+##f$cc_river_iso_hu_villain_is_coldcaller##
+f$cc_river_iso_base_context && f$cc_hu && f$cc_hu_villain_pos_bit > 0 && ((f$cc_pf_post_raise_coldcaller_mask BitAnd f$cc_hu_villain_pos_bit) > 0)
+
+// Purpose: current HU ISO River came from a Turn that was already HU.
+// Source/Provenance: T/A Gate02N field provenance.
+##f$cc_river_iso_hu_from_hu_turn##
+f$cc_river_iso_base_context && f$cc_river_turn_hu_still_hu
+
+// Purpose: current HU ISO River came from a Turn that was multiway.
+// Source/Provenance: T/P selected multiway-Turn caller history.
+##f$cc_river_iso_hu_from_mw_turn##
+f$cc_river_iso_base_context && f$cc_river_turn_mw_now_hu
+
+// Purpose: stable current HU ISO survivor ID: 1 limper | 2 coldcaller | 0 invalid.
+// Source/Provenance: P metadata over T exact masks.
+##f$cc_river_iso_hu_survivor_type_id##
+When f$cc_river_iso_hu_villain_is_limper Return 1 Force
+When f$cc_river_iso_hu_villain_is_coldcaller Return 2 Force
+When Others Return 0 Force
+
+// Purpose: validate HU ISO River survivor and Turn-field origin.
+// Source/Provenance: P fail-closed invariant.
+##f$cc_river_iso_hu_context_consistent##
+When !f$cc_river_iso_base_context Return false Force
+When !f$cc_hu Return false Force
+When (f$cc_river_iso_hu_villain_is_limper + f$cc_river_iso_hu_villain_is_coldcaller) != 1 Return false Force
+When (f$cc_river_iso_hu_from_hu_turn + f$cc_river_iso_hu_from_mw_turn) != 1 Return false Force
+When f$cc_river_iso_hu_survivor_type_id <= 0 Return false Force
+When Others Return true Force
+
+// Purpose: strong HU ISO selection after coldcaller origin, multiway Turn or
+// large 75/pot Turn barrel.
+// Source/Provenance: P professional-theory selection modifier.
+##f$cc_river_iso_hu_strong_selection##
+f$cc_river_iso_hu_context_consistent && (f$cc_river_iso_hu_villain_is_coldcaller || f$cc_river_iso_hu_from_mw_turn || f$cc_river_turn_plan_size_id >= 6)
+
+// Purpose: current live original-limper mask in a multiway ISO River.
+// Source/Provenance: T exact current-mask intersection.
+##f$cc_river_iso_mw_live_limper_mask##
+When !f$cc_river_iso_base_context || !f$cc_multiway Return 0 Force
+When Others Return (f$cc_opp_live_mask BitAnd f$cc_pf_pre_raise_limper_mask) Force
+
+// Purpose: current live post-raise-coldcaller mask in multiway ISO River.
+// Source/Provenance: T exact current-mask intersection.
+##f$cc_river_iso_mw_live_coldcaller_mask##
+When !f$cc_river_iso_base_context || !f$cc_multiway Return 0 Force
+When Others Return (f$cc_opp_live_mask BitAnd f$cc_pf_post_raise_coldcaller_mask) Force
+
+// Purpose: current live limper-origin count.
+// Source/Provenance: T BitCount over exact mask.
+##f$cc_river_iso_mw_live_limper_count##
+BitCount(f$cc_river_iso_mw_live_limper_mask)
+
+// Purpose: current live coldcaller-origin count.
+// Source/Provenance: T BitCount over exact mask.
+##f$cc_river_iso_mw_live_coldcaller_count##
+BitCount(f$cc_river_iso_mw_live_coldcaller_mask)
+
+// Purpose: current multiway ISO composition ID: 1 all limpers | 2 mixed |
+// 3 all coldcallers | 0 inconsistent.
+// Source/Provenance: P exact range-composition metadata.
+##f$cc_river_iso_mw_comp_id##
+When !f$cc_river_iso_base_context || !f$cc_multiway Return 0 Force
+When f$cc_river_iso_mw_live_limper_count = nopponentsplaying && f$cc_river_iso_mw_live_coldcaller_count = 0 Return 1 Force
+When f$cc_river_iso_mw_live_limper_count > 0 && f$cc_river_iso_mw_live_coldcaller_count > 0 && (f$cc_river_iso_mw_live_limper_count + f$cc_river_iso_mw_live_coldcaller_count) = nopponentsplaying Return 2 Force
+When f$cc_river_iso_mw_live_limper_count = 0 && f$cc_river_iso_mw_live_coldcaller_count = nopponentsplaying Return 3 Force
+When Others Return 0 Force
+
+// Purpose: validate current multiway ISO River composition and deepest SPR.
+// Source/Provenance: T/P fail-closed contract.
+##f$cc_river_iso_mw_context_consistent##
+When !f$cc_river_iso_base_context || !f$cc_multiway Return false Force
+When !f$cc_river_mw_deep_spr_valid Return false Force
+When f$cc_river_iso_mw_comp_id <= 0 Return false Force
+When (f$cc_river_iso_mw_live_limper_count + f$cc_river_iso_mw_live_coldcaller_count) != nopponentsplaying Return false Force
+When Others Return true Force
+
+// Purpose: all current multiway ISO effective relationships have River SPR <2.
+// Source/Provenance: T/P deepest-effective geometry descriptor.
+##f$cc_river_iso_mw_all_effective_spr_below_2##
+f$cc_river_iso_mw_context_consistent && f$cc_mw_spr_deepest_round_start < 2
+
+// Purpose: all current multiway ISO effective relationships have River SPR <1.
+// Source/Provenance: T/P deepest-effective geometry descriptor; no auto-jam.
+##f$cc_river_iso_mw_all_effective_spr_below_1##
+f$cc_river_iso_mw_context_consistent && f$cc_mw_spr_deepest_round_start < 1
+
+// ============================================================================
+// End Gate03D.0 ISO River context.
+// ============================================================================

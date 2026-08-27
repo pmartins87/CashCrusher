@@ -1,0 +1,61 @@
+// ============================================================================
+// CashCrusher_Flop_Donk_4BP.txt
+// Gate 07I — clean caller-side HU 4BP Flop Donk
+// ============================================================================
+// Purpose:
+//   Review the clean four-bet-pot case where Hero 3bet, called the opener's 4bet,
+//   and is OOP on the flop with the first-action non-initiative Donk opportunity.
+//
+// Source boundary:
+//   DeepCrusher's positive Flop Donk source is `(BBorSB)v2pp`; no dedicated
+//   deep-stack 4BP Donk tree was found. The already audited caller-side 4BP
+//   chronology is reusable, but it does not grant a lead range.
+//
+// Provenance:
+//   T/A = clean caller-side 4BP chronology + exact HU/OOP/current opportunity.
+//   P   = reviewed CHECK baseline for this condensed low-SPR range interaction.
+//
+// Safety:
+//   Low SPR is not a reason to manufacture a lead. TP/OP are not generic stackoff
+//   classes. Multiway 4BP, cold4-call, reversed/backraise/limp-reraise and 5bet+
+//   remain unsupported rather than borrowing this family.
+// ============================================================================
+
+// Purpose: clean HU 4BP Donk ownership against the reconstructed opener4.
+// Source/Provenance: T/A exact current topology + generic caller-side 4BP proof.
+##f$cc_flop_donk_4bp_hu_context##
+f$cc_flop_donk_opportunity &&
+f$cc_hu &&
+f$cc_pot_family_id = 4 &&
+f$cc_pf_call4_opener4_vs_hero3bettor_proven &&
+f$cc_hu_villain_pos_id = f$cc_pf_call4_other_raiser_pos_id &&
+f$cc_relpos_id != 3
+
+// Purpose: reviewed strategic action for clean caller-side HU 4BP Donk.
+// Source: no direct positive Donk source for this pot family.
+// Provenance: P professional CHECK baseline; defense/check-raise is a later owner.
+##f$cc_flop_donk_4bp_hu_action##
+When !f$cc_flop_donk_4bp_hu_context Return false Force
+When Others Return false Force
+
+// Purpose: no strategic lead size exists while the reviewed policy is CHECK.
+// Source/Provenance: P paired size contract.
+##f$cc_flop_donk_4bp_hu_size_id##
+When !f$cc_flop_donk_4bp_hu_context Return 0 Force
+When Others Return 0 Force
+
+// Purpose: reviewed clean HU caller-side 4BP coverage.
+// Source/Provenance: P engineering metadata over exact T/A context.
+##f$cc_flop_donk_4bp_covered##
+f$cc_flop_donk_4bp_hu_context
+
+// Purpose: explicit unsupported 4BP Donk state for audit visibility.
+// Source/Provenance: P fail-closed evidence boundary.
+##f$cc_flop_donk_4bp_unresolved##
+f$cc_flop_donk_opportunity &&
+f$cc_pot_family_id = 4 &&
+!f$cc_flop_donk_4bp_covered
+
+// ============================================================================
+// End Gate07I clean caller-side HU 4BP Flop Donk.
+// ============================================================================

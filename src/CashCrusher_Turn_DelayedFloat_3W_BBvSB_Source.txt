@@ -1,0 +1,169 @@
+// ============================================================================
+// CashCrusher_Turn_DelayedFloat_3W_BBvSB_Source.txt
+// Gate 12B.4 — native 3wBBvSB direct-source Turn Delayed-Float tree
+// ============================================================================
+// Source:
+//   Crusher Starting Strategy `3wBBvSB Facing Check (ISO/LP/SRP)`:
+//     * 4th pair -> showdown;
+//     * 3rd/2nd pair -> Delay Turn 50%; 2nd pair may Del&B 50%;
+//     * wet A/K-high/backdoors/air -> delayed family;
+//     * Turn default check on completed / 2BW / A-high structures;
+//     * non-completed eligible air stab 50%; completed boards barrel only with
+//       live draw equity; AKx is the rare skip-BxB structure.
+//   Mature DeepCrusher resolves current-hand reclassification and future-street
+//   plan markers without importing generic HandPower/random tails.
+//
+// Provenance:
+//   T = direct Starting Strategy action/size directions.
+//   A = mature current-hand reclassification and portable CF7 safety translation.
+//   P = normalized family/size/coverage metadata only.
+// ============================================================================
+
+// Purpose: exact source owner after source flop snapshot + ACTUAL X/X + Turn X.
+// Source/Provenance: T/A exact native geometry and three source preflop origins.
+##f$cc_turn_delayed_float_3w_bbvsb_source_context##
+f$cc_turn_delayed_float_3w_bbvsb_snapshot_valid &&
+f$cc_deal_size = 3 &&
+f$cc_flop_entry_count = 2 &&
+f$cc_hu &&
+f$cc_hero_pos_id = 6 &&
+f$cc_hu_villain_pos_id = 5 &&
+f$cc_relpos_id = 3
+
+// -----------------------------------------------------------------------------
+// Pair-history source tree
+// -----------------------------------------------------------------------------
+
+// Purpose: direct pair delayed action. Source 2nd/3rd pair delays 50; mature
+// ancestry first promotes real current value, then preserves only source-shaped
+// current 2nd/3rd pair descendants. 4th-or-worse remains showdown/check.
+// Source/Provenance: T pair direction + A current-strength reclassification.
+##f$cc_turn_delayed_float_3w_bbvsb_pair_action##
+When !f$cc_turn_delayed_float_3w_bbvsb_source_context Return false Force
+When !(user_cc_turn_delayed_float_3w_bbvsb_flop_secondpair_candidate || user_cc_turn_delayed_float_3w_bbvsb_flop_thirdpair_candidate) Return false Force
+When f$cc_turn_delayed_float_two_pair_plus_real Return true Force
+When f$cc_turn_delayed_float_tpop_real Return true Force
+When user_cc_turn_delayed_float_3w_bbvsb_flop_secondpair_candidate && f$cc_turn_delayed_float_second_pair Return true Force
+When (user_cc_turn_delayed_float_3w_bbvsb_flop_secondpair_candidate || user_cc_turn_delayed_float_3w_bbvsb_flop_thirdpair_candidate) && f$cc_turn_delayed_float_third_pair Return true Force
+When Others Return false Force
+
+// Purpose: source pair sizes: current 2P+ uses mature value 75; all other
+// positive pair descendants use the literal source Delay50.
+// Source/Provenance: T exact 50 + A value reclassification.
+##f$cc_turn_delayed_float_3w_bbvsb_pair_size_id##
+When !f$cc_turn_delayed_float_3w_bbvsb_pair_action Return 0 Force
+When f$cc_turn_delayed_float_two_pair_plus_real Return f$cc_turn_delayed_float_size_75_id Force
+When Others Return f$cc_turn_delayed_float_size_50_id Force
+
+// Purpose: source 2nd-pair Del&B future plan. Gate13 owns execution.
+// Source/Provenance: T direct `with 2nd pair we can Del&B with 50%`.
+##f$cc_turn_delayed_float_3w_bbvsb_plan_river50_secondpair##
+f$cc_turn_delayed_float_3w_bbvsb_source_context &&
+user_cc_turn_delayed_float_3w_bbvsb_flop_secondpair_candidate &&
+f$cc_turn_delayed_float_second_pair
+
+// Purpose: 3rd-pair delayed value is one street only; River checks by source/mature
+// ancestry unless Gate13 later proves a new value reclassification.
+// Source/Provenance: T/A direct one-street delayed-value interpretation.
+##f$cc_turn_delayed_float_3w_bbvsb_plan_checkriver_thirdpair##
+f$cc_turn_delayed_float_3w_bbvsb_source_context &&
+(user_cc_turn_delayed_float_3w_bbvsb_flop_secondpair_candidate || user_cc_turn_delayed_float_3w_bbvsb_flop_thirdpair_candidate) &&
+f$cc_turn_delayed_float_third_pair
+
+// -----------------------------------------------------------------------------
+// Wet-air/backdoor source tree
+// -----------------------------------------------------------------------------
+
+// Purpose: source completed-turn air may bet only when real draw equity survived
+// the exact legacy dead/zombie safety filters.
+// Source/Provenance: T direct completed-board rule + A exact safety translation.
+##f$cc_turn_delayed_float_3w_bbvsb_completed_live_draw##
+f$cc_turn_delayed_float_3w_bbvsb_source_context &&
+user_cc_turn_delayed_float_3w_bbvsb_flop_wetair_candidate &&
+f$cc_turn_delayed_float_turn_completed &&
+f$cc_turn_delayed_float_live_real_draw
+
+// Purpose: wet-air delayed action. Current robust value supersedes stale air;
+// completed boards need live draw equity; non-completed no-made turns stab 50 only
+// when flop was neither 2BW nor A-high. Otherwise source checks.
+// Source/Provenance: T direct Q2 air rules + A current-value promotion.
+##f$cc_turn_delayed_float_3w_bbvsb_air_action##
+When !f$cc_turn_delayed_float_3w_bbvsb_source_context Return false Force
+When !user_cc_turn_delayed_float_3w_bbvsb_flop_wetair_candidate Return false Force
+When f$cc_turn_delayed_float_two_pair_plus_real Return true Force
+When f$cc_turn_delayed_float_tpop_real Return true Force
+When f$cc_turn_delayed_float_second_pair Return true Force
+When f$cc_turn_delayed_float_3w_bbvsb_completed_live_draw Return true Force
+When !f$cc_turn_delayed_float_turn_completed && !user_cc_turn_delayed_float_3w_bbvsb_flop_wetair_2bw && !user_cc_turn_delayed_float_3w_bbvsb_flop_wetair_ahigh && f$cc_turn_delayed_float_no_made Return true Force
+When Others Return false Force
+
+// Purpose: exact wet-air sizing: current 2P+ mature value 75; all other positive
+// branches use source 50.
+// Source/Provenance: T exact 50 + A value reclassification.
+##f$cc_turn_delayed_float_3w_bbvsb_air_size_id##
+When !f$cc_turn_delayed_float_3w_bbvsb_air_action Return 0 Force
+When f$cc_turn_delayed_float_two_pair_plus_real Return f$cc_turn_delayed_float_size_75_id Force
+When Others Return f$cc_turn_delayed_float_size_50_id Force
+
+// Purpose: any source air Turn50 does not automatically force a River bluff.
+// Gate13 may only act on separately proven River conditions.
+// Source/Provenance: T/A mature `AirTurn50_CheckRiver` ancestry.
+##f$cc_turn_delayed_float_3w_bbvsb_plan_air_delay50_checkriver##
+When f$cc_turn_delayed_float_3w_bbvsb_completed_live_draw Return true Force
+When f$cc_turn_delayed_float_3w_bbvsb_source_context && user_cc_turn_delayed_float_3w_bbvsb_flop_wetair_candidate && !f$cc_turn_delayed_float_turn_completed && !user_cc_turn_delayed_float_3w_bbvsb_flop_wetair_2bw && !user_cc_turn_delayed_float_3w_bbvsb_flop_wetair_ahigh && f$cc_turn_delayed_float_no_made Return true Force
+When Others Return false Force
+
+// Purpose: source Turn check preserves BxB River50 as the common bluff plan,
+// except AKx where source explicitly says skip BxB. Metadata only for Gate13.
+// Source/Provenance: T direct Q2 BxB/AKx rule.
+##f$cc_turn_delayed_float_3w_bbvsb_plan_turncheck_bxb_river50##
+f$cc_turn_delayed_float_3w_bbvsb_source_context &&
+user_cc_turn_delayed_float_3w_bbvsb_flop_wetair_candidate &&
+!user_cc_turn_delayed_float_3w_bbvsb_flop_wetair_akx &&
+!f$cc_turn_delayed_float_3w_bbvsb_air_action
+
+// Purpose: explicit AKx no-BxB plan metadata.
+// Source/Provenance: T direct rare source exception.
+##f$cc_turn_delayed_float_3w_bbvsb_plan_turncheck_skip_bxb##
+f$cc_turn_delayed_float_3w_bbvsb_source_context &&
+user_cc_turn_delayed_float_3w_bbvsb_flop_wetair_candidate &&
+user_cc_turn_delayed_float_3w_bbvsb_flop_wetair_akx &&
+!f$cc_turn_delayed_float_3w_bbvsb_air_action
+
+// -----------------------------------------------------------------------------
+// Dispatch / coverage
+// -----------------------------------------------------------------------------
+
+// Purpose: source family dispatcher; pair candidate and air candidate are
+// mutually exclusive by snapshot contract.
+// Source/Provenance: T/A exact source-family routing.
+##f$cc_turn_delayed_float_3w_bbvsb_source_action##
+When f$cc_turn_delayed_float_3w_bbvsb_pair_action Return true Force
+When f$cc_turn_delayed_float_3w_bbvsb_air_action Return true Force
+When Others Return false Force
+
+// Purpose: paired source size dispatcher.
+// Source/Provenance: T/A exact family mapping.
+##f$cc_turn_delayed_float_3w_bbvsb_source_size_id##
+When f$cc_turn_delayed_float_3w_bbvsb_pair_action Return f$cc_turn_delayed_float_3w_bbvsb_pair_size_id Force
+When f$cc_turn_delayed_float_3w_bbvsb_air_action Return f$cc_turn_delayed_float_3w_bbvsb_air_size_id Force
+When Others Return 0 Force
+
+// Purpose: entire exact source delayed class is reviewed, including explicit
+// source checks. A source topology with no valid delayed-class marker is NOT
+// covered and remains the snapshot mismatch diagnostic.
+// Source/Provenance: P coverage metadata over T/A source proof.
+##f$cc_turn_delayed_float_3w_bbvsb_source_covered##
+f$cc_turn_delayed_float_3w_bbvsb_source_context
+
+// Purpose: local action/size integrity.
+// Source/Provenance: P safety invariant.
+##f$cc_turn_delayed_float_3w_bbvsb_size_consistent##
+When !f$cc_turn_delayed_float_3w_bbvsb_source_covered Return f$cc_turn_delayed_float_3w_bbvsb_source_size_id = 0 Force
+When f$cc_turn_delayed_float_3w_bbvsb_source_covered && !f$cc_turn_delayed_float_3w_bbvsb_source_action Return f$cc_turn_delayed_float_3w_bbvsb_source_size_id = 0 Force
+When f$cc_turn_delayed_float_3w_bbvsb_source_action Return f$cc_turn_delayed_float_3w_bbvsb_source_size_id = f$cc_turn_delayed_float_size_50_id || f$cc_turn_delayed_float_3w_bbvsb_source_size_id = f$cc_turn_delayed_float_size_75_id Force
+When Others Return false Force
+
+// ============================================================================
+// End Gate12B.4 native 3wBBvSB source tree.
+// ============================================================================

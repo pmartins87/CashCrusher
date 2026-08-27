@@ -1,0 +1,110 @@
+// ============================================================================
+// CashCrusher_River_Probe_Common.txt
+// Gate 11B.0 — shared River-Probe hand/texture and sizing vocabulary
+// ============================================================================
+// Purpose:
+//   Normalize only portable current-River facts needed by source descendants.
+//   These descriptors never authorize a Probe by themselves.
+//
+// Source/Provenance:
+//   T/A = portable OpenPPL/CashCrusher made-hand and board descriptors.
+//   P = normalized size IDs.
+// ============================================================================
+
+// Purpose: source completed River = straight or flush possible on board/runout.
+// Source: mature DeepCrusher `f$river_Completed`.
+// Provenance: T.
+##f$cc_river_probe_completed##
+FlushPossible || StraightPossible
+
+// Purpose: paired River board, used by source bad-board/value splits.
+// Source/Provenance: T OpenPPL board state.
+##f$cc_river_probe_paired##
+PairOnBoard
+
+// Purpose: exact count of public broadway ranks across the five-card River board.
+// Source: DeepCrusher `f$board_2BW/f$board_3BW` classify >=2 broadways.
+// Source/Provenance: T/A equivalent arithmetic over persistent board-card ranks.
+##f$cc_river_probe_board_broadway_count##
+(FirstFlopCard >= 10 ? 1 : 0) +
+(SecondFlopCard >= 10 ? 1 : 0) +
+(ThirdFlopCard >= 10 ? 1 : 0) +
+(TurnCard >= 10 ? 1 : 0) +
+(RiverCard >= 10 ? 1 : 0)
+
+// Purpose: exact source River board class on which native 3wBBvBTN high-air
+// abandons the bluff: paired OR any Ace OR at least two broadway board cards.
+// Source: DeepCrusher `f$board_BadToBluffRiver`.
+// Source/Provenance: T/A direct mechanical translation.
+##f$cc_river_probe_bad_to_bluff_board##
+IsRiver && (PairOnBoard || board$A || f$cc_river_probe_board_broadway_count >= 2)
+
+// Purpose: conservative exact-two-pair contribution subset. Board-only two pair
+// is excluded rather than pretending full equivalence to CF7_ExactTwoPair.
+// Source/Provenance: A conservative translation.
+##f$cc_river_probe_contributed_exact_two_pair##
+HaveTwoPair && !TwoPairOnBoard
+
+// Purpose: literal contributed set, directly available without CF7 reconstruction.
+// Source/Provenance: T OpenPPL HaveSet; conservative subset of source real-trips.
+##f$cc_river_probe_source_set##
+HaveSet
+
+// Purpose: literal nuts subset. It is intentionally narrower than CF7_NutClass;
+// no missing nut-class semantics are fabricated.
+// Source/Provenance: T/A conservative translation.
+##f$cc_river_probe_literal_nuts##
+HaveNuts
+
+// Purpose: current no-made/no-frontdoor class used by source missed draw/high-air
+// Probe branches after historical flop X/C and Turn X/X.
+// Source/Provenance: A cleaned CashCrusher hand taxonomy.
+##f$cc_river_probe_air##
+IsRiver && f$cc_air_no_frontdoor
+
+// -----------------------------------------------------------------------------
+// Normalized River-Probe size IDs
+// 1 MIN | 2 25% | 3 33% | 4 50% | 5 75% | 6 100% | 7 30%.
+// 30% is kept distinct because the audited HUBB 1HC-under-straight source uses
+// River30 exactly; silently rounding it to 33% would change source strategy.
+// Runtime mapping is intentionally deferred until the strategic tree is complete.
+// -----------------------------------------------------------------------------
+
+// Purpose: normalized minimum-bet River Probe size identifier.
+// Source/Provenance: P sizing metadata only; no strategy ownership.
+##f$cc_river_probe_size_min_id##
+1
+
+// Purpose: normalized quarter-pot River Probe size identifier.
+// Source/Provenance: P sizing metadata only; no strategy ownership.
+##f$cc_river_probe_size_25_id##
+2
+
+// Purpose: normalized third-pot River Probe size identifier.
+// Source/Provenance: P sizing metadata only; no strategy ownership.
+##f$cc_river_probe_size_33_id##
+3
+
+// Purpose: normalized half-pot River Probe size identifier.
+// Source/Provenance: P sizing metadata only; no strategy ownership.
+##f$cc_river_probe_size_50_id##
+4
+
+// Purpose: normalized three-quarter-pot River Probe size identifier.
+// Source/Provenance: P sizing metadata only; no strategy ownership.
+##f$cc_river_probe_size_75_id##
+5
+
+// Purpose: normalized pot-size River Probe identifier.
+// Source/Provenance: P sizing metadata only; no strategy ownership.
+##f$cc_river_probe_size_100_id##
+6
+
+// Purpose: exact 30%-pot River Probe size identifier used by HUBB source.
+// Source/Provenance: T River30 source family; P normalized numeric ID.
+##f$cc_river_probe_size_30_id##
+7
+
+// ============================================================================
+// End Gate11B.0 common vocabulary.
+// ============================================================================

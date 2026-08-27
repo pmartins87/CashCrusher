@@ -1,0 +1,292 @@
+// ============================================================================
+// CashCrusher_Flop_CBet.txt
+// Gate 01 — six-max cash flop CBet routing contract
+// ============================================================================
+// Purpose: route an eligible flop CBet to the exact pot/range family before any
+// policy is allowed to act. Same current player count does not imply same range.
+// Source/Provenance: A DeepCrusher initiative/router architecture + P six-max
+// pot-family/survivor decomposition. Unsupported families fail closed.
+// OpenPPL safety: flat complete WHEN rules only; indentation has no logic scope.
+// ============================================================================
+
+// Purpose: prove that current decision legally belongs to a flop CBet node.
+// Source/Provenance: A initiative concept + P PFA/3bettor/4bettor roles.
+##f$cc_flop_cbet_opportunity##
+When !IsFlop Return false Force
+When !f$cc_context_valid Return false Force
+When AmountToCall > 0 Return false Force
+When f$cc_pf_role_id <= 0 Return false Force
+When f$cc_pf_role_pfa Return true Force
+When f$cc_pf_role_3bettor Return true Force
+When f$cc_pf_role_4bettor Return true Force
+When Others Return false Force
+
+// Purpose: top-level exact-family CBet action router.
+// Source/Provenance: A/P. True HU, preflop-reduced HU and multiway are distinct.
+##f$cc_flop_cbet_router##
+When !f$cc_flop_cbet_opportunity Return false Force
+When f$cc_true_hu && f$cc_pot_family_id = 2 && f$cc_pf_role_pfa && f$cc_pf_one_raise_ordinary_srp && f$cc_hu_ip Return f$cc_flop_cbet_true_hu_srp_sb_pfa_ip Force
+When f$cc_true_hu && f$cc_pot_family_id = 2 && f$cc_pf_role_pfa && f$cc_pf_hu_limp_raise_proven && f$cc_hu_oop Return f$cc_flop_cbet_true_hu_limpraised_bb_pfa_oop Force
+When f$cc_true_hu && f$cc_pot_family_id = 3 && f$cc_pf_role_3bettor && f$cc_pf_3bet_plain_proven && f$cc_hu_oop Return f$cc_flop_cbet_true_hu_3bp_3bettor_oop Force
+When f$cc_true_hu && f$cc_pot_family_id = 4 && f$cc_pf_role_4bettor && f$cc_hu_ip Return f$cc_flop_cbet_true_hu_4bp_4bettor_ip Force
+When f$cc_true_hu && f$cc_pot_family_id = 4 && f$cc_pf_role_4bettor && f$cc_hu_oop Return f$cc_flop_cbet_true_hu_4bp_4bettor_oop Force
+When f$cc_hu_origin_preflop_reduced && f$cc_pot_family_id = 2 && f$cc_pf_role_pfa && f$cc_pf_iso_proven && f$cc_hu_ip Return f$cc_flop_cbet_hu_iso_pfa_ip Force
+When f$cc_hu_origin_preflop_reduced && f$cc_pot_family_id = 2 && f$cc_pf_role_pfa && f$cc_pf_iso_proven && f$cc_hu_oop Return f$cc_flop_cbet_hu_iso_pfa_oop Force
+When f$cc_hu_origin_preflop_reduced && f$cc_pot_family_id = 2 && f$cc_pf_role_pfa && f$cc_pf_one_raise_ordinary_srp && f$cc_hu_ip Return f$cc_flop_cbet_hu_srp_pfa_ip Force
+When f$cc_hu_origin_preflop_reduced && f$cc_pot_family_id = 2 && f$cc_pf_role_pfa && f$cc_pf_one_raise_ordinary_srp && f$cc_hu_oop Return f$cc_flop_cbet_hu_srp_pfa_oop Force
+When f$cc_hu_origin_preflop_reduced && f$cc_pot_family_id = 3 && f$cc_pf_role_3bettor && f$cc_pf_squeeze_proven && f$cc_hu_ip Return f$cc_flop_cbet_hu_squeeze_3bettor_ip Force
+When f$cc_hu_origin_preflop_reduced && f$cc_pot_family_id = 3 && f$cc_pf_role_3bettor && f$cc_pf_squeeze_proven && f$cc_hu_oop Return f$cc_flop_cbet_hu_squeeze_3bettor_oop Force
+When f$cc_hu_origin_preflop_reduced && f$cc_pot_family_id = 3 && f$cc_pf_role_3bettor && f$cc_pf_3bet_plain_proven && f$cc_hu_ip Return f$cc_flop_cbet_hu_3bp_3bettor_ip Force
+When f$cc_hu_origin_preflop_reduced && f$cc_pot_family_id = 3 && f$cc_pf_role_3bettor && f$cc_pf_3bet_plain_proven && f$cc_hu_oop Return f$cc_flop_cbet_hu_3bp_3bettor_oop Force
+When f$cc_hu_origin_preflop_reduced && f$cc_pot_family_id = 4 && f$cc_pf_role_4bettor && f$cc_hu_ip Return f$cc_flop_cbet_hu_4bp_4bettor_ip Force
+When f$cc_hu_origin_preflop_reduced && f$cc_pot_family_id = 4 && f$cc_pf_role_4bettor && f$cc_hu_oop Return f$cc_flop_cbet_hu_4bp_4bettor_oop Force
+When f$cc_multiway && f$cc_pot_family_id = 2 && f$cc_pf_role_pfa && f$cc_pf_iso_proven Return f$cc_flop_cbet_mw_iso_pfa Force
+When f$cc_multiway && f$cc_pot_family_id = 2 && f$cc_pf_role_pfa && f$cc_pf_one_raise_ordinary_srp Return f$cc_flop_cbet_mw_srp_pfa Force
+When f$cc_multiway && f$cc_pot_family_id = 3 && f$cc_pf_role_3bettor && f$cc_pf_squeeze_proven Return f$cc_flop_cbet_mw_squeeze_3bettor Force
+When f$cc_multiway && f$cc_pot_family_id = 3 && f$cc_pf_role_3bettor && f$cc_pf_3bet_plain_proven Return f$cc_flop_cbet_mw_3bp_3bettor Force
+When f$cc_multiway && f$cc_pot_family_id = 4 && f$cc_pf_role_4bettor Return f$cc_flop_cbet_mw_4bp_4bettor Force
+When Others Return false Force
+
+// Purpose: strongest legacy one-raise HU ancestor ID for audit/logging only.
+// Source/Provenance: T/A DeepCrusher scenario ancestry; never sufficient for action.
+##f$cc_flop_cbet_hu_srp_legacy_ancestor_id##
+When f$cc_pot_family_id != 2 Return 0 Force
+When !f$cc_pf_role_pfa Return 0 Force
+When f$cc_true_hu && f$cc_pf_one_raise_ordinary_srp && f$cc_hu_matchup_id = 56 Return 1 Force
+When f$cc_true_hu && f$cc_pf_hu_limp_raise_proven && f$cc_hu_matchup_id = 65 Return 2 Force
+When f$cc_hu_origin_preflop_reduced && f$cc_pf_one_raise_ordinary_srp && f$cc_hu_matchup_id = 46 Return 4 Force
+When f$cc_hu_origin_preflop_reduced && f$cc_pf_one_raise_ordinary_srp && f$cc_hu_matchup_id = 45 Return 3 Force
+When f$cc_hu_origin_preflop_reduced && f$cc_pf_one_raise_ordinary_srp && f$cc_hu_matchup_id = 56 Return 7 Force
+When f$cc_hu_origin_preflop_reduced && (f$cc_hu_matchup_id = 16 || f$cc_hu_matchup_id = 26 || f$cc_hu_matchup_id = 36) Return 4 Force
+When f$cc_hu_origin_preflop_reduced && (f$cc_hu_matchup_id = 15 || f$cc_hu_matchup_id = 25 || f$cc_hu_matchup_id = 35) Return 3 Force
+When f$cc_hu_origin_preflop_reduced && (f$cc_hu_matchup_id = 12 || f$cc_hu_matchup_id = 13 || f$cc_hu_matchup_id = 14 || f$cc_hu_matchup_id = 23 || f$cc_hu_matchup_id = 24 || f$cc_hu_matchup_id = 34) Return 6 Force
+When Others Return 0 Force
+
+// Purpose: audit confidence for one-raise legacy parent relation.
+// Source/Provenance: A metadata: 3 direct, 2 structural, 1 positional skeleton.
+##f$cc_flop_cbet_hu_srp_parent_confidence_id##
+When f$cc_true_hu && f$cc_pf_one_raise_ordinary_srp && f$cc_hu_matchup_id = 56 Return 3 Force
+When f$cc_true_hu && f$cc_pf_hu_limp_raise_proven && f$cc_hu_matchup_id = 65 Return 2 Force
+When f$cc_hu_origin_preflop_reduced && (f$cc_hu_matchup_id = 46 || f$cc_hu_matchup_id = 45 || f$cc_hu_matchup_id = 56) Return 3 Force
+When f$cc_hu_origin_preflop_reduced && (f$cc_hu_matchup_id = 16 || f$cc_hu_matchup_id = 26 || f$cc_hu_matchup_id = 36 || f$cc_hu_matchup_id = 15 || f$cc_hu_matchup_id = 25 || f$cc_hu_matchup_id = 35) Return 2 Force
+When f$cc_hu_origin_preflop_reduced && (f$cc_hu_matchup_id = 12 || f$cc_hu_matchup_id = 13 || f$cc_hu_matchup_id = 14 || f$cc_hu_matchup_id = 23 || f$cc_hu_matchup_id = 24 || f$cc_hu_matchup_id = 34) Return 1 Force
+When Others Return 0 Force
+
+// Purpose: child wrapper — true-HU ordinary SRP.
+// Source/Provenance: A/P SRP IP module, HUSB ancestor.
+##f$cc_flop_cbet_true_hu_srp_sb_pfa_ip##
+f$cc_cbet_srp_ip_true_hu_action
+
+// Purpose: child wrapper — true-HU limp-raised BB PFA OOP.
+// Source/Provenance: A/P TrueHU_LimpRaised module, HUBB ancestor.
+##f$cc_flop_cbet_true_hu_limpraised_bb_pfa_oop##
+f$cc_cbet_true_hu_limpraised_action
+
+// Purpose: diagnostic impossible ordinary true-HU 3BP 3bettor-IP child.
+// Source/Provenance: X topology invariant.
+##f$cc_flop_cbet_true_hu_3bp_3bettor_ip##
+false
+
+// Purpose: child wrapper — true-HU standard BB 3bettor OOP.
+// Source/Provenance: A/P Flop_CBet_3BP module.
+##f$cc_flop_cbet_true_hu_3bp_3bettor_oop##
+f$cc_cbet_true_hu_plain3bp_oop_action
+
+// Purpose: clean true-HU ordinary 4BP SB/Button-4bettor-IP child.
+// Source/Provenance: A HU topology + P Flop_CBet_4BP policy.
+// Safety: reversed/limp-reraise true-HU 4BP cannot satisfy the clean child.
+##f$cc_flop_cbet_true_hu_4bp_4bettor_ip##
+f$cc_cbet_true_hu_4bp_opener4_ip_action
+
+// Purpose: true-HU 4bettor-OOP is not a clean standard opener4 topology.
+// Source/Provenance: P/A chronology guard; reversed histories remain unsupported.
+##f$cc_flop_cbet_true_hu_4bp_4bettor_oop##
+false
+
+// Purpose: ordinary reduced-HU SRP PFA-IP child.
+// Source/Provenance: A/P SRP_IP module.
+##f$cc_flop_cbet_hu_srp_pfa_ip##
+f$cc_cbet_srp_ip_reduced_action
+
+// Purpose: ordinary reduced-HU SRP PFA-OOP child.
+// Source/Provenance: A/P SRP_OOP module.
+##f$cc_flop_cbet_hu_srp_pfa_oop##
+f$cc_cbet_srp_oop_reduced_action
+
+// Purpose: HU ISO PFA-IP exact-survivor child.
+// Source/Provenance: A/P ISO module.
+##f$cc_flop_cbet_hu_iso_pfa_ip##
+f$cc_cbet_iso_hu_ip_action
+
+// Purpose: HU ISO PFA-OOP exact-survivor child.
+// Source/Provenance: A/P ISO module.
+##f$cc_flop_cbet_hu_iso_pfa_oop##
+f$cc_cbet_iso_hu_oop_action
+
+// Purpose: ordinary plain-3BP IP exact-survivor child.
+// Source/Provenance: A/P 3BP opener + 3BP coldcaller modules.
+##f$cc_flop_cbet_hu_3bp_3bettor_ip##
+f$cc_cbet_plain3bp_ip_survivor_dispatch
+
+// Purpose: ordinary plain-3BP OOP exact-survivor child.
+// Source/Provenance: A/P 3BP opener + 3BP coldcaller modules.
+##f$cc_flop_cbet_hu_3bp_3bettor_oop##
+f$cc_cbet_plain3bp_oop_survivor_dispatch
+
+// Purpose: HU squeeze 3bettor-IP exact-survivor child.
+// Source/Provenance: A generic architecture + P Flop_CBet_Squeeze policy.
+##f$cc_flop_cbet_hu_squeeze_3bettor_ip##
+f$cc_cbet_squeeze_hu_ip_action
+
+// Purpose: HU squeeze 3bettor-OOP exact-survivor child.
+// Source/Provenance: A generic architecture + P Flop_CBet_Squeeze policy.
+##f$cc_flop_cbet_hu_squeeze_3bettor_oop##
+f$cc_cbet_squeeze_hu_oop_action
+
+// Purpose: clean reduced-HU 4BP 4bettor-IP child.
+// Source/Provenance: P/A exact opener4/cold4 survivor dispatcher.
+// Safety: non-raiser survivor and ambiguous chronology check inside dispatcher.
+##f$cc_flop_cbet_hu_4bp_4bettor_ip##
+f$cc_cbet_4bp_reduced_hu_action
+
+// Purpose: clean reduced-HU 4BP 4bettor-OOP child.
+// Source/Provenance: P/A exact opener4/cold4 survivor dispatcher.
+// Safety: no generic 4BP fallback.
+##f$cc_flop_cbet_hu_4bp_4bettor_oop##
+f$cc_cbet_4bp_reduced_hu_action
+
+// Purpose: multiway ordinary SRP child, split by exact flop origin count.
+// Source: true3 policy in Flop_CBet_Multiway_SRP; 4/5/6-way policy in
+// Flop_CBet_Multiway_SRP4Plus.
+// Source/Provenance: A/P true3 and P-heavy four-way+ policy.
+##f$cc_flop_cbet_mw_srp_pfa##
+When f$cc_mw_srp_true3_context_consistent Return f$cc_cbet_mw_srp_true3_action Force
+When f$cc_mw_srp_4plus_context_consistent Return f$cc_cbet_mw_srp_4plus_action Force
+When Others Return false Force
+
+// Purpose: multiway ISO child, preserving exact limper/coldcaller composition.
+// Source: true3 policy in Flop_CBet_Multiway_ISO; 4/5/6-way policy in
+// Flop_CBet_Multiway_ISO4Plus.
+// Source/Provenance: A/P true3 and P-heavy four-way+ policy.
+// Safety: unresolved survivor composition fails closed before action.
+##f$cc_flop_cbet_mw_iso_pfa##
+When f$cc_mw_iso_true3_context_consistent Return f$cc_cbet_mw_iso_true3_action Force
+When f$cc_mw_iso_4plus_context_consistent Return f$cc_cbet_mw_iso_4plus_action Force
+When Others Return false Force
+
+// Purpose: multiway ordinary plain-3BP child with opener/coldcaller provenance.
+// Source/Provenance: A 3BP mechanics + P multiway policy in Multiway_3BP module.
+// Safety: plain subtype never absorbs squeeze or unclassified caller origins.
+##f$cc_flop_cbet_mw_3bp_3bettor##
+When f$cc_mw_plain3bp_exact3_context Return f$cc_cbet_mw_plain3bp_action Force
+When f$cc_mw_plain3bp_4plus_context Return f$cc_cbet_mw_plain3bp_action Force
+When Others Return false Force
+
+// Purpose: multiway squeeze child with exact live range-origin composition.
+// Source/Provenance: P-heavy policy in Flop_CBet_Multiway_3BP, constrained by A
+// initiative/texture architecture. Squeeze is never treated as ordinary 3BP.
+##f$cc_flop_cbet_mw_squeeze_3bettor##
+When f$cc_mw_squeeze_exact3_context Return f$cc_cbet_mw_squeeze_action Force
+When f$cc_mw_squeeze_4plus_context Return f$cc_cbet_mw_squeeze_action Force
+When Others Return false Force
+
+// Purpose: multiway 4BP remains mechanically classified but strategically pending.
+// Source/Provenance: P exact opener/3bettor/othercaller metadata exists; caller
+// chronology is not precise enough yet for a blanket multiway action policy.
+##f$cc_flop_cbet_mw_4bp_4bettor##
+false
+
+// Purpose: report whether exact CBet context has an implemented strategic baseline.
+// Source/Provenance: P engineering coverage contract; check can still be strategy.
+##f$cc_flop_cbet_strategy_covered##
+When f$cc_cbet_srp_ip_true_hu_context Return true Force
+When f$cc_cbet_true_hu_limpraised_context Return true Force
+When f$cc_cbet_srp_ip_vs_bb_context Return true Force
+When f$cc_cbet_srp_ip_vs_sb_context Return true Force
+When f$cc_cbet_srp_oop_sb_vs_bb_context Return true Force
+When f$cc_cbet_srp_oop_coldcaller_context Return true Force
+When f$cc_cbet_iso_hu_limper_ip_context Return true Force
+When f$cc_cbet_iso_hu_limper_oop_context Return true Force
+When f$cc_cbet_iso_hu_coldcaller_ip_context Return true Force
+When f$cc_cbet_iso_hu_coldcaller_oop_context Return true Force
+When f$cc_cbet_true_hu_plain3bp_oop_context Return true Force
+When f$cc_cbet_plain3bp_vs_opener_ip_context Return true Force
+When f$cc_cbet_plain3bp_vs_opener_oop_context Return true Force
+When f$cc_cbet_plain3bp_postcoldcaller_ip_context Return true Force
+When f$cc_cbet_plain3bp_postcoldcaller_oop_context Return true Force
+When f$cc_cbet_squeeze_vs_opener_ip_context Return true Force
+When f$cc_cbet_squeeze_vs_opener_oop_context Return true Force
+When f$cc_cbet_squeeze_vs_pre3bet_coldcaller_ip_context Return true Force
+When f$cc_cbet_squeeze_vs_pre3bet_coldcaller_oop_context Return true Force
+When f$cc_cbet_squeeze_vs_post3bet_coldcaller_ip_context Return true Force
+When f$cc_cbet_squeeze_vs_post3bet_coldcaller_oop_context Return true Force
+When f$cc_cbet_true_hu_4bp_opener4_ip_context Return true Force
+When f$cc_cbet_4bp_opener4_vs_threebettor_ip_context Return true Force
+When f$cc_cbet_4bp_opener4_vs_threebettor_oop_context Return true Force
+When f$cc_cbet_4bp_cold4_vs_opener_ip_context Return true Force
+When f$cc_cbet_4bp_cold4_vs_opener_oop_context Return true Force
+When f$cc_cbet_4bp_cold4_vs_threebettor_ip_context Return true Force
+When f$cc_cbet_4bp_cold4_vs_threebettor_oop_context Return true Force
+When f$cc_mw_srp_true3_context_consistent Return true Force
+When f$cc_mw_srp_4plus_context_consistent Return true Force
+When f$cc_mw_iso_true3_context_consistent Return true Force
+When f$cc_mw_iso_4plus_context_consistent Return true Force
+When f$cc_mw_plain3bp_exact3_context Return true Force
+When f$cc_mw_plain3bp_4plus_context Return true Force
+When f$cc_mw_squeeze_exact3_context Return true Force
+When f$cc_mw_squeeze_4plus_context Return true Force
+When Others Return false Force
+
+// Purpose: map implemented positive CBet to reviewed size-family ID.
+// Source/Provenance: A/P child sizing routers. ID belongs to this flop action;
+// any stack-sensitive conversion is reviewed separately in sizing/commitment work.
+##f$cc_flop_cbet_size_id##
+When !f$cc_flop_cbet_opportunity Return 0 Force
+When f$cc_cbet_srp_ip_true_hu_context Return f$cc_cbet_srp_ip_true_hu_size_id Force
+When f$cc_cbet_true_hu_limpraised_context Return f$cc_cbet_true_hu_limpraised_size_id Force
+When f$cc_cbet_srp_ip_vs_bb_context Return f$cc_cbet_srp_ip_vs_bb_size_id Force
+When f$cc_cbet_srp_ip_vs_sb_context Return f$cc_cbet_srp_ip_vs_sb_size_id Force
+When f$cc_cbet_srp_oop_sb_vs_bb_context Return f$cc_cbet_srp_oop_sb_vs_bb_size_id Force
+When f$cc_cbet_srp_oop_coldcaller_context Return f$cc_cbet_srp_oop_coldcaller_size_id Force
+When f$cc_cbet_iso_hu_limper_ip_context Return f$cc_cbet_iso_hu_limper_ip_size_id Force
+When f$cc_cbet_iso_hu_limper_oop_context Return f$cc_cbet_iso_hu_limper_oop_size_id Force
+When f$cc_cbet_iso_hu_coldcaller_ip_context Return f$cc_cbet_iso_hu_coldcaller_ip_size_id Force
+When f$cc_cbet_iso_hu_coldcaller_oop_context Return f$cc_cbet_iso_hu_coldcaller_oop_size_id Force
+When f$cc_cbet_true_hu_plain3bp_oop_context Return f$cc_cbet_true_hu_plain3bp_oop_size_id Force
+When f$cc_cbet_plain3bp_vs_opener_ip_context Return f$cc_cbet_plain3bp_vs_opener_ip_size_id Force
+When f$cc_cbet_plain3bp_vs_opener_oop_context Return f$cc_cbet_plain3bp_vs_opener_oop_size_id Force
+When f$cc_cbet_plain3bp_postcoldcaller_ip_context Return f$cc_cbet_plain3bp_postcoldcaller_ip_size_id Force
+When f$cc_cbet_plain3bp_postcoldcaller_oop_context Return f$cc_cbet_plain3bp_postcoldcaller_oop_size_id Force
+When f$cc_cbet_squeeze_vs_opener_ip_context Return f$cc_cbet_squeeze_vs_opener_ip_size_id Force
+When f$cc_cbet_squeeze_vs_opener_oop_context Return f$cc_cbet_squeeze_vs_opener_oop_size_id Force
+When f$cc_cbet_squeeze_vs_pre3bet_coldcaller_ip_context Return f$cc_cbet_squeeze_vs_pre3bet_coldcaller_ip_size_id Force
+When f$cc_cbet_squeeze_vs_pre3bet_coldcaller_oop_context Return f$cc_cbet_squeeze_vs_pre3bet_coldcaller_oop_size_id Force
+When f$cc_cbet_squeeze_vs_post3bet_coldcaller_ip_context Return f$cc_cbet_squeeze_vs_post3bet_coldcaller_ip_size_id Force
+When f$cc_cbet_squeeze_vs_post3bet_coldcaller_oop_context Return f$cc_cbet_squeeze_vs_post3bet_coldcaller_oop_size_id Force
+When f$cc_cbet_true_hu_4bp_opener4_ip_context Return f$cc_cbet_true_hu_4bp_opener4_ip_size_id Force
+When f$cc_cbet_4bp_opener4_vs_threebettor_ip_context Return f$cc_cbet_4bp_opener4_vs_threebettor_size_id Force
+When f$cc_cbet_4bp_opener4_vs_threebettor_oop_context Return f$cc_cbet_4bp_opener4_vs_threebettor_size_id Force
+When f$cc_cbet_4bp_cold4_vs_opener_ip_context Return f$cc_cbet_4bp_cold4_vs_opener_size_id Force
+When f$cc_cbet_4bp_cold4_vs_opener_oop_context Return f$cc_cbet_4bp_cold4_vs_opener_size_id Force
+When f$cc_cbet_4bp_cold4_vs_threebettor_ip_context Return f$cc_cbet_4bp_cold4_vs_threebettor_size_id Force
+When f$cc_cbet_4bp_cold4_vs_threebettor_oop_context Return f$cc_cbet_4bp_cold4_vs_threebettor_size_id Force
+When f$cc_mw_srp_true3_context_consistent Return f$cc_cbet_mw_srp_true3_size_id Force
+When f$cc_mw_srp_4plus_context_consistent Return f$cc_cbet_mw_srp_4plus_size_id Force
+When f$cc_mw_iso_true3_context_consistent Return f$cc_cbet_mw_iso_true3_size_id Force
+When f$cc_mw_iso_4plus_context_consistent Return f$cc_cbet_mw_iso_4plus_size_id Force
+When f$cc_mw_plain3bp_exact3_context Return f$cc_cbet_mw_plain3bp_size_id Force
+When f$cc_mw_plain3bp_4plus_context Return f$cc_cbet_mw_plain3bp_size_id Force
+When f$cc_mw_squeeze_exact3_context Return f$cc_cbet_mw_squeeze_size_id Force
+When f$cc_mw_squeeze_4plus_context Return f$cc_cbet_mw_squeeze_size_id Force
+When Others Return 0 Force
+
+// Purpose: invariant tying positive action to positive size and check to zero size.
+// Source/Provenance: P engineering consistency guard.
+##f$cc_flop_cbet_size_consistent##
+When !f$cc_flop_cbet_router Return f$cc_flop_cbet_size_id = 0 Force
+When f$cc_flop_cbet_router Return f$cc_flop_cbet_size_id > 0 Force
+When Others Return false Force
+
+// ============================================================================
+// End Gate 01 routing contract.
+// ============================================================================

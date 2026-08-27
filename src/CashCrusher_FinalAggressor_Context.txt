@@ -1,0 +1,191 @@
+// ============================================================================
+// CashCrusher_FinalAggressor_Context.txt
+// Gate 05A.0 / Gate04 corrective evidence layer
+// ============================================================================
+// Purpose:
+//   Recover the ACTUAL final preflop aggressor from OpenHoldem `lastraised1`
+//   instead of assuming Hero participated in every raise sequence.  This closes
+//   an evidence gap that matters whenever Hero is a pure cold-caller of a 3bet.
+//
+// Runtime source facts:
+//   * `lastraised1` is the chair of the final preflop raiser once preflop closes;
+//   * `raisbits1` is the persisted bitmask of chairs that raised preflop;
+//   * previous-round raisbits/lastraised are stable historical data in OpenHoldem.
+//
+// Provenance:
+//   T = OpenHoldem persisted raiser history and chair aliases.
+//   A = canonical CashCrusher 2-6h position mapping.
+//   P = conservative chronology classification built only where those facts prove it.
+//
+// Important:
+//   This module does NOT replace the older Hero-participation helpers globally.
+//   It provides a stronger caller-side evidence path.  Unsupported/reversed
+//   chronology remains fail-closed.
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// PFRT.01 — final preflop aggressor identity
+// -----------------------------------------------------------------------------
+
+// Purpose: validate the historical chair stored by `lastraised1`.
+// Source/Provenance: T OpenHoldem chair history; invalid/undefined chair -> false.
+##f$cc_pf_rt_final_aggressor_chair_valid##
+When IsPreflop Return false Force
+When lastraised1 < 0 Return false Force
+When lastraised1 >= 10 Return false Force
+When Others Return true Force
+
+// Purpose: prove `lastraised1` also belongs to persisted preflop raiser bits.
+// Source/Provenance: T cross-check of two independent OpenHoldem history symbols.
+// Safety: never shift by an invalid chair index.
+##f$cc_pf_rt_final_aggressor_history_valid##
+When !f$cc_pf_rt_final_aggressor_chair_valid Return false Force
+When f$cc_pf_raise_count <= 0 Return false Force
+When (((raisbits1 >> lastraised1) BitAnd 1) = 0) Return false Force
+When Others Return true Force
+
+// Purpose: map the final raiser chair to canonical six-max-equivalent position.
+// IDs: 1 UTG | 2 HJ | 3 CO | 4 BTN | 5 SB | 6 BB.
+// Source/Provenance: T chair aliases + A Gate00 handedness mapping.
+// True-HU safety: dealerchair=smallblindchair, so 2h SB mapping is handled before BTN.
+##f$cc_pf_rt_final_aggressor_pos_id##
+When !f$cc_pf_rt_final_aggressor_history_valid Return 0 Force
+When f$cc_deal_size = 6 && lastraised1 = utgchair Return 1 Force
+When f$cc_deal_size >= 5 && lastraised1 = mp3chair Return 2 Force
+When f$cc_deal_size >= 4 && lastraised1 = cutoffchair Return 3 Force
+When f$cc_deal_size >= 3 && lastraised1 = dealerchair Return 4 Force
+When lastraised1 = smallblindchair Return 5 Force
+When lastraised1 = bigblindchair Return 6 Force
+When Others Return 0 Force
+
+// Purpose: canonical position bit of the actual final preflop aggressor.
+// Source/Provenance: A mechanical position-ID to bit adapter.
+##f$cc_pf_rt_final_aggressor_pos_bit##
+When f$cc_pf_rt_final_aggressor_pos_id = 1 Return 1 Force
+When f$cc_pf_rt_final_aggressor_pos_id = 2 Return 2 Force
+When f$cc_pf_rt_final_aggressor_pos_id = 3 Return 4 Force
+When f$cc_pf_rt_final_aggressor_pos_id = 4 Return 8 Force
+When f$cc_pf_rt_final_aggressor_pos_id = 5 Return 16 Force
+When f$cc_pf_rt_final_aggressor_pos_id = 6 Return 32 Force
+When Others Return 0 Force
+
+// Purpose: final preflop aggressor is still a current live opponent.
+// Source/Provenance: T `playersplayingbits` plus historical final-raiser chair.
+// Safety: Hero as final aggressor does not satisfy opponent ownership.
+##f$cc_pf_rt_final_aggressor_live_opponent##
+When !f$cc_pf_rt_final_aggressor_chair_valid Return false Force
+When lastraised1 = userchair Return false Force
+When (((playersplayingbits >> lastraised1) BitAnd 1) = 0) Return false Force
+When Others Return true Force
+
+// Purpose: explicit identity diagnostic for Hero as final preflop aggressor.
+// Source/Provenance: T chair equality.
+##f$cc_pf_rt_final_aggressor_is_hero##
+f$cc_pf_rt_final_aggressor_chair_valid && lastraised1 = userchair
+
+// -----------------------------------------------------------------------------
+// PFRT.02 — two-raise chronology independent of Hero having raised
+// -----------------------------------------------------------------------------
+
+// Purpose: in a two-raise/two-raiser pot, identify the OTHER unique raiser after
+// the actual final raiser is known from `lastraised1`.  This is the candidate opener.
+// Source/Provenance: T raisbits + T lastraised1 + A canonical positions.
+// Safety: repeated-raiser / one-unique-raiser histories remain unresolved.
+##f$cc_pf_rt_3bet_first_raiser_pos_id##
+When f$cc_pf_raise_count != 2 Return 0 Force
+When f$cc_pf_unique_raiser_count != 2 Return 0 Force
+When f$cc_pf_rt_final_aggressor_pos_id <= 0 Return 0 Force
+When f$cc_pf_raise_utg && f$cc_pf_rt_final_aggressor_pos_id != 1 Return 1 Force
+When f$cc_pf_raise_hj && f$cc_pf_rt_final_aggressor_pos_id != 2 Return 2 Force
+When f$cc_pf_raise_co && f$cc_pf_rt_final_aggressor_pos_id != 3 Return 3 Force
+When f$cc_pf_raise_btn && f$cc_pf_rt_final_aggressor_pos_id != 4 Return 4 Force
+When f$cc_pf_raise_sb && f$cc_pf_rt_final_aggressor_pos_id != 5 Return 5 Force
+When f$cc_pf_raise_bb && f$cc_pf_rt_final_aggressor_pos_id != 6 Return 6 Force
+When Others Return 0 Force
+
+// Purpose: prove normal first-orbit opener -> later-position 3bet order using the
+// actual final raiser rather than Hero's participation in the raise sequence.
+// Source/Provenance: T final aggressor + P conservative canonical-order guard.
+// Safety: limp-reraise/backraise/reversed final aggression returns false.
+##f$cc_pf_rt_3bet_order_supported##
+When f$cc_pf_rt_3bet_first_raiser_pos_id <= 0 Return false Force
+When f$cc_pf_rt_final_aggressor_pos_id <= 0 Return false Force
+When f$cc_pf_rt_3bet_first_raiser_pos_id < f$cc_pf_rt_final_aggressor_pos_id Return true Force
+When Others Return false Force
+
+// Purpose: detect at least one call strictly between opener and final 3bettor.
+// Source/Provenance: T callbits + P/A first-orbit position interval.
+// Safety: only evaluated after supported final-raiser chronology is proven.
+##f$cc_pf_rt_call_between_3bet_raisers##
+When !f$cc_pf_rt_3bet_order_supported Return false Force
+When f$cc_pf_rt_3bet_first_raiser_pos_id = 1 && f$cc_pf_rt_final_aggressor_pos_id = 3 && f$cc_pf_call_hj Return true Force
+When f$cc_pf_rt_3bet_first_raiser_pos_id = 1 && f$cc_pf_rt_final_aggressor_pos_id = 4 && (f$cc_pf_call_hj || f$cc_pf_call_co) Return true Force
+When f$cc_pf_rt_3bet_first_raiser_pos_id = 1 && f$cc_pf_rt_final_aggressor_pos_id = 5 && (f$cc_pf_call_hj || f$cc_pf_call_co || f$cc_pf_call_btn) Return true Force
+When f$cc_pf_rt_3bet_first_raiser_pos_id = 1 && f$cc_pf_rt_final_aggressor_pos_id = 6 && (f$cc_pf_call_hj || f$cc_pf_call_co || f$cc_pf_call_btn || f$cc_pf_call_sb) Return true Force
+When f$cc_pf_rt_3bet_first_raiser_pos_id = 2 && f$cc_pf_rt_final_aggressor_pos_id = 4 && f$cc_pf_call_co Return true Force
+When f$cc_pf_rt_3bet_first_raiser_pos_id = 2 && f$cc_pf_rt_final_aggressor_pos_id = 5 && (f$cc_pf_call_co || f$cc_pf_call_btn) Return true Force
+When f$cc_pf_rt_3bet_first_raiser_pos_id = 2 && f$cc_pf_rt_final_aggressor_pos_id = 6 && (f$cc_pf_call_co || f$cc_pf_call_btn || f$cc_pf_call_sb) Return true Force
+When f$cc_pf_rt_3bet_first_raiser_pos_id = 3 && f$cc_pf_rt_final_aggressor_pos_id = 5 && f$cc_pf_call_btn Return true Force
+When f$cc_pf_rt_3bet_first_raiser_pos_id = 3 && f$cc_pf_rt_final_aggressor_pos_id = 6 && (f$cc_pf_call_btn || f$cc_pf_call_sb) Return true Force
+When f$cc_pf_rt_3bet_first_raiser_pos_id = 4 && f$cc_pf_rt_final_aggressor_pos_id = 6 && f$cc_pf_call_sb Return true Force
+When Others Return false Force
+
+// Purpose: supported squeeze topology from actual final preflop aggressor.
+// Source/Provenance: A concept + P exact caller-side chronology repair.
+##f$cc_pf_rt_squeeze_proven##
+!f$cc_true_hu &&
+f$cc_pf_raise_count = 2 &&
+f$cc_pf_rt_3bet_order_supported &&
+f$cc_pf_rt_call_between_3bet_raisers
+
+// Purpose: supported ordinary/plain 3BP from actual final preflop aggressor.
+// Source/Provenance: P/A complement of squeeze inside supported first-orbit order.
+##f$cc_pf_rt_plain3bet_proven##
+f$cc_pf_raise_count = 2 &&
+f$cc_pf_rt_3bet_order_supported &&
+!f$cc_pf_rt_call_between_3bet_raisers
+
+// -----------------------------------------------------------------------------
+// PFRT.03 — Hero caller origin in two-raise pots
+// -----------------------------------------------------------------------------
+
+// Purpose: Hero is the original opener who called the final 3bet.
+// Source/Provenance: A role ID + actual reconstructed opener position.
+##f$cc_pf_rt_hero_is_opener_call_3bet##
+f$cc_pf_role_open_call_3bet &&
+f$cc_pf_rt_3bet_order_supported &&
+f$cc_hero_pos_id = f$cc_pf_rt_3bet_first_raiser_pos_id
+
+// Purpose: Hero pure-cold-called the open before the final 3bettor and therefore
+// occupies a seat strictly between opener and final 3bettor in first-orbit order.
+// Source/Provenance: T Hero role/position + P chronological interval proof.
+##f$cc_pf_rt_hero_is_pre3bet_coldcaller##
+f$cc_pf_role_cold_call_3bet &&
+f$cc_pf_rt_squeeze_proven &&
+f$cc_hero_pos_id > f$cc_pf_rt_3bet_first_raiser_pos_id &&
+f$cc_hero_pos_id < f$cc_pf_rt_final_aggressor_pos_id
+
+// Purpose: Hero first entered by cold-calling after the final 3bet.
+// Source/Provenance: T Hero role/position + P first-orbit ordering.
+// Safety: seats before/equal to the opener/final raiser are not guessed.
+##f$cc_pf_rt_hero_is_post3bet_coldcaller##
+f$cc_pf_role_cold_call_3bet &&
+f$cc_pf_rt_3bet_order_supported &&
+f$cc_hero_pos_id > f$cc_pf_rt_final_aggressor_pos_id
+
+// Purpose: exactly one caller-origin class is proven for supported Hero caller 3BP.
+// Source/Provenance: P fail-closed exclusivity invariant.
+##f$cc_pf_rt_hero_3bet_origin_consistent##
+When (f$cc_pf_rt_hero_is_opener_call_3bet + f$cc_pf_rt_hero_is_pre3bet_coldcaller + f$cc_pf_rt_hero_is_post3bet_coldcaller) != 1 Return false Force
+When Others Return true Force
+
+// Purpose: current final 3bettor remains live as an opponent.
+// Source/Provenance: T current live mask + actual final-aggressor identity.
+##f$cc_pf_rt_3bettor_live_opponent##
+f$cc_pf_raise_count = 2 &&
+f$cc_pf_rt_3bet_order_supported &&
+f$cc_pf_rt_final_aggressor_live_opponent
+
+// ============================================================================
+// End final-aggressor caller-side evidence layer.
+// ============================================================================

@@ -1,0 +1,58 @@
+// ============================================================================
+// CashCrusher_Flop_Donk_SourceHistoryHelpers.txt
+// Gate 08B.0 — source-history descriptors needed by Turn Donk
+// ============================================================================
+// Purpose:
+//   Preserve direct `(BBorSB)v2pp` flop CHECK sub-states that are strategically
+//   relevant one street later. Gate07's action router deliberately treated many
+//   source-reviewed checks alike; Turn Donk needs to know which kind of check it
+//   actually was before any source descendant may fire.
+//
+// Source:
+//   Dedicated Starting Strategy `(BBorSB)v2pp`:
+//     * good/medium draws on Ax/CPL/2+BW prefer X/C;
+//     * A-high + BDSD, or lower high-card + BDFD + OC, may X/C only versus a
+//       very small (~33%) flop bet and can later donk after a 2HC draw pickup.
+//   Mature DeepCrusher uses the same A-high/BDSD and lower-high/BDFD+OC split.
+//
+// Provenance:
+//   T/A = direct source categories assembled from existing CashCrusher flop
+//         hand/backdoor primitives and OpenPPL hole-card ranks.
+//   P   = helper naming / history-only separation.
+//
+// Safety:
+//   These are pre-action descriptors only. They NEVER prove Hero actually called
+//   a flop bet, never authorize the flop call price, and never select Turn action
+//   by themselves. Closed `did*round2` history remains mandatory downstream.
+// ============================================================================
+
+// Purpose: exact direct-source draw-check candidate that may later form X/C.
+// Source/Provenance: T alias of Gate07B source draw-check parent.
+##f$cc_flop_donk_source_turn_xc_draw_candidate##
+f$cc_flop_donk_source_native_context &&
+f$cc_flop_donk_source_draw_check_parent
+
+// Purpose: direct-source high-card/backdoor candidate before Hero checks flop.
+// Source: A-high requires BDSD; lower high-card requires BDFD + at least one OC.
+// Provenance: T/A direct `(BBorSB)v2pp` source translation. `rankhiplayer=ace`
+// mechanically means Hero holds at least one Ace and avoids inventing a helper.
+// Safety: price <=33% is NOT inferable before the later bet arrives and therefore
+// is intentionally not encoded here.
+##f$cc_flop_donk_source_turn_xc_highair_candidate##
+When !f$cc_flop_donk_source_native_context Return false Force
+When !f$cc_hand_no_made Return false Force
+When f$cc_real_frontdoor_draw Return false Force
+When rankhiplayer = ace && f$cc_backdoor_sd Return true Force
+When rankhiplayer != ace && f$cc_backdoor_fd && Overcards > 0 Return true Force
+When Others Return false Force
+
+// Purpose: source-positive draw Donk whose future B/C Turn branch needs later
+// defensive price/class proof before it can be treated as source-owned.
+// Source/Provenance: T Gate07B positive draw branch + P explicit evidence gap.
+##f$cc_flop_donk_source_turn_bc_draw_candidate##
+f$cc_flop_donk_source_native_context &&
+f$cc_flop_donk_source_draw_action
+
+// ============================================================================
+// End Gate08B.0 source-history helpers.
+// ============================================================================

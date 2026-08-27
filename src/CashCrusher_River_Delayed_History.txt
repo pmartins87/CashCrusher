@@ -1,0 +1,115 @@
+// ============================================================================
+// CashCrusher_River_Delayed_History.txt
+// Gate 13A — exact Framework ownership and CLOSED no-action River history
+// ============================================================================
+// Purpose:
+//   Reconstruct `f$river_lead_noaction` ownership without conflating a current
+//   zero AmountToCall with a genuine no-initiative/no-action River lineage.
+//
+// Exact Framework route:
+//   * current f$Init_Nobody owns the river no-action attack node;
+//   * FIRST/MIDDLE with a real flop call is diverted to River Probe;
+//   * LAST/MIDDLE checked-to routes to river_lead_noaction directly;
+//   * current River decision must face no bet.
+//
+// Provenance:
+//   T = Framework f$Init_Nobody / did*round2/3 / current action counters.
+//   A = Gate02N, Gate12A.17 and Gate12B.14 CLOSED parent bridges.
+//   P = supported-pot boundary / diagnostics only.
+// ============================================================================
+
+// Purpose: first clean River decision with no wager currently facing Hero.
+// Source/Provenance: T exact river callback state.
+##f$cc_river_delayed_first_action_clean##
+IsRiver &&
+f$cc_context_valid &&
+BotsActionsOnThisRoundIncludingChecks = 0 &&
+AmountToCall = 0
+
+// Purpose: CLOSED Turn X/X/no-action proof from Hero counters. If any player had
+// bet and Hero reached River, Hero would necessarily have called/aggressed or left
+// the hand; therefore this surviving all-check pattern is exact for Hero lineage.
+// Source/Provenance: T did*round3 closed history.
+##f$cc_river_delayed_turn_checkthrough##
+IsRiver &&
+didchecround3 > 0 &&
+didcallround3 = 0 &&
+didraisround3 = 0 &&
+didbetsizeround3 = 0 &&
+didalliround3 = 0
+
+// Purpose: exact Framework OOP split. FIRST/MIDDLE with a flop call belongs to
+// River Probe; LAST has no `BotCalledOnFlop` exclusion in f$river_Raise_noaction.
+// Source/Provenance: T direct routing translation using closed didcallround2.
+##f$cc_river_delayed_framework_position_owner##
+When f$cc_relpos_id = 3 Return true Force
+When (f$cc_relpos_id = 1 || f$cc_relpos_id = 2) && didcallround2 = 0 Return true Force
+When Others Return false Force
+
+// Purpose: explicit diagnostic for the exact OOP state diverted to Gate11 Probe.
+// Source/Provenance: T direct Framework ownership boundary.
+##f$cc_river_delayed_oop_flopcall_owned_by_probe##
+IsRiver &&
+(f$cc_relpos_id = 1 || f$cc_relpos_id = 2) &&
+didcallround2 > 0
+
+// Purpose: current pot families for which Gate13 may study explicit children.
+// 5bet+ remains fail-closed until a dedicated range family is proven.
+// Source/Provenance: P architecture boundary over T preflop taxonomy.
+##f$cc_river_delayed_supported_pot_family##
+f$cc_pot_family_id >= 1 && f$cc_pot_family_id <= 4
+
+// Purpose: canonical Gate13 River Delayed opportunity.
+// Source: Framework `f$Init_Nobody -> f$river_Raise_noaction` plus exact positional
+// split inside f$river_Raise_noaction.
+// Provenance: T/A exact ownership; no strategy is granted here.
+##f$cc_river_delayed_base_opportunity##
+f$cc_river_delayed_first_action_clean &&
+f$Init_Nobody &&
+f$cc_river_delayed_turn_checkthrough &&
+f$cc_river_delayed_framework_position_owner &&
+f$cc_river_delayed_supported_pot_family
+
+// Purpose: strict standard-Turn-CBet CHECK-through bridge. This covers initiative
+// lines such as ordinary HUSB flop CBet -> Turn check -> River no-action.
+// Source/Provenance: A Gate02N CLOSED parent + X mismatch exclusion.
+##f$cc_river_delayed_after_standard_turncheck_valid##
+f$cc_river_delayed_base_opportunity &&
+f$cc_hist_river_after_turn_checkthrough_parent &&
+f$cc_hist_turn_state_snapshot_consistent &&
+!f$cc_hist_turn_cbet_runtime_mismatch
+
+// Purpose: strict Gate12A Delayed-CBet CHECK-through bridge.
+// Source/Provenance: A Gate12A.17 CLOSED action proof.
+##f$cc_river_delayed_after_gate12a_check_valid##
+f$cc_river_delayed_base_opportunity &&
+f$cc_hist_river_delayed_cbet_check_parent_valid
+
+// Purpose: strict Gate12B Delayed-Float CHECK-back bridge.
+// Source/Provenance: A Gate12B.14 CLOSED action proof.
+##f$cc_river_delayed_after_gate12b_check_valid##
+f$cc_river_delayed_base_opportunity &&
+f$cc_hist_river_delayed_float_check_parent_valid
+
+// Purpose: exact known CLOSED parent count. A base opportunity may still have zero
+// known parents while other Turn owners are audited; it remains fail-closed.
+// Source/Provenance: P diagnostic over A exact parent bridges.
+##f$cc_river_delayed_known_parent_count##
+(f$cc_river_delayed_after_standard_turncheck_valid * 1) +
+(f$cc_river_delayed_after_gate12a_check_valid * 1) +
+(f$cc_river_delayed_after_gate12b_check_valid * 1)
+
+// Purpose: known previous-owner contradiction diagnostic.
+// Source/Provenance: P/X integrity guard; never authorizes a River bet.
+##f$cc_river_delayed_parent_conflict##
+f$cc_river_delayed_known_parent_count > 1
+
+// Purpose: legal Gate13 state whose exact previous Turn owner is not yet bridged.
+// Source/Provenance: X explicit fail-closed work queue.
+##f$cc_river_delayed_parent_unresolved##
+f$cc_river_delayed_base_opportunity &&
+f$cc_river_delayed_known_parent_count = 0
+
+// ============================================================================
+// End Gate13A ownership/history foundation.
+// ============================================================================

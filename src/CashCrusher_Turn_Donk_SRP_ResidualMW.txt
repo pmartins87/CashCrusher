@@ -1,0 +1,161 @@
+// ============================================================================
+// CashCrusher_Turn_Donk_SRP_ResidualMW.txt
+// Gate 08D.2 — residual ordinary-SRP current-multiway Turn Donk coverage
+// ============================================================================
+// Purpose:
+//   Close ordinary one-raise Turn-Donk opportunities that remain MULTIWAY on the
+//   Turn and are not owned by the audited `(BBorSB)v2pp` source descendants.
+//
+// Strategic boundary:
+//   DeepCrusher routes OOP/no-initiative states to `f$move_turn_donkbet`, but the
+//   generic framework router is NOT a positive strategy source. The dedicated
+//   positive multiway material is already owned by Gate08B. This residual file
+//   therefore must not extrapolate those exact BTN+blinds ranges to arbitrary
+//   UTG/HJ/CO/BTN/SB/BB multiway compositions.
+//
+// Professional-theory review:
+//   Multiway Turn leads after an actual flop X/C can exist when the Turn produces
+//   a sharp nut/range shift, but their composition depends on every live range,
+//   flop action order/size, exact board and Hero's relative position. A broad
+//   deterministic lead would over-generalize far more severely than in HU.
+//
+//   The reviewed baseline is CHECK. This is a deliberate P decision for the
+//   residual class, not a claim that equilibrium multiway Donk frequency is zero.
+//
+// Provenance:
+//   T/A = Gate00 pot/field/role data + Gate08A actual closed X/C ownership.
+//   P   = residual current-multiway CHECK after professional range/topology review.
+//   X   = generic `multiway + OOP + no initiative -> lead` transplantation.
+//
+// Safety:
+//   Native source ancestry is excluded even if a particular source descendant is
+//   temporarily fail-closed waiting for defensive provenance. Missing source
+//   evidence therefore remains visible instead of being swallowed by this CHECK.
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// TDSRPMW.01 — source/high-ancestry firewall
+// -----------------------------------------------------------------------------
+
+// Purpose: exact Gate07 native source families remain owned by Gate08B.
+// Source/Provenance: A/T `(BBorSB)v2pp` family-history firewall.
+##f$cc_turn_donk_srp_mw_native_source_ancestry##
+(f$cc_hist_flop_donk_family_id = 1) ||
+(f$cc_hist_flop_donk_family_id = 2)
+
+// Purpose: prevent any currently identified dedicated seat-label descendant from
+// being absorbed if a future history repair permits it to remain multiway.
+// Source/Provenance: P ownership firewall over T/A source mappings.
+##f$cc_turn_donk_srp_mw_dedicated_source_ancestry##
+f$cc_turn_donk_hubb_context ||
+f$cc_turn_donk_sbvbtn_context ||
+f$cc_turn_donk_sbvbb_context ||
+f$cc_turn_donk_bbvbtn_context
+
+// Purpose: union of every source/high-ancestry state excluded from residual MW.
+// Source/Provenance: P safety union.
+##f$cc_turn_donk_srp_mw_source_ancestry##
+f$cc_turn_donk_srp_mw_native_source_ancestry ||
+f$cc_turn_donk_srp_mw_dedicated_source_ancestry
+
+// -----------------------------------------------------------------------------
+// TDSRPMW.02 — exact residual owner and range metadata
+// -----------------------------------------------------------------------------
+
+// Purpose: canonical residual current-multiway ordinary-SRP Turn-Donk context.
+// Source/Provenance: T/A exact field/pot/history + P source exclusion.
+##f$cc_turn_donk_srp_residual_mw_context##
+f$cc_turn_donk_opportunity &&
+f$cc_multiway &&
+f$cc_pot_family_id = 2 &&
+f$cc_pf_one_raise_ordinary_srp &&
+!f$cc_turn_donk_srp_mw_source_ancestry
+
+// Purpose: Hero defended the single preflop raise and X/C flop multiway.
+// Source/Provenance: T/A exact preflop role + closed Gate08A history.
+##f$cc_turn_donk_srp_residual_mw_hero_was_caller##
+f$cc_turn_donk_srp_residual_mw_context && f$cc_pf_role_srp_caller
+
+// Purpose: Hero was PFA, checked flop, then called a later stab/bet and therefore
+// no longer owns final flop aggression.
+// Source/Provenance: T/A exact role/history reconstruction.
+##f$cc_turn_donk_srp_residual_mw_hero_was_pfa##
+f$cc_turn_donk_srp_residual_mw_context && f$cc_pf_role_pfa
+
+// Purpose: exact flop aggressor was the original PFA.
+// Source/Provenance: T aggressor identity compared with A preflop raiser identity.
+##f$cc_turn_donk_srp_residual_mw_flop_aggressor_was_pfa##
+f$cc_turn_donk_srp_residual_mw_context &&
+f$cc_turn_donk_flop_aggressor_pos_id = f$cc_pf_single_raiser_pos_id
+
+// Purpose: flop aggressor was a caller/stabber after original PFA checked.
+// Source/Provenance: A exact complement inside proven one-raise chronology.
+##f$cc_turn_donk_srp_residual_mw_flop_aggressor_was_stabber##
+f$cc_turn_donk_srp_residual_mw_context &&
+f$cc_turn_donk_flop_aggressor_pos_id != f$cc_pf_single_raiser_pos_id
+
+// Purpose: retain exact current field width for audit without turning it into a
+// frequency shortcut.
+// Source/Provenance: T nplayersplaying metadata.
+##f$cc_turn_donk_srp_residual_mw_player_count##
+When !f$cc_turn_donk_srp_residual_mw_context Return 0 Force
+When nplayersplaying >= 3 && nplayersplaying <= 6 Return nplayersplaying Force
+When Others Return 0 Force
+
+// Purpose: role must be one of the two reviewed ordinary-SRP Hero range classes.
+// Source/Provenance: P integrity guard.
+##f$cc_turn_donk_srp_residual_mw_role_valid##
+f$cc_turn_donk_srp_residual_mw_hero_was_caller ||
+f$cc_turn_donk_srp_residual_mw_hero_was_pfa
+
+// Purpose: multiway stack envelope must be coherent before this state is marked
+// strategically reviewed, even though CHECK itself does not use SPR.
+// Source/Provenance: T/P Gate00 dual-bound stack safety.
+##f$cc_turn_donk_srp_residual_mw_stack_valid##
+f$cc_turn_donk_srp_residual_mw_context && f$cc_mw_spr_bounds_valid
+
+// -----------------------------------------------------------------------------
+// TDSRPMW.03 — professional baseline: CHECK
+// -----------------------------------------------------------------------------
+
+// Purpose: deliberate residual current-multiway Turn-Donk action.
+// Professional-theory rationale:
+//   * Hero's flop X/C range is condensed;
+//   * at least two opponent ranges remain live;
+//   * the flop aggressor's range retains strong value while another live range
+//     materially constrains bluffing/thin value;
+//   * useful turn leads are topology/runout-specific and should be added only by
+//     an exact future child, not by broad multiway inheritance.
+// Provenance: P reviewed CHECK baseline.
+##f$cc_turn_donk_srp_residual_mw_action##
+When !f$cc_turn_donk_srp_residual_mw_context Return false Force
+When !f$cc_turn_donk_srp_residual_mw_role_valid Return false Force
+When !f$cc_turn_donk_srp_residual_mw_stack_valid Return false Force
+When Others Return false Force
+
+// Purpose: CHECK has no strategic size.
+// Source/Provenance: P paired action/size invariant.
+##f$cc_turn_donk_srp_residual_mw_size_id##
+0
+
+// Purpose: reviewed coverage requires exact role and coherent MW stack envelope.
+// Source/Provenance: P coverage contract.
+##f$cc_turn_donk_srp_residual_mw_covered##
+f$cc_turn_donk_srp_residual_mw_context &&
+f$cc_turn_donk_srp_residual_mw_role_valid &&
+f$cc_turn_donk_srp_residual_mw_stack_valid
+
+// Purpose: expose an ordinary-SRP current-MW opportunity whose range/stack
+// provenance is unresolved instead of silently labelling it reviewed.
+// Source/Provenance: P fail-closed diagnostic.
+##f$cc_turn_donk_srp_residual_mw_uncovered_context##
+f$cc_turn_donk_srp_residual_mw_context && !f$cc_turn_donk_srp_residual_mw_covered
+
+// Purpose: action/size integrity.
+// Source/Provenance: P safety invariant.
+##f$cc_turn_donk_srp_residual_mw_size_consistent##
+!f$cc_turn_donk_srp_residual_mw_action && f$cc_turn_donk_srp_residual_mw_size_id = 0
+
+// ============================================================================
+// End Gate08D.2 residual ordinary-SRP current-multiway Turn Donk.
+// ============================================================================

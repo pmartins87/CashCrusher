@@ -1,0 +1,138 @@
+// ============================================================================
+// CashCrusher_River_CBet_3BP.txt
+// Gate 03E — plain 3-bet-pot River CBet
+// ============================================================================
+// Source boundary:
+//   No dedicated deep-stack 3BP three-barrel source exists. Exact River policy
+//   is P-heavy, constrained by A current-strength/runout/fail-close principles.
+//
+// Range provenance:
+//   opener-call != post-3bet coldcaller; Turn-HU != Turn-MW survivor.
+//
+// Stack-depth contract:
+//   Naturally low 3BP River SPR is a legitimate strategic input, not automatic
+//   TP+ stack-off authority. No BetMax lives in this module.
+// ============================================================================
+
+// Purpose: clean enough 3BP River for one-pair value.
+// Source/Provenance: A runout caution + P 3BP abstraction.
+##f$cc_river_plain3bp_clean##
+IsRiver && !f$cc_river_completed && !f$cc_river_four_card_completion
+
+// Purpose: clean meaningful-OC pressure River for narrow bluff selection.
+// Source/Provenance: P 3bettor range-advantage selector.
+##f$cc_river_plain3bp_high_pressure##
+f$cc_river_plain3bp_clean && f$cc_river_meaningful_overcard && !f$cc_river_pairs_previous_board
+
+// -----------------------------------------------------------------------------
+// R3.01 — HU versus ORIGINAL OPENER-CALL
+// -----------------------------------------------------------------------------
+
+// Purpose: P-heavy River third barrel versus original opener-call.
+// Logic: robust value broad; OP/strong TP continue clean or at naturally low SPR;
+// medium TP checks. A narrow IP missed-premium-draw bluff requires Turn-HU,
+// non-strong selection, high-pressure River and A/K blocker structure.
+// Source/Provenance: P professional deep-stack 3BP fill.
+##f$cc_river_plain3bp_hu_opener_action##
+When !f$cc_river_plain3bp_hu_context_consistent Return false Force
+When !f$cc_river_plain3bp_hu_vs_opener Return false Force
+When f$cc_river_two_pair_plus Return true Force
+When f$cc_river_overpair && f$cc_river_plain3bp_clean Return true Force
+When f$cc_river_overpair && f$cc_river_hu_spr_below_1 Return true Force
+When f$cc_river_overpair Return false Force
+When f$cc_river_strong_top_pair && f$cc_river_plain3bp_clean && !f$cc_river_hu_high_spr Return true Force
+When f$cc_river_strong_top_pair && f$cc_river_hu_spr_below_15 Return true Force
+When f$cc_river_top_pair Return false Force
+When f$cc_river_second_pair Return false Force
+When f$cc_river_no_made && user_cc_turn_state_had_premium_draw && f$cc_hu_ip && f$cc_river_plain3bp_hu_from_hu_turn && !f$cc_river_plain3bp_hu_strong_selection && f$cc_river_turn_plan_size_id <= 4 && f$cc_river_plain3bp_high_pressure && (f$cc_hole_has_ace || f$cc_hole_has_king) Return true Force
+When f$cc_river_no_made Return false Force
+When Others Return false Force
+
+// Purpose: opener-call 3BP River size map.
+// Source/Provenance: P: 75 robust/polar, 50 one-pair value.
+##f$cc_river_plain3bp_hu_opener_size_id##
+When !f$cc_river_plain3bp_hu_opener_action Return 0 Force
+When f$cc_river_two_pair_plus Return f$cc_river_size_75_id Force
+When f$cc_river_overpair || f$cc_river_top_pair Return f$cc_river_size_50_id Force
+When f$cc_river_no_made Return f$cc_river_size_75_id Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// R3.02 — HU versus POST-3BET COLD CALLER
+// -----------------------------------------------------------------------------
+
+// Purpose: River third barrel versus selected post-3bet-coldcaller range.
+// Source/Provenance: P-heavy, tighter than opener-call.
+// Logic: robust value, clean OP/strong TP at low/moderate SPR; no no-made bluff.
+##f$cc_river_plain3bp_hu_coldcaller_action##
+When !f$cc_river_plain3bp_hu_context_consistent Return false Force
+When !f$cc_river_plain3bp_hu_vs_coldcaller Return false Force
+When f$cc_river_straight_or_better Return true Force
+When f$cc_river_two_pair_plus && !f$cc_river_super_completed Return true Force
+When f$cc_river_two_pair_plus && f$cc_river_hu_spr_below_1 Return true Force
+When f$cc_river_overpair && f$cc_river_plain3bp_clean && f$cc_river_hu_spr_below_2 Return true Force
+When f$cc_river_strong_top_pair && f$cc_river_plain3bp_clean && f$cc_river_hu_spr_below_1 Return true Force
+When f$cc_river_top_pair Return false Force
+When f$cc_river_second_pair Return false Force
+When f$cc_river_no_made Return false Force
+When Others Return false Force
+
+// Purpose: post3bet-coldcaller 3BP River sizes.
+// Source/Provenance: P 75 robust / 50 one-pair map.
+##f$cc_river_plain3bp_hu_coldcaller_size_id##
+When !f$cc_river_plain3bp_hu_coldcaller_action Return 0 Force
+When f$cc_river_straight_or_better || f$cc_river_two_pair_plus Return f$cc_river_size_75_id Force
+When f$cc_river_overpair || f$cc_river_top_pair Return f$cc_river_size_50_id Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// R3.03 — Current MULTIWAY plain3BP River
+// -----------------------------------------------------------------------------
+
+// Purpose: value-heavy multiway plain3BP third barrel.
+// Source: no dedicated source; multiway selectivity supplies only A constraint.
+// Provenance: P-heavy.
+// Safety: deepest-effective River SPR controls field-wide low-SPR exceptions.
+##f$cc_river_plain3bp_mw_action##
+When !f$cc_river_plain3bp_mw_context_consistent Return false Force
+When f$cc_river_straight_or_better && !f$cc_river_super_completed Return true Force
+When f$cc_river_straight_or_better && f$cc_river_plain3bp_mw_all_effective_spr_below_1 Return true Force
+When f$cc_river_two_pair_plus && f$cc_river_plain3bp_clean Return true Force
+When f$cc_river_two_pair_plus && f$cc_river_plain3bp_mw_all_effective_spr_below_1 Return true Force
+When f$cc_river_overpair && f$cc_river_plain3bp_mw_comp_id = 1 && f$cc_river_plain3bp_clean && f$cc_river_plain3bp_mw_all_effective_spr_below_1 Return true Force
+When f$cc_river_top_pair Return false Force
+When f$cc_river_no_made Return false Force
+When Others Return false Force
+
+// Purpose: multiway plain3BP River sizes.
+// Source/Provenance: P value-heavy 75 / one-pair 50.
+##f$cc_river_plain3bp_mw_size_id##
+When !f$cc_river_plain3bp_mw_action Return 0 Force
+When f$cc_river_straight_or_better || f$cc_river_two_pair_plus Return f$cc_river_size_75_id Force
+When f$cc_river_overpair Return f$cc_river_size_50_id Force
+When Others Return 0 Force
+
+// Purpose: exact plain3BP River action dispatcher.
+// Source/Provenance: P/A survivor/composition router.
+##f$cc_river_plain3bp_action##
+When f$cc_river_plain3bp_hu_vs_opener && f$cc_river_plain3bp_hu_context_consistent Return f$cc_river_plain3bp_hu_opener_action Force
+When f$cc_river_plain3bp_hu_vs_coldcaller && f$cc_river_plain3bp_hu_context_consistent Return f$cc_river_plain3bp_hu_coldcaller_action Force
+When f$cc_river_plain3bp_mw_context_consistent Return f$cc_river_plain3bp_mw_action Force
+When Others Return false Force
+
+// Purpose: paired plain3BP River size dispatcher.
+// Source/Provenance: P/A safety router; check/uncovered ->0.
+##f$cc_river_plain3bp_size_id##
+When f$cc_river_plain3bp_hu_vs_opener && f$cc_river_plain3bp_hu_context_consistent Return f$cc_river_plain3bp_hu_opener_size_id Force
+When f$cc_river_plain3bp_hu_vs_coldcaller && f$cc_river_plain3bp_hu_context_consistent Return f$cc_river_plain3bp_hu_coldcaller_size_id Force
+When f$cc_river_plain3bp_mw_context_consistent Return f$cc_river_plain3bp_mw_size_id Force
+When Others Return 0 Force
+
+// Purpose: Gate03E plain3BP River coverage flag.
+// Source/Provenance: P engineering metadata.
+##f$cc_river_plain3bp_covered##
+(f$cc_river_plain3bp_hu_context_consistent && f$cc_river_plain3bp_hu_survivor_type_id > 0) || f$cc_river_plain3bp_mw_context_consistent
+
+// ============================================================================
+// End Gate03E plain3BP River CBet.
+// ============================================================================

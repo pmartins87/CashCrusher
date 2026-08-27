@@ -1,0 +1,203 @@
+// ============================================================================
+// CashCrusher_Turn_CBet_ISO.txt
+// Gate 02F — isolation-pot Turn CBet after actual flop CBet
+// ============================================================================
+// Source boundary:
+//   DeepCrusher has NO clean dedicated isolator-2Bar tree. Legacy
+//   `Init_GotRaised_Or_Isolated` routes turn through donk/float ownership rather
+//   than a dedicated ISO CBet policy. Exact actions below are therefore P-heavy.
+//
+// A-level constraints retained:
+//   current strength first, IP/OOP separation, runout caution, draw quality,
+//   protected OOP checking and multiway tightening.
+//
+// Range provenance retained:
+//   original limper != post-raise coldcaller; flop-HU != postflop-reduced HU;
+//   multiway limper/coldcaller composition remains explicit.
+//
+// Stack-depth contract:
+//   one-pair betting is not stack-off permission. Multiway field-wide depth uses
+//   deepest-effective SPR. No BetMax lives in this module.
+// ============================================================================
+
+// Purpose: dangerous/completed turn for ISO one-pair value.
+// Source/Provenance: A source runout caution + P ISO application.
+##f$cc_turn_iso_dangerous_runout##
+f$cc_turn_new_completion || f$cc_turn_four_card_straight_or_flush || f$cc_turn_super_completed
+
+// Purpose: clean ISO turn complement.
+// Source/Provenance: A/P runout descriptor.
+##f$cc_turn_iso_clean_turn##
+!f$cc_turn_iso_dangerous_runout
+
+// Purpose: A/K high-pressure turn without completion.
+// Source/Provenance: P range-advantage selector; action remains context-specific.
+##f$cc_turn_iso_high_pressure_turn##
+f$cc_turn_iso_clean_turn && f$cc_turn_overcard_to_flop && !f$cc_turn_pairs_flop_rank && (f$cc_turn_is_ace || f$cc_turn_is_king)
+
+// -----------------------------------------------------------------------------
+// ISO-T.01 — HU versus ORIGINAL LIMPER
+// -----------------------------------------------------------------------------
+
+// Purpose: second-barrel baseline versus a proven original limp-caller.
+// Source: no dedicated source ISO 2Bar tree; DeepCrusher supplies only A-level
+// later-street architecture.
+// Provenance: P-heavy professional-theory fill.
+// Logic: limp-call range is generally wider than post-raise coldcall range, so
+// robust one-pair can value-barrel clean turns; medium TP is restricted to IP,
+// non-strong-selection states; premium draws remain selective; narrow IP air
+// exists only on high-pressure turns after a quality/small flop CBet plan.
+// Safety: post-multiway origin automatically tightens through strong-selection.
+##f$cc_turn_iso_hu_limper_action##
+When !f$cc_turn_iso_hu_context_consistent Return false Force
+When !f$cc_turn_iso_hu_villain_was_limper Return false Force
+When f$cc_hand_trips_or_better Return true Force
+When HaveTwoPair && f$cc_turn_four_card_straight_or_flush && f$cc_turn_cbet_hu_high_spr Return false Force
+When HaveTwoPair Return true Force
+When f$cc_turn_cbet_overpair && f$cc_turn_iso_dangerous_runout && f$cc_turn_cbet_hu_high_spr Return false Force
+When f$cc_turn_cbet_overpair Return true Force
+When f$cc_turn_cbet_strong_top_pair && f$cc_turn_iso_dangerous_runout Return false Force
+When f$cc_turn_cbet_strong_top_pair Return true Force
+When f$cc_turn_cbet_medium_top_pair && f$cc_hu_ip && f$cc_turn_iso_clean_turn && !f$cc_turn_iso_hu_strong_selection Return true Force
+When f$cc_turn_cbet_medium_top_pair && f$cc_pair_plus_draw && !f$cc_turn_super_completed && !f$cc_turn_iso_hu_postmw_origin Return true Force
+When f$cc_turn_cbet_medium_top_pair Return false Force
+When f$cc_turn_cbet_weak_top_pair Return false Force
+When f$cc_turn_cbet_second_pair Return false Force
+When f$cc_turn_cbet_third_or_worse_pair Return false Force
+When f$cc_hand_no_made && f$cc_turn_cbet_premium_draw && f$cc_hu_ip && !f$cc_turn_super_completed Return true Force
+When f$cc_hand_no_made && f$cc_turn_cbet_premium_draw && f$cc_hu_oop && f$cc_turn_iso_high_pressure_turn && !f$cc_turn_iso_hu_postmw_origin Return true Force
+When f$cc_hand_no_made && f$cc_turn_cbet_good_draw && f$cc_hu_ip && f$cc_turn_iso_high_pressure_turn && !f$cc_turn_iso_hu_strong_selection Return true Force
+When f$cc_hand_no_made && f$cc_real_frontdoor_draw Return false Force
+When f$cc_turn_cbet_air && f$cc_hu_ip && !f$cc_turn_iso_hu_strong_selection && user_cc_flop_cbet_had_quality_air && f$cc_hist_flop_cbet_plan_size_id = 1 && f$cc_turn_iso_high_pressure_turn Return true Force
+When Others Return false Force
+
+// Purpose: HU limper-origin ISO turn size map.
+// Source/Provenance: P cash baseline, informed by A source 50/75 later-street sizes.
+##f$cc_turn_iso_hu_limper_size_id##
+When !f$cc_turn_iso_hu_limper_action Return 0 Force
+When f$cc_hand_trips_or_better Return f$cc_turn_size_75_id Force
+When HaveTwoPair && f$cc_turn_iso_dangerous_runout Return f$cc_turn_size_50_id Force
+When HaveTwoPair Return f$cc_turn_size_75_id Force
+When f$cc_turn_cbet_overpair Return f$cc_turn_size_50_id Force
+When f$cc_turn_cbet_strong_top_pair Return f$cc_turn_size_50_id Force
+When f$cc_turn_cbet_medium_top_pair Return f$cc_turn_size_33_id Force
+When f$cc_hand_no_made && f$cc_turn_cbet_premium_draw Return f$cc_turn_size_75_id Force
+When f$cc_hand_no_made && f$cc_turn_cbet_good_draw Return f$cc_turn_size_50_id Force
+When f$cc_turn_cbet_air Return f$cc_turn_size_75_id Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// ISO-T.02 — HU versus POST-RAISE COLD CALLER
+// -----------------------------------------------------------------------------
+
+// Purpose: second-barrel baseline versus a proven post-raise coldcaller.
+// Source: no dedicated source tree.
+// Provenance: P-heavy, deliberately tighter than limp-caller family.
+// Logic: selected preflop call + flop CBet call means medium/weak one-pair and
+// marginal draws check more. Robust value remains; premium draws barrel mostly
+// IP or favorable clean pressure. Pure-air baseline is omitted.
+##f$cc_turn_iso_hu_coldcaller_action##
+When !f$cc_turn_iso_hu_context_consistent Return false Force
+When !f$cc_turn_iso_hu_villain_was_coldcaller Return false Force
+When f$cc_hand_trips_or_better Return true Force
+When HaveTwoPair && f$cc_turn_four_card_straight_or_flush && f$cc_turn_cbet_hu_high_spr Return false Force
+When HaveTwoPair Return true Force
+When f$cc_turn_cbet_overpair && f$cc_turn_iso_dangerous_runout Return false Force
+When f$cc_turn_cbet_overpair && f$cc_hu_ip Return true Force
+When f$cc_turn_cbet_overpair && f$cc_hu_oop && !f$cc_turn_cbet_hu_high_spr && f$cc_turn_iso_clean_turn Return true Force
+When f$cc_turn_cbet_overpair Return false Force
+When f$cc_turn_cbet_strong_top_pair && f$cc_hu_ip && f$cc_turn_iso_clean_turn Return true Force
+When f$cc_turn_cbet_strong_top_pair && f$cc_hu_oop && f$cc_pair_plus_draw && f$cc_turn_iso_clean_turn && !f$cc_turn_cbet_hu_high_spr Return true Force
+When f$cc_turn_cbet_top_pair Return false Force
+When f$cc_turn_cbet_second_pair Return false Force
+When f$cc_turn_cbet_third_or_worse_pair Return false Force
+When f$cc_hand_no_made && f$cc_turn_cbet_premium_draw && f$cc_hu_ip && !f$cc_turn_super_completed Return true Force
+When f$cc_hand_no_made && f$cc_turn_cbet_premium_draw && f$cc_hu_oop && f$cc_turn_iso_high_pressure_turn && !f$cc_turn_iso_hu_postmw_origin Return true Force
+When f$cc_hand_no_made && f$cc_real_frontdoor_draw Return false Force
+When f$cc_turn_cbet_air Return false Force
+When Others Return false Force
+
+// Purpose: HU post-raise-coldcaller ISO turn size map.
+// Source/Provenance: P conservative 50/75 map; no thin 33 air tail.
+##f$cc_turn_iso_hu_coldcaller_size_id##
+When !f$cc_turn_iso_hu_coldcaller_action Return 0 Force
+When f$cc_hand_trips_or_better Return f$cc_turn_size_75_id Force
+When HaveTwoPair && f$cc_turn_iso_dangerous_runout Return f$cc_turn_size_50_id Force
+When HaveTwoPair Return f$cc_turn_size_75_id Force
+When f$cc_turn_cbet_overpair Return f$cc_turn_size_50_id Force
+When f$cc_turn_cbet_strong_top_pair Return f$cc_turn_size_50_id Force
+When f$cc_hand_no_made && f$cc_turn_cbet_premium_draw Return f$cc_turn_size_75_id Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// ISO-T.03 — Current MULTIWAY ISO turn
+// -----------------------------------------------------------------------------
+
+// Purpose: value-heavy multiway ISO second-barrel baseline.
+// Source: no dedicated ISO source; mature DeepCrusher multiway policy supplies A
+// evidence for substantial tightening where exact trees end.
+// Provenance: P-heavy professional-theory fill.
+// Logic: trips+ broad; two-pair runout/depth-sensitive; OP/strong TP only in
+// favorable LAST/all-limper or low deepest-SPR states; premium draws mostly LAST;
+// mixed/all-coldcaller fields tighten further; no pure-air baseline.
+// Safety: deepest-effective SPR, never shortest opponent, controls low-SPR relaxations.
+##f$cc_turn_iso_mw_action##
+When !f$cc_turn_iso_mw_context_consistent Return false Force
+When f$cc_hand_trips_or_better && !f$cc_turn_super_completed Return true Force
+When f$cc_hand_trips_or_better && f$cc_turn_super_completed && f$cc_turn_iso_mw_all_effective_spr_below_3 Return true Force
+When HaveTwoPair && f$cc_turn_iso_clean_turn Return true Force
+When HaveTwoPair && f$cc_turn_iso_dangerous_runout && f$cc_turn_iso_mw_all_effective_spr_below_3 Return true Force
+When HaveTwoPair Return false Force
+When f$cc_turn_cbet_overpair && f$cc_multiway_rel_last && f$cc_turn_iso_mw_all_limpers && f$cc_turn_iso_clean_turn Return true Force
+When f$cc_turn_cbet_overpair && f$cc_multiway_rel_last && !f$cc_turn_iso_mw_all_coldcallers && f$cc_turn_iso_clean_turn && f$cc_turn_iso_mw_all_effective_spr_below_4 Return true Force
+When f$cc_turn_cbet_overpair Return false Force
+When f$cc_turn_cbet_strong_top_pair && f$cc_multiway_rel_last && f$cc_turn_iso_mw_all_limpers && f$cc_turn_iso_clean_turn && f$cc_turn_iso_mw_all_effective_spr_below_4 Return true Force
+When f$cc_turn_cbet_top_pair Return false Force
+When f$cc_turn_cbet_second_pair Return false Force
+When f$cc_turn_cbet_third_or_worse_pair Return false Force
+When f$cc_hand_no_made && f$cc_turn_cbet_premium_draw && f$cc_multiway_rel_last && f$cc_turn_iso_clean_turn && f$cc_turn_iso_mw_all_limpers Return true Force
+When f$cc_hand_no_made && f$cc_turn_cbet_premium_draw && f$cc_multiway_rel_last && f$cc_turn_iso_high_pressure_turn && f$cc_turn_iso_mw_all_effective_spr_below_3 && !f$cc_turn_iso_mw_all_coldcallers Return true Force
+When f$cc_real_frontdoor_draw Return false Force
+When f$cc_turn_cbet_air Return false Force
+When Others Return false Force
+
+// Purpose: multiway ISO Turn-CBet size map.
+// Source/Provenance: P value-heavy 50/75 baseline; no pot/jam without exact audit.
+##f$cc_turn_iso_mw_size_id##
+When !f$cc_turn_iso_mw_action Return 0 Force
+When f$cc_hand_trips_or_better Return f$cc_turn_size_75_id Force
+When HaveTwoPair && f$cc_turn_iso_dangerous_runout Return f$cc_turn_size_50_id Force
+When HaveTwoPair Return f$cc_turn_size_75_id Force
+When f$cc_turn_cbet_overpair Return f$cc_turn_size_50_id Force
+When f$cc_turn_cbet_strong_top_pair Return f$cc_turn_size_50_id Force
+When f$cc_hand_no_made && f$cc_turn_cbet_premium_draw Return f$cc_turn_size_75_id Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// ISO-T.04 — Dispatch / coverage
+// -----------------------------------------------------------------------------
+
+// Purpose: exact ISO Turn-CBet action dispatcher.
+// Source/Provenance: P/A range-provenance router; unknown origin fails closed.
+##f$cc_turn_iso_action##
+When f$cc_turn_iso_hu_villain_was_limper && f$cc_turn_iso_hu_context_consistent Return f$cc_turn_iso_hu_limper_action Force
+When f$cc_turn_iso_hu_villain_was_coldcaller && f$cc_turn_iso_hu_context_consistent Return f$cc_turn_iso_hu_coldcaller_action Force
+When f$cc_turn_iso_mw_context_consistent Return f$cc_turn_iso_mw_action Force
+When Others Return false Force
+
+// Purpose: paired ISO Turn-CBet size dispatcher.
+// Source/Provenance: P/A safety router; check/uncovered -> 0.
+##f$cc_turn_iso_size_id##
+When f$cc_turn_iso_hu_villain_was_limper && f$cc_turn_iso_hu_context_consistent Return f$cc_turn_iso_hu_limper_size_id Force
+When f$cc_turn_iso_hu_villain_was_coldcaller && f$cc_turn_iso_hu_context_consistent Return f$cc_turn_iso_hu_coldcaller_size_id Force
+When f$cc_turn_iso_mw_context_consistent Return f$cc_turn_iso_mw_size_id Force
+When Others Return 0 Force
+
+// Purpose: coverage flag for Gate02F ISO Turn CBet.
+// Source/Provenance: P engineering metadata over explicit exact contexts.
+##f$cc_turn_iso_covered##
+(f$cc_turn_iso_hu_context_consistent && (f$cc_turn_iso_hu_villain_was_limper || f$cc_turn_iso_hu_villain_was_coldcaller)) || f$cc_turn_iso_mw_context_consistent
+
+// ============================================================================
+// End Gate 02F strategy.
+// ============================================================================

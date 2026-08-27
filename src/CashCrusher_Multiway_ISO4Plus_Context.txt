@@ -1,0 +1,113 @@
+// ============================================================================
+// CashCrusher_Multiway_ISO4Plus_Context.txt
+// Gate 01E.4 context — exact 4/5/6-player isolation-raised flop
+// ============================================================================
+// Composition IDs:
+//   1 = ALL_LIMPERS
+//   2 = MIXED_LIMPER_AND_POSTRAISE_COLD_CALLER
+//   3 = ALL_POSTRAISE_COLD_CALLERS
+//   0 = unresolved / outside scope
+//
+// Source/Provenance:
+//   A = exact ISO limper/coldcaller masks from CashCrusher_ISO_Context.txt.
+//   P = coarse 4-way+ range-composition parents; exact masks/counts retained.
+// ============================================================================
+
+// Purpose: exact four-way+ ISO PFA flop context with unchanged flop field size.
+// Source/Provenance: A exact pot/history/player mechanics.
+// Safety: excludes true3, ordinary SRP, reraised pots and later-reduced fields.
+##f$cc_mw_iso_4plus_pfa_context##
+f$cc_multiway_context_valid &&
+f$cc_flop_entry_count = nplayersplaying &&
+f$cc_flop_entry_count >= 4 &&
+f$cc_flop_entry_count <= 6 &&
+f$cc_pot_family_id = 2 &&
+f$cc_pf_role_pfa &&
+f$cc_pf_iso_proven &&
+f$cc_flop_cbet_opportunity &&
+f$cc_spr_valid
+
+// Purpose: exact 4-player ISO flop.
+// Source/Provenance: T/A player-count alias.
+##f$cc_mw_iso_exact4_pfa_context##
+f$cc_mw_iso_4plus_pfa_context && f$cc_flop_entry_count = 4
+
+// Purpose: exact 5-player ISO flop.
+// Source/Provenance: T/A player-count alias.
+##f$cc_mw_iso_exact5_pfa_context##
+f$cc_mw_iso_4plus_pfa_context && f$cc_flop_entry_count = 5
+
+// Purpose: exact 6-player ISO flop.
+// Source/Provenance: T/A player-count alias.
+##f$cc_mw_iso_exact6_pfa_context##
+f$cc_mw_iso_4plus_pfa_context && f$cc_flop_entry_count = 6
+
+// Purpose: count live original limpers among current ISO opponents.
+// Source/Provenance: A alias over exact live limper mask intersection.
+##f$cc_mw_iso_4plus_limper_count##
+When !f$cc_mw_iso_4plus_pfa_context Return 0 Force
+When Others Return f$cc_mw_iso_live_limper_count Force
+
+// Purpose: count live post-raise cold callers among current ISO opponents.
+// Source/Provenance: A alias over exact live coldcaller mask intersection.
+##f$cc_mw_iso_4plus_postraise_coldcaller_count##
+When !f$cc_mw_iso_4plus_pfa_context Return 0 Force
+When Others Return f$cc_mw_iso_live_postraise_coldcaller_count Force
+
+// Purpose: broad survivor-composition parent for 4-way+ ISO.
+// Source/Provenance: P abstraction over A exact survivor counts.
+// Safety: all current opponents must be classified.
+##f$cc_mw_iso_4plus_comp_id##
+When !f$cc_mw_iso_4plus_pfa_context Return 0 Force
+When f$cc_mw_iso_4plus_limper_count = (f$cc_flop_entry_count - 1) && f$cc_mw_iso_4plus_postraise_coldcaller_count = 0 Return 1 Force
+When f$cc_mw_iso_4plus_limper_count > 0 && f$cc_mw_iso_4plus_postraise_coldcaller_count > 0 && (f$cc_mw_iso_4plus_limper_count + f$cc_mw_iso_4plus_postraise_coldcaller_count) = (f$cc_flop_entry_count - 1) Return 2 Force
+When f$cc_mw_iso_4plus_limper_count = 0 && f$cc_mw_iso_4plus_postraise_coldcaller_count = (f$cc_flop_entry_count - 1) Return 3 Force
+When Others Return 0 Force
+
+// Purpose: all surviving opponents are original limpers.
+// Source/Provenance: P weakest/widest broad ISO continuation parent.
+##f$cc_mw_iso_4plus_all_limpers##
+f$cc_mw_iso_4plus_comp_id = 1
+
+// Purpose: surviving field mixes original limpers and post-raise cold callers.
+// Source/Provenance: P mixed broad range parent.
+##f$cc_mw_iso_4plus_mixed##
+f$cc_mw_iso_4plus_comp_id = 2
+
+// Purpose: all surviving opponents cold-called after Hero's isolation raise.
+// Source/Provenance: P most selected/condensed broad parent.
+##f$cc_mw_iso_4plus_all_coldcallers##
+f$cc_mw_iso_4plus_comp_id = 3
+
+// Purpose: four-way+ ISO PFA acts FIRST.
+// Source/Provenance: A relative-position mechanics + P strategy parent.
+##f$cc_mw_iso_4plus_first_context##
+f$cc_mw_iso_4plus_pfa_context && f$cc_multiway_rel_first
+
+// Purpose: four-way+ ISO PFA acts MIDDLE.
+// Source/Provenance: A relative-position mechanics + P strategy parent.
+##f$cc_mw_iso_4plus_middle_context##
+f$cc_mw_iso_4plus_pfa_context && f$cc_multiway_rel_middle
+
+// Purpose: four-way+ ISO PFA acts LAST after all previous players check.
+// Source/Provenance: A relative-position mechanics + P strategy parent.
+##f$cc_mw_iso_4plus_last_context##
+f$cc_mw_iso_4plus_pfa_context && f$cc_multiway_rel_last
+
+// Purpose: exact field-composition consistency guard.
+// Source/Provenance: P safety invariant over A exact survivor masks/counts.
+##f$cc_mw_iso_4plus_context_consistent##
+When !f$cc_mw_iso_4plus_pfa_context Return false Force
+When f$cc_mw_iso_4plus_comp_id <= 0 Return false Force
+When (f$cc_mw_iso_4plus_limper_count + f$cc_mw_iso_4plus_postraise_coldcaller_count) != (f$cc_flop_entry_count - 1) Return false Force
+When Others Return true Force
+
+// Purpose: compact exact audit key: flop count, Hero pos, live mask, comp, relpos.
+// Source/Provenance: P engineering metadata; not a solved strategy lookup.
+##f$cc_mw_iso_4plus_range_key##
+When !f$cc_mw_iso_4plus_pfa_context Return 0 Force
+When Others Return ((f$cc_flop_entry_count * 1000000) + (f$cc_hero_pos_id * 10000) + (f$cc_opp_live_mask * 100) + (f$cc_mw_iso_4plus_comp_id * 10) + f$cc_relpos_id) Force
+
+// ============================================================================
+// End four-way+ ISO context.
+// ============================================================================

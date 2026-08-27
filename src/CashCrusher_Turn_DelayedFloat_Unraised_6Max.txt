@@ -1,0 +1,132 @@
+// ============================================================================
+// CashCrusher_Turn_DelayedFloat_Unraised_6Max.txt
+// Gate 12B.11 — 4-6h unraised no-initiative Turn Delayed-Float adaptation
+// ============================================================================
+// Purpose:
+//   Cover the source-silent overlimp/BB-check family that Gate04 correctly does
+//   not call a Flop Float: Hero acts LAST after a flop check-through, checks back,
+//   then is checked to again on Turn. This is a genuine 12B delayed-stab family.
+//
+// Provenance:
+//   T/A = exact unraised/no-initiative topology + dedicated pre-action snapshot.
+//   P = deterministic deep-cash unraised-pot delayed-stab policy.
+// ============================================================================
+
+// Purpose: exact 4-6h unraised Turn parent with saved flop state and actual X/X.
+// Source/Provenance: T/A/P cross-street owner; native 3h LP excluded by deal size.
+##f$cc_turn_delayed_float_unraised6_context##
+f$cc_turn_delayed_float_base_opportunity &&
+f$cc_turn_delayed_float_unraised_snapshot_valid &&
+f$cc_deal_size >= 4 && f$cc_deal_size <= 6 &&
+f$cc_pot_family_id = 1 &&
+(f$cc_pf_role_unraised_caller || f$cc_pf_role_bb_check)
+
+// Purpose: current HU unraised delayed state.
+// Source/Provenance: T current field split over exact parent.
+##f$cc_turn_delayed_float_unraised6_hu_context##
+f$cc_turn_delayed_float_unraised6_context && f$cc_hu
+
+// Purpose: current multiway unraised delayed state.
+// Source/Provenance: T current field split over exact parent.
+##f$cc_turn_delayed_float_unraised6_mw_context##
+f$cc_turn_delayed_float_unraised6_context && f$cc_multiway
+
+// Purpose: HU thin second-pair protection/value. Unraised ranges are widest, but
+// still require saved lower-pair provenance plus a calm undercard.
+// Source/Provenance: P professional wide-range thin-value filter.
+##f$cc_turn_delayed_float_unraised6_secondpair_thin##
+f$cc_turn_delayed_float_unraised6_hu_context &&
+f$cc_turn_delayed_float_second_pair &&
+f$cc_turn_delayed_float_unraised_flop_had_lower_pair &&
+f$cc_turn_undercard &&
+f$cc_turn_delayed_float_thin_value_runout
+
+// Purpose: HU pure-air delayed bluff after two checks in a wide unraised pot.
+// Require saved air and a meaningful non-completing pressure card.
+// Source/Provenance: P professional delayed-stab selection.
+##f$cc_turn_delayed_float_unraised6_air_bluff##
+f$cc_turn_delayed_float_unraised6_hu_context &&
+f$cc_turn_delayed_float_no_made &&
+f$cc_turn_delayed_float_unraised_flop_had_air &&
+f$cc_turn_delayed_float_bluff_pressure_card
+
+// Purpose: HU unraised delayed action.
+// Source/Provenance: P value/protection/equity-first wide-range policy.
+##f$cc_turn_delayed_float_unraised6_hu_action##
+When !f$cc_turn_delayed_float_unraised6_hu_context Return false Force
+When f$cc_turn_delayed_float_two_pair_plus_real Return true Force
+When f$cc_turn_delayed_float_tpop_real && f$cc_turn_delayed_float_thin_value_runout Return true Force
+When f$cc_turn_delayed_float_tpop_real Return false Force
+When f$cc_turn_delayed_float_unraised6_secondpair_thin Return true Force
+When f$cc_turn_delayed_float_second_pair || f$cc_turn_delayed_float_third_pair Return false Force
+When f$cc_turn_delayed_float_semibluff_candidate Return true Force
+When f$cc_turn_delayed_float_unraised6_air_bluff Return true Force
+When Others Return false Force
+
+// Purpose: HU unraised delayed size map.
+// Source/Provenance: P 33/50/75 sizing; no direct all-in branch.
+##f$cc_turn_delayed_float_unraised6_hu_size_id##
+When !f$cc_turn_delayed_float_unraised6_hu_action Return 0 Force
+When f$cc_turn_delayed_float_two_pair_plus_real Return f$cc_turn_delayed_float_size_75_id Force
+When f$cc_turn_delayed_float_tpop_real Return f$cc_turn_delayed_float_size_50_id Force
+When f$cc_turn_delayed_float_unraised6_secondpair_thin Return f$cc_turn_delayed_float_size_33_id Force
+When f$cc_turn_delayed_float_semibluff_candidate Return f$cc_turn_delayed_float_size_50_id Force
+When f$cc_turn_delayed_float_unraised6_air_bluff Return f$cc_turn_delayed_float_size_50_id Force
+When Others Return 0 Force
+
+// Purpose: exact-threeway unraised parent where limited one-pair/equity betting
+// remains acceptable after all players check twice.
+// Source/Provenance: P player-count tightening over T field size.
+##f$cc_turn_delayed_float_unraised6_exact_threeway##
+f$cc_turn_delayed_float_unraised6_mw_context && nplayersplaying = 3
+
+// Purpose: multiway unraised delayed action. No pure-air branch; four-plus-way is
+// robust-value only, while exact threeway may add calm TP/OP and safe combo draws.
+// Source/Provenance: P conservative multiway wide-range policy.
+##f$cc_turn_delayed_float_unraised6_mw_action##
+When !f$cc_turn_delayed_float_unraised6_mw_context Return false Force
+When f$cc_turn_delayed_float_two_pair_plus_real Return true Force
+When f$cc_turn_delayed_float_unraised6_exact_threeway && f$cc_turn_delayed_float_tpop_real && f$cc_turn_delayed_float_thin_value_runout Return true Force
+When f$cc_turn_delayed_float_tpop_real Return false Force
+When f$cc_turn_delayed_float_unraised6_exact_threeway && f$cc_turn_delayed_float_no_made && f$cc_real_combo_draw && f$cc_turn_delayed_float_source_draw_live_safe Return true Force
+When Others Return false Force
+
+// Purpose: multiway unraised size map.
+// Source/Provenance: P robust-value/equity 50/75 map.
+##f$cc_turn_delayed_float_unraised6_mw_size_id##
+When !f$cc_turn_delayed_float_unraised6_mw_action Return 0 Force
+When f$cc_turn_delayed_float_two_pair_plus_real Return f$cc_turn_delayed_float_size_75_id Force
+When f$cc_turn_delayed_float_tpop_real Return f$cc_turn_delayed_float_size_50_id Force
+When f$cc_real_combo_draw Return f$cc_turn_delayed_float_size_50_id Force
+When Others Return 0 Force
+
+// Purpose: unraised family action dispatcher.
+// Source/Provenance: P exact HU/multiway split.
+##f$cc_turn_delayed_float_unraised6_action##
+When f$cc_turn_delayed_float_unraised6_hu_context Return f$cc_turn_delayed_float_unraised6_hu_action Force
+When f$cc_turn_delayed_float_unraised6_mw_context Return f$cc_turn_delayed_float_unraised6_mw_action Force
+When Others Return false Force
+
+// Purpose: paired unraised size dispatcher.
+// Source/Provenance: P exact owner; check/outside ->0.
+##f$cc_turn_delayed_float_unraised6_size_id##
+When f$cc_turn_delayed_float_unraised6_hu_context Return f$cc_turn_delayed_float_unraised6_hu_size_id Force
+When f$cc_turn_delayed_float_unraised6_mw_context Return f$cc_turn_delayed_float_unraised6_mw_size_id Force
+When Others Return 0 Force
+
+// Purpose: report reviewed source-silent unraised Gate12B coverage.
+// Source/Provenance: P coverage metadata over exact T/A snapshot.
+##f$cc_turn_delayed_float_unraised6_covered##
+f$cc_turn_delayed_float_unraised6_context
+
+// Purpose: local action/size consistency.
+// Source/Provenance: P fail-closed safety invariant.
+##f$cc_turn_delayed_float_unraised6_size_consistent##
+When !f$cc_turn_delayed_float_unraised6_covered Return f$cc_turn_delayed_float_unraised6_size_id = 0 Force
+When f$cc_turn_delayed_float_unraised6_covered && !f$cc_turn_delayed_float_unraised6_action Return f$cc_turn_delayed_float_unraised6_size_id = 0 Force
+When f$cc_turn_delayed_float_unraised6_action Return f$cc_turn_delayed_float_unraised6_size_id = f$cc_turn_delayed_float_size_33_id || f$cc_turn_delayed_float_unraised6_size_id = f$cc_turn_delayed_float_size_50_id || f$cc_turn_delayed_float_unraised6_size_id = f$cc_turn_delayed_float_size_75_id Force
+When Others Return false Force
+
+// ============================================================================
+// End Gate12B.11 unraised adaptation.
+// ============================================================================

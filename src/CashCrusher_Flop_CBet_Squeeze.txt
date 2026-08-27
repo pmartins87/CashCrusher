@@ -1,0 +1,365 @@
+// ============================================================================
+// CashCrusher_Flop_CBet_Squeeze.txt
+// Gate 01H — HU squeeze-pot flop CBet by surviving range provenance
+// ============================================================================
+// Covered:
+//   1) final 3bettor vs ORIGINAL OPENER who called squeeze, IP/OOP;
+//   2) final 3bettor vs PRE-3BET COLD CALLER who continued, IP/OOP;
+//   3) final 3bettor vs POST-3BET COLD CALLER, IP/OOP.
+//
+// Not covered:
+//   multiway squeeze, reversed/unsupported chronology, 4BP, or response after a
+//   flop CBet is raised.
+//
+// Source hierarchy:
+//   A — DeepCrusher initiative/IP-OOP/board/hand architecture.
+//   P — exact squeeze range/frequency policy; no clean source squeeze tree exists.
+//
+// Stack-depth note:
+//   DeepCrusher short-stack commitment helpers are not banned here.  This file
+//   simply does not use them because it owns only first-flop CBet/check + sizing.
+//   Any later stack-off or very-low-SPR jam belongs to its exact reviewed node.
+//
+// OpenPPL safety:
+//   every WHEN is flat/complete; exact survivor provenance is mandatory.
+// Size IDs: 1 ~33% | 2 ~50% | 3 ~75% | 0 check
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// SQ.00 — Context guards
+// -----------------------------------------------------------------------------
+
+// Purpose: squeeze pot, sole Villain is original opener, Hero acts IP.
+// Source/Provenance: P range family over A/T 3BP survivor reconstruction.
+##f$cc_cbet_squeeze_vs_opener_ip_context##
+f$cc_flop_cbet_opportunity &&
+f$cc_hu_origin_preflop_reduced &&
+f$cc_hu_squeeze_vs_opener &&
+f$cc_hu_ip &&
+f$cc_spr_valid
+
+// Purpose: squeeze pot, sole Villain is original opener, Hero acts OOP.
+// Source/Provenance: P range family over A/T 3BP survivor reconstruction.
+##f$cc_cbet_squeeze_vs_opener_oop_context##
+f$cc_flop_cbet_opportunity &&
+f$cc_hu_origin_preflop_reduced &&
+f$cc_hu_squeeze_vs_opener &&
+f$cc_hu_oop &&
+f$cc_spr_valid
+
+// Purpose: squeeze pot, sole Villain cold-called the open before Hero squeezed
+// and then continued versus the squeeze; Hero IP.
+// Source/Provenance: P-heavy six-max range family.
+##f$cc_cbet_squeeze_vs_pre3bet_coldcaller_ip_context##
+f$cc_flop_cbet_opportunity &&
+f$cc_hu_origin_preflop_reduced &&
+f$cc_hu_squeeze_vs_pre3bet_coldcaller &&
+f$cc_hu_ip &&
+f$cc_spr_valid
+
+// Purpose: same pre-3bet-coldcaller survivor family with Hero OOP.
+// Source/Provenance: P-heavy six-max range family.
+##f$cc_cbet_squeeze_vs_pre3bet_coldcaller_oop_context##
+f$cc_flop_cbet_opportunity &&
+f$cc_hu_origin_preflop_reduced &&
+f$cc_hu_squeeze_vs_pre3bet_coldcaller &&
+f$cc_hu_oop &&
+f$cc_spr_valid
+
+// Purpose: squeeze pot, sole Villain acted after the squeeze and cold-called it;
+// Hero IP.
+// Source/Provenance: P-heavy selected/condensed cold-call-squeeze family.
+##f$cc_cbet_squeeze_vs_post3bet_coldcaller_ip_context##
+f$cc_flop_cbet_opportunity &&
+f$cc_hu_origin_preflop_reduced &&
+f$cc_hu_squeeze_vs_post3bet_coldcaller &&
+f$cc_hu_ip &&
+f$cc_spr_valid
+
+// Purpose: same post-3bet-coldcaller survivor family with Hero OOP.
+// Source/Provenance: P-heavy selected/condensed cold-call-squeeze family.
+##f$cc_cbet_squeeze_vs_post3bet_coldcaller_oop_context##
+f$cc_flop_cbet_opportunity &&
+f$cc_hu_origin_preflop_reduced &&
+f$cc_hu_squeeze_vs_post3bet_coldcaller &&
+f$cc_hu_oop &&
+f$cc_spr_valid
+
+// -----------------------------------------------------------------------------
+// SQ.01 — Squeeze vs ORIGINAL OPENER, IP
+// -----------------------------------------------------------------------------
+
+// Purpose: choose CBet/check when Hero squeezed and original opener is sole
+// flop caller, with Hero IP.
+// Source: no dedicated DeepCrusher squeeze tree; source supplies only A concepts.
+// Provenance: P-heavy deep-cash squeeze baseline.
+// Decision logic: robust value bets; strong/medium TP bets broadly but dynamic
+// low boards gain checks as SPR rises; marginal SDV checks; premium draws bet;
+// quality-air pressure focuses on static-high/paired and selected dynamic-high.
+// Safety/Limits: later response to raise/stack-off is not decided here.
+##f$cc_cbet_squeeze_vs_opener_ip_action##
+When !f$cc_cbet_squeeze_vs_opener_ip_context Return false Force
+When f$cc_cbet_flop_very_strong_value Return true Force
+When f$cc_cbet_flop_overpair Return true Force
+When f$cc_cbet_flop_strong_top_pair Return true Force
+When f$cc_cbet_flop_medium_top_pair && f$cc_flop_dynamic_lowmid_parent && f$cc_cbet_high_spr Return false Force
+When f$cc_cbet_flop_medium_top_pair Return true Force
+When f$cc_cbet_flop_weak_top_pair && (f$cc_flop_static_high_parent || f$cc_flop_paired_parent) && f$cc_spr_round_start < 6 Return true Force
+When f$cc_cbet_flop_weak_top_pair Return false Force
+When f$cc_hand_second_pair_or_pocket && f$cc_pair_plus_draw Return true Force
+When f$cc_hand_second_pair_or_pocket && f$cc_cbet_board_small_bet_parent && f$cc_spr_round_start < 3 Return true Force
+When f$cc_cbet_flop_showdown_pair Return false Force
+When f$cc_cbet_flop_premium_draw Return true Force
+When f$cc_cbet_flop_good_draw && !f$cc_flop_dynamic_lowmid_parent Return true Force
+When f$cc_cbet_flop_good_draw && f$cc_flop_dynamic_lowmid_parent && f$cc_two_overcards Return true Force
+When f$cc_real_frontdoor_draw Return false Force
+When f$cc_cbet_flop_quality_air && (f$cc_flop_static_high_parent || f$cc_flop_paired_parent) Return true Force
+When f$cc_cbet_flop_air_best_backdoors && f$cc_flop_dynamic_high_parent Return true Force
+When Others Return false Force
+
+// Purpose: size positive IP squeeze CBet versus original opener.
+// Source/Provenance: A source dry-small/dynamic-larger concept + P squeeze map.
+##f$cc_cbet_squeeze_vs_opener_ip_size_id##
+When !f$cc_cbet_squeeze_vs_opener_ip_action Return 0 Force
+When f$cc_flop_dynamic_lowmid_parent && (f$cc_cbet_flop_very_strong_value || f$cc_cbet_flop_premium_draw) Return 3 Force
+When f$cc_flop_dynamic_lowmid_parent Return 2 Force
+When f$cc_flop_dynamic_high_parent && (f$cc_cbet_flop_very_strong_value || f$cc_cbet_flop_overpair || f$cc_cbet_flop_premium_draw) Return 2 Force
+When f$cc_flop_dynamic_high_parent Return 1 Force
+When f$cc_flop_static_lowmid_parent && (f$cc_cbet_flop_very_strong_value || f$cc_cbet_flop_overpair || f$cc_cbet_flop_premium_draw) Return 2 Force
+When f$cc_flop_static_high_parent || f$cc_flop_paired_parent Return 1 Force
+When Others Return 1 Force
+
+// -----------------------------------------------------------------------------
+// SQ.02 — Squeeze vs ORIGINAL OPENER, OOP
+// -----------------------------------------------------------------------------
+
+// Purpose: choose CBet/check when Hero squeezed OOP and original opener called.
+// Source/Provenance: A OOP checking architecture + P squeeze range policy.
+// Decision logic: retain high/static pressure where squeezer has strong range
+// advantage, but protect check range with marginal one-pair and dynamic draws.
+##f$cc_cbet_squeeze_vs_opener_oop_action##
+When !f$cc_cbet_squeeze_vs_opener_oop_context Return false Force
+When f$cc_cbet_flop_very_strong_value Return true Force
+When f$cc_cbet_flop_overpair Return true Force
+When f$cc_cbet_flop_strong_top_pair && f$cc_flop_dynamic_lowmid_parent && f$cc_cbet_high_spr Return false Force
+When f$cc_cbet_flop_strong_top_pair Return true Force
+When f$cc_cbet_flop_medium_top_pair && f$cc_flop_static_high_parent Return true Force
+When f$cc_cbet_flop_medium_top_pair && f$cc_pair_plus_draw Return true Force
+When f$cc_cbet_flop_medium_top_pair && f$cc_flop_paired_parent && f$cc_spr_round_start < 4 Return true Force
+When f$cc_cbet_flop_medium_top_pair Return false Force
+When f$cc_cbet_flop_weak_top_pair Return false Force
+When f$cc_cbet_flop_showdown_pair Return false Force
+When f$cc_cbet_flop_premium_draw && !f$cc_flop_dynamic_lowmid_parent Return true Force
+When f$cc_cbet_flop_premium_draw && f$cc_flop_dynamic_lowmid_parent Return false Force
+When f$cc_cbet_flop_good_draw && f$cc_cbet_board_small_bet_parent Return true Force
+When f$cc_real_frontdoor_draw Return false Force
+When f$cc_cbet_flop_quality_air && f$cc_flop_static_high_parent Return true Force
+When f$cc_cbet_flop_air_best_backdoors && f$cc_flop_paired_parent Return true Force
+When Others Return false Force
+
+// Purpose: size positive OOP squeeze CBet versus original opener.
+// Source/Provenance: A/P 33/50/75 baseline.
+##f$cc_cbet_squeeze_vs_opener_oop_size_id##
+When !f$cc_cbet_squeeze_vs_opener_oop_action Return 0 Force
+When f$cc_flop_dynamic_lowmid_parent && f$cc_cbet_flop_very_strong_value Return 3 Force
+When f$cc_flop_dynamic_lowmid_parent Return 2 Force
+When f$cc_flop_dynamic_high_parent && (f$cc_cbet_flop_very_strong_value || f$cc_cbet_flop_overpair || f$cc_cbet_flop_strong_top_pair) Return 2 Force
+When f$cc_flop_dynamic_high_parent Return 1 Force
+When f$cc_flop_static_lowmid_parent && (f$cc_cbet_flop_very_strong_value || f$cc_cbet_flop_overpair) Return 2 Force
+When f$cc_flop_static_high_parent || f$cc_flop_paired_parent Return 1 Force
+When Others Return 1 Force
+
+// -----------------------------------------------------------------------------
+// SQ.03 — Squeeze vs PRE-3BET COLD CALLER, IP
+// -----------------------------------------------------------------------------
+
+// Purpose: choose CBet/check versus a player who flat-called the open and then
+// continued versus Hero's squeeze.
+// Source: no direct source range; this is a genuine six-max squeeze gap.
+// Provenance: P-heavy professional theory constrained by A board/hand concepts.
+// Decision logic: caller's pair/suited density makes low/mid boards more
+// interactive; squeezer retains stronger pressure on A/K/Q-high static boards.
+##f$cc_cbet_squeeze_vs_pre3bet_coldcaller_ip_action##
+When !f$cc_cbet_squeeze_vs_pre3bet_coldcaller_ip_context Return false Force
+When f$cc_cbet_flop_very_strong_value Return true Force
+When f$cc_cbet_flop_overpair Return true Force
+When f$cc_cbet_flop_strong_top_pair Return true Force
+When f$cc_cbet_flop_medium_top_pair && f$cc_flop_dynamic_lowmid_parent Return false Force
+When f$cc_cbet_flop_medium_top_pair Return true Force
+When f$cc_cbet_flop_weak_top_pair && f$cc_flop_static_high_parent && f$cc_spr_round_start < 4 Return true Force
+When f$cc_cbet_flop_weak_top_pair Return false Force
+When f$cc_hand_second_pair_or_pocket && f$cc_pair_plus_draw Return true Force
+When f$cc_cbet_flop_showdown_pair Return false Force
+When f$cc_cbet_flop_premium_draw Return true Force
+When f$cc_cbet_flop_good_draw && (f$cc_flop_static_high_parent || f$cc_flop_dynamic_high_parent || f$cc_flop_paired_parent) Return true Force
+When f$cc_cbet_flop_good_draw && f$cc_flop_static_lowmid_parent && f$cc_two_overcards Return true Force
+When f$cc_real_frontdoor_draw Return false Force
+When f$cc_cbet_flop_quality_air && f$cc_flop_static_high_parent Return true Force
+When f$cc_cbet_flop_air_best_backdoors && f$cc_flop_paired_parent Return true Force
+When Others Return false Force
+
+// Purpose: size IP squeeze CBet versus pre-3bet cold caller.
+// Source/Provenance: P-heavy; static high small, dynamic robust region 50/75.
+##f$cc_cbet_squeeze_vs_pre3bet_coldcaller_ip_size_id##
+When !f$cc_cbet_squeeze_vs_pre3bet_coldcaller_ip_action Return 0 Force
+When f$cc_flop_dynamic_lowmid_parent && (f$cc_cbet_flop_very_strong_value || f$cc_cbet_flop_premium_draw) Return 3 Force
+When f$cc_flop_dynamic_lowmid_parent Return 2 Force
+When f$cc_flop_dynamic_high_parent && (f$cc_cbet_flop_very_strong_value || f$cc_cbet_flop_overpair || f$cc_cbet_flop_premium_draw) Return 2 Force
+When f$cc_flop_dynamic_high_parent Return 1 Force
+When f$cc_flop_static_lowmid_parent Return 2 Force
+When f$cc_flop_static_high_parent || f$cc_flop_paired_parent Return 1 Force
+When Others Return 1 Force
+
+// -----------------------------------------------------------------------------
+// SQ.04 — Squeeze vs PRE-3BET COLD CALLER, OOP
+// -----------------------------------------------------------------------------
+
+// Purpose: OOP counterpart versus pre-3bet coldcaller who continued squeeze.
+// Source/Provenance: P-heavy; A contributes protected-check architecture.
+// Decision logic: strong value still bets; medium one-pair and strong dynamic
+// draws check substantially; static high remains main bluff/value pressure zone.
+##f$cc_cbet_squeeze_vs_pre3bet_coldcaller_oop_action##
+When !f$cc_cbet_squeeze_vs_pre3bet_coldcaller_oop_context Return false Force
+When f$cc_cbet_flop_very_strong_value Return true Force
+When f$cc_cbet_flop_overpair Return true Force
+When f$cc_cbet_flop_strong_top_pair && f$cc_flop_dynamic_lowmid_parent && f$cc_cbet_high_spr Return false Force
+When f$cc_cbet_flop_strong_top_pair Return true Force
+When f$cc_cbet_flop_medium_top_pair && f$cc_flop_static_high_parent Return true Force
+When f$cc_cbet_flop_medium_top_pair && f$cc_pair_plus_draw Return true Force
+When f$cc_cbet_flop_medium_top_pair Return false Force
+When f$cc_cbet_flop_weak_top_pair Return false Force
+When f$cc_cbet_flop_showdown_pair Return false Force
+When f$cc_cbet_flop_premium_draw && f$cc_cbet_board_small_bet_parent Return true Force
+When f$cc_cbet_flop_premium_draw && f$cc_flop_dynamic_high_parent Return true Force
+When f$cc_real_frontdoor_draw Return false Force
+When f$cc_cbet_flop_quality_air && f$cc_flop_static_high_parent Return true Force
+When Others Return false Force
+
+// Purpose: size OOP squeeze CBet versus pre-3bet cold caller.
+// Source/Provenance: P-heavy 33/50/75 baseline.
+##f$cc_cbet_squeeze_vs_pre3bet_coldcaller_oop_size_id##
+When !f$cc_cbet_squeeze_vs_pre3bet_coldcaller_oop_action Return 0 Force
+When f$cc_flop_dynamic_lowmid_parent && f$cc_cbet_flop_very_strong_value Return 3 Force
+When f$cc_flop_dynamic_lowmid_parent Return 2 Force
+When f$cc_flop_dynamic_high_parent && (f$cc_cbet_flop_very_strong_value || f$cc_cbet_flop_overpair) Return 2 Force
+When f$cc_flop_dynamic_high_parent Return 1 Force
+When f$cc_flop_static_lowmid_parent && (f$cc_cbet_flop_very_strong_value || f$cc_cbet_flop_overpair) Return 2 Force
+When f$cc_flop_static_high_parent || f$cc_flop_paired_parent Return 1 Force
+When Others Return 1 Force
+
+// -----------------------------------------------------------------------------
+// SQ.05 — Squeeze vs POST-3BET COLD CALLER, IP
+// -----------------------------------------------------------------------------
+
+// Purpose: choose CBet/check versus selected player who cold-called the squeeze
+// after Hero's 3bet and became sole flop Villain.
+// Source: no direct DeepCrusher range strategy.
+// Provenance: P-heavy and intentionally more selective than opener-call baseline.
+// Decision logic: robust value bets; medium/weak one-pair checks more; premium
+// draws remain aggressive; air is restricted mainly to strongest static-high
+// backdoor candidates because Villain's continuing range is selected/condensed.
+##f$cc_cbet_squeeze_vs_post3bet_coldcaller_ip_action##
+When !f$cc_cbet_squeeze_vs_post3bet_coldcaller_ip_context Return false Force
+When f$cc_cbet_flop_very_strong_value Return true Force
+When f$cc_cbet_flop_overpair Return true Force
+When f$cc_cbet_flop_strong_top_pair Return true Force
+When f$cc_cbet_flop_medium_top_pair && f$cc_flop_static_high_parent Return true Force
+When f$cc_cbet_flop_medium_top_pair && f$cc_pair_plus_draw Return true Force
+When f$cc_cbet_flop_medium_top_pair Return false Force
+When f$cc_cbet_flop_weak_top_pair Return false Force
+When f$cc_cbet_flop_showdown_pair Return false Force
+When f$cc_cbet_flop_premium_draw Return true Force
+When f$cc_cbet_flop_good_draw && (f$cc_flop_static_high_parent || f$cc_flop_dynamic_high_parent || f$cc_flop_paired_parent) Return true Force
+When f$cc_real_frontdoor_draw Return false Force
+When f$cc_cbet_flop_air_best_backdoors && f$cc_flop_static_high_parent Return true Force
+When f$cc_cbet_flop_air_best_backdoors && f$cc_flop_paired_parent && f$cc_spr_round_start < 4 Return true Force
+When Others Return false Force
+
+// Purpose: size IP squeeze CBet versus post-3bet cold caller.
+// Source/Provenance: P-heavy; small on static/high, larger only robust dynamic value.
+##f$cc_cbet_squeeze_vs_post3bet_coldcaller_ip_size_id##
+When !f$cc_cbet_squeeze_vs_post3bet_coldcaller_ip_action Return 0 Force
+When f$cc_flop_dynamic_lowmid_parent && (f$cc_cbet_flop_very_strong_value || f$cc_cbet_flop_premium_draw) Return 3 Force
+When f$cc_flop_dynamic_lowmid_parent Return 2 Force
+When f$cc_flop_dynamic_high_parent && (f$cc_cbet_flop_very_strong_value || f$cc_cbet_flop_overpair || f$cc_cbet_flop_premium_draw) Return 2 Force
+When f$cc_flop_dynamic_high_parent Return 1 Force
+When f$cc_flop_static_lowmid_parent Return 2 Force
+When f$cc_flop_static_high_parent || f$cc_flop_paired_parent Return 1 Force
+When Others Return 1 Force
+
+// -----------------------------------------------------------------------------
+// SQ.06 — Squeeze vs POST-3BET COLD CALLER, OOP
+// -----------------------------------------------------------------------------
+
+// Purpose: OOP counterpart versus selected post-squeeze cold caller.
+// Source/Provenance: P-heavy; A contributes protected checking principles.
+// Decision logic: robust value bets; one-pair threshold tightens; dynamic draws
+// often check; air pressure is restricted to strongest static-high backdoors.
+##f$cc_cbet_squeeze_vs_post3bet_coldcaller_oop_action##
+When !f$cc_cbet_squeeze_vs_post3bet_coldcaller_oop_context Return false Force
+When f$cc_cbet_flop_very_strong_value Return true Force
+When f$cc_cbet_flop_overpair Return true Force
+When f$cc_cbet_flop_strong_top_pair && f$cc_flop_dynamic_lowmid_parent && f$cc_cbet_high_spr Return false Force
+When f$cc_cbet_flop_strong_top_pair Return true Force
+When f$cc_cbet_flop_medium_top_pair && f$cc_flop_static_high_parent && f$cc_spr_round_start < 4 Return true Force
+When f$cc_cbet_flop_medium_top_pair && f$cc_pair_plus_draw Return true Force
+When f$cc_cbet_flop_medium_top_pair Return false Force
+When f$cc_cbet_flop_weak_top_pair Return false Force
+When f$cc_cbet_flop_showdown_pair Return false Force
+When f$cc_cbet_flop_premium_draw && f$cc_cbet_board_small_bet_parent Return true Force
+When f$cc_cbet_flop_premium_draw && f$cc_flop_dynamic_high_parent && f$cc_spr_round_start < 4 Return true Force
+When f$cc_real_frontdoor_draw Return false Force
+When f$cc_cbet_flop_air_best_backdoors && f$cc_flop_static_high_parent && f$cc_spr_round_start < 4 Return true Force
+When Others Return false Force
+
+// Purpose: size OOP squeeze CBet versus post-3bet cold caller.
+// Source/Provenance: P-heavy; intentionally conservative static-small baseline.
+##f$cc_cbet_squeeze_vs_post3bet_coldcaller_oop_size_id##
+When !f$cc_cbet_squeeze_vs_post3bet_coldcaller_oop_action Return 0 Force
+When f$cc_flop_dynamic_lowmid_parent && f$cc_cbet_flop_very_strong_value Return 3 Force
+When f$cc_flop_dynamic_lowmid_parent Return 2 Force
+When f$cc_flop_dynamic_high_parent && (f$cc_cbet_flop_very_strong_value || f$cc_cbet_flop_overpair) Return 2 Force
+When f$cc_flop_dynamic_high_parent Return 1 Force
+When f$cc_flop_static_lowmid_parent && f$cc_cbet_flop_very_strong_value Return 2 Force
+When f$cc_flop_static_high_parent || f$cc_flop_paired_parent Return 1 Force
+When Others Return 1 Force
+
+// -----------------------------------------------------------------------------
+// SQ.07 — Dispatchers
+// -----------------------------------------------------------------------------
+
+// Purpose: route HU squeeze action by exact survivor provenance and position.
+// Source/Provenance: P/A topology dispatcher; unknown survivor fails closed.
+##f$cc_cbet_squeeze_hu_ip_action##
+When f$cc_cbet_squeeze_vs_opener_ip_context Return f$cc_cbet_squeeze_vs_opener_ip_action Force
+When f$cc_cbet_squeeze_vs_pre3bet_coldcaller_ip_context Return f$cc_cbet_squeeze_vs_pre3bet_coldcaller_ip_action Force
+When f$cc_cbet_squeeze_vs_post3bet_coldcaller_ip_context Return f$cc_cbet_squeeze_vs_post3bet_coldcaller_ip_action Force
+When Others Return false Force
+
+// Purpose: OOP counterpart of exact-survivor squeeze action router.
+// Source/Provenance: P/A topology dispatcher; unknown survivor fails closed.
+##f$cc_cbet_squeeze_hu_oop_action##
+When f$cc_cbet_squeeze_vs_opener_oop_context Return f$cc_cbet_squeeze_vs_opener_oop_action Force
+When f$cc_cbet_squeeze_vs_pre3bet_coldcaller_oop_context Return f$cc_cbet_squeeze_vs_pre3bet_coldcaller_oop_action Force
+When f$cc_cbet_squeeze_vs_post3bet_coldcaller_oop_context Return f$cc_cbet_squeeze_vs_post3bet_coldcaller_oop_action Force
+When Others Return false Force
+
+// Purpose: size router paired to IP squeeze action ownership.
+// Source/Provenance: P/A safety dispatcher; uncovered -> 0.
+##f$cc_cbet_squeeze_hu_ip_size_id##
+When f$cc_cbet_squeeze_vs_opener_ip_context Return f$cc_cbet_squeeze_vs_opener_ip_size_id Force
+When f$cc_cbet_squeeze_vs_pre3bet_coldcaller_ip_context Return f$cc_cbet_squeeze_vs_pre3bet_coldcaller_ip_size_id Force
+When f$cc_cbet_squeeze_vs_post3bet_coldcaller_ip_context Return f$cc_cbet_squeeze_vs_post3bet_coldcaller_ip_size_id Force
+When Others Return 0 Force
+
+// Purpose: size router paired to OOP squeeze action ownership.
+// Source/Provenance: P/A safety dispatcher; uncovered -> 0.
+##f$cc_cbet_squeeze_hu_oop_size_id##
+When f$cc_cbet_squeeze_vs_opener_oop_context Return f$cc_cbet_squeeze_vs_opener_oop_size_id Force
+When f$cc_cbet_squeeze_vs_pre3bet_coldcaller_oop_context Return f$cc_cbet_squeeze_vs_pre3bet_coldcaller_oop_size_id Force
+When f$cc_cbet_squeeze_vs_post3bet_coldcaller_oop_context Return f$cc_cbet_squeeze_vs_post3bet_coldcaller_oop_size_id Force
+When Others Return 0 Force
+
+// ============================================================================
+// End Gate 01H HU squeeze CBet baseline.
+// ============================================================================

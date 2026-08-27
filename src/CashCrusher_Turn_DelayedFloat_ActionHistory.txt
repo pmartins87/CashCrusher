@@ -1,0 +1,375 @@
+// ============================================================================
+// CashCrusher_Turn_DelayedFloat_ActionHistory.txt
+// Gate 12B.14 — executed Turn Delayed-Float provenance for Gate13 routing
+// ============================================================================
+// Purpose:
+//   Separate the reviewed checked-to Turn opportunity/plan from what OpenHoldem
+//   actually executed. Gate13 may consume only CLOSED round-3 proof plus stable
+//   family/source-plan snapshots; pre-action markers alone never prove a bet/check.
+//
+// Provenance:
+//   T = did*round3 + lastraised3 + current live mask.
+//   A = Gate04H/Gate05H final-action provenance architecture.
+//   P = Gate12B family/current-hand/runout snapshots.
+//   X = unexpected all-in or execution/plan drift remains explicit fail-closed.
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// DFH.01 — pre-action strategy/snapshot wrapper
+// -----------------------------------------------------------------------------
+
+// Purpose: exhaustive residual current-hand metadata class for histories outside
+// the five strategy-facing tiers; this never authorizes an action by itself.
+// Source/Provenance: P complement over T/A mutually-exclusive current tiers.
+##f$cc_turn_delayed_float_residual_current_class##
+IsTurn &&
+!f$cc_turn_delayed_float_two_pair_plus_real &&
+!f$cc_turn_delayed_float_tpop_real &&
+!f$cc_turn_delayed_float_second_pair &&
+!f$cc_turn_delayed_float_third_pair &&
+!f$cc_turn_delayed_float_no_made
+
+// Purpose: history-aware Gate12B action predicate for eventual whole-bot f$turn
+// composition. All writes are PRE-ACTION observations/plans, never execution proof.
+// Source/Provenance: A/T final-action wrapper + P stable Gate12B snapshot.
+##f$cc_turn_delayed_float_action_with_history##
+When !f$cc_turn_delayed_float_base_opportunity Return false Force
+When f$cc_turn_delayed_float_base_opportunity Set user_cc_turn_delayed_float_opportunity_seen
+When f$cc_turn_delayed_float_base_opportunity Set user_cc_turn_delayed_float_state_snapshot_recorded
+
+// Reviewed family ID. Uncovered/source-mismatch states intentionally store none.
+When f$cc_turn_delayed_float_family_id = 1 Set user_cc_turn_delayed_float_state_family_1
+When f$cc_turn_delayed_float_family_id = 2 Set user_cc_turn_delayed_float_state_family_2
+When f$cc_turn_delayed_float_family_id = 3 Set user_cc_turn_delayed_float_state_family_3
+When f$cc_turn_delayed_float_family_id = 4 Set user_cc_turn_delayed_float_state_family_4
+When f$cc_turn_delayed_float_family_id = 5 Set user_cc_turn_delayed_float_state_family_5
+When f$cc_turn_delayed_float_family_id = 6 Set user_cc_turn_delayed_float_state_family_6
+When f$cc_turn_delayed_float_family_id = 7 Set user_cc_turn_delayed_float_state_family_7
+When f$cc_turn_delayed_float_family_id = 8 Set user_cc_turn_delayed_float_state_family_8
+When f$cc_turn_delayed_float_family_id = 9 Set user_cc_turn_delayed_float_state_family_9
+When f$cc_turn_delayed_float_family_id = 10 Set user_cc_turn_delayed_float_state_family_10
+When f$cc_turn_delayed_float_family_id = 11 Set user_cc_turn_delayed_float_state_family_11
+When f$cc_turn_delayed_float_family_id = 12 Set user_cc_turn_delayed_float_state_family_12
+When f$cc_turn_delayed_float_family_id = 13 Set user_cc_turn_delayed_float_state_family_13
+
+// Mutually exclusive current Turn class.
+When f$cc_turn_delayed_float_two_pair_plus_real Set user_cc_turn_delayed_float_state_had_2pplus
+When f$cc_turn_delayed_float_tpop_real Set user_cc_turn_delayed_float_state_had_tpop
+When f$cc_turn_delayed_float_second_pair Set user_cc_turn_delayed_float_state_had_second_pair
+When f$cc_turn_delayed_float_third_pair Set user_cc_turn_delayed_float_state_had_third_pair
+When f$cc_turn_delayed_float_no_made Set user_cc_turn_delayed_float_state_had_no_made
+When f$cc_turn_delayed_float_residual_current_class Set user_cc_turn_delayed_float_state_had_residual
+
+// Runout/equity overlays needed by Gate13 reclassification.
+When f$cc_turn_delayed_float_turn_completed Set user_cc_turn_delayed_float_state_turn_completed
+When f$cc_turn_super_completed Set user_cc_turn_delayed_float_state_turn_supercompleted
+When f$cc_turn_new_completion Set user_cc_turn_delayed_float_state_turn_new_completion
+When f$cc_turn_pairs_flop_rank Set user_cc_turn_delayed_float_state_turn_paired_flop
+When f$cc_turn_meaningful_overcard Set user_cc_turn_delayed_float_state_turn_meaningful_overcard
+When f$cc_turn_undercard Set user_cc_turn_delayed_float_state_turn_undercard
+When f$cc_turn_delayed_float_live_real_draw Set user_cc_turn_delayed_float_state_had_live_real_draw
+
+// Player count and exact live opponents before Hero's delayed action.
+When nplayersplaying = 2 Set user_cc_turn_delayed_float_state_players_2
+When nplayersplaying = 3 Set user_cc_turn_delayed_float_state_players_3
+When nplayersplaying = 4 Set user_cc_turn_delayed_float_state_players_4
+When nplayersplaying = 5 Set user_cc_turn_delayed_float_state_players_5
+When nplayersplaying = 6 Set user_cc_turn_delayed_float_state_players_6
+When f$cc_opp_live_utg Set user_cc_turn_delayed_float_state_live_utg
+When f$cc_opp_live_hj Set user_cc_turn_delayed_float_state_live_hj
+When f$cc_opp_live_co Set user_cc_turn_delayed_float_state_live_co
+When f$cc_opp_live_btn Set user_cc_turn_delayed_float_state_live_btn
+When f$cc_opp_live_sb Set user_cc_turn_delayed_float_state_live_sb
+When f$cc_opp_live_bb Set user_cc_turn_delayed_float_state_live_bb
+
+// Direct native 3wBBvSB future source plans. These remain pre-action metadata.
+When f$cc_turn_delayed_float_3w_bbvsb_plan_river50_secondpair Set user_cc_turn_delayed_float_source_plan_bet_river50_secondpair
+When f$cc_turn_delayed_float_3w_bbvsb_plan_checkriver_thirdpair Set user_cc_turn_delayed_float_source_plan_bet_checkriver_thirdpair
+When f$cc_turn_delayed_float_3w_bbvsb_plan_air_delay50_checkriver Set user_cc_turn_delayed_float_source_plan_bet_air_checkriver
+When f$cc_turn_delayed_float_3w_bbvsb_plan_turncheck_bxb_river50 Set user_cc_turn_delayed_float_source_plan_check_bxb_river50
+When f$cc_turn_delayed_float_3w_bbvsb_plan_turncheck_skip_bxb Set user_cc_turn_delayed_float_source_plan_check_skip_bxb
+
+When f$cc_turn_delayed_float_router Set user_cc_turn_delayed_float_plan_bet_seen
+When f$cc_turn_delayed_float_router Return true Force
+When Others Return false Force
+
+// Purpose: count stored reviewed Gate12B family markers.
+// Source/Provenance: P integrity arithmetic over persistent family booleans.
+##f$cc_hist_turn_delayed_float_family_marker_count##
+(user_cc_turn_delayed_float_state_family_1 * 1) +
+(user_cc_turn_delayed_float_state_family_2 * 1) +
+(user_cc_turn_delayed_float_state_family_3 * 1) +
+(user_cc_turn_delayed_float_state_family_4 * 1) +
+(user_cc_turn_delayed_float_state_family_5 * 1) +
+(user_cc_turn_delayed_float_state_family_6 * 1) +
+(user_cc_turn_delayed_float_state_family_7 * 1) +
+(user_cc_turn_delayed_float_state_family_8 * 1) +
+(user_cc_turn_delayed_float_state_family_9 * 1) +
+(user_cc_turn_delayed_float_state_family_10 * 1) +
+(user_cc_turn_delayed_float_state_family_11 * 1) +
+(user_cc_turn_delayed_float_state_family_12 * 1) +
+(user_cc_turn_delayed_float_state_family_13 * 1)
+
+// Purpose: decode reviewed Gate12B family after Turn closes.
+// Source/Provenance: P contradiction-safe persistent decoder.
+##f$cc_hist_turn_delayed_float_family_id##
+When !f$cc_hist_turn_delayed_float_closed Return 0 Force
+When f$cc_hist_turn_delayed_float_family_marker_count != 1 Return 0 Force
+When user_cc_turn_delayed_float_state_family_1 Return 1 Force
+When user_cc_turn_delayed_float_state_family_2 Return 2 Force
+When user_cc_turn_delayed_float_state_family_3 Return 3 Force
+When user_cc_turn_delayed_float_state_family_4 Return 4 Force
+When user_cc_turn_delayed_float_state_family_5 Return 5 Force
+When user_cc_turn_delayed_float_state_family_6 Return 6 Force
+When user_cc_turn_delayed_float_state_family_7 Return 7 Force
+When user_cc_turn_delayed_float_state_family_8 Return 8 Force
+When user_cc_turn_delayed_float_state_family_9 Return 9 Force
+When user_cc_turn_delayed_float_state_family_10 Return 10 Force
+When user_cc_turn_delayed_float_state_family_11 Return 11 Force
+When user_cc_turn_delayed_float_state_family_12 Return 12 Force
+When user_cc_turn_delayed_float_state_family_13 Return 13 Force
+When Others Return 0 Force
+
+// Purpose: count mutually-exclusive current Turn class markers.
+// Source/Provenance: P integrity over T/A current-hand snapshot.
+##f$cc_hist_turn_delayed_float_primary_class_marker_count##
+(user_cc_turn_delayed_float_state_had_2pplus * 1) +
+(user_cc_turn_delayed_float_state_had_tpop * 1) +
+(user_cc_turn_delayed_float_state_had_second_pair * 1) +
+(user_cc_turn_delayed_float_state_had_third_pair * 1) +
+(user_cc_turn_delayed_float_state_had_no_made * 1) +
+(user_cc_turn_delayed_float_state_had_residual * 1)
+
+// Purpose: count stored player-count markers.
+// Source/Provenance: P integrity over T nplayersplaying snapshot.
+##f$cc_hist_turn_delayed_float_player_count_marker_count##
+(user_cc_turn_delayed_float_state_players_2 * 1) +
+(user_cc_turn_delayed_float_state_players_3 * 1) +
+(user_cc_turn_delayed_float_state_players_4 * 1) +
+(user_cc_turn_delayed_float_state_players_5 * 1) +
+(user_cc_turn_delayed_float_state_players_6 * 1)
+
+// Purpose: decode player count at delayed-float Turn decision.
+// Source/Provenance: P persistent player-count decoder.
+##f$cc_hist_turn_delayed_float_player_count##
+When !f$cc_hist_turn_delayed_float_closed Return 0 Force
+When f$cc_hist_turn_delayed_float_player_count_marker_count != 1 Return 0 Force
+When user_cc_turn_delayed_float_state_players_2 Return 2 Force
+When user_cc_turn_delayed_float_state_players_3 Return 3 Force
+When user_cc_turn_delayed_float_state_players_4 Return 4 Force
+When user_cc_turn_delayed_float_state_players_5 Return 5 Force
+When user_cc_turn_delayed_float_state_players_6 Return 6 Force
+When Others Return 0 Force
+
+// Purpose: reconstruct exact opponents live before the Turn decision.
+// Source/Provenance: A/P canonical position-mask decoder.
+##f$cc_hist_turn_delayed_float_live_opp_mask##
+(user_cc_turn_delayed_float_state_live_utg * 1) +
+(user_cc_turn_delayed_float_state_live_hj * 2) +
+(user_cc_turn_delayed_float_state_live_co * 4) +
+(user_cc_turn_delayed_float_state_live_btn * 8) +
+(user_cc_turn_delayed_float_state_live_sb * 16) +
+(user_cc_turn_delayed_float_state_live_bb * 32)
+
+// Purpose: count mutually-exclusive direct-source future plan markers.
+// Source/Provenance: P integrity over T/A native 3wBBvSB source plan state.
+##f$cc_hist_turn_delayed_float_source_plan_marker_count##
+(user_cc_turn_delayed_float_source_plan_bet_river50_secondpair * 1) +
+(user_cc_turn_delayed_float_source_plan_bet_checkriver_thirdpair * 1) +
+(user_cc_turn_delayed_float_source_plan_bet_air_checkriver * 1) +
+(user_cc_turn_delayed_float_source_plan_check_bxb_river50 * 1) +
+(user_cc_turn_delayed_float_source_plan_check_skip_bxb * 1)
+
+// -----------------------------------------------------------------------------
+// DFH.02 — CLOSED round-3 execution proof
+// -----------------------------------------------------------------------------
+
+// Purpose: Turn has ended; round-3 action counters are final.
+// Source/Provenance: T OpenHoldem betround numbering.
+##f$cc_hist_turn_delayed_float_closed##
+IsRiver
+
+// Purpose: prove Hero actually executed the initial delayed Turn bet.
+// Source/Provenance: T did*round3 + A pre-action opportunity marker.
+##f$cc_hist_turn_delayed_float_initial_bet_executed##
+f$cc_hist_turn_delayed_float_closed &&
+user_cc_turn_delayed_float_opportunity_seen &&
+didchecround3 = 0 &&
+(didbetsizeround3 > 0 || didalliround3 > 0)
+
+// Purpose: initial delayed Turn bet executed as one normal sized bet.
+// Source/Provenance: T round-3 sized-bet counter.
+##f$cc_hist_turn_delayed_float_initial_bet_was_sized##
+f$cc_hist_turn_delayed_float_initial_bet_executed && didbetsizeround3 > 0
+
+// Purpose: initial delayed Turn action was recorded as direct Hero all-in.
+// Source/Provenance: T action counters only; this function never authorizes it.
+##f$cc_hist_turn_delayed_float_initial_bet_was_direct_allin##
+f$cc_hist_turn_delayed_float_initial_bet_executed &&
+didalliround3 > 0 &&
+didbetsizeround3 = 0 &&
+didraisround3 = 0
+
+// Purpose: direct all-in is mechanically explainable only when the normal plan
+// already reached Hero's full Turn-start stack. It still has no Gate13 action parent.
+// Source/Provenance: T actual all-in + P persisted stack-reach diagnostic.
+##f$cc_hist_turn_delayed_float_mechanical_hero_stack_cap##
+f$cc_hist_turn_delayed_float_initial_bet_was_direct_allin &&
+user_cc_turn_delayed_float_plan_reaches_hero_stack
+
+// Purpose: direct all-in with no prior normal-request Hero-stack reach is drift.
+// Source/Provenance: X mismatch diagnostic; no strategic all-in inference.
+##f$cc_hist_turn_delayed_float_unexpected_allin_execution##
+f$cc_hist_turn_delayed_float_initial_bet_was_direct_allin &&
+!user_cc_turn_delayed_float_plan_reaches_hero_stack
+
+// Purpose: Hero deliberately checked back the reviewed exact-LAST Turn decision.
+// Source/Provenance: T/A exact closed check-back history.
+##f$cc_hist_turn_delayed_float_checked_back##
+f$cc_hist_turn_delayed_float_closed &&
+user_cc_turn_delayed_float_opportunity_seen &&
+didchecround3 > 0 &&
+didcallround3 = 0 &&
+didraisround3 = 0 &&
+didbetsizeround3 = 0 &&
+didalliround3 = 0
+
+// Purpose: delayed bet was raised and Hero later called the raise.
+// Source/Provenance: T action counters + final aggressor identity.
+##f$cc_hist_turn_delayed_float_then_called_raise##
+f$cc_hist_turn_delayed_float_initial_bet_executed &&
+didcallround3 > 0 &&
+lastraised3 != userchair
+
+// Purpose: Hero delayed-bet then re-aggressed on Turn.
+// Source/Provenance: T multiple aggressive-action counters.
+##f$cc_hist_turn_delayed_float_then_reaggressed##
+f$cc_hist_turn_delayed_float_initial_bet_executed &&
+(didbetsizeround3 >= 2 || didraisround3 > 0 || (didbetsizeround3 > 0 && didalliround3 > 0))
+
+// Purpose: one normal delayed bet with Hero final Turn aggressor.
+// Source/Provenance: T lastraised3 + exact counter pattern.
+##f$cc_hist_turn_delayed_float_standard_parent##
+f$cc_hist_turn_delayed_float_closed &&
+user_cc_turn_delayed_float_opportunity_seen &&
+didchecround3 = 0 &&
+didcallround3 = 0 &&
+didraisround3 = 0 &&
+didbetsizeround3 = 1 &&
+didalliround3 = 0 &&
+lastraised3 = userchair
+
+// -----------------------------------------------------------------------------
+// DFH.03 — snapshot / plan integrity and runtime drift
+// -----------------------------------------------------------------------------
+
+// Purpose: validate generic pre-action snapshot without treating a fail-closed
+// uncovered family as runtime corruption merely because family_id remained zero.
+// Source/Provenance: P integrity over T/A persistent snapshot facts.
+##f$cc_hist_turn_delayed_float_snapshot_consistent##
+When !f$cc_hist_turn_delayed_float_closed Return false Force
+When !user_cc_turn_delayed_float_opportunity_seen Return !user_cc_turn_delayed_float_state_snapshot_recorded Force
+When !user_cc_turn_delayed_float_state_snapshot_recorded Return false Force
+When f$cc_hist_turn_delayed_float_primary_class_marker_count != 1 Return false Force
+When f$cc_hist_turn_delayed_float_player_count_marker_count != 1 Return false Force
+When BitCount(f$cc_hist_turn_delayed_float_live_opp_mask) != (f$cc_hist_turn_delayed_float_player_count - 1) Return false Force
+When f$cc_hist_turn_delayed_float_family_marker_count > 1 Return false Force
+When user_cc_turn_delayed_float_plan_bet_seen && f$cc_hist_turn_delayed_float_family_marker_count != 1 Return false Force
+When Others Return true Force
+
+// Purpose: prove the closed history came from exactly one reviewed positive family.
+// Source/Provenance: P Gate13 admission guard over generic snapshot integrity.
+##f$cc_hist_turn_delayed_float_reviewed_snapshot_consistent##
+f$cc_hist_turn_delayed_float_snapshot_consistent &&
+f$cc_hist_turn_delayed_float_family_marker_count = 1
+
+// Purpose: validate source future-plan marker direction against bet/check intent.
+// Source/Provenance: P integrity over T/A direct-source plan markers.
+##f$cc_hist_turn_delayed_float_source_plan_consistent##
+When f$cc_hist_turn_delayed_float_source_plan_marker_count > 1 Return false Force
+When (user_cc_turn_delayed_float_source_plan_bet_river50_secondpair || user_cc_turn_delayed_float_source_plan_bet_checkriver_thirdpair || user_cc_turn_delayed_float_source_plan_bet_air_checkriver) && !user_cc_turn_delayed_float_plan_bet_seen Return false Force
+When (user_cc_turn_delayed_float_source_plan_check_bxb_river50 || user_cc_turn_delayed_float_source_plan_check_skip_bxb) && user_cc_turn_delayed_float_plan_bet_seen Return false Force
+When f$cc_hist_turn_delayed_float_source_plan_marker_count > 0 && f$cc_hist_turn_delayed_float_family_id != 1 Return false Force
+When Others Return true Force
+
+// Purpose: strategy planned a delayed bet but runtime records check-back.
+// Source/Provenance: X/P diagnostic over T closed history.
+##f$cc_hist_turn_delayed_float_planned_bet_but_checked##
+f$cc_hist_turn_delayed_float_closed &&
+user_cc_turn_delayed_float_plan_bet_seen && didchecround3 > 0
+
+// Purpose: runtime executed delayed aggression without reviewed bet-plan capture.
+// Source/Provenance: X/P composition diagnostic.
+##f$cc_hist_turn_delayed_float_executed_without_plan##
+f$cc_hist_turn_delayed_float_initial_bet_executed &&
+!user_cc_turn_delayed_float_plan_bet_seen
+
+// Purpose: compact Gate12B runtime mismatch flag. A direct all-in explained by
+// Hero-stack reach is recorded but does not become a valid Gate13 parent.
+// Source/Provenance: X union of T/A/P plan/snapshot/execution inconsistencies.
+##f$cc_hist_turn_delayed_float_runtime_mismatch##
+When !f$cc_hist_turn_delayed_float_closed Return false Force
+When !f$cc_turn_delayed_float_plan_markers_consistent Return true Force
+When !f$cc_hist_turn_delayed_float_snapshot_consistent Return true Force
+When !f$cc_hist_turn_delayed_float_source_plan_consistent Return true Force
+When f$cc_hist_turn_delayed_float_planned_bet_but_checked Return true Force
+When f$cc_hist_turn_delayed_float_executed_without_plan Return true Force
+When f$cc_hist_turn_delayed_float_unexpected_allin_execution Return true Force
+When Others Return false Force
+
+// -----------------------------------------------------------------------------
+// DFH.04 — exact Gate13 parent wrappers
+// -----------------------------------------------------------------------------
+
+// Purpose: reviewed normal executed delayed bet parent for River continuation.
+// Source/Provenance: P fail-closed wrapper over actual T/A execution history.
+##f$cc_hist_river_delayed_float_bet_parent_valid##
+f$cc_hist_turn_delayed_float_standard_parent &&
+f$cc_turn_delayed_float_plan_markers_consistent &&
+f$cc_hist_turn_delayed_float_reviewed_snapshot_consistent &&
+f$cc_hist_turn_delayed_float_source_plan_consistent &&
+!f$cc_hist_turn_delayed_float_runtime_mismatch
+
+// Purpose: reviewed deliberate Turn check-back parent for BxB-style River delayed
+// logic. A strategy-planned bet that failed at runtime is explicitly excluded.
+// Source/Provenance: P/A exact check parent over T execution proof.
+##f$cc_hist_river_delayed_float_check_parent_valid##
+f$cc_hist_turn_delayed_float_checked_back &&
+!user_cc_turn_delayed_float_plan_bet_seen &&
+f$cc_hist_turn_delayed_float_reviewed_snapshot_consistent &&
+f$cc_hist_turn_delayed_float_source_plan_consistent &&
+!f$cc_hist_turn_delayed_float_runtime_mismatch
+
+// Purpose: direct native source Del&B second-pair River50 plan after actual normal bet.
+// Source/Provenance: T/A source plan + T closed Turn execution proof.
+##f$cc_hist_river_delayed_float_source_secondpair_river50_valid##
+f$cc_hist_river_delayed_float_bet_parent_valid &&
+user_cc_turn_delayed_float_source_plan_bet_river50_secondpair
+
+// Purpose: direct native third-pair source says give up River after actual Turn50.
+// Source/Provenance: T/A source plan + T closed Turn execution proof.
+##f$cc_hist_river_delayed_float_source_thirdpair_checkriver_valid##
+f$cc_hist_river_delayed_float_bet_parent_valid &&
+user_cc_turn_delayed_float_source_plan_bet_checkriver_thirdpair
+
+// Purpose: direct native air/draw Turn50 plan gives up River after actual normal bet.
+// Source/Provenance: T/A source plan + T closed Turn execution proof.
+##f$cc_hist_river_delayed_float_source_air_checkriver_valid##
+f$cc_hist_river_delayed_float_bet_parent_valid &&
+user_cc_turn_delayed_float_source_plan_bet_air_checkriver
+
+// Purpose: direct native Turn-check BxB plan authorizes Gate13 source River50 study.
+// Source/Provenance: T/A source plan + T actual Turn check-back proof.
+##f$cc_hist_river_delayed_float_source_bxb_river50_valid##
+f$cc_hist_river_delayed_float_check_parent_valid &&
+user_cc_turn_delayed_float_source_plan_check_bxb_river50
+
+// Purpose: AKx native exception explicitly blocks inherited BxB River bluff.
+// Source/Provenance: T/A source exception + T actual Turn check-back proof.
+##f$cc_hist_river_delayed_float_source_skip_bxb_valid##
+f$cc_hist_river_delayed_float_check_parent_valid &&
+user_cc_turn_delayed_float_source_plan_check_skip_bxb
+
+// ============================================================================
+// End Gate12B.14 closed action provenance.
+// ============================================================================

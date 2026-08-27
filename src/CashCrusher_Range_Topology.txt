@@ -1,0 +1,216 @@
+// ============================================================================
+// CashCrusher_Range_Topology.txt
+// Six-max cash HU SRP range-topology parents — handedness aware
+// ============================================================================
+// Purpose:
+//   Group exact mechanical matchups into reusable strategic parents WITHOUT
+//   erasing absolute positions, deal size, HU origin or pot history.
+//
+// Critical distinction:
+//   origin=1 TRUE HU DEAL: exactly two were dealt; SB is also BTN and is IP.
+//   origin=2 PREFLOP-REDUCED HU: 3-6 were dealt; original cash ranges remain.
+//   origin=3 POSTFLOP-REDUCED HU: flop began multiway; never ordinary HU range.
+//
+// Source/Provenance:
+//   A = legacy HUSB/HUBB/3w positional ancestry mapped structurally.
+//   P = six-max handedness/range-family architecture where source has gaps.
+// Parent IDs are metadata/routing aids only; they never authorize blind copying
+// of one absolute-position range into another.
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// R.00 — HU origin guards
+// -----------------------------------------------------------------------------
+
+// Purpose: current hand is HU and was dealt as true two-player poker.
+// Source/Provenance: Gate00 HU-origin mechanics, A/T.
+##f$cc_range_true_hu##
+f$cc_hu && f$cc_hu_origin_true
+
+// Purpose: current HU hand reached flop HU after preflop folds from 3-6 dealt.
+// Source/Provenance: Gate00 HU-origin mechanics, A.
+##f$cc_range_reduced_hu##
+f$cc_hu && f$cc_hu_origin_preflop_reduced
+
+// Purpose: current hand has two players now but flop originally began multiway.
+// Source/Provenance: Gate00 origin tracking, A; ordinary HU policy must not use it.
+##f$cc_range_postflop_reduced_hu##
+f$cc_hu && f$cc_hu_origin_postflop_reduced
+
+// -----------------------------------------------------------------------------
+// R.01 — TRUE HU one-raise PFA families
+// -----------------------------------------------------------------------------
+
+// Purpose: true-HU SB/Button PFA IP vs BB ordinary open/call family.
+// Context: matchup ID 56 is valid only with true-HU origin and IP proof.
+// Source: HUSB is the direct legacy ancestor.
+// Provenance: A high-confidence ancestry; deep-stack action still adapted.
+##f$cc_srp_true_hu_sb_pfa_ip_vs_bb##
+f$cc_range_true_hu &&
+f$cc_pot_family_id = 2 &&
+f$cc_pf_role_pfa &&
+f$cc_pf_one_raise_ordinary_srp &&
+f$cc_hu_matchup_id = 56 &&
+f$cc_hu_ip
+
+// Purpose: true-HU SB limp -> BB raise -> SB call, BB PFA OOP family.
+// Source: HUBB limped/raised initiative ancestry.
+// Provenance: A high-confidence topology; not ISO.
+##f$cc_srp_true_hu_bb_pfa_oop_after_limp##
+f$cc_range_true_hu &&
+f$cc_pot_family_id = 2 &&
+f$cc_pf_role_pfa &&
+f$cc_pf_hu_limp_raise_proven &&
+f$cc_hu_matchup_id = 65 &&
+f$cc_hu_oop
+
+// -----------------------------------------------------------------------------
+// R.02 — 3-to-6-handed deals that reach flop HU
+// -----------------------------------------------------------------------------
+
+// Purpose: ordinary-SRP opener IP versus BB, preserving exact opener ID.
+// Exact matchups: UTG/HJ/CO/BTN -> BB = 16/26/36/46.
+// Source: 3wBTNvBB direct for 46, structural A parent for earlier opens.
+// Provenance: A/P; exact range adjustment remains downstream.
+##f$cc_srp_pfa_ip_vs_bb##
+f$cc_range_reduced_hu &&
+f$cc_pot_family_id = 2 && f$cc_pf_role_pfa && f$cc_pf_one_raise_ordinary_srp && f$cc_hu_ip &&
+(f$cc_hu_matchup_id = 16 || f$cc_hu_matchup_id = 26 || f$cc_hu_matchup_id = 36 || f$cc_hu_matchup_id = 46)
+
+// Purpose: ordinary-SRP opener IP versus SB cold caller.
+// Exact matchups: UTG/HJ/CO/BTN -> SB = 15/25/35/45.
+// Source: 3wBTNvSB direct for 45, structural A parent for earlier opens.
+// Provenance: A/P.
+##f$cc_srp_pfa_ip_vs_sb##
+f$cc_range_reduced_hu &&
+f$cc_pot_family_id = 2 && f$cc_pf_role_pfa && f$cc_pf_one_raise_ordinary_srp && f$cc_hu_ip &&
+(f$cc_hu_matchup_id = 15 || f$cc_hu_matchup_id = 25 || f$cc_hu_matchup_id = 35 || f$cc_hu_matchup_id = 45)
+
+// Purpose: new six-max ordinary-SRP PFA OOP versus later-position cold caller.
+// Exact matchups: 12/13/14/23/24/34.
+// Source: no direct range parent; 3wSBvBTN supplies positional skeleton only.
+// Provenance: P-heavy explicit gap family.
+##f$cc_srp_pfa_oop_vs_lp_coldcaller##
+f$cc_range_reduced_hu &&
+f$cc_pot_family_id = 2 && f$cc_pf_role_pfa && f$cc_pf_one_raise_ordinary_srp && f$cc_hu_oop &&
+(f$cc_hu_matchup_id = 12 || f$cc_hu_matchup_id = 13 || f$cc_hu_matchup_id = 14 ||
+ f$cc_hu_matchup_id = 23 || f$cc_hu_matchup_id = 24 || f$cc_hu_matchup_id = 34)
+
+// Purpose: reduced-HU SB PFA OOP versus BB ordinary SRP.
+// Source: direct 3wSBvBB ancestry.
+// Provenance: A high-confidence; true-HU matchup 56 is excluded by origin guard.
+##f$cc_srp_sb_pfa_oop_vs_bb##
+f$cc_range_reduced_hu &&
+f$cc_pot_family_id = 2 && f$cc_pf_role_pfa && f$cc_pf_one_raise_ordinary_srp &&
+f$cc_hu_matchup_id = 56 && f$cc_hu_oop
+
+// -----------------------------------------------------------------------------
+// R.03 — Opener bands (descriptors only)
+// -----------------------------------------------------------------------------
+
+// Purpose: UTG/HJ opener band for coarse range adjustments.
+// Source/Provenance: P six-max grouping; exact position ID remains canonical.
+##f$cc_pfa_ep_band##
+f$cc_hero_pos_id = 1 || f$cc_hero_pos_id = 2
+
+// Purpose: CO/BTN opener band for coarse range adjustments.
+// Source/Provenance: P six-max grouping.
+##f$cc_pfa_lp_band##
+f$cc_hero_pos_id = 3 || f$cc_hero_pos_id = 4
+
+// Purpose: blind-origin aggressor band for contexts that require it.
+// Source/Provenance: P engineering grouping; no range equivalence is asserted.
+##f$cc_pfa_blind_band##
+f$cc_hero_pos_id = 5 || f$cc_hero_pos_id = 6
+
+// -----------------------------------------------------------------------------
+// R.04 — Direct versus adapted legacy ancestry
+// -----------------------------------------------------------------------------
+
+// Purpose: mark true-HU SB/Button-v-BB as direct HUSB descendant.
+// Source/Provenance: A direct ancestry flag.
+##f$cc_srp_direct_true_hu_sb_vs_bb##
+f$cc_srp_true_hu_sb_pfa_ip_vs_bb
+
+// Purpose: direct reduced-HU BTN-v-BB descendant of 3wBTNvBB.
+// Source/Provenance: A direct ancestry flag.
+##f$cc_srp_direct_btn_vs_bb##
+f$cc_range_reduced_hu && f$cc_hu_matchup_id = 46
+
+// Purpose: direct reduced-HU BTN-v-SB descendant of 3wBTNvSB.
+// Source/Provenance: A direct ancestry flag.
+##f$cc_srp_direct_btn_vs_sb##
+f$cc_range_reduced_hu && f$cc_hu_matchup_id = 45
+
+// Purpose: direct reduced-HU SB-v-BB descendant of 3wSBvBB.
+// Source/Provenance: A direct ancestry flag.
+##f$cc_srp_direct_sb_vs_bb##
+f$cc_range_reduced_hu && f$cc_hu_matchup_id = 56
+
+// Purpose: earlier-position opener vs BB structural descendants.
+// Source/Provenance: A positional skeleton + P range adjustment required.
+##f$cc_srp_earlier_opener_vs_bb##
+f$cc_range_reduced_hu && (f$cc_hu_matchup_id = 16 || f$cc_hu_matchup_id = 26 || f$cc_hu_matchup_id = 36)
+
+// Purpose: earlier-position opener vs SB structural descendants.
+// Source/Provenance: A positional skeleton + P range adjustment required.
+##f$cc_srp_earlier_opener_vs_sb##
+f$cc_range_reduced_hu && (f$cc_hu_matchup_id = 15 || f$cc_hu_matchup_id = 25 || f$cc_hu_matchup_id = 35)
+
+// Purpose: alias the P-heavy OOP later-coldcaller family for audit metadata.
+// Source/Provenance: P gap classification.
+##f$cc_srp_new_oop_coldcaller_family##
+f$cc_srp_pfa_oop_vs_lp_coldcaller
+
+// -----------------------------------------------------------------------------
+// R.05 — Parent IDs for logs and child-policy routing
+// 1 reduced-HU IP vs BB | 2 IP vs SB | 3 OOP vs LP caller | 4 SB-OOP-v-BB
+// 5 true-HU HUSB | 6 true-HU BB after limp | 0 unsupported
+// -----------------------------------------------------------------------------
+
+// Purpose: compact parent ID for diagnostics/child routing while retaining exact
+// matchup/origin elsewhere.
+// Source/Provenance: A/P engineering metadata.
+// Safety: origin=3 and unsupported pot families return 0.
+##f$cc_srp_pfa_parent_id##
+When f$cc_srp_true_hu_sb_pfa_ip_vs_bb Return 5 Force
+When f$cc_srp_true_hu_bb_pfa_oop_after_limp Return 6 Force
+When f$cc_srp_pfa_ip_vs_bb Return 1 Force
+When f$cc_srp_pfa_ip_vs_sb Return 2 Force
+When f$cc_srp_pfa_oop_vs_lp_coldcaller Return 3 Force
+When f$cc_srp_sb_pfa_oop_vs_bb Return 4 Force
+When Others Return 0 Force
+
+// Purpose: encode how much strategic adjustment a legacy parent requires.
+// IDs: 4 true-HU closest source; 1 direct 3w descendant; 2 structural A/P;
+// 3 P-heavy new family; 0 unsupported.
+// Source/Provenance: P audit metadata built from A ancestry quality.
+##f$cc_srp_matchup_adjustment_id##
+When f$cc_srp_direct_true_hu_sb_vs_bb Return 4 Force
+When f$cc_srp_direct_btn_vs_bb || f$cc_srp_direct_btn_vs_sb || f$cc_srp_direct_sb_vs_bb Return 1 Force
+When f$cc_srp_earlier_opener_vs_bb || f$cc_srp_earlier_opener_vs_sb Return 2 Force
+When f$cc_srp_new_oop_coldcaller_family Return 3 Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// R.06 — Handedness descriptor for logging/audit
+// -----------------------------------------------------------------------------
+
+// Purpose: expose original deal size as a separate range-topology dimension.
+// Source/Provenance: Gate00 mechanical `f$cc_deal_size`, A alias.
+// Safety: canonical position ID alone never implies identical 3h/4h/5h/6h range.
+##f$cc_handedness_id##
+f$cc_deal_size
+
+// Purpose: flag reduced-HU contexts from 3/4/5-handed original deals where the
+// same canonical matchup may have meaningfully different preflop ranges.
+// Source/Provenance: P six-max/short-handed adjustment contract.
+// Safety: true HU is already its own source family and returns false here.
+##f$cc_handedness_adjustment_required##
+When f$cc_true_hu Return false Force
+When f$cc_deal_size >= 3 && f$cc_deal_size <= 5 Return true Force
+When Others Return false Force
+
+// ============================================================================
+// End range-topology module.
+// ============================================================================

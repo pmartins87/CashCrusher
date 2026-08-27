@@ -1,0 +1,66 @@
+// ============================================================================
+// CashCrusher_River_Float_Betsize.txt
+// Gate 06H.1 — OpenPPL runtime adapter for reviewed River-Float size IDs
+// ============================================================================
+// Purpose:
+//   Translate the canonical River-Float strategic size ID into the exact OpenPPL
+//   initial-bet action.  This file never decides whether to Float and never owns
+//   strategic stack commitment.
+//
+// Runtime facts:
+//   * River Float is checked to Hero: AmountToCall=0;
+//   * BetThirdPot / BetHalfPot / BetThreeFourthPot / BetPot are native actions;
+//   * OpenPPL percentage `RaiseBy 25%` contributes quarter-pot when call=0.
+//
+// Source/Provenance:
+//   T = OpenPPL sizing semantics already certified in Turn/River-CBet gates.
+//   A = frozen River palette 25/33/50/75/100.
+//
+// Safety:
+//   unknown/check/uncovered ->0; no BetMax here; natural all-in equivalence is
+//   owned by Gate06H.3 and historical 50/55/60 thresholds are never actions.
+// ============================================================================
+
+// Purpose: positive canonical River Float owns exactly one supported size ID.
+// Source/Provenance: A/P engineering guard over reviewed router/size consistency.
+##f$cc_river_float_runtime_size_ready##
+When !f$cc_river_float_router Return false Force
+When !f$cc_river_float_size_consistent Return false Force
+When f$cc_river_float_size_id >= 1 && f$cc_river_float_size_id <= 5 Return true Force
+When Others Return false Force
+
+// Purpose: convert canonical River Float size ID to exact pot fraction.
+// Source/Provenance: A exact mapping of the reviewed River palette.
+##f$cc_river_float_requested_pot_fraction##
+When !f$cc_river_float_runtime_size_ready Return 0 Force
+When f$cc_river_float_size_id = 1 Return 0.25 Force
+When f$cc_river_float_size_id = 2 Return 0.333 Force
+When f$cc_river_float_size_id = 3 Return 0.50 Force
+When f$cc_river_float_size_id = 4 Return 0.75 Force
+When f$cc_river_float_size_id = 5 Return 1.00 Force
+When Others Return 0 Force
+
+// Purpose: translate reviewed River Float ID into exact OpenPPL bet action.
+// Source/Provenance: T native/percentage actions + A River size palette.
+// Safety: BetMax can only be introduced by later mechanical equivalence.
+##f$cc_river_float_requested_betsize##
+When !f$cc_river_float_runtime_size_ready Return 0 Force
+When f$cc_river_float_size_id = 1 RaiseBy 25% Force
+When f$cc_river_float_size_id = 2 Return BetThirdPot Force
+When f$cc_river_float_size_id = 3 Return BetHalfPot Force
+When f$cc_river_float_size_id = 4 Return BetThreeFourthPot Force
+When f$cc_river_float_size_id = 5 Return BetPot Force
+When Others Return 0 Force
+
+// Purpose: verify positive River Float has a valid runtime size mapping.
+// Source/Provenance: P invariant over T/A mapping.
+##f$cc_river_float_runtime_mapping_valid##
+When !f$cc_river_float_router Return f$cc_river_float_requested_pot_fraction = 0 Force
+When !f$cc_river_float_runtime_size_ready Return false Force
+When f$cc_river_float_requested_pot_fraction <= 0 Return false Force
+When f$cc_river_float_size_id < 1 || f$cc_river_float_size_id > 5 Return false Force
+When Others Return true Force
+
+// ============================================================================
+// End Gate06H.1.
+// ============================================================================

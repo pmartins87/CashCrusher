@@ -1,0 +1,150 @@
+// ============================================================================
+// CashCrusher_Flop_Donk_HU.txt
+// Gate 07D — true-HU / reduced-HU ordinary-SRP Flop Donk baseline
+// ============================================================================
+// Purpose:
+//   Mark exact OOP HU Donk opportunities as deliberately reviewed CHECK ranges
+//   when the supplied source provides reactive check-vs-CBet strategy but no
+//   positive first-action flop-donk tree.
+//
+// Source boundary:
+//   A = Framework routes HUBB/HUBB-vlimp to Flop Donk ownership.
+//   A/X = mature DeepCrusher limits positive `f$move_flop_donkbet` strategy to
+//         `(BBorSB)v2pp`; other router families fall through to check.
+//   P = full-range OOP check is a standard deep-cash simplification until an exact
+//       solver/source-backed board/matchup lead subset is available.
+//
+// Safety:
+//   * true HU remains distinct from preflop-reduced HU;
+//   * only ordinary one-raise SRP or exact true-HU limped pot is covered;
+//   * postflop-reduced HU, ISO, 3BP/squeeze, 4BP+ remain outside this file;
+//   * no positive sizing, BetMax, commitment or defense-vs-CBet action lives here.
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// FDH.01 — true-HU standard SRP BB caller
+// -----------------------------------------------------------------------------
+
+// Purpose: true HU SB/Button open -> BB call, BB acts first on flop.
+// Source: Framework `HUBB` no-initiative first-position Donk router.
+// Provenance: T exact HU positions/raiser/caller + A source scenario ownership.
+##f$cc_flop_donk_truehu_srp_bb_context##
+f$cc_flop_donk_opportunity &&
+f$cc_true_hu &&
+f$cc_flop_entry_count = 2 &&
+f$cc_hu &&
+f$cc_hu_oop &&
+f$cc_hero_pos_id = 6 &&
+f$cc_hu_villain_pos_id = 5 &&
+f$cc_pot_family_id = 2 &&
+f$cc_pf_one_raise_ordinary_srp &&
+f$cc_pf_role_srp_caller &&
+f$cc_pf_single_raiser_pos_id = 5
+
+// Purpose: reviewed true-HU SRP first-action policy is CHECK.
+// Source: mature move node has no positive HUBB flop-donk branch; HUBB source
+// instead supplies check-response trees versus SB CBet.
+// Provenance: A source-silent/negative implementation + P range-check baseline.
+##f$cc_flop_donk_truehu_srp_bb_action##
+When f$cc_flop_donk_truehu_srp_bb_context Return false Force
+When Others Return false Force
+
+// -----------------------------------------------------------------------------
+// FDH.02 — true-HU limped pot BB check option
+// -----------------------------------------------------------------------------
+
+// Purpose: true HU SB/Button limp -> BB check, BB acts first on flop.
+// Source: Framework `HUBB-vlimp` l-donk router ancestry.
+// Provenance: T exact zero-raise/role/position facts + A source scenario ownership.
+##f$cc_flop_donk_truehu_limped_bb_context##
+f$cc_flop_donk_opportunity &&
+f$cc_true_hu &&
+f$cc_flop_entry_count = 2 &&
+f$cc_hu &&
+f$cc_hu_oop &&
+f$cc_hero_pos_id = 6 &&
+f$cc_hu_villain_pos_id = 5 &&
+f$cc_pot_family_id = 1 &&
+f$cc_pf_raise_count = 0 &&
+f$cc_pf_role_bb_check &&
+f$cc_pf_call_sb
+
+// Purpose: reviewed true-HU limped first-action policy is CHECK.
+// Source: no supplied positive HUBB-vlimp flop lead table survived the mature
+// source audit; checking preserves Villain stab/probe opportunity.
+// Provenance: A source-silent implementation + P deep-cash range-check baseline.
+##f$cc_flop_donk_truehu_limped_bb_action##
+When f$cc_flop_donk_truehu_limped_bb_context Return false Force
+When Others Return false Force
+
+// -----------------------------------------------------------------------------
+// FDH.03 — 3-6h ordinary SRP reduced preflop to HU, Hero OOP caller
+// -----------------------------------------------------------------------------
+
+// Purpose: ordinary one-raise pot from a 3-6h deal where exactly Hero caller and
+// original PFA reached flop, Hero is OOP and acts first.
+// Source ancestry: 3wSBvBTN / 3wBBvBTN source documents build flop play around
+// check-vs-BTN-CBet, not a positive first-action Donk.
+// Provenance: T exact reduced-HU/PFA identity + A high-ancestry source + P generic
+// six-max OOP caller range-check baseline for other opener/caller matchups.
+##f$cc_flop_donk_reducedhu_srp_oop_caller_context##
+f$cc_flop_donk_opportunity &&
+f$cc_hu_origin_preflop_reduced &&
+f$cc_flop_entry_count = 2 &&
+f$cc_hu &&
+f$cc_hu_oop &&
+f$cc_pot_family_id = 2 &&
+f$cc_pf_one_raise_ordinary_srp &&
+f$cc_pf_role_srp_caller &&
+f$cc_pf_single_raiser_pos_id > 0 &&
+f$cc_pf_single_raiser_pos_id = f$cc_hu_villain_pos_id
+
+// Purpose: reviewed reduced-HU ordinary-SRP OOP caller policy is CHECK.
+// Source/Provenance: A direct 3wBTN ancestry where available + P full-range check
+// simplification elsewhere. Exact future solver-backed donks must precede this parent.
+##f$cc_flop_donk_reducedhu_srp_oop_caller_action##
+When f$cc_flop_donk_reducedhu_srp_oop_caller_context Return false Force
+When Others Return false Force
+
+// -----------------------------------------------------------------------------
+// FDH.04 — canonical HU family coverage
+// -----------------------------------------------------------------------------
+
+// Purpose: compact reviewed HU Donk context ID.
+// 1=trueHU SRP BB; 2=trueHU limped BB; 3=3-6h reduced-HU ordinary-SRP OOP caller.
+// Source/Provenance: P audit metadata over T/A exact parents.
+##f$cc_flop_donk_hu_parent_id##
+When f$cc_flop_donk_truehu_srp_bb_context Return 1 Force
+When f$cc_flop_donk_truehu_limped_bb_context Return 2 Force
+When f$cc_flop_donk_reducedhu_srp_oop_caller_context Return 3 Force
+When Others Return 0 Force
+
+// Purpose: all Gate07D parents are reviewed deliberate checks.
+// Source/Provenance: A/P strategy dispatcher.
+##f$cc_flop_donk_hu_action##
+When f$cc_flop_donk_hu_parent_id > 0 Return false Force
+When Others Return false Force
+
+// Purpose: check-only Gate07D has no strategic bet size.
+// Source/Provenance: P exact paired-size owner.
+##f$cc_flop_donk_hu_size_id##
+When Others Return 0 Force
+
+// Purpose: recognized Gate07D HU family has been reviewed even though action is check.
+// Source/Provenance: P coverage contract.
+##f$cc_flop_donk_hu_covered##
+f$cc_flop_donk_hu_parent_id > 0
+
+// Purpose: Gate07D review must never masquerade as direct multiway source coverage.
+// Source/Provenance: P source-fidelity invariant.
+##f$cc_flop_donk_hu_not_source_covered##
+f$cc_flop_donk_hu_covered && !f$cc_flop_donk_source_covered
+
+// Purpose: check-only action/size integrity.
+// Source/Provenance: P engineering invariant.
+##f$cc_flop_donk_hu_size_consistent##
+!f$cc_flop_donk_hu_action && f$cc_flop_donk_hu_size_id = 0
+
+// ============================================================================
+// End Gate07D HU reviewed-check baseline.
+// ============================================================================

@@ -1,0 +1,68 @@
+// ============================================================================
+// CashCrusher_River_Donk_Betsize.txt
+// Gate 09H.1 — OpenPPL runtime adapter for reviewed River-Donk size IDs
+// ============================================================================
+// Purpose:
+//   Translate canonical River-Donk strategic sizes into exact initial-bet actions.
+//   This file never decides whether to Donk and never creates strategic all-ins.
+//
+// Runtime facts:
+//   * River Donk is Hero's first River action with AmountToCall=0;
+//   * 33/50/75/100 use native pot-size actions;
+//   * 25% and source-specific 30% use OpenPPL percentage RaiseBy syntax; because
+//     AmountToCall=0 these are initial bets of the requested pot fraction.
+//
+// Source/Provenance:
+//   T = OpenPPL sizing semantics already used by earlier CashCrusher attack gates.
+//   A = River-Donk palette 25/30/33/50/75/100 from source + adaptations.
+//   P = strict mapping/coverage guard only.
+//
+// Safety:
+//   no BetMax here; natural all-in equivalence belongs to Gate09H.3.
+// ============================================================================
+
+// Purpose: positive reviewed River Donk owns one supported canonical size.
+// Source/Provenance: P guard over reviewed router/exclusivity.
+##f$cc_river_donk_runtime_size_ready##
+When !f$cc_river_donk_router Return false Force
+When !f$cc_river_donk_size_consistent Return false Force
+When f$cc_river_donk_size_id >= 1 && f$cc_river_donk_size_id <= 6 Return true Force
+When Others Return false Force
+
+// Purpose: exact requested pot fraction for local stack geometry.
+// IDs: 1=25 2=30 3=33 4=50 5=75 6=100.
+// Source/Provenance: A exact palette mapping.
+##f$cc_river_donk_requested_pot_fraction##
+When !f$cc_river_donk_runtime_size_ready Return 0 Force
+When f$cc_river_donk_size_id = 1 Return 0.25 Force
+When f$cc_river_donk_size_id = 2 Return 0.30 Force
+When f$cc_river_donk_size_id = 3 Return 0.333 Force
+When f$cc_river_donk_size_id = 4 Return 0.50 Force
+When f$cc_river_donk_size_id = 5 Return 0.75 Force
+When f$cc_river_donk_size_id = 6 Return 1.00 Force
+When Others Return 0 Force
+
+// Purpose: translate reviewed River Donk ID into exact OpenPPL bet action.
+// Source/Provenance: T native/percentage actions + A River Donk palette.
+##f$cc_river_donk_requested_betsize##
+When !f$cc_river_donk_runtime_size_ready Return 0 Force
+When f$cc_river_donk_size_id = 1 RaiseBy 25% Force
+When f$cc_river_donk_size_id = 2 RaiseBy 30% Force
+When f$cc_river_donk_size_id = 3 Return BetThirdPot Force
+When f$cc_river_donk_size_id = 4 Return BetHalfPot Force
+When f$cc_river_donk_size_id = 5 Return BetThreeFourthPot Force
+When f$cc_river_donk_size_id = 6 Return BetPot Force
+When Others Return 0 Force
+
+// Purpose: positive River Donk has a valid runtime mapping.
+// Source/Provenance: P invariant over T/A mapping.
+##f$cc_river_donk_runtime_mapping_valid##
+When !f$cc_river_donk_router Return f$cc_river_donk_requested_pot_fraction = 0 Force
+When !f$cc_river_donk_runtime_size_ready Return false Force
+When f$cc_river_donk_requested_pot_fraction <= 0 Return false Force
+When f$cc_river_donk_size_id < 1 || f$cc_river_donk_size_id > 6 Return false Force
+When Others Return true Force
+
+// ============================================================================
+// End Gate09H.1.
+// ============================================================================

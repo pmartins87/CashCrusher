@@ -1,0 +1,255 @@
+// ============================================================================
+// CashCrusher_Turn_CBet_Common.txt
+// Gate 02A — common second-barrel context / hand / sizing descriptors
+// ============================================================================
+// Purpose:
+//   Build Turn CBet on ACTUAL flop CBet history, current turn hand strength and
+//   exact runout/SPR facts. This file owns no matchup-specific betting policy.
+//
+// Source boundary:
+//   A = DeepCrusher initiative/current-strength/flop-provenance architecture.
+//   T = Gate01N executed flop history + portable hand/stack symbols.
+//   P = clean cash sizing palette and deep-stack caution descriptors.
+//
+// Critical contract:
+//   `f$cc_turn_cbet_opportunity` requires a STANDARD executed flop CBet. Flop
+//   check-through belongs to Delayed CBet; flop check-call/check-raise and
+//   CBet-then-raise histories belong to separate families.
+//
+// Stack-depth contract:
+//   one-pair is a value/SDV class, not a stack-off class. Low SPR can influence
+//   an exact node, but this common module never turns TP/OP into an automatic jam.
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// TC.01 — Canonical Turn CBet opportunity
+// -----------------------------------------------------------------------------
+
+// Purpose: prove current decision legally belongs to ordinary Turn CBet routing.
+// Source: DeepCrusher initiative concept corrected by Gate01N final-action proof.
+// Provenance: A/T.
+// Safety: runtime/snapshot mismatch fails closed; no bet facing Hero.
+##f$cc_turn_cbet_opportunity##
+When !IsTurn Return false Force
+When !f$cc_context_valid Return false Force
+When AmountToCall > 0 Return false Force
+When !f$cc_hist_turn_standard_cbet_parent Return false Force
+When !f$cc_hist_flop_cbet_plan_markers_consistent Return false Force
+When !f$cc_hist_flop_cbet_snapshot_consistent Return false Force
+When f$cc_hist_flop_cbet_runtime_mismatch Return false Force
+When Others Return true Force
+
+// Purpose: Turn CBet opportunity currently heads-up.
+// Source/Provenance: T/A handedness split over canonical opportunity.
+##f$cc_turn_cbet_hu_opportunity##
+f$cc_turn_cbet_opportunity && f$cc_hu
+
+// Purpose: Turn CBet opportunity currently multiway.
+// Source/Provenance: T/A handedness split; exact flop origin remains available.
+##f$cc_turn_cbet_multiway_opportunity##
+f$cc_turn_cbet_opportunity && f$cc_multiway
+
+// -----------------------------------------------------------------------------
+// TC.02 — Current TURN made-hand classes
+// -----------------------------------------------------------------------------
+
+// Purpose: current robust two-pair-or-better value class.
+// Source/Provenance: T/A portable current-strength ladder.
+##f$cc_turn_cbet_two_pair_plus##
+IsTurn && f$cc_hand_two_pair_or_better
+
+// Purpose: current overpair exactly, excluding two-pair+.
+// Source/Provenance: T/A current hand evaluator.
+##f$cc_turn_cbet_overpair##
+IsTurn && HaveOverPair && !f$cc_hand_two_pair_or_better
+
+// Purpose: current top pair exactly, excluding OP/2P+.
+// Source/Provenance: T/A portable hand evaluator.
+##f$cc_turn_cbet_top_pair##
+IsTurn && f$cc_hand_just_top_pair
+
+// Purpose: current TP with at most two unavailable better kicker ranks.
+// Source: DeepCrusher stratifies TP by kicker repeatedly.
+// Provenance: A/P; exact <=2 CashCrusher boundary is an engineering split.
+##f$cc_turn_cbet_strong_top_pair##
+f$cc_turn_cbet_top_pair && f$cc_number_better_kickers <= 2
+
+// Purpose: current TP middle kicker band.
+// Source/Provenance: A/P deterministic six-max split, not universal GTO cutoff.
+##f$cc_turn_cbet_medium_top_pair##
+f$cc_turn_cbet_top_pair && f$cc_number_better_kickers > 2 && f$cc_number_better_kickers <= 4
+
+// Purpose: weakest current TP bucket.
+// Source/Provenance: A/P; action always remains matchup/runout dependent.
+##f$cc_turn_cbet_weak_top_pair##
+f$cc_turn_cbet_top_pair && f$cc_number_better_kickers > 4
+
+// Purpose: current second-pair/pocket-pair class below TP.
+// Source/Provenance: T/A portable pair-tier reconstruction.
+##f$cc_turn_cbet_second_pair##
+IsTurn && f$cc_hand_second_pair_or_pocket && !f$cc_hand_top_pair_or_better
+
+// Purpose: current third-or-worse pair showdown-value family.
+// Source/Provenance: T/A pair-tier aggregation; underpair included.
+##f$cc_turn_cbet_third_or_worse_pair##
+IsTurn && !f$cc_hand_top_pair_or_better && (f$cc_hand_third_pair_or_pocket || f$cc_hand_fourth_pair_or_pocket || f$cc_hand_fifth_pair_or_pocket || HaveUnderPair)
+
+// -----------------------------------------------------------------------------
+// TC.03 — Current TURN draw/equity tiers
+// -----------------------------------------------------------------------------
+
+// Purpose: highest current turn draw-equity bucket, without stack-off semantics.
+// Source: DeepCrusher good/combo/nut-draw ingredients.
+// Provenance: A/P grouping for deep-stack second-barrel selection.
+##f$cc_turn_cbet_premium_draw##
+IsTurn && (f$cc_real_combo_draw || f$cc_real_nut_fd || (f$cc_real_oesd && f$cc_two_overcards) || (f$cc_real_fd && f$cc_two_overcards))
+
+// Purpose: useful current frontdoor draw below premium tier.
+// Source/Provenance: A/P deterministic quality split.
+##f$cc_turn_cbet_good_draw##
+IsTurn && !f$cc_turn_cbet_premium_draw && (f$cc_real_fd || f$cc_real_oesd || (f$cc_real_gutshot && f$cc_two_overcards))
+
+// Purpose: remaining real turn frontdoor draw.
+// Source/Provenance: A/P quality residue; no automatic barrel implied.
+##f$cc_turn_cbet_weak_draw##
+IsTurn && !f$cc_turn_cbet_premium_draw && !f$cc_turn_cbet_good_draw && f$cc_real_frontdoor_draw
+
+// Purpose: current no-made premium/good draw union for semibluff logic.
+// Source/Provenance: A/P helper; made pair+draw is handled from made-hand branch.
+##f$cc_turn_cbet_no_made_quality_draw##
+f$cc_hand_no_made && (f$cc_turn_cbet_premium_draw || f$cc_turn_cbet_good_draw)
+
+// Purpose: current no-made weak draw.
+// Source/Provenance: A/P helper.
+##f$cc_turn_cbet_no_made_weak_draw##
+f$cc_hand_no_made && f$cc_turn_cbet_weak_draw
+
+// Purpose: current pure/no-frontdoor air on turn.
+// Source/Provenance: T/A no-made + real draw negation.
+##f$cc_turn_cbet_air##
+IsTurn && f$cc_hand_no_made && !f$cc_real_frontdoor_draw
+
+// -----------------------------------------------------------------------------
+// TC.04 — FLOP-to-TURN hand provenance
+// Current turn hand strength remains primary. Stored flop class only answers how
+// Hero arrived here; it never freezes the old hand classification.
+// -----------------------------------------------------------------------------
+
+// Purpose: flop CBet began with TP or OP.
+// Source: direct need in HUSB and 3wBTN-v-BB source trees.
+// Provenance: A from Gate01N snapshot.
+##f$cc_turn_cbet_flop_had_tp_or_op##
+user_cc_flop_cbet_had_top_pair || user_cc_flop_cbet_had_overpair
+
+// Purpose: current TP first appeared after a flop that was not already TP/OP/2P+.
+// Source: 3wBTN-v-BB explicitly gives fresh turn TP its own value branch.
+// Provenance: A source-history concept.
+##f$cc_turn_cbet_new_top_pair##
+f$cc_turn_cbet_top_pair &&
+!user_cc_flop_cbet_had_top_pair &&
+!user_cc_flop_cbet_had_overpair &&
+!user_cc_flop_cbet_had_2pplus
+
+// Purpose: current TP was already TP on flop.
+// Source/Provenance: A carried-TP source branch.
+##f$cc_turn_cbet_carried_top_pair##
+f$cc_turn_cbet_top_pair && user_cc_flop_cbet_had_top_pair
+
+// Purpose: flop TP has been demoted below TP by turn runout, most commonly OC.
+// Source: HUSB explicitly continues a smaller barrel in this history.
+// Provenance: A source-history descriptor.
+##f$cc_turn_cbet_flop_tp_demoted##
+user_cc_flop_cbet_had_top_pair && !f$cc_hand_top_pair_or_better && f$cc_hand_pair_or_better
+
+// Purpose: current 2P+ is an improvement from a weaker flop class.
+// Source: multiple source trees reclassify current improvement before stale plan.
+// Provenance: A current-strength-first history descriptor.
+##f$cc_turn_cbet_improved_to_two_pair_plus##
+f$cc_turn_cbet_two_pair_plus && !user_cc_flop_cbet_had_2pplus
+
+// Purpose: current no-made draw came from a flop no-made/equity CBet family.
+// Source/Provenance: A carried semibluff-history descriptor.
+##f$cc_turn_cbet_carried_no_made_cbet##
+f$cc_hand_no_made && user_cc_flop_cbet_had_no_made
+
+// Purpose: preserve exact flop BDSD proxy used by 3wBTN-v-BB carried weak-TP rule.
+// Source/Provenance: A direct source-history marker.
+##f$cc_turn_cbet_flop_had_bdsd##
+user_cc_flop_cbet_had_bdsd
+
+// -----------------------------------------------------------------------------
+// TC.05 — Cash-depth geometry descriptors
+// -----------------------------------------------------------------------------
+
+// Purpose: exact HU turn SPR valid.
+// Source/Provenance: T/A Gate00 HU effective-stack geometry.
+##f$cc_turn_cbet_hu_spr_valid##
+f$cc_hu && f$cc_spr_round_start >= 0
+
+// Purpose: HU SPR below 2, only a geometry fact.
+// Source/Provenance: P/T engineering descriptor; no automatic stack-off.
+##f$cc_turn_cbet_hu_spr_below_2##
+f$cc_turn_cbet_hu_spr_valid && f$cc_spr_round_start < 2
+
+// Purpose: HU SPR below 3, only a geometry fact.
+// Source/Provenance: P/T engineering descriptor.
+##f$cc_turn_cbet_hu_spr_below_3##
+f$cc_turn_cbet_hu_spr_valid && f$cc_spr_round_start < 3
+
+// Purpose: HU materially deep turn geometry for one-pair pot-building caution.
+// Source: no literal Spin threshold transfers.
+// Provenance: P engineering boundary at SPR >=6, raw SPR remains canonical.
+##f$cc_turn_cbet_hu_high_spr##
+f$cc_turn_cbet_hu_spr_valid && f$cc_spr_round_start >= 6
+
+// Purpose: multiway deepest-effective SPR is valid.
+// Source/Provenance: T/A corrected dual-bound stack geometry.
+##f$cc_turn_cbet_mw_deep_spr_valid##
+f$cc_multiway && f$cc_mw_stack_geometry_valid && f$cc_mw_spr_deepest_round_start >= 0
+
+// -----------------------------------------------------------------------------
+// TC.06 — Turn strategic size-family IDs
+// -----------------------------------------------------------------------------
+// Turn keeps a wider palette than flop because source material contains meaningful
+// 25/33/40/50/62.5/75/100 distinctions. Runtime adapter is a separate Gate.
+
+// Purpose: Turn ~25% pot size ID.
+// Source/Provenance: A source sizing family, stable engineering ID.
+##f$cc_turn_size_25_id##
+1
+
+// Purpose: Turn ~33% pot size ID.
+// Source/Provenance: A source sizing family.
+##f$cc_turn_size_33_id##
+2
+
+// Purpose: Turn ~40% pot size ID.
+// Source/Provenance: A source sizing family retained for HUBB/history-specific use.
+##f$cc_turn_size_40_id##
+3
+
+// Purpose: Turn ~50% pot size ID.
+// Source/Provenance: A source sizing family.
+##f$cc_turn_size_50_id##
+4
+
+// Purpose: Turn ~62.5% pot size ID.
+// Source: explicit 3wBTN-v-BB 50/62 planning ancestry.
+// Provenance: A sizing family; later runtime may use exact formula rather than a
+// native rounded constant.
+##f$cc_turn_size_625_id##
+5
+
+// Purpose: Turn ~75% pot size ID.
+// Source/Provenance: A common source value/semibluff sizing family.
+##f$cc_turn_size_75_id##
+6
+
+// Purpose: Turn pot-sized (100%) size ID.
+// Source/Provenance: A source pressure/value family; not synonymous with all-in.
+##f$cc_turn_size_100_id##
+7
+
+// ============================================================================
+// End Turn CBet common descriptors.
+// ============================================================================

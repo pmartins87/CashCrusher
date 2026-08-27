@@ -1,0 +1,291 @@
+// ============================================================================
+// CashCrusher_Turn_Float_SRP_Gaps.txt
+// Gate 05C — ordinary-SRP six-max Turn Float gap policy
+// ============================================================================
+// Purpose:
+//   Fill ordinary one-raise SRP Turn-Float states not decided by exact Gate05B
+//   source branches. Histories remain separate: call-flop/missed-2Bar, CBet-XR-
+//   call, and FlopFloat-XR-call are not interchangeable range states.
+//
+// Source boundary:
+//   DeepCrusher has useful position/history principles but no complete 100bb
+//   six-max tree for these states. Betting policy below is therefore P-heavy.
+//
+// Professional principles used (P):
+//   * IP can value/protection bet more often after OOP aggression stops;
+//   * XR-call histories are materially more selected than a simple flop call;
+//   * current strength overrides stale flop class;
+//   * completed/4-card runouts reduce thin one-pair value;
+//   * pure-air stabs require a narrow scare-card/high-card selector;
+//   * post-multiway/current-multiway histories are tightened sharply.
+//
+// Safety:
+//   Exact source coverage/locks always win. No HandPower/random tail and no
+//   stackoff or BetMax decision appears here.
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// TFSRP.01 — exact contexts
+// -----------------------------------------------------------------------------
+
+// Purpose: ordinary SRP, simple flop-call parent, HU since flop entry.
+// Source/Provenance: T/A parent topology + P six-max strategy owner.
+##f$cc_turn_float_srp_parent1_hu_context##
+f$cc_turn_float_opportunity &&
+f$cc_turn_float_parent_id = 1 &&
+f$cc_turn_float_current_hu_from_hu_flop &&
+f$cc_turn_float_hu_aggressor_is_current_villain &&
+f$cc_pot_family_id = 2 &&
+f$cc_pf_one_raise_ordinary_srp &&
+f$cc_pf_role_srp_caller &&
+!f$cc_turn_float_source_exact_covered
+
+// Purpose: ordinary SRP Hero-PFA CBet -> flop XR -> call parent, now checked to.
+// Source/Provenance: A/T exact parent2 + P gap owner outside BTN Advanced source.
+##f$cc_turn_float_srp_parent2_hu_context##
+f$cc_turn_float_opportunity &&
+f$cc_turn_float_parent_id = 2 &&
+f$cc_turn_float_current_hu_from_hu_flop &&
+f$cc_turn_float_hu_aggressor_is_current_villain &&
+f$cc_pot_family_id = 2 &&
+f$cc_pf_one_raise_ordinary_srp &&
+f$cc_pf_role_pfa &&
+!f$cc_turn_float_source_exact_covered
+
+// Purpose: ordinary SRP Flop-Float -> XR -> Hero call parent, now checked to.
+// Source/Provenance: A/T exact parent3 + P selected-range gap owner.
+##f$cc_turn_float_srp_parent3_hu_context##
+f$cc_turn_float_opportunity &&
+f$cc_turn_float_parent_id = 3 &&
+f$cc_turn_float_current_hu_from_hu_flop &&
+f$cc_turn_float_hu_aggressor_is_current_villain &&
+f$cc_pot_family_id = 2 &&
+f$cc_pf_one_raise_ordinary_srp &&
+f$cc_pf_role_srp_caller &&
+!f$cc_turn_float_source_exact_covered
+
+// Purpose: flop began multiway but ordinary SRP Turn-Float decision is HU now.
+// Source/Provenance: A/T origin preservation + P selected-survivor policy.
+##f$cc_turn_float_srp_postmultiway_hu_context##
+f$cc_turn_float_opportunity &&
+f$cc_turn_float_postmultiway_to_hu &&
+f$cc_turn_float_hu_aggressor_is_current_villain &&
+f$cc_pot_family_id = 2 &&
+f$cc_pf_one_raise_ordinary_srp &&
+!f$cc_turn_float_source_exact_covered
+
+// Purpose: ordinary SRP Turn-Float decision remains true multiway, Hero exact LAST.
+// Source/Provenance: T/A topology + P multiway tightening.
+##f$cc_turn_float_srp_multiway_context##
+f$cc_turn_float_opportunity &&
+f$cc_turn_float_current_multiway &&
+f$cc_pot_family_id = 2 &&
+f$cc_pf_one_raise_ordinary_srp &&
+!f$cc_turn_float_source_exact_covered
+
+// -----------------------------------------------------------------------------
+// TFSRP.02 — simple flop-call -> missed 2Bar, HU
+// -----------------------------------------------------------------------------
+
+// Purpose: P-heavy HU Turn stab after Hero called one PFA flop bet and PFA checks.
+// Provenance: P professional policy over A/T exact parent1.
+##f$cc_turn_float_srp_parent1_hu_action##
+When !f$cc_turn_float_srp_parent1_hu_context Return false Force
+When f$cc_turn_float_robust_value Return true Force
+When f$cc_turn_float_vulnerable_two_pair_plus && f$cc_turn_float_calm_runout Return true Force
+When f$cc_turn_float_vulnerable_two_pair_plus Return false Force
+When f$cc_turn_float_overpair && (f$cc_turn_float_calm_runout || f$cc_turn_float_hu_low_spr) Return true Force
+When f$cc_turn_float_overpair Return false Force
+When f$cc_turn_float_strong_top_pair && f$cc_turn_float_calm_runout && !f$cc_turn_float_hu_high_spr Return true Force
+When f$cc_turn_float_strong_top_pair && f$cc_turn_float_hu_low_spr && !f$cc_turn_float_hostile_runout Return true Force
+When f$cc_turn_float_strong_top_pair Return false Force
+When f$cc_turn_float_medium_top_pair && f$cc_turn_float_calm_runout && !f$cc_turn_float_hu_high_spr Return true Force
+When f$cc_turn_float_medium_top_pair Return false Force
+When f$cc_turn_float_weak_top_pair Return false Force
+When f$cc_turn_float_second_pair || f$cc_turn_float_third_or_worse_pair Return false Force
+When f$cc_turn_float_premium_draw && !f$cc_turn_super_completed Return true Force
+When f$cc_turn_float_good_draw && f$cc_turn_float_calm_runout Return true Force
+When f$cc_turn_float_weak_draw Return false Force
+When f$cc_turn_float_quality_air_hu Return true Force
+When f$cc_turn_float_current_air Return false Force
+When Others Return false Force
+
+// Purpose: parent1 HU size map: value/equity 50-75, thin value/air 33.
+// Source/Provenance: P deterministic cash sizing; no all-in implication.
+##f$cc_turn_float_srp_parent1_hu_size_id##
+When !f$cc_turn_float_srp_parent1_hu_action Return 0 Force
+When f$cc_turn_float_robust_value && f$cc_turn_completed Return f$cc_turn_float_size_75_id Force
+When f$cc_turn_float_robust_value Return f$cc_turn_float_size_50_id Force
+When f$cc_turn_float_vulnerable_two_pair_plus Return f$cc_turn_float_size_50_id Force
+When f$cc_turn_float_overpair Return f$cc_turn_float_size_50_id Force
+When f$cc_turn_float_strong_top_pair Return f$cc_turn_float_size_50_id Force
+When f$cc_turn_float_medium_top_pair Return f$cc_turn_float_size_33_id Force
+When f$cc_turn_float_premium_draw Return f$cc_turn_float_size_50_id Force
+When f$cc_turn_float_good_draw Return f$cc_turn_float_size_33_id Force
+When f$cc_turn_float_quality_air_hu Return f$cc_turn_float_size_33_id Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// TFSRP.03 — CBet/XR/call and FlopFloat/XR/call HU
+// -----------------------------------------------------------------------------
+
+// Purpose: generic parent2 policy after Hero's CBet was raised and Hero called.
+// Source: BTN Advanced exact air branch is already source-owned and excluded.
+// Provenance: P-heavy selected-range policy; no generic pure-air stab.
+##f$cc_turn_float_srp_parent2_hu_action##
+When !f$cc_turn_float_srp_parent2_hu_context Return false Force
+When f$cc_turn_float_robust_value Return true Force
+When f$cc_turn_float_vulnerable_two_pair_plus && f$cc_turn_float_calm_runout Return true Force
+When f$cc_turn_float_vulnerable_two_pair_plus Return false Force
+When f$cc_turn_float_overpair && (f$cc_turn_float_calm_runout || f$cc_turn_float_hu_low_spr) Return true Force
+When f$cc_turn_float_overpair Return false Force
+When f$cc_turn_float_strong_top_pair && f$cc_turn_float_calm_runout Return true Force
+When f$cc_turn_float_strong_top_pair Return false Force
+When f$cc_turn_float_medium_top_pair || f$cc_turn_float_weak_top_pair Return false Force
+When f$cc_turn_float_second_pair || f$cc_turn_float_third_or_worse_pair Return false Force
+When f$cc_turn_float_premium_draw && !f$cc_turn_super_completed Return true Force
+When f$cc_turn_float_good_draw && f$cc_turn_float_calm_runout Return true Force
+When f$cc_turn_float_weak_draw Return false Force
+When f$cc_turn_float_current_air Return false Force
+When Others Return false Force
+
+// Purpose: parent2 HU sizes after selected flop XR-call history.
+// Source/Provenance: P 33/50/75 map; source exact BTN33 handled before this file.
+##f$cc_turn_float_srp_parent2_hu_size_id##
+When !f$cc_turn_float_srp_parent2_hu_action Return 0 Force
+When f$cc_turn_float_robust_value && f$cc_turn_completed Return f$cc_turn_float_size_75_id Force
+When f$cc_turn_float_robust_value Return f$cc_turn_float_size_50_id Force
+When f$cc_turn_float_vulnerable_two_pair_plus Return f$cc_turn_float_size_50_id Force
+When f$cc_turn_float_overpair || f$cc_turn_float_strong_top_pair Return f$cc_turn_float_size_50_id Force
+When f$cc_turn_float_premium_draw Return f$cc_turn_float_size_50_id Force
+When f$cc_turn_float_good_draw Return f$cc_turn_float_size_33_id Force
+When Others Return 0 Force
+
+// Purpose: parent3 policy after checked-to Flop Float was raised and Hero called.
+// Provenance: P-heavy; even tighter than parent2 because Hero began flop as caller
+// and then continued against a check-raise/raise. No air or ordinary good-draw bet.
+##f$cc_turn_float_srp_parent3_hu_action##
+When !f$cc_turn_float_srp_parent3_hu_context Return false Force
+When f$cc_turn_float_robust_value Return true Force
+When f$cc_turn_float_vulnerable_two_pair_plus && f$cc_turn_float_calm_runout Return true Force
+When f$cc_turn_float_vulnerable_two_pair_plus Return false Force
+When f$cc_turn_float_overpair && f$cc_turn_float_calm_runout Return true Force
+When f$cc_turn_float_overpair Return false Force
+When f$cc_turn_float_strong_top_pair && f$cc_turn_float_calm_runout && f$cc_turn_float_hu_low_spr Return true Force
+When f$cc_turn_float_strong_top_pair Return false Force
+When f$cc_hand_top_pair_or_better Return false Force
+When f$cc_turn_float_second_pair || f$cc_turn_float_third_or_worse_pair Return false Force
+When f$cc_turn_float_premium_draw && !f$cc_turn_super_completed Return true Force
+When f$cc_turn_float_good_draw || f$cc_turn_float_weak_draw Return false Force
+When f$cc_turn_float_current_air Return false Force
+When Others Return false Force
+
+// Purpose: parent3 HU size map.
+// Source/Provenance: P selected-range 50/75 sizing.
+##f$cc_turn_float_srp_parent3_hu_size_id##
+When !f$cc_turn_float_srp_parent3_hu_action Return 0 Force
+When f$cc_turn_float_robust_value && f$cc_turn_completed Return f$cc_turn_float_size_75_id Force
+When f$cc_turn_float_robust_value Return f$cc_turn_float_size_50_id Force
+When f$cc_turn_float_vulnerable_two_pair_plus Return f$cc_turn_float_size_50_id Force
+When f$cc_turn_float_overpair || f$cc_turn_float_strong_top_pair Return f$cc_turn_float_size_50_id Force
+When f$cc_turn_float_premium_draw Return f$cc_turn_float_size_50_id Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// TFSRP.04 — multiway-origin / current multiway
+// -----------------------------------------------------------------------------
+
+// Purpose: flop-multiway -> Turn-HU policy. Surviving range is more selected than
+// a clean HU flop call/XR-call, so pure air and ordinary good draws do not stab.
+// Source/Provenance: P multiway-origin tightening.
+##f$cc_turn_float_srp_postmultiway_hu_action##
+When !f$cc_turn_float_srp_postmultiway_hu_context Return false Force
+When f$cc_turn_float_robust_value Return true Force
+When f$cc_turn_float_vulnerable_two_pair_plus && f$cc_turn_float_calm_runout Return true Force
+When f$cc_turn_float_vulnerable_two_pair_plus Return false Force
+When f$cc_turn_float_overpair && f$cc_turn_float_calm_runout && f$cc_turn_float_hu_low_spr Return true Force
+When f$cc_turn_float_overpair Return false Force
+When f$cc_turn_float_strong_top_pair && f$cc_turn_float_calm_runout && f$cc_turn_float_hu_very_low_spr Return true Force
+When f$cc_turn_float_strong_top_pair Return false Force
+When f$cc_hand_top_pair_or_better Return false Force
+When f$cc_turn_float_premium_draw && !f$cc_turn_super_completed Return true Force
+When f$cc_turn_float_good_draw || f$cc_turn_float_weak_draw Return false Force
+When f$cc_turn_float_current_air Return false Force
+When Others Return false Force
+
+// Purpose: post-multiway HU size map.
+// Source/Provenance: P robust 50/75 policy.
+##f$cc_turn_float_srp_postmultiway_hu_size_id##
+When !f$cc_turn_float_srp_postmultiway_hu_action Return 0 Force
+When f$cc_turn_float_robust_value && f$cc_turn_completed Return f$cc_turn_float_size_75_id Force
+When f$cc_turn_float_robust_value Return f$cc_turn_float_size_50_id Force
+When f$cc_turn_float_vulnerable_two_pair_plus Return f$cc_turn_float_size_50_id Force
+When f$cc_turn_float_overpair || f$cc_turn_float_strong_top_pair Return f$cc_turn_float_size_50_id Force
+When f$cc_turn_float_premium_draw Return f$cc_turn_float_size_50_id Force
+When Others Return 0 Force
+
+// Purpose: current true-multiway SRP policy after all players before LAST Hero
+// declined to bet turn. 3-way can bet selected one-pair/equity at low deepest SPR;
+// 4+ way is restricted to robust value or strongest combo-draw equity.
+// Source/Provenance: P professional multiway tightening + T deepest SPR.
+##f$cc_turn_float_srp_multiway_action##
+When !f$cc_turn_float_srp_multiway_context Return false Force
+When f$cc_turn_float_robust_value Return true Force
+When nplayersplaying = 3 && f$cc_turn_float_vulnerable_two_pair_plus && f$cc_turn_float_calm_runout Return true Force
+When f$cc_turn_float_vulnerable_two_pair_plus Return false Force
+When nplayersplaying = 3 && f$cc_turn_float_mw_deep_spr_valid && f$cc_mw_spr_deepest_round_start < 3 && f$cc_turn_float_overpair && f$cc_turn_float_calm_runout Return true Force
+When nplayersplaying = 3 && f$cc_turn_float_mw_deep_spr_valid && f$cc_mw_spr_deepest_round_start < 2 && f$cc_turn_float_strong_top_pair && f$cc_turn_float_calm_runout Return true Force
+When f$cc_hand_top_pair_or_better Return false Force
+When nplayersplaying = 3 && f$cc_turn_float_premium_draw && !f$cc_turn_super_completed Return true Force
+When nplayersplaying >= 4 && f$cc_hand_no_made && f$cc_real_combo_draw && !f$cc_turn_super_completed Return true Force
+When f$cc_real_frontdoor_draw Return false Force
+When f$cc_turn_float_current_air Return false Force
+When Others Return false Force
+
+// Purpose: current-multiway SRP size map.
+// Source/Provenance: P 50/75 robust-value/equity sizing.
+##f$cc_turn_float_srp_multiway_size_id##
+When !f$cc_turn_float_srp_multiway_action Return 0 Force
+When f$cc_turn_float_robust_value && f$cc_turn_completed Return f$cc_turn_float_size_75_id Force
+When f$cc_turn_float_robust_value Return f$cc_turn_float_size_50_id Force
+When f$cc_turn_float_vulnerable_two_pair_plus Return f$cc_turn_float_size_50_id Force
+When f$cc_turn_float_overpair || f$cc_turn_float_strong_top_pair Return f$cc_turn_float_size_50_id Force
+When f$cc_turn_float_premium_draw || (f$cc_hand_no_made && f$cc_real_combo_draw) Return f$cc_turn_float_size_50_id Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// TFSRP.05 — dispatch / coverage
+// -----------------------------------------------------------------------------
+
+// Purpose: ordinary-SRP gap action dispatcher.
+// Source/Provenance: P exact history/origin owner routing.
+##f$cc_turn_float_srp_gap_action##
+When f$cc_turn_float_srp_parent1_hu_context Return f$cc_turn_float_srp_parent1_hu_action Force
+When f$cc_turn_float_srp_parent2_hu_context Return f$cc_turn_float_srp_parent2_hu_action Force
+When f$cc_turn_float_srp_parent3_hu_context Return f$cc_turn_float_srp_parent3_hu_action Force
+When f$cc_turn_float_srp_postmultiway_hu_context Return f$cc_turn_float_srp_postmultiway_hu_action Force
+When f$cc_turn_float_srp_multiway_context Return f$cc_turn_float_srp_multiway_action Force
+When Others Return false Force
+
+// Purpose: paired ordinary-SRP gap size dispatcher.
+// Source/Provenance: P exact context pairing.
+##f$cc_turn_float_srp_gap_size_id##
+When f$cc_turn_float_srp_parent1_hu_context Return f$cc_turn_float_srp_parent1_hu_size_id Force
+When f$cc_turn_float_srp_parent2_hu_context Return f$cc_turn_float_srp_parent2_hu_size_id Force
+When f$cc_turn_float_srp_parent3_hu_context Return f$cc_turn_float_srp_parent3_hu_size_id Force
+When f$cc_turn_float_srp_postmultiway_hu_context Return f$cc_turn_float_srp_postmultiway_hu_size_id Force
+When f$cc_turn_float_srp_multiway_context Return f$cc_turn_float_srp_multiway_size_id Force
+When Others Return 0 Force
+
+// Purpose: report complete current ordinary-SRP gap ownership.
+// Source/Provenance: P engineering coverage over mutually separated contexts.
+##f$cc_turn_float_srp_gap_covered##
+f$cc_turn_float_srp_parent1_hu_context ||
+f$cc_turn_float_srp_parent2_hu_context ||
+f$cc_turn_float_srp_parent3_hu_context ||
+f$cc_turn_float_srp_postmultiway_hu_context ||
+f$cc_turn_float_srp_multiway_context
+
+// ============================================================================
+// End Gate05C ordinary-SRP Turn Float gaps.
+// ============================================================================

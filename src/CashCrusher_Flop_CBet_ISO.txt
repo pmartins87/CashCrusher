@@ -1,0 +1,317 @@
+// ============================================================================
+// CashCrusher_Flop_CBet_ISO.txt
+// Gate 01E — HU isolation-pot flop CBet baselines
+// ============================================================================
+// Scope:
+//   3-6 handed deal -> proven one-raise ISO -> preflop folds leave HU flop ->
+//   Hero is sole preflop aggressor and faces no flop bet before acting.
+//
+// CRITICAL RANGE PROVENANCE:
+//   survivor type 1 = original PRE-RAISE LIMPER;
+//   survivor type 2 = POST-RAISE COLD CALLER.
+// They are never merged into one generic "ISO villain" range.
+//
+// Source hierarchy:
+//   A: DeepCrusher `3wBBvSB` checked-to tree explicitly covers ISO/LP/SRP shape;
+//      HUSB / 3wBTNvBB / 3wBTNvSB corroborate board/hand principles.
+//   P: exact deep-stack six-max ISO frequencies are a format gap and are filled
+//      with professional NLHE range-advantage/position/SPR principles.
+//   X: shallow <=16/20BB commitment, StackOffDraws and automatic jam tails.
+//
+// OpenPPL safety:
+//   every WHEN is complete; no branch depends on indentation/open-ended scope.
+//   unsupported or unproven survivor types fail closed.
+//
+// Size IDs:
+//   1 = ~33% | 2 = ~50% | 3 = ~75% | 0 = check/no CBet
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// ISO.C00 — exact HU context guards
+// -----------------------------------------------------------------------------
+
+// Purpose: prove IP isolator versus the original limper on a HU flop.
+// Context: non-true-HU, one-raise ISO, Hero PFA, Villain survivor=pre-raise limper.
+// Source/Provenance: survivor mechanics A/P; no betting policy in this helper.
+// Safety: requires proven/consistent survivor classification and valid raw SPR.
+##f$cc_cbet_iso_hu_limper_ip_context##
+f$cc_flop_cbet_opportunity &&
+f$cc_hu_origin_preflop_reduced &&
+f$cc_pf_iso_proven &&
+f$cc_pf_role_pfa &&
+f$cc_hu_ip &&
+f$cc_hu_iso_villain_was_limper &&
+f$cc_hu_iso_survivor_consistent &&
+f$cc_spr_valid
+
+// Purpose: prove OOP isolator versus the original limper on a HU flop.
+// Context: same range family as above, but Hero acts first postflop.
+// Source/Provenance: survivor mechanics A/P; policy remains downstream.
+// Safety: true HU limp-raised pots are excluded by hu_origin_preflop_reduced.
+##f$cc_cbet_iso_hu_limper_oop_context##
+f$cc_flop_cbet_opportunity &&
+f$cc_hu_origin_preflop_reduced &&
+f$cc_pf_iso_proven &&
+f$cc_pf_role_pfa &&
+f$cc_hu_oop &&
+f$cc_hu_iso_villain_was_limper &&
+f$cc_hu_iso_survivor_consistent &&
+f$cc_spr_valid
+
+// Purpose: prove IP isolator versus a player who cold-called after the ISO raise.
+// Context: the original limper folded; surviving Villain belongs to post-raise
+// cold-call range rather than limp-call range.
+// Source/Provenance: A/P architecture; this distinction is a six-max gap fill.
+// Safety: no fallback from unknown survivor type into the weaker limper range.
+##f$cc_cbet_iso_hu_coldcaller_ip_context##
+f$cc_flop_cbet_opportunity &&
+f$cc_hu_origin_preflop_reduced &&
+f$cc_pf_iso_proven &&
+f$cc_pf_role_pfa &&
+f$cc_hu_ip &&
+f$cc_hu_iso_villain_was_postraise_coldcaller &&
+f$cc_hu_iso_survivor_consistent &&
+f$cc_spr_valid
+
+// Purpose: prove OOP isolator versus a post-raise cold caller.
+// Context: strongest/check-heaviest HU ISO descendant in this baseline.
+// Source/Provenance: A/P architecture; exact betting policy is P-heavy.
+// Safety: requires explicit OOP and proven survivor mask.
+##f$cc_cbet_iso_hu_coldcaller_oop_context##
+f$cc_flop_cbet_opportunity &&
+f$cc_hu_origin_preflop_reduced &&
+f$cc_pf_iso_proven &&
+f$cc_pf_role_pfa &&
+f$cc_hu_oop &&
+f$cc_hu_iso_villain_was_postraise_coldcaller &&
+f$cc_hu_iso_survivor_consistent &&
+f$cc_spr_valid
+
+// -----------------------------------------------------------------------------
+// ISO.C01 — IP isolator versus ORIGINAL LIMPER
+// -----------------------------------------------------------------------------
+
+// Purpose: decide whether to CBet IP against the surviving pre-raise limper.
+// Context: HU ISO, Hero PFA IP, survivor type=limper.
+// Source: A from `3wBBvSB` ISO/LP/SRP checked-to principles plus HUSB/BTN source
+// families for static-high small betting and selective dynamic-board pressure.
+// Provenance: A for source concepts; P for deep-stack combo-selection thresholds.
+// Decision logic: robust value/premium equity bet; marginal SDV checks more as
+// SPR/board dynamism rise; quality backdoors supply deterministic bluff subset.
+// Safety/Limits: not solver-exact; exact matchup ID remains available for later
+// refinement; no shallow commitment or automatic raise-vs-XR plan is implied.
+##f$cc_cbet_iso_hu_limper_ip_action##
+When !f$cc_cbet_iso_hu_limper_ip_context Return false Force
+When f$cc_cbet_flop_very_strong_value Return true Force
+When f$cc_cbet_flop_overpair Return true Force
+When f$cc_cbet_flop_strong_top_pair Return true Force
+When f$cc_cbet_flop_medium_top_pair && f$cc_flop_dynamic_lowmid_parent && f$cc_cbet_high_spr Return false Force
+When f$cc_cbet_flop_medium_top_pair Return true Force
+When f$cc_cbet_flop_weak_top_pair && (f$cc_flop_static_high_parent || f$cc_flop_paired_parent) && !f$cc_cbet_very_high_spr Return true Force
+When f$cc_cbet_flop_weak_top_pair && f$cc_flop_static_lowmid_parent && !f$cc_cbet_high_spr Return true Force
+When f$cc_cbet_flop_weak_top_pair Return false Force
+When f$cc_cbet_flop_showdown_pair && f$cc_pair_plus_draw Return true Force
+When f$cc_hand_second_pair_or_pocket && (f$cc_flop_static_high_parent || f$cc_flop_paired_parent) && !f$cc_cbet_very_high_spr Return true Force
+When f$cc_cbet_flop_showdown_pair Return false Force
+When f$cc_cbet_flop_premium_draw Return true Force
+When f$cc_cbet_flop_good_draw && !f$cc_flop_dynamic_lowmid_parent Return true Force
+When f$cc_cbet_flop_good_draw && f$cc_flop_dynamic_lowmid_parent && f$cc_one_or_more_overcards Return true Force
+When f$cc_cbet_flop_weak_draw && (f$cc_flop_static_high_parent || f$cc_flop_paired_parent) Return true Force
+When f$cc_real_frontdoor_draw Return false Force
+When f$cc_cbet_flop_quality_air && (f$cc_flop_static_high_parent || f$cc_flop_paired_parent) Return true Force
+When f$cc_cbet_flop_air_best_backdoors && f$cc_flop_dynamic_high_parent Return true Force
+When f$cc_cbet_flop_air_two_oc_backdoor && f$cc_flop_static_lowmid_parent && !f$cc_cbet_high_spr Return true Force
+When Others Return false Force
+
+// Purpose: select flop size for the IP-isolator-vs-limper betting range.
+// Source: A from source dry-small/dynamic-larger pattern.
+// Provenance: A/P mapping to CashCrusher 33/50/75 deep-stack palette.
+// Decision logic: static high/paired small; dynamic high medium; caller-favouring
+// dynamic low becomes large only for robust value/premium draws, medium otherwise.
+// Safety/Limits: size 0 whenever action function checks; no size auto-converts to jam.
+##f$cc_cbet_iso_hu_limper_ip_size_id##
+When !f$cc_cbet_iso_hu_limper_ip_action Return 0 Force
+When f$cc_flop_dynamic_lowmid_parent && (f$cc_cbet_flop_very_strong_value || f$cc_cbet_flop_premium_draw) Return 3 Force
+When f$cc_flop_dynamic_lowmid_parent Return 2 Force
+When f$cc_flop_dynamic_high_parent Return 2 Force
+When f$cc_flop_static_lowmid_parent && (f$cc_cbet_flop_very_strong_value || f$cc_cbet_flop_overpair || f$cc_cbet_flop_premium_draw) Return 2 Force
+When f$cc_flop_static_lowmid_parent Return 1 Force
+When f$cc_flop_static_high_parent || f$cc_flop_paired_parent Return 1 Force
+When Others Return 2 Force
+
+// -----------------------------------------------------------------------------
+// ISO.C02 — OOP isolator versus ORIGINAL LIMPER
+// -----------------------------------------------------------------------------
+
+// Purpose: decide CBet OOP against the original limp-caller.
+// Context: HU ISO, Hero PFA OOP, survivor type=limper.
+// Source: A from DeepCrusher OOP/checking architecture and `3wSBvBB`; the exact
+// OOP ISO range does not exist in source.
+// Provenance: A/P; professional fill deliberately increases checking versus IP.
+// Decision logic: robust value bets, marginal one-pair checks, dynamic-low draws
+// often stay in future X/R/X/C range, and bluffs are restricted to best static
+// high/paired backdoor candidates.
+// Safety/Limits: checking here delegates future action to defense nodes; it is
+// not a hidden give-up instruction.
+##f$cc_cbet_iso_hu_limper_oop_action##
+When !f$cc_cbet_iso_hu_limper_oop_context Return false Force
+When f$cc_cbet_flop_very_strong_value Return true Force
+When f$cc_cbet_flop_overpair Return true Force
+When f$cc_cbet_flop_strong_top_pair && f$cc_flop_dynamic_lowmid_parent && f$cc_cbet_high_spr Return false Force
+When f$cc_cbet_flop_strong_top_pair Return true Force
+When f$cc_cbet_flop_medium_top_pair && (f$cc_flop_static_high_parent || f$cc_flop_paired_parent) Return true Force
+When f$cc_cbet_flop_medium_top_pair && f$cc_pair_plus_draw Return true Force
+When f$cc_cbet_flop_medium_top_pair Return false Force
+When f$cc_cbet_flop_weak_top_pair Return false Force
+When f$cc_cbet_flop_showdown_pair Return false Force
+When f$cc_cbet_flop_premium_draw && !f$cc_flop_dynamic_lowmid_parent Return true Force
+When f$cc_cbet_flop_good_draw && (f$cc_flop_static_high_parent || f$cc_flop_paired_parent) Return true Force
+When f$cc_real_frontdoor_draw Return false Force
+When f$cc_cbet_flop_air_best_backdoors && f$cc_flop_static_high_parent Return true Force
+When f$cc_cbet_flop_air_best_backdoors && f$cc_flop_paired_parent && !f$cc_cbet_high_spr Return true Force
+When Others Return false Force
+
+// Purpose: size OOP isolation CBets against the original limper.
+// Source/Provenance: A dry-small/dynamic-larger source concept + P deep-stack map.
+// Decision logic: dynamic low robust value can use 75%; other dynamic value uses
+// 50%; static high/paired pressure uses 33%.
+// Safety/Limits: no automatic commitment semantics.
+##f$cc_cbet_iso_hu_limper_oop_size_id##
+When !f$cc_cbet_iso_hu_limper_oop_action Return 0 Force
+When f$cc_flop_dynamic_lowmid_parent && f$cc_cbet_flop_very_strong_value Return 3 Force
+When f$cc_flop_dynamic_lowmid_parent Return 2 Force
+When f$cc_flop_dynamic_high_parent Return 2 Force
+When f$cc_flop_static_lowmid_parent && (f$cc_cbet_flop_very_strong_value || f$cc_cbet_flop_overpair) Return 2 Force
+When f$cc_flop_static_high_parent || f$cc_flop_paired_parent Return 1 Force
+When Others Return 2 Force
+
+// -----------------------------------------------------------------------------
+// ISO.C03 — IP isolator versus POST-RAISE COLD CALLER
+// -----------------------------------------------------------------------------
+
+// Purpose: decide CBet IP when the original limper folded and a later cold caller
+// is the surviving opponent.
+// Context: HU ISO pot by history, but Villain's range is post-raise cold-call.
+// Source: no direct Crusher range parent; 3wBTNvSB/BB and checked-to source only
+// constrain hand/board architecture.
+// Provenance: P-heavy with A constraints. This is explicitly a "tapa-buraco"
+// caused by the 6-max format difference, not a hidden Crusher rule.
+// Decision logic: narrower than vs limper; marginal SDV checks, premium equity
+// bets, static-high quality air supplies most bluffs.
+// Safety/Limits: exact cold-call composition is site/rake/sizing dependent; this
+// baseline does not claim a solved universal frequency.
+##f$cc_cbet_iso_hu_coldcaller_ip_action##
+When !f$cc_cbet_iso_hu_coldcaller_ip_context Return false Force
+When f$cc_cbet_flop_very_strong_value Return true Force
+When f$cc_cbet_flop_overpair Return true Force
+When f$cc_cbet_flop_strong_top_pair Return true Force
+When f$cc_cbet_flop_medium_top_pair && f$cc_flop_dynamic_lowmid_parent && f$cc_cbet_high_spr Return false Force
+When f$cc_cbet_flop_medium_top_pair && !f$cc_flop_dynamic_lowmid_parent Return true Force
+When f$cc_cbet_flop_medium_top_pair && !f$cc_cbet_high_spr Return true Force
+When f$cc_cbet_flop_medium_top_pair Return false Force
+When f$cc_cbet_flop_weak_top_pair && f$cc_flop_static_high_parent && !f$cc_cbet_very_high_spr Return true Force
+When f$cc_cbet_flop_weak_top_pair Return false Force
+When f$cc_cbet_flop_showdown_pair && f$cc_pair_plus_draw Return true Force
+When f$cc_cbet_flop_showdown_pair Return false Force
+When f$cc_cbet_flop_premium_draw Return true Force
+When f$cc_cbet_flop_good_draw && (f$cc_flop_static_high_parent || f$cc_flop_dynamic_high_parent || f$cc_flop_paired_parent) Return true Force
+When f$cc_cbet_flop_good_draw && f$cc_flop_static_lowmid_parent && f$cc_one_or_more_overcards Return true Force
+When f$cc_real_frontdoor_draw Return false Force
+When f$cc_cbet_flop_quality_air && f$cc_flop_static_high_parent Return true Force
+When f$cc_cbet_flop_air_best_backdoors && f$cc_flop_paired_parent Return true Force
+When Others Return false Force
+
+// Purpose: size IP CBets versus the stronger post-raise cold-call survivor.
+// Source/Provenance: A/P 33/50/75 mapping; intentionally less small-range-bet
+// oriented on static low boards than the vs-limper family.
+// Safety/Limits: 0 if action checks; no BetMax/commit conversion.
+##f$cc_cbet_iso_hu_coldcaller_ip_size_id##
+When !f$cc_cbet_iso_hu_coldcaller_ip_action Return 0 Force
+When f$cc_flop_dynamic_lowmid_parent && (f$cc_cbet_flop_very_strong_value || f$cc_cbet_flop_premium_draw) Return 3 Force
+When f$cc_flop_dynamic_lowmid_parent Return 2 Force
+When f$cc_flop_dynamic_high_parent Return 2 Force
+When f$cc_flop_static_lowmid_parent Return 2 Force
+When f$cc_flop_static_high_parent || f$cc_flop_paired_parent Return 1 Force
+When Others Return 2 Force
+
+// -----------------------------------------------------------------------------
+// ISO.C04 — OOP isolator versus POST-RAISE COLD CALLER
+// -----------------------------------------------------------------------------
+
+// Purpose: decide the most conservative HU ISO descendant: Hero isolated but a
+// post-raise cold caller survived and has position.
+// Context: HU ISO-history pot, PFA OOP, survivor type=cold caller.
+// Source: no direct Crusher range parent; OOP source trees constrain only the
+// need for a protected checking range and board-dependent value betting.
+// Provenance: P-heavy "tapa-buraco" with A architecture.
+// Decision logic: robust value bets; medium/weak one-pair checks frequently;
+// premium draws bet only outside the most caller-friendly dynamic-low boards;
+// air bluffs are limited to quality static-high candidates.
+// Safety/Limits: no attempt to mimic exact solver mixes through arbitrary RNG.
+##f$cc_cbet_iso_hu_coldcaller_oop_action##
+When !f$cc_cbet_iso_hu_coldcaller_oop_context Return false Force
+When f$cc_cbet_flop_very_strong_value Return true Force
+When f$cc_cbet_flop_overpair Return true Force
+When f$cc_cbet_flop_strong_top_pair && f$cc_flop_dynamic_lowmid_parent && f$cc_cbet_high_spr Return false Force
+When f$cc_cbet_flop_strong_top_pair Return true Force
+When f$cc_cbet_flop_medium_top_pair && f$cc_flop_static_high_parent Return true Force
+When f$cc_cbet_flop_medium_top_pair && f$cc_pair_plus_draw Return true Force
+When f$cc_cbet_flop_medium_top_pair Return false Force
+When f$cc_cbet_flop_weak_top_pair Return false Force
+When f$cc_cbet_flop_showdown_pair Return false Force
+When f$cc_cbet_flop_premium_draw && !f$cc_flop_dynamic_lowmid_parent Return true Force
+When f$cc_cbet_flop_good_draw && (f$cc_flop_static_high_parent || f$cc_flop_paired_parent) Return true Force
+When f$cc_real_frontdoor_draw Return false Force
+When f$cc_cbet_flop_quality_air && f$cc_flop_static_high_parent Return true Force
+When Others Return false Force
+
+// Purpose: size OOP CBet range versus a post-raise cold caller.
+// Source/Provenance: A/P; static-high small, dynamic robust region medium/large.
+// Safety/Limits: no automatic all-in meaning and no policy outside proven context.
+##f$cc_cbet_iso_hu_coldcaller_oop_size_id##
+When !f$cc_cbet_iso_hu_coldcaller_oop_action Return 0 Force
+When f$cc_flop_dynamic_lowmid_parent && f$cc_cbet_flop_very_strong_value Return 3 Force
+When f$cc_flop_dynamic_lowmid_parent Return 2 Force
+When f$cc_flop_dynamic_high_parent Return 2 Force
+When f$cc_flop_static_lowmid_parent && (f$cc_cbet_flop_very_strong_value || f$cc_cbet_flop_overpair) Return 2 Force
+When f$cc_flop_static_high_parent || f$cc_flop_paired_parent Return 1 Force
+When Others Return 2 Force
+
+// -----------------------------------------------------------------------------
+// ISO.C05 — HU dispatchers
+// -----------------------------------------------------------------------------
+
+// Purpose: route an IP HU ISO CBet to the correct survivor-range policy.
+// Source/Provenance: A/P architecture; no approximation between limper/coldcaller.
+// Safety: unknown survivor -> false.
+##f$cc_cbet_iso_hu_ip_action##
+When f$cc_cbet_iso_hu_limper_ip_context Return f$cc_cbet_iso_hu_limper_ip_action Force
+When f$cc_cbet_iso_hu_coldcaller_ip_context Return f$cc_cbet_iso_hu_coldcaller_ip_action Force
+When Others Return false Force
+
+// Purpose: return size ID paired with the exact IP ISO survivor policy.
+// Source/Provenance: A/P router; size 0 on unknown context.
+##f$cc_cbet_iso_hu_ip_size_id##
+When f$cc_cbet_iso_hu_limper_ip_context Return f$cc_cbet_iso_hu_limper_ip_size_id Force
+When f$cc_cbet_iso_hu_coldcaller_ip_context Return f$cc_cbet_iso_hu_coldcaller_ip_size_id Force
+When Others Return 0 Force
+
+// Purpose: route an OOP HU ISO CBet to the correct survivor-range policy.
+// Source/Provenance: A/P architecture; no range fallback by visual similarity.
+// Safety: unknown survivor -> false.
+##f$cc_cbet_iso_hu_oop_action##
+When f$cc_cbet_iso_hu_limper_oop_context Return f$cc_cbet_iso_hu_limper_oop_action Force
+When f$cc_cbet_iso_hu_coldcaller_oop_context Return f$cc_cbet_iso_hu_coldcaller_oop_action Force
+When Others Return false Force
+
+// Purpose: return size ID paired with the exact OOP ISO survivor policy.
+// Source/Provenance: A/P router; size 0 on unknown context.
+##f$cc_cbet_iso_hu_oop_size_id##
+When f$cc_cbet_iso_hu_limper_oop_context Return f$cc_cbet_iso_hu_limper_oop_size_id Force
+When f$cc_cbet_iso_hu_coldcaller_oop_context Return f$cc_cbet_iso_hu_coldcaller_oop_size_id Force
+When Others Return 0 Force
+
+// ============================================================================
+// End Gate 01E HU ISO CBet baseline.
+// Multiway ISO remains fail-closed until independently audited.
+// ============================================================================

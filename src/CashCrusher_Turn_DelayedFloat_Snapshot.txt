@@ -1,0 +1,149 @@
+// ============================================================================
+// CashCrusher_Turn_DelayedFloat_Snapshot.txt
+// Gate 12B.3 — pre-action flop provenance for source Delayed-Float histories
+// ============================================================================
+// Purpose:
+//   Save source facts that disappear once the Turn card arrives. These markers
+//   are CANDIDATE observations only; they never prove Hero checked. Every Turn
+//   consumer must additionally require Gate12B.1 CLOSED flop X/X history.
+//
+// Source:
+//   Starting Strategy `3wBBvSB Facing Check (ISO/LP/SRP)` deliberately checks
+//   high second/third pairs, low second/third pairs on wet flops, and wet air.
+//   Those exact flop classes feed the source Turn delayed tree.
+//
+// Provenance:
+//   T/A = flop hand/texture facts + exact native 3-handed position topology.
+//   P = persistent marker wrapper and explicit pot-origin ID.
+// ============================================================================
+
+// Purpose: pre-action no-initiative checked-to flop decision at exact LAST.
+// Source/Provenance: T/A Framework delayed-float parent before actual action.
+##f$cc_turn_delayed_float_snapshot_capture_eligible##
+IsFlop &&
+f$cc_context_valid &&
+BotsActionsOnThisRoundIncludingChecks = 0 &&
+AmountToCall = 0 &&
+f$cc_relpos_id = 3 &&
+f$cc_turn_delayed_float_preflop_noinitiative
+
+// Purpose: classify the direct 3wBBvSB source's three named preflop families.
+// 1 = limped/unraised; 2 = ISO; 3 = ordinary one-raise SRP.
+// Source/Provenance: T/A exact source `ISO/LP/SRP` origin translation.
+##f$cc_turn_delayed_float_3w_bbvsb_flop_origin_id##
+When !f$cc_turn_delayed_float_snapshot_capture_eligible Return 0 Force
+When f$cc_pot_family_id = 1 Return 1 Force
+When f$cc_pot_family_id = 2 && f$cc_pf_iso_proven Return 2 Force
+When f$cc_pot_family_id = 2 && f$cc_pf_one_raise_ordinary_srp Return 3 Force
+When Others Return 0 Force
+
+// Purpose: exact native three-handed BB-v-SB checked-to flop topology.
+// Source/Provenance: A direct legacy `3wBBvSB` reconstruction.
+##f$cc_turn_delayed_float_snapshot_3w_bbvsb_context##
+f$cc_turn_delayed_float_snapshot_capture_eligible &&
+f$cc_deal_size = 3 &&
+f$cc_flop_entry_count = 2 &&
+f$cc_hu &&
+f$cc_hero_pos_id = 6 &&
+f$cc_hu_villain_pos_id = 5 &&
+f$cc_turn_delayed_float_3w_bbvsb_flop_origin_id >= 1 &&
+f$cc_turn_delayed_float_3w_bbvsb_flop_origin_id <= 3
+
+// Purpose: source checked second-pair class: high (8+) always checks; low (<=7)
+// checks only on wet flops. Gate04 already ports the exact high/low rank split.
+// Source/Provenance: T/A direct Starting Strategy Q1/Q2 translation.
+##f$cc_turn_delayed_float_3w_bbvsb_secondpair_candidate##
+f$cc_turn_delayed_float_snapshot_3w_bbvsb_context &&
+(f$cc_flop_float_second_pair_high ||
+ (f$cc_flop_float_second_pair_low && f$cc_flop_float_wet_parent))
+
+// Purpose: source checked third/bottom-pair class with the same rank/texture rule.
+// Source/Provenance: T/A direct Starting Strategy Q1/Q2 translation.
+##f$cc_turn_delayed_float_3w_bbvsb_thirdpair_candidate##
+f$cc_turn_delayed_float_snapshot_3w_bbvsb_context &&
+(f$cc_flop_float_bottom_pair_high ||
+ (f$cc_flop_float_bottom_pair_low && f$cc_flop_float_wet_parent))
+
+// Purpose: source wet-air `DL&Bet` / delayed family.
+// Source/Provenance: T/A direct Starting Strategy Facing-Check air rule.
+##f$cc_turn_delayed_float_3w_bbvsb_wetair_candidate##
+f$cc_turn_delayed_float_snapshot_3w_bbvsb_context &&
+f$cc_flop_float_air &&
+f$cc_flop_float_wet_parent
+
+// Purpose: exact flop 2-broadway marker used by source Turn air restrictions.
+// Source/Provenance: T direct two-BW board structure.
+##f$cc_turn_delayed_float_3w_bbvsb_wetair_2bw_candidate##
+f$cc_turn_delayed_float_3w_bbvsb_wetair_candidate &&
+f$cc_flop_broadway_count = 2
+
+// Purpose: source A-high wet-air restriction.
+// Source/Provenance: T direct board rank fact.
+##f$cc_turn_delayed_float_3w_bbvsb_wetair_ahigh_candidate##
+f$cc_turn_delayed_float_3w_bbvsb_wetair_candidate && board$A
+
+// Purpose: source rare AKx no-BxB subset.
+// Source/Provenance: T direct board pattern.
+##f$cc_turn_delayed_float_3w_bbvsb_wetair_akx_candidate##
+f$cc_turn_delayed_float_3w_bbvsb_wetair_candidate && board$A && board$K
+
+// Purpose: count mutually-exclusive direct source flop families.
+// Source/Provenance: P integrity check over T/A candidates.
+##f$cc_turn_delayed_float_3w_bbvsb_primary_marker_count##
+(f$cc_turn_delayed_float_3w_bbvsb_secondpair_candidate * 1) +
+(f$cc_turn_delayed_float_3w_bbvsb_thirdpair_candidate * 1) +
+(f$cc_turn_delayed_float_3w_bbvsb_wetair_candidate * 1)
+
+// Purpose: persist exact candidate history. No Return true means "bet"; this is
+// only a side-effect snapshot to be composed into the eventual flop adapter.
+// Source/Provenance: T/A observed source facts + P persistence wrapper.
+##f$cc_turn_delayed_float_snapshot_writer##
+When !f$cc_turn_delayed_float_snapshot_3w_bbvsb_context Return false Force
+When f$cc_turn_delayed_float_snapshot_3w_bbvsb_context Set user_cc_turn_delayed_float_3w_bbvsb_snapshot_seen
+When f$cc_turn_delayed_float_3w_bbvsb_flop_origin_id = 1 Set user_cc_turn_delayed_float_3w_bbvsb_origin_limped
+When f$cc_turn_delayed_float_3w_bbvsb_flop_origin_id = 2 Set user_cc_turn_delayed_float_3w_bbvsb_origin_iso
+When f$cc_turn_delayed_float_3w_bbvsb_flop_origin_id = 3 Set user_cc_turn_delayed_float_3w_bbvsb_origin_srp
+When f$cc_turn_delayed_float_3w_bbvsb_secondpair_candidate Set user_cc_turn_delayed_float_3w_bbvsb_flop_secondpair_candidate
+When f$cc_turn_delayed_float_3w_bbvsb_thirdpair_candidate Set user_cc_turn_delayed_float_3w_bbvsb_flop_thirdpair_candidate
+When f$cc_turn_delayed_float_3w_bbvsb_wetair_candidate Set user_cc_turn_delayed_float_3w_bbvsb_flop_wetair_candidate
+When f$cc_turn_delayed_float_3w_bbvsb_wetair_2bw_candidate Set user_cc_turn_delayed_float_3w_bbvsb_flop_wetair_2bw
+When f$cc_turn_delayed_float_3w_bbvsb_wetair_ahigh_candidate Set user_cc_turn_delayed_float_3w_bbvsb_flop_wetair_ahigh
+When f$cc_turn_delayed_float_3w_bbvsb_wetair_akx_candidate Set user_cc_turn_delayed_float_3w_bbvsb_flop_wetair_akx
+When Others Return true Force
+
+// Purpose: count persisted source origin markers.
+// Source/Provenance: P integrity check.
+##f$cc_turn_delayed_float_3w_bbvsb_origin_marker_count##
+(user_cc_turn_delayed_float_3w_bbvsb_origin_limped * 1) +
+(user_cc_turn_delayed_float_3w_bbvsb_origin_iso * 1) +
+(user_cc_turn_delayed_float_3w_bbvsb_origin_srp * 1)
+
+// Purpose: count persisted source family markers.
+// Source/Provenance: P integrity check.
+##f$cc_turn_delayed_float_3w_bbvsb_saved_primary_marker_count##
+(user_cc_turn_delayed_float_3w_bbvsb_flop_secondpair_candidate * 1) +
+(user_cc_turn_delayed_float_3w_bbvsb_flop_thirdpair_candidate * 1) +
+(user_cc_turn_delayed_float_3w_bbvsb_flop_wetair_candidate * 1)
+
+// Purpose: exact source snapshot may be consumed only after actual X/X history.
+// A snapshot with no source delayed class is retained as a diagnostic mismatch,
+// not promoted into a strategy family.
+// Source/Provenance: T/A/P cross-street evidence bridge.
+##f$cc_turn_delayed_float_3w_bbvsb_snapshot_valid##
+When !f$cc_turn_delayed_float_base_opportunity Return false Force
+When !user_cc_turn_delayed_float_3w_bbvsb_snapshot_seen Return false Force
+When f$cc_turn_delayed_float_3w_bbvsb_origin_marker_count != 1 Return false Force
+When f$cc_turn_delayed_float_3w_bbvsb_saved_primary_marker_count != 1 Return false Force
+When Others Return true Force
+
+// Purpose: Hero checked a source topology that should have bet immediately
+// (TP+, real draw, dry air, etc.) or snapshot provenance is incomplete.
+// Source/Provenance: X fail-closed diagnostic; never authorizes a Turn bet.
+##f$cc_turn_delayed_float_3w_bbvsb_unexpected_check_history##
+f$cc_turn_delayed_float_base_opportunity &&
+user_cc_turn_delayed_float_3w_bbvsb_snapshot_seen &&
+!f$cc_turn_delayed_float_3w_bbvsb_snapshot_valid
+
+// ============================================================================
+// End Gate12B.3 snapshot provenance.
+// ============================================================================

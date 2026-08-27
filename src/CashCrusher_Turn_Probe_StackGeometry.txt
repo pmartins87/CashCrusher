@@ -1,0 +1,157 @@
+// ============================================================================
+// CashCrusher_Turn_Probe_StackGeometry.txt
+// Gate 10J.2A — Turn-Probe stack-sensitive execution geometry
+// ============================================================================
+// Purpose:
+//   Measure the reviewed Turn-Probe request against Hero balance and exact HU /
+//   dual-bound multiway effective stacks. Historical DeepCrusher commitment
+//   thresholds remain diagnostics, never automatic strategy.
+//
+// MIN handling:
+//   `BetMin` is a minimum bet, not a pot fraction. OpenHoldem maps BetMin to its
+//   MinBet/Bet action token, and DeepCrusher explicitly documents TurnMin = 1bb.
+//   Therefore requested contribution is exactly 1bb for geometry while the
+//   fraction diagnostic remains sentinel -1.
+//
+// Source/Provenance:
+//   T = OpenHoldem balance/pot/currentbet mechanics and verified BetMin semantics.
+//   A = corrected deepest-effective ancestry + historical 50/60 review signals.
+//   P = sidepot/all-live diagnostics only; no BetMax in this file.
+//
+// Safety:
+//   * clean initial Turn bet only (AmountToCall/currentbet/potplayer = 0);
+//   * shortest-only reach is a sidepot event, never whole-field commitment;
+//   * no hand class creates an all-in action here.
+// ============================================================================
+
+// Purpose: simple street-start geometry is valid for this initial Turn Probe.
+// Source/Provenance: T OpenHoldem current-bet/potplayer semantics + A router gate.
+##f$cc_turn_probe_stackgeom_clean##
+f$cc_turn_probe_runtime_size_ready &&
+f$cc_turn_probe_runtime_mapping_valid &&
+AmountToCall = 0 &&
+currentbet = 0 &&
+potplayer = 0 &&
+f$cc_round_start_pot_bb > 0 &&
+f$cc_hero_stack_round_start_bb > 0
+
+// Purpose: exact requested Hero contribution in BB before any Villain response.
+// Source: T DeepCrusher TurnMin=1bb; fixed fractions use clean initial-bet pot.
+// Provenance: T/A arithmetic.
+##f$cc_turn_probe_requested_bet_bb##
+When !f$cc_turn_probe_stackgeom_clean Return -1 Force
+When f$cc_turn_probe_size_id = 1 Return 1.00 Force
+When f$cc_turn_probe_requested_pot_fraction <= 0 Return -1 Force
+When Others Return (f$cc_turn_probe_requested_pot_fraction * f$cc_round_start_pot_bb) Force
+
+// Purpose: requested bet / Hero available street-start stack.
+// Source/Provenance: T mechanical balance ratio.
+##f$cc_turn_probe_requested_hero_balance_ratio##
+When !f$cc_turn_probe_stackgeom_clean Return -1 Force
+When f$cc_hero_stack_round_start_bb <= 0 Return -1 Force
+When f$cc_turn_probe_requested_bet_bb < 0 Return -1 Force
+When Others Return (f$cc_turn_probe_requested_bet_bb / f$cc_hero_stack_round_start_bb) Force
+
+// Purpose: Hero residual stack after request, before response.
+// Source/Provenance: T arithmetic diagnostic.
+##f$cc_turn_probe_hero_residual_after_bet_bb##
+When f$cc_turn_probe_requested_bet_bb < 0 Return -1 Force
+When Others Return (f$cc_hero_stack_round_start_bb - f$cc_turn_probe_requested_bet_bb) Force
+
+// Purpose: historical ~50%-Hero-stack review signal only.
+// Source/Provenance: A DeepCrusher commitment ancestry; NOT strategy.
+##f$cc_turn_probe_hist_hero_balance_50_trigger##
+f$cc_turn_probe_requested_hero_balance_ratio >= 0.50
+
+// Purpose: historical explicit ~60%-Hero-stack review signal only.
+// Source/Provenance: A DeepCrusher sizing-router ancestry; NOT strategy.
+##f$cc_turn_probe_hist_hero_stack_60_trigger##
+f$cc_turn_probe_requested_hero_balance_ratio >= 0.60
+
+// Purpose: requested bet / exact current HU effective stack.
+// Source/Provenance: T/A Gate00 HU street-start effective geometry.
+##f$cc_turn_probe_requested_hu_effective_ratio##
+When !f$cc_turn_probe_stackgeom_clean Return -1 Force
+When !f$cc_hu Return -1 Force
+When f$cc_hu_effective_stack_round_start_bb <= 0 Return -1 Force
+When Others Return (f$cc_turn_probe_requested_bet_bb / f$cc_hu_effective_stack_round_start_bb) Force
+
+// Purpose: historical ~50%-effective HU review signal only.
+// Source/Provenance: A DeepCrusher callback ancestry; no action implied.
+##f$cc_turn_probe_hist_hu_effective_50_trigger##
+f$cc_turn_probe_requested_hu_effective_ratio >= 0.50
+
+// Purpose: requested bet / shallowest current multiway effective relation.
+// Source/Provenance: T/A corrected dual-bound multiway geometry.
+##f$cc_turn_probe_requested_mw_shallowest_effective_ratio##
+When !f$cc_turn_probe_stackgeom_clean Return -1 Force
+When !f$cc_multiway Return -1 Force
+When !f$cc_mw_stack_geometry_valid Return -1 Force
+When f$cc_mw_shallowest_effective_stack_round_start_bb <= 0 Return -1 Force
+When Others Return (f$cc_turn_probe_requested_bet_bb / f$cc_mw_shallowest_effective_stack_round_start_bb) Force
+
+// Purpose: requested bet / deepest all-live current multiway effective relation.
+// Source: DeepCrusher EffectiveStack_BKP ancestry maps to biggest active opponent.
+// Provenance: T/A corrected whole-field denominator.
+##f$cc_turn_probe_requested_mw_deepest_effective_ratio##
+When !f$cc_turn_probe_stackgeom_clean Return -1 Force
+When !f$cc_multiway Return -1 Force
+When !f$cc_mw_stack_geometry_valid Return -1 Force
+When f$cc_mw_deepest_effective_stack_round_start_bb <= 0 Return -1 Force
+When Others Return (f$cc_turn_probe_requested_bet_bb / f$cc_mw_deepest_effective_stack_round_start_bb) Force
+
+// Purpose: historical ~50%-effective multiway review signal using deepest/all-live.
+// Source/Provenance: A source threshold semantics, diagnostic only.
+##f$cc_turn_probe_hist_mw_effective_50_trigger##
+f$cc_turn_probe_requested_mw_deepest_effective_ratio >= 0.50
+
+// Purpose: request reaches/exceeds Hero's entire balance.
+// Source/Provenance: T mechanical geometry.
+##f$cc_turn_probe_requested_reaches_hero_stack##
+f$cc_turn_probe_requested_hero_balance_ratio >= 1.00
+
+// Purpose: request reaches exact HU effective relationship.
+// Source/Provenance: T exact HU geometry.
+##f$cc_turn_probe_requested_reaches_hu_effective##
+f$cc_hu && f$cc_turn_probe_requested_hu_effective_ratio >= 1.00
+
+// Purpose: request reaches at least the shallowest MW effective relationship.
+// Source/Provenance: T/A sidepot descriptor only.
+##f$cc_turn_probe_requested_reaches_mw_shallowest##
+f$cc_multiway && f$cc_turn_probe_requested_mw_shallowest_effective_ratio >= 1.00
+
+// Purpose: request reaches deepest/all-live MW effective relationship.
+// Source/Provenance: T/A whole-field mechanical reach.
+##f$cc_turn_probe_requested_reaches_mw_deepest##
+f$cc_multiway && f$cc_turn_probe_requested_mw_deepest_effective_ratio >= 1.00
+
+// Purpose: shortest-only all-in/sidepot reach while deeper opponent remains.
+// Source/Provenance: P/T safety diagnostic.
+##f$cc_turn_probe_mw_sidepot_divergence_candidate##
+f$cc_turn_probe_requested_reaches_mw_shallowest &&
+!f$cc_turn_probe_requested_reaches_mw_deepest
+
+// Purpose: review flag if source-era threshold or natural stack reach is engaged.
+// Source/Provenance: A/P diagnostics only.
+##f$cc_turn_probe_stack_sensitive_review_required##
+When !f$cc_turn_probe_stackgeom_clean Return false Force
+When f$cc_turn_probe_hist_hero_balance_50_trigger Return true Force
+When f$cc_hu && f$cc_turn_probe_hist_hu_effective_50_trigger Return true Force
+When f$cc_multiway && f$cc_turn_probe_hist_mw_effective_50_trigger Return true Force
+When f$cc_turn_probe_requested_reaches_hero_stack Return true Force
+When f$cc_hu && f$cc_turn_probe_requested_reaches_hu_effective Return true Force
+When f$cc_multiway && f$cc_turn_probe_requested_reaches_mw_shallowest Return true Force
+When Others Return false Force
+
+// Purpose: compact review flags.
+// Bits: 1 Hero>=50; 2 Hero>=60; 4 HU-effective>=50; 8 reaches HU effective;
+// 16 reaches MW shallowest; 32 MW-deepest>=50; 64 reaches MW deepest;
+// 128 shortest-only sidepot divergence; 256 MIN-size request.
+// Source/Provenance: P metadata over A/T diagnostics.
+##f$cc_turn_probe_stack_review_flags_id##
+When !f$cc_turn_probe_stackgeom_clean Return 0 Force
+When Others Return ((f$cc_turn_probe_hist_hero_balance_50_trigger * 1) + (f$cc_turn_probe_hist_hero_stack_60_trigger * 2) + ((f$cc_hu && f$cc_turn_probe_hist_hu_effective_50_trigger) * 4) + ((f$cc_hu && f$cc_turn_probe_requested_reaches_hu_effective) * 8) + ((f$cc_multiway && f$cc_turn_probe_requested_reaches_mw_shallowest) * 16) + ((f$cc_multiway && f$cc_turn_probe_hist_mw_effective_50_trigger) * 32) + ((f$cc_multiway && f$cc_turn_probe_requested_reaches_mw_deepest) * 64) + ((f$cc_multiway && f$cc_turn_probe_mw_sidepot_divergence_candidate) * 128) + ((f$cc_turn_probe_size_id = 1) * 256)) Force
+
+// ============================================================================
+// End Gate10J.2A. No all-in action encoded here.
+// ============================================================================

@@ -1,0 +1,329 @@
+// ============================================================================
+// CashCrusher_Turn_DelayedCBet_ActionHistory.txt
+// Gate 12A.17 — executed Turn Delayed-CBet provenance for Gate13
+// ============================================================================
+// Purpose:
+//   Preserve the exact distinction between a reviewed Turn Delayed-CBet plan and
+//   what OpenHoldem actually executed. Gate13 may consume only CLOSED round-3
+//   proof. A source future-plan predicate captured before Hero acts is metadata,
+//   never evidence that Hero really checked or bet.
+//
+// Provenance:
+//   T = did*round3 / lastraised3 and current live-mask mechanics.
+//   A = Gate02N/Gate12B closed-action provenance architecture.
+//   P = stable Gate12A family/current-class/source-plan snapshots.
+//   X = plan/runtime drift remains explicit and fail-closed.
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// DCH.01 — pre-action snapshot / strategy wrapper
+// -----------------------------------------------------------------------------
+
+// Purpose: exhaustive residual Turn class outside the five source-facing tiers.
+// Source/Provenance: P complement over T/A mutually-exclusive current tiers.
+##f$cc_turn_delayed_cbet_residual_current_class##
+IsTurn &&
+!f$cc_turn_delayed_cbet_two_pair_plus_real &&
+!f$cc_turn_delayed_cbet_tpop_real &&
+!f$cc_turn_delayed_cbet_second_pair &&
+!f$cc_turn_delayed_cbet_third_pair &&
+!f$cc_turn_delayed_cbet_no_made
+
+// Purpose: history-aware Gate12A action predicate for eventual whole-bot f$turn
+// composition. Every user_* write below is PRE-ACTION metadata only.
+// Source/Provenance: A/T closed-history wrapper + P stable Gate12A snapshot.
+##f$cc_turn_delayed_cbet_action_with_history##
+When !f$cc_turn_delayed_cbet_base_opportunity Return false Force
+When f$cc_turn_delayed_cbet_base_opportunity Set user_cc_turn_delayed_cbet_opportunity_seen
+When f$cc_turn_delayed_cbet_base_opportunity Set user_cc_turn_delayed_cbet_state_snapshot_recorded
+
+// Reviewed Gate12A family. Uncovered states intentionally store no family marker.
+When f$cc_turn_delayed_cbet_family_id = 1 Set user_cc_turn_delayed_cbet_state_family_1
+When f$cc_turn_delayed_cbet_family_id = 2 Set user_cc_turn_delayed_cbet_state_family_2
+When f$cc_turn_delayed_cbet_family_id = 3 Set user_cc_turn_delayed_cbet_state_family_3
+When f$cc_turn_delayed_cbet_family_id = 4 Set user_cc_turn_delayed_cbet_state_family_4
+When f$cc_turn_delayed_cbet_family_id = 5 Set user_cc_turn_delayed_cbet_state_family_5
+When f$cc_turn_delayed_cbet_family_id = 6 Set user_cc_turn_delayed_cbet_state_family_6
+When f$cc_turn_delayed_cbet_family_id = 7 Set user_cc_turn_delayed_cbet_state_family_7
+When f$cc_turn_delayed_cbet_family_id = 8 Set user_cc_turn_delayed_cbet_state_family_8
+When f$cc_turn_delayed_cbet_family_id = 9 Set user_cc_turn_delayed_cbet_state_family_9
+When f$cc_turn_delayed_cbet_family_id = 10 Set user_cc_turn_delayed_cbet_state_family_10
+When f$cc_turn_delayed_cbet_family_id = 11 Set user_cc_turn_delayed_cbet_state_family_11
+When f$cc_turn_delayed_cbet_family_id = 12 Set user_cc_turn_delayed_cbet_state_family_12
+When f$cc_turn_delayed_cbet_family_id = 13 Set user_cc_turn_delayed_cbet_state_family_13
+When f$cc_turn_delayed_cbet_family_id = 14 Set user_cc_turn_delayed_cbet_state_family_14
+When f$cc_turn_delayed_cbet_family_id = 15 Set user_cc_turn_delayed_cbet_state_family_15
+When f$cc_turn_delayed_cbet_family_id = 16 Set user_cc_turn_delayed_cbet_state_family_16
+When f$cc_turn_delayed_cbet_family_id = 17 Set user_cc_turn_delayed_cbet_state_family_17
+
+// Mutually-exclusive current Turn class.
+When f$cc_turn_delayed_cbet_two_pair_plus_real Set user_cc_turn_delayed_cbet_state_had_2pplus
+When f$cc_turn_delayed_cbet_tpop_real Set user_cc_turn_delayed_cbet_state_had_tpop
+When f$cc_turn_delayed_cbet_second_pair Set user_cc_turn_delayed_cbet_state_had_second_pair
+When f$cc_turn_delayed_cbet_third_pair Set user_cc_turn_delayed_cbet_state_had_third_pair
+When f$cc_turn_delayed_cbet_no_made Set user_cc_turn_delayed_cbet_state_had_no_made
+When f$cc_turn_delayed_cbet_residual_current_class Set user_cc_turn_delayed_cbet_state_had_residual
+
+// Runout/equity overlays retained for River reclassification.
+When f$cc_turn_delayed_cbet_turn_completed Set user_cc_turn_delayed_cbet_state_turn_completed
+When f$cc_turn_super_completed Set user_cc_turn_delayed_cbet_state_turn_supercompleted
+When f$cc_turn_new_completion Set user_cc_turn_delayed_cbet_state_turn_new_completion
+When f$cc_turn_pairs_flop_rank Set user_cc_turn_delayed_cbet_state_turn_paired_flop
+When f$cc_turn_meaningful_overcard Set user_cc_turn_delayed_cbet_state_turn_meaningful_overcard
+When f$cc_turn_undercard Set user_cc_turn_delayed_cbet_state_turn_undercard
+
+// Player count and exact opponents alive before Hero's Gate12A decision.
+When nplayersplaying = 2 Set user_cc_turn_delayed_cbet_state_players_2
+When nplayersplaying = 3 Set user_cc_turn_delayed_cbet_state_players_3
+When nplayersplaying = 4 Set user_cc_turn_delayed_cbet_state_players_4
+When nplayersplaying = 5 Set user_cc_turn_delayed_cbet_state_players_5
+When nplayersplaying = 6 Set user_cc_turn_delayed_cbet_state_players_6
+When f$cc_opp_live_utg Set user_cc_turn_delayed_cbet_state_live_utg
+When f$cc_opp_live_hj Set user_cc_turn_delayed_cbet_state_live_hj
+When f$cc_opp_live_co Set user_cc_turn_delayed_cbet_state_live_co
+When f$cc_opp_live_btn Set user_cc_turn_delayed_cbet_state_live_btn
+When f$cc_opp_live_sb Set user_cc_turn_delayed_cbet_state_live_sb
+When f$cc_opp_live_bb Set user_cc_turn_delayed_cbet_state_live_bb
+
+// Exact source future plans whose Gate12A action is CHECK and which therefore can
+// become Gate13 no-action parents only after CLOSED X/X proof.
+When f$cc_turn_delayed_cbet_hubb_thirdpair_deldel_plan Set user_cc_turn_delayed_cbet_source_plan_hubb_thirdpair_deldel
+When f$cc_turn_delayed_cbet_hubb_air_deldel_plan Set user_cc_turn_delayed_cbet_source_plan_hubb_air_deldel
+When f$cc_turn_delayed_cbet_3w_bbvsb_plan_turncheck_bxb_river50 Set user_cc_turn_delayed_cbet_source_plan_bbvsb_bxb_river50
+When f$cc_turn_delayed_cbet_3w_sbvbb_plan_lowpair_deldel_river50 Set user_cc_turn_delayed_cbet_source_plan_sbvbb_lowpair_deldel50
+When f$cc_turn_delayed_cbet_3w_sbvbb_plan_draw_connected_deldel Set user_cc_turn_delayed_cbet_source_plan_sbvbb_draw_deldel50
+When f$cc_turn_delayed_cbet_3w_sbvbb_plan_air_ak_showdown Set user_cc_turn_delayed_cbet_source_plan_sbvbb_air_ak_showdown
+
+When f$cc_turn_delayed_cbet_router Set user_cc_turn_delayed_cbet_plan_bet_seen
+When f$cc_turn_delayed_cbet_router Return true Force
+When Others Return false Force
+
+// Purpose: count stored Gate12A family markers.
+// Source/Provenance: P integrity arithmetic over stable family booleans.
+##f$cc_hist_turn_delayed_cbet_family_marker_count##
+(user_cc_turn_delayed_cbet_state_family_1 * 1) +
+(user_cc_turn_delayed_cbet_state_family_2 * 1) +
+(user_cc_turn_delayed_cbet_state_family_3 * 1) +
+(user_cc_turn_delayed_cbet_state_family_4 * 1) +
+(user_cc_turn_delayed_cbet_state_family_5 * 1) +
+(user_cc_turn_delayed_cbet_state_family_6 * 1) +
+(user_cc_turn_delayed_cbet_state_family_7 * 1) +
+(user_cc_turn_delayed_cbet_state_family_8 * 1) +
+(user_cc_turn_delayed_cbet_state_family_9 * 1) +
+(user_cc_turn_delayed_cbet_state_family_10 * 1) +
+(user_cc_turn_delayed_cbet_state_family_11 * 1) +
+(user_cc_turn_delayed_cbet_state_family_12 * 1) +
+(user_cc_turn_delayed_cbet_state_family_13 * 1) +
+(user_cc_turn_delayed_cbet_state_family_14 * 1) +
+(user_cc_turn_delayed_cbet_state_family_15 * 1) +
+(user_cc_turn_delayed_cbet_state_family_16 * 1) +
+(user_cc_turn_delayed_cbet_state_family_17 * 1)
+
+// Purpose: decode reviewed Gate12A family after Turn closes.
+// Source/Provenance: P contradiction-safe persistent decoder.
+##f$cc_hist_turn_delayed_cbet_family_id##
+When !f$cc_hist_turn_delayed_cbet_closed Return 0 Force
+When f$cc_hist_turn_delayed_cbet_family_marker_count != 1 Return 0 Force
+When user_cc_turn_delayed_cbet_state_family_1 Return 1 Force
+When user_cc_turn_delayed_cbet_state_family_2 Return 2 Force
+When user_cc_turn_delayed_cbet_state_family_3 Return 3 Force
+When user_cc_turn_delayed_cbet_state_family_4 Return 4 Force
+When user_cc_turn_delayed_cbet_state_family_5 Return 5 Force
+When user_cc_turn_delayed_cbet_state_family_6 Return 6 Force
+When user_cc_turn_delayed_cbet_state_family_7 Return 7 Force
+When user_cc_turn_delayed_cbet_state_family_8 Return 8 Force
+When user_cc_turn_delayed_cbet_state_family_9 Return 9 Force
+When user_cc_turn_delayed_cbet_state_family_10 Return 10 Force
+When user_cc_turn_delayed_cbet_state_family_11 Return 11 Force
+When user_cc_turn_delayed_cbet_state_family_12 Return 12 Force
+When user_cc_turn_delayed_cbet_state_family_13 Return 13 Force
+When user_cc_turn_delayed_cbet_state_family_14 Return 14 Force
+When user_cc_turn_delayed_cbet_state_family_15 Return 15 Force
+When user_cc_turn_delayed_cbet_state_family_16 Return 16 Force
+When user_cc_turn_delayed_cbet_state_family_17 Return 17 Force
+When Others Return 0 Force
+
+// Purpose: count mutually-exclusive current Turn class markers.
+// Source/Provenance: P integrity over T/A current-hand snapshot.
+##f$cc_hist_turn_delayed_cbet_primary_class_marker_count##
+(user_cc_turn_delayed_cbet_state_had_2pplus * 1) +
+(user_cc_turn_delayed_cbet_state_had_tpop * 1) +
+(user_cc_turn_delayed_cbet_state_had_second_pair * 1) +
+(user_cc_turn_delayed_cbet_state_had_third_pair * 1) +
+(user_cc_turn_delayed_cbet_state_had_no_made * 1) +
+(user_cc_turn_delayed_cbet_state_had_residual * 1)
+
+// Purpose: count stored player-count markers.
+// Source/Provenance: P integrity over T nplayersplaying snapshot.
+##f$cc_hist_turn_delayed_cbet_player_count_marker_count##
+(user_cc_turn_delayed_cbet_state_players_2 * 1) +
+(user_cc_turn_delayed_cbet_state_players_3 * 1) +
+(user_cc_turn_delayed_cbet_state_players_4 * 1) +
+(user_cc_turn_delayed_cbet_state_players_5 * 1) +
+(user_cc_turn_delayed_cbet_state_players_6 * 1)
+
+// Purpose: decode player count at Gate12A Turn decision.
+// Source/Provenance: P persistent player-count decoder.
+##f$cc_hist_turn_delayed_cbet_player_count##
+When !f$cc_hist_turn_delayed_cbet_closed Return 0 Force
+When f$cc_hist_turn_delayed_cbet_player_count_marker_count != 1 Return 0 Force
+When user_cc_turn_delayed_cbet_state_players_2 Return 2 Force
+When user_cc_turn_delayed_cbet_state_players_3 Return 3 Force
+When user_cc_turn_delayed_cbet_state_players_4 Return 4 Force
+When user_cc_turn_delayed_cbet_state_players_5 Return 5 Force
+When user_cc_turn_delayed_cbet_state_players_6 Return 6 Force
+When Others Return 0 Force
+
+// Purpose: exact opponents alive before Hero's Gate12A decision.
+// Source/Provenance: A/P canonical position-mask decoder.
+##f$cc_hist_turn_delayed_cbet_live_opp_mask##
+(user_cc_turn_delayed_cbet_state_live_utg * 1) +
+(user_cc_turn_delayed_cbet_state_live_hj * 2) +
+(user_cc_turn_delayed_cbet_state_live_co * 4) +
+(user_cc_turn_delayed_cbet_state_live_btn * 8) +
+(user_cc_turn_delayed_cbet_state_live_sb * 16) +
+(user_cc_turn_delayed_cbet_state_live_bb * 32)
+
+// Purpose: count mutually-exclusive source CHECK-plan markers carried into Gate13.
+// Source/Provenance: P integrity over T/A exact source-plan state.
+##f$cc_hist_turn_delayed_cbet_source_check_plan_marker_count##
+(user_cc_turn_delayed_cbet_source_plan_hubb_thirdpair_deldel * 1) +
+(user_cc_turn_delayed_cbet_source_plan_hubb_air_deldel * 1) +
+(user_cc_turn_delayed_cbet_source_plan_bbvsb_bxb_river50 * 1) +
+(user_cc_turn_delayed_cbet_source_plan_sbvbb_lowpair_deldel50 * 1) +
+(user_cc_turn_delayed_cbet_source_plan_sbvbb_draw_deldel50 * 1) +
+(user_cc_turn_delayed_cbet_source_plan_sbvbb_air_ak_showdown * 1)
+
+// -----------------------------------------------------------------------------
+// DCH.02 — CLOSED round-3 execution proof
+// -----------------------------------------------------------------------------
+
+// Purpose: Turn has ended; round-3 counters are final.
+// Source/Provenance: T OpenHoldem River/round numbering.
+##f$cc_hist_turn_delayed_cbet_closed##
+IsRiver
+
+// Purpose: Hero executed a Gate12A initial delayed bet.
+// Source/Provenance: T did*round3 + A opportunity marker.
+##f$cc_hist_turn_delayed_cbet_initial_bet_executed##
+f$cc_hist_turn_delayed_cbet_closed &&
+user_cc_turn_delayed_cbet_opportunity_seen &&
+didchecround3 = 0 &&
+(didbetsizeround3 > 0 || didalliround3 > 0)
+
+// Purpose: Hero actually checked the Gate12A decision and no later Turn action
+// was required. Reaching River with this counter pattern proves Turn X/X.
+// Source/Provenance: T exact closed check-through history.
+##f$cc_hist_turn_delayed_cbet_checked_through##
+f$cc_hist_turn_delayed_cbet_closed &&
+user_cc_turn_delayed_cbet_opportunity_seen &&
+didchecround3 > 0 &&
+didcallround3 = 0 &&
+didraisround3 = 0 &&
+didbetsizeround3 = 0 &&
+didalliround3 = 0
+
+// Purpose: one normal Gate12A bet with Hero final Turn aggressor.
+// Source/Provenance: T exact action-counter/final-aggressor pattern.
+##f$cc_hist_turn_delayed_cbet_standard_bet_parent##
+f$cc_hist_turn_delayed_cbet_closed &&
+user_cc_turn_delayed_cbet_opportunity_seen &&
+didchecround3 = 0 &&
+didcallround3 = 0 &&
+didraisround3 = 0 &&
+didbetsizeround3 = 1 &&
+didalliround3 = 0 &&
+lastraised3 = userchair
+
+// Purpose: strategy planned Gate12A bet but runtime records a check.
+// Source/Provenance: X/P diagnostic over T closed history.
+##f$cc_hist_turn_delayed_cbet_planned_bet_but_checked##
+f$cc_hist_turn_delayed_cbet_closed &&
+user_cc_turn_delayed_cbet_plan_bet_seen &&
+didchecround3 > 0
+
+// Purpose: actual Gate12A aggression exists without a positive reviewed plan.
+// Source/Provenance: X/P runtime-composition diagnostic.
+##f$cc_hist_turn_delayed_cbet_executed_without_plan##
+f$cc_hist_turn_delayed_cbet_initial_bet_executed &&
+!user_cc_turn_delayed_cbet_plan_bet_seen
+
+// -----------------------------------------------------------------------------
+// DCH.03 — snapshot / parent integrity
+// -----------------------------------------------------------------------------
+
+// Purpose: validate pre-action Gate12A snapshot after Turn closes.
+// Source/Provenance: P integrity over T/A captured state.
+##f$cc_hist_turn_delayed_cbet_snapshot_consistent##
+When !f$cc_hist_turn_delayed_cbet_closed Return false Force
+When !user_cc_turn_delayed_cbet_opportunity_seen Return !user_cc_turn_delayed_cbet_state_snapshot_recorded Force
+When !user_cc_turn_delayed_cbet_state_snapshot_recorded Return false Force
+When f$cc_hist_turn_delayed_cbet_family_marker_count != 1 Return false Force
+When f$cc_hist_turn_delayed_cbet_primary_class_marker_count != 1 Return false Force
+When f$cc_hist_turn_delayed_cbet_player_count_marker_count != 1 Return false Force
+When BitCount(f$cc_hist_turn_delayed_cbet_live_opp_mask) != (f$cc_hist_turn_delayed_cbet_player_count - 1) Return false Force
+When f$cc_hist_turn_delayed_cbet_source_check_plan_marker_count > 1 Return false Force
+When Others Return true Force
+
+// Purpose: compact Gate12A runtime mismatch flag.
+// Source/Provenance: X/P union of exact plan/snapshot/action inconsistencies.
+##f$cc_hist_turn_delayed_cbet_runtime_mismatch##
+When !f$cc_hist_turn_delayed_cbet_closed Return false Force
+When !f$cc_hist_turn_delayed_cbet_snapshot_consistent Return true Force
+When f$cc_hist_turn_delayed_cbet_planned_bet_but_checked Return true Force
+When f$cc_hist_turn_delayed_cbet_executed_without_plan Return true Force
+When Others Return false Force
+
+// Purpose: valid Gate13 no-action parent after a reviewed Gate12A CHECK.
+// Source/Provenance: A/T actual X/X proof + P snapshot integrity.
+##f$cc_hist_river_delayed_cbet_check_parent_valid##
+f$cc_hist_turn_delayed_cbet_checked_through &&
+f$cc_hist_turn_delayed_cbet_snapshot_consistent &&
+!f$cc_hist_turn_delayed_cbet_runtime_mismatch
+
+// Purpose: exact HUBB Del-Del source parent, either third-pair or air lineage.
+// Source/Provenance: T/A source-plan marker + CLOSED Gate12A check proof.
+##f$cc_hist_river_delayed_cbet_hubb_deldel_valid##
+f$cc_hist_river_delayed_cbet_check_parent_valid &&
+f$cc_hist_turn_delayed_cbet_family_id = 2 &&
+(user_cc_turn_delayed_cbet_source_plan_hubb_thirdpair_deldel ||
+ user_cc_turn_delayed_cbet_source_plan_hubb_air_deldel)
+
+// Purpose: distinguish HUBB historical air Del-Del for source no-made River50.
+// Source/Provenance: T direct source lineage + A/T CLOSED check proof.
+##f$cc_hist_river_delayed_cbet_hubb_air_deldel_valid##
+f$cc_hist_river_delayed_cbet_check_parent_valid &&
+f$cc_hist_turn_delayed_cbet_family_id = 2 &&
+user_cc_turn_delayed_cbet_source_plan_hubb_air_deldel
+
+// Purpose: exact native 3wBBvSB Turn-check -> BxB River50 source parent.
+// Source/Provenance: T direct future plan + A/T CLOSED check proof.
+##f$cc_hist_river_delayed_cbet_bbvsb_bxb50_valid##
+f$cc_hist_river_delayed_cbet_check_parent_valid &&
+f$cc_hist_turn_delayed_cbet_family_id = 5 &&
+user_cc_turn_delayed_cbet_source_plan_bbvsb_bxb_river50
+
+// Purpose: native 3wSBvBB low-pair Del-Del River50 source parent.
+// Source/Provenance: T direct future plan + A/T CLOSED check proof.
+##f$cc_hist_river_delayed_cbet_sbvbb_lowpair_deldel50_valid##
+f$cc_hist_river_delayed_cbet_check_parent_valid &&
+f$cc_hist_turn_delayed_cbet_family_id = 6 &&
+user_cc_turn_delayed_cbet_source_plan_sbvbb_lowpair_deldel50
+
+// Purpose: native 3wSBvBB connected-draw Del-Del River50 source parent.
+// Source/Provenance: T direct future plan + A/T CLOSED check proof.
+##f$cc_hist_river_delayed_cbet_sbvbb_draw_deldel50_valid##
+f$cc_hist_river_delayed_cbet_check_parent_valid &&
+f$cc_hist_turn_delayed_cbet_family_id = 6 &&
+user_cc_turn_delayed_cbet_source_plan_sbvbb_draw_deldel50
+
+// Purpose: source A/K-air Turn check is retained as a negative lineage only.
+// Source/Provenance: T direct source check state + CLOSED Gate12A proof.
+##f$cc_hist_river_delayed_cbet_sbvbb_air_ak_showdown_valid##
+f$cc_hist_river_delayed_cbet_check_parent_valid &&
+f$cc_hist_turn_delayed_cbet_family_id = 6 &&
+user_cc_turn_delayed_cbet_source_plan_sbvbb_air_ak_showdown
+
+// ============================================================================
+// End Gate12A.17 executed action provenance.
+// ============================================================================

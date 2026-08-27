@@ -1,0 +1,238 @@
+// ============================================================================
+// CashCrusher_Turn_Float_Source.txt
+// Gate 05B — direct / high-ancestry Turn Float strategy
+// ============================================================================
+// Purpose:
+//   Implement only the Turn-Float policies supported strongly enough by the
+//   supplied Crusher sources before any broad six-max professional gap fill.
+//
+// Primary source owners:
+//   1) 3wBBvSB Facing Bet -> Hero call -> Turn X:
+//      current no-made draw/air Float 50%; source broad `turn_Completed` origin
+//      creates a river-barrel plan, otherwise give up river.
+//   2) BTN Advanced CBet -> Villain X/R/raise -> Hero call -> Turn X:
+//      source AIR/A-high Float interval 25-40%; CashCrusher/DeepCrusher uses 33%.
+//      Existing FD/OESD/Gutshot+ does NOT inherit that AIR instruction.
+//   3) 3wBTNvSB source philosophy explicitly avoids no-made bluffing against the
+//      unusually strong SB range; this is a negative/locked source rule.
+//
+// Secondary audited adaptation:
+//   Current DeepCrusher lets the old BTN called-X/R draw marker bet 50% when the
+//   turn has improved to a made hand after the explicit AIR and live-draw cases
+//   are removed. That branch is retained as A, not presented as PDF-exact text.
+//
+// Source/Provenance:
+//   T = Gate05A closed history + current hand/board facts.
+//   A = direct DeepCrusher/Starting-Strategy descendants and audited adaptation.
+//   P = only strict six-max topology guards; no P betting frequency is added here.
+//
+// OpenPPL safety:
+//   Flat complete WHENs only. No generic HandPower, no random tail, no BetMax.
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// TFS.01 — 3wBBvSB source context: SRP and exact LP repair
+// -----------------------------------------------------------------------------
+
+// Purpose: one-raise ordinary-SRP descendant of SB PFA -> BB call -> SB flop bet
+// -> BB call -> SB checks turn, with Hero BB exact IP and HU since flop entry.
+// Source: 3wBBvSB Facing-Bet Q4 explicitly includes SRP.
+// Provenance: A high-ancestry positional transplant + T exact history.
+// Safety: proven ISO is excluded because the cited Q4 line says LP/SRP.
+##f$cc_turn_float_source_bbv_sb_srp_context##
+f$cc_turn_float_opportunity &&
+f$cc_turn_float_parent_id = 1 &&
+f$cc_turn_float_current_hu_from_hu_flop &&
+f$cc_turn_float_hu_aggressor_is_current_villain &&
+f$cc_pot_family_id = 2 &&
+f$cc_pf_one_raise_ordinary_srp &&
+f$cc_hero_pos_id = 6 &&
+f$cc_pf_rt_final_aggressor_pos_id = 5 &&
+f$cc_turn_float_flop_aggressor_pos_id = 5
+
+// Purpose: exact unraised SB-limp/BB-check source descendant restored by Gate05B.R.
+// Source/Provenance: A direct 3wBBvSB LP source + T exact repaired history.
+##f$cc_turn_float_source_bbv_sb_limped_context##
+f$cc_turn_float_source_limped_bbv_sb_opportunity
+
+// Purpose: complete direct 3wBBvSB Facing-Bet Turn-X owner.
+// Source/Provenance: A union of the source's explicit LP/SRP pot labels.
+##f$cc_turn_float_source_bbv_sb_context##
+f$cc_turn_float_source_bbv_sb_srp_context ||
+f$cc_turn_float_source_bbv_sb_limped_context
+
+// Purpose: source positive no-made action for 3wBBvSB Turn X.
+// Source: Q4 says both real draws and A/K-high/backdoors/pure air Float 50%.
+// Provenance: A direct source action. Splitting draw/air lives in common helpers;
+// their union intentionally covers all current no-made hands in this exact owner.
+##f$cc_turn_float_source_bbv_sb_action##
+When !f$cc_turn_float_source_bbv_sb_context Return false Force
+When f$cc_turn_float_current_real_draw Return true Force
+When f$cc_turn_float_current_air Return true Force
+When Others Return false Force
+
+// Purpose: exact 50% size for the direct 3wBBvSB no-made Float.
+// Source/Provenance: A primary source sizing.
+##f$cc_turn_float_source_bbv_sb_size_id##
+When !f$cc_turn_float_source_bbv_sb_action Return 0 Force
+When Others Return f$cc_turn_float_size_50_id Force
+
+// Purpose: preserve the source river-plan distinction without claiming the Turn
+// bet has already executed. IDs: 1=GIVE_UP_RIVER, 2=BARREL_RIVER, 0=none.
+// Source: Q4 says Float50 & GU river normally; Float & barrel river only when
+// turn was CPL. DeepCrusher `f$turn_Completed` is broad straight/flush possible.
+// Provenance: A exact source plan over T/A `f$cc_turn_completed`.
+##f$cc_turn_float_source_bbv_sb_river_plan_id##
+When !f$cc_turn_float_source_bbv_sb_action Return 0 Force
+When f$cc_turn_completed Return 2 Force
+When Others Return 1 Force
+
+// -----------------------------------------------------------------------------
+// TFS.02 — 3wBTNvSB no-made source lock
+// -----------------------------------------------------------------------------
+
+// Purpose: protect the explicit BTNvSB no-made realization philosophy from later
+// generic P gap fills. The lock applies only to a valid canonical Gate05A Turn
+// Float opportunity that is HU since flop entry and whose aggressor is SB.
+// Source: audited DeepCrusher begins Turn Float with
+// `3wBTNvSB && NoMadeHand -> false`; Starting Strategy says the SB range is very
+// strong and Hero does not plan to win these pots by bluffing.
+// Provenance: A primary negative source rule + T exact opponent identity.
+##f$cc_turn_float_source_btnv_sb_nomade_lock##
+f$cc_turn_float_opportunity &&
+f$cc_turn_float_current_hu_from_hu_flop &&
+f$cc_turn_float_hu_aggressor_is_current_villain &&
+f$cc_hero_pos_id = 4 &&
+f$cc_turn_float_flop_aggressor_pos_id = 5 &&
+f$cc_hand_no_made
+
+// -----------------------------------------------------------------------------
+// TFS.03 — BTN Advanced CBet -> X/R -> call -> Turn X
+// -----------------------------------------------------------------------------
+
+// Purpose: exact high-ancestry source context for BTN PFA in ordinary SRP after
+// Hero CBet, called a blind's flop X/R/raise, and that final aggressor checks turn.
+// Source: BTN_CF_ADVANCED `Se o oponente não dar 2Bar OTT -> FLOAT 25-40% ...`.
+// Provenance: A primary source structure + T parent-2 execution proof.
+// Safety: current BTNvSB no-made lock is evaluated before this positive branch.
+##f$cc_turn_float_source_btnadv_context##
+f$cc_turn_float_opportunity &&
+f$cc_turn_float_parent_id = 2 &&
+f$cc_turn_float_current_hu_from_hu_flop &&
+f$cc_turn_float_hu_aggressor_is_current_villain &&
+f$cc_pot_family_id = 2 &&
+f$cc_pf_one_raise_ordinary_srp &&
+f$cc_pf_role_pfa &&
+f$cc_hero_pos_id = 4 &&
+(f$cc_turn_float_flop_aggressor_pos_id = 5 || f$cc_turn_float_flop_aggressor_pos_id = 6) &&
+f$cc_turn_float_btnadv_flop_draw_marker_analog
+
+// Purpose: source-exact AIR/A-high-like miss after the flop draw-marker history.
+// Source: BTN Advanced says use 25-40% to fold air and also bet A-high; current
+// DeepCrusher chooses Turn33. A no-made hand with no real frontdoor draw is the
+// contribution-aware current equivalent of that AIR/high-card miss.
+// Provenance: A primary source action.
+##f$cc_turn_float_source_btnadv_air_action##
+f$cc_turn_float_source_btnadv_context &&
+f$cc_turn_float_current_air &&
+!f$cc_turn_float_source_btnv_sb_nomade_lock
+
+// Purpose: live current Gutshot/OESD/FD remains excluded from the AIR instruction.
+// Source: BTN Advanced has a separate Draws (FD/OESD) section; current DeepCrusher
+// explicitly returns false for `NoMadeHand && Gutshot_or_BetterFDSD` here.
+// Provenance: A direct negative source boundary.
+##f$cc_turn_float_source_btnadv_live_draw_lock##
+f$cc_turn_float_source_btnadv_context &&
+f$cc_turn_float_current_real_draw
+
+// Purpose: made improvement after the exact old draw-marker domain.
+// Source: current audited DeepCrusher residual marker branch uses Turn50 after
+// AIR/A-high and still-live draws are handled. The PDF does not state this exact
+// made-improvement sizing, so provenance is A, not primary-source exact.
+##f$cc_turn_float_source_btnadv_made_action##
+f$cc_turn_float_source_btnadv_context &&
+f$cc_turn_float_btnadv_made_improvement
+
+// Purpose: BTN Advanced action dispatcher with source negative precedence.
+// Source/Provenance: A exact ordering of source lock -> live-draw lock -> AIR ->
+// audited made-improvement adaptation.
+##f$cc_turn_float_source_btnadv_action##
+When !f$cc_turn_float_source_btnadv_context Return false Force
+When f$cc_turn_float_source_btnv_sb_nomade_lock Return false Force
+When f$cc_turn_float_source_btnadv_live_draw_lock Return false Force
+When f$cc_turn_float_source_btnadv_air_action Return true Force
+When f$cc_turn_float_source_btnadv_made_action Return true Force
+When Others Return false Force
+
+// Purpose: BTN Advanced paired size map.
+// Source: AIR/A-high uses Turn33 inside explicit 25-40 interval; audited made
+// improvement uses 50. Live-draw and locked no-made states return size 0.
+// Provenance: A source/adaptation mapping.
+##f$cc_turn_float_source_btnadv_size_id##
+When !f$cc_turn_float_source_btnadv_action Return 0 Force
+When f$cc_turn_float_source_btnadv_air_action Return f$cc_turn_float_size_33_id Force
+When f$cc_turn_float_source_btnadv_made_action Return f$cc_turn_float_size_50_id Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// TFS.04 — source ownership / dispatch metadata
+// -----------------------------------------------------------------------------
+
+// Purpose: exact negative source state that later P families are forbidden to override.
+// Source/Provenance: A union of explicit source check boundaries.
+##f$cc_turn_float_source_locked_check##
+f$cc_turn_float_source_btnv_sb_nomade_lock ||
+f$cc_turn_float_source_btnadv_live_draw_lock
+
+// Purpose: source/high-ancestry positive betting owner.
+// Source/Provenance: A direct-source union.
+##f$cc_turn_float_source_positive_covered##
+f$cc_turn_float_source_bbv_sb_context ||
+f$cc_turn_float_source_btnadv_context
+
+// Purpose: report all source-owned contexts, including exact source checks.
+// Source/Provenance: A coverage metadata; locked check counts as reviewed coverage.
+##f$cc_turn_float_source_covered##
+f$cc_turn_float_source_positive_covered || f$cc_turn_float_source_locked_check
+
+// Purpose: top-level source action; negative source lock has absolute precedence.
+// Source/Provenance: A fail-closed source dispatcher.
+##f$cc_turn_float_source_action##
+When !f$cc_turn_float_source_any_opportunity Return false Force
+When f$cc_turn_float_source_locked_check Return false Force
+When f$cc_turn_float_source_bbv_sb_context Return f$cc_turn_float_source_bbv_sb_action Force
+When f$cc_turn_float_source_btnadv_context Return f$cc_turn_float_source_btnadv_action Force
+When Others Return false Force
+
+// Purpose: paired source size dispatcher.
+// Source/Provenance: A exact source owner; check/uncovered ->0.
+##f$cc_turn_float_source_size_id##
+When !f$cc_turn_float_source_action Return 0 Force
+When f$cc_turn_float_source_bbv_sb_context Return f$cc_turn_float_source_bbv_sb_size_id Force
+When f$cc_turn_float_source_btnadv_context Return f$cc_turn_float_source_btnadv_size_id Force
+When Others Return 0 Force
+
+// Purpose: source River-plan dispatcher; only 3wBBvSB currently supplies a
+// source-explicit follow-up. Plan is pre-action intent, never proof of execution.
+// Source/Provenance: A exact source plan routing.
+##f$cc_turn_float_source_river_plan_id##
+When !f$cc_turn_float_source_action Return 0 Force
+When f$cc_turn_float_source_bbv_sb_context Return f$cc_turn_float_source_bbv_sb_river_plan_id Force
+When Others Return 0 Force
+
+// Purpose: compact source branch ID for logs/tests.
+// 1=BBvSB LP/SRP no-made Float50; 2=BTN Advanced AIR33;
+// 3=BTN Advanced made-improvement50; 4=BTNvSB no-made lock;
+// 5=BTN Advanced live-draw lock.
+// Source/Provenance: P engineering metadata over A exact branches.
+##f$cc_turn_float_source_branch_id##
+When f$cc_turn_float_source_btnv_sb_nomade_lock Return 4 Force
+When f$cc_turn_float_source_btnadv_live_draw_lock Return 5 Force
+When f$cc_turn_float_source_bbv_sb_action Return 1 Force
+When f$cc_turn_float_source_btnadv_air_action Return 2 Force
+When f$cc_turn_float_source_btnadv_made_action Return 3 Force
+When Others Return 0 Force
+
+// ============================================================================
+// End Gate05B direct-source Turn Float strategy.
+// ============================================================================

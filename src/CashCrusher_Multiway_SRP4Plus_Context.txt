@@ -1,0 +1,98 @@
+// ============================================================================
+// CashCrusher_Multiway_SRP4Plus_Context.txt
+// Gate 01J.2 context — 4/5/6-way ordinary-SRP PFA flop
+// ============================================================================
+// Purpose:
+//   Preserve exact flop player count, relative position and live range
+//   composition for four-way+ ordinary-SRP PFA CBet policy.
+//
+// Source/Provenance:
+//   T/A = exact OpenPPL/Gate00 player count, live masks, role and position.
+//   P   = four-way+ range-composition descriptors; DeepCrusher has no literal
+//         four-way+ postflop source tree.
+// ============================================================================
+
+// Purpose: exact 4-6 player ordinary-SRP PFA flop context whose current player
+// count is unchanged from flop entry.
+// Source/Provenance: T/A mechanical context; P only in later strategy.
+// Safety: excludes true3, reduced-after-flop states, ISO and reraised pots.
+##f$cc_mw_srp_4plus_pfa_context##
+f$cc_multiway_context_valid &&
+f$cc_flop_entry_count = nplayersplaying &&
+f$cc_flop_entry_count >= 4 &&
+f$cc_flop_entry_count <= 6 &&
+f$cc_pot_family_id = 2 &&
+f$cc_pf_role_pfa &&
+f$cc_pf_one_raise_ordinary_srp &&
+f$cc_flop_cbet_opportunity &&
+f$cc_spr_valid
+
+// Purpose: exact four-player flop origin.
+// Source/Provenance: T/A player-count alias.
+##f$cc_mw_srp_exact4_pfa_context##
+f$cc_mw_srp_4plus_pfa_context && f$cc_flop_entry_count = 4
+
+// Purpose: exact five-player flop origin.
+// Source/Provenance: T/A player-count alias.
+##f$cc_mw_srp_exact5_pfa_context##
+f$cc_mw_srp_4plus_pfa_context && f$cc_flop_entry_count = 5
+
+// Purpose: exact six-player flop origin.
+// Source/Provenance: T/A player-count alias.
+##f$cc_mw_srp_exact6_pfa_context##
+f$cc_mw_srp_4plus_pfa_context && f$cc_flop_entry_count = 6
+
+// Purpose: number of live blind defenders among SB/BB.
+// Source/Provenance: T/A exact mask bits 16+32 = 48.
+##f$cc_mw_srp_4plus_live_blind_count##
+When !f$cc_mw_srp_4plus_pfa_context Return 0 Force
+When Others Return BitCount(f$cc_opp_live_mask BitAnd 48) Force
+
+// Purpose: number of live nonblind opponents among UTG/HJ/CO/BTN.
+// Source/Provenance: T/A exact mask bits 1+2+4+8 = 15.
+##f$cc_mw_srp_4plus_live_nonblind_count##
+When !f$cc_mw_srp_4plus_pfa_context Return 0 Force
+When Others Return BitCount(f$cc_opp_live_mask BitAnd 15) Force
+
+// Purpose: flag both blinds live among Hero's opponents.
+// Source/Provenance: P range-composition descriptor over T exact mask.
+##f$cc_mw_srp_4plus_both_blinds_live##
+f$cc_mw_srp_4plus_pfa_context && f$cc_mw_srp_4plus_live_blind_count = 2
+
+// Purpose: flag a nonblind-dense continuing field (at least two nonblind callers).
+// Source/Provenance: P selected/condensed range-pressure descriptor.
+##f$cc_mw_srp_4plus_nonblind_dense##
+f$cc_mw_srp_4plus_pfa_context && f$cc_mw_srp_4plus_live_nonblind_count >= 2
+
+// Purpose: four-way+ PFA acting FIRST.
+// Source/Provenance: P strategy parent over A relative-position mechanics.
+##f$cc_mw_srp_4plus_pfa_first_context##
+f$cc_mw_srp_4plus_pfa_context && f$cc_multiway_rel_first
+
+// Purpose: four-way+ PFA acting MIDDLE.
+// Source/Provenance: P strategy parent over A relative-position mechanics.
+##f$cc_mw_srp_4plus_pfa_middle_context##
+f$cc_mw_srp_4plus_pfa_context && f$cc_multiway_rel_middle
+
+// Purpose: four-way+ PFA acting LAST after all prior players check.
+// Source/Provenance: P strategy parent over A relative-position mechanics.
+##f$cc_mw_srp_4plus_pfa_last_context##
+f$cc_mw_srp_4plus_pfa_context && f$cc_multiway_rel_last
+
+// Purpose: exact live-field consistency for four-way+ ordinary SRP.
+// Source/Provenance: P safety invariant over T exact counts.
+##f$cc_mw_srp_4plus_context_consistent##
+When !f$cc_mw_srp_4plus_pfa_context Return false Force
+When (f$cc_mw_srp_4plus_live_blind_count + f$cc_mw_srp_4plus_live_nonblind_count) != (f$cc_flop_entry_count - 1) Return false Force
+When Others Return true Force
+
+// Purpose: compact audit key retaining flop count, Hero position, opponent mask
+// and relative position: F H MM Q.
+// Source/Provenance: P engineering metadata over exact mechanical inputs.
+##f$cc_mw_srp_4plus_range_key##
+When !f$cc_mw_srp_4plus_pfa_context Return 0 Force
+When Others Return ((f$cc_flop_entry_count * 100000) + (f$cc_hero_pos_id * 1000) + (f$cc_opp_live_mask * 10) + f$cc_relpos_id) Force
+
+// ============================================================================
+// End four-way+ ordinary-SRP context.
+// ============================================================================

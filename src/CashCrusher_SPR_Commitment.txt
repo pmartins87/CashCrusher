@@ -1,0 +1,265 @@
+// ============================================================================
+// CashCrusher_SPR_Commitment.txt
+// Gate 00D — deep-stack SPR geometry for 2-6 handed cash
+// ============================================================================
+// Corrected migration rule:
+//   DeepCrusher was built around short-stack Spin geometry, so inherited
+//   commitment helpers and TP+/draw stack-off rules cannot be copied blindly to
+//   a cash game that normally starts around 100bb.  That does NOT mean those
+//   helpers are globally invalid, must be zeroed, or must be prohibited.
+//
+//   The correct rule is contextual review: retain/adapt/reject each inherited
+//   commitment rule only after checking the actual pot family, effective stack,
+//   SPR, board/runout, range topology and action size where it is used.
+//
+// Important rollback:
+//   This module intentionally does NOT override
+//   `f$allin_on_betsize_balance_ratio`.  Its eventual CashCrusher definition is
+//   deferred to the sizing/commitment audit instead of being forced to 0.00.
+//   Likewise, legacy `f$Raise_Committed` / `f$hand_StackOffDraws` are neither
+//   imported here nor globally banned here; any future use must be audited in
+//   the exact strategic node.
+//
+// Multiway clarification (Gate 00D.2):
+//   `f$cc_spr_round_start` predates the dual-bound multiway audit.  It remains
+//   exact in HU and remains useful as a SHALLOWEST-live coarse descriptor in
+//   multiway for compatibility/diagnostics.  It is NOT the canonical strategic
+//   SPR for a multiway one-pair/commitment decision.  Multiway strategy must use
+//   explicit helpers from CashCrusher_Multiway_StackGeometry.txt:
+//     * f$cc_mw_spr_shallowest_round_start
+//     * f$cc_mw_spr_deepest_round_start
+//     * actor-specific geometry where one opponent owns the decision.
+//   DeepCrusher f$EffectiveStack_BKP itself uses the biggest active opponent,
+//   which corresponds to the deepest effective relationship after capping by Hero.
+//
+// Provenance:
+//   T/A = runtime stack/current-bet/pot facts used to reconstruct street-start
+//         effective stacks without current-action contamination.
+//   P = SPR buckets are engineering bins for routing/audit, NOT universal GTO
+//       thresholds. Exact strategy uses the appropriate HU/deepest/shallowest/
+//       actor-specific raw geometry rather than assuming one universal SPR.
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// 00D.01 — Street-start stack reconstruction
+// Current street bets are added back to balance so the value stays stable while
+// a betting round is in progress.
+// -----------------------------------------------------------------------------
+
+// Purpose: reconstruct Hero stack at start of current street in BB.
+// Source: OpenHoldem `balance`, `currentbet`, `bblind` semantics.
+// Provenance: T/A mechanical reconstruction; -1 marks invalid geometry.
+##f$cc_hero_stack_round_start_bb##
+When bblind <= 0 Return -1 Force
+When (balance + currentbet) < 0 Return -1 Force
+When Others Return ((balance + currentbet) / bblind) Force
+
+// Purpose: reconstruct UTG seat street-start stack in BB.
+// Source/Provenance: T/A runtime stack/currentbet arithmetic.
+##f$cc_stack_utg_round_start_bb##
+When bblind <= 0 Return -1 Force
+When utgchair < 0 Return -1 Force
+When Others Return ((balance_utgchair + currentbet_utgchair) / bblind) Force
+
+// Purpose: reconstruct HJ/MP3 seat street-start stack in BB.
+// Source/Provenance: T/A runtime stack/currentbet arithmetic.
+##f$cc_stack_hj_round_start_bb##
+When bblind <= 0 Return -1 Force
+When mp3chair < 0 Return -1 Force
+When Others Return ((balance_mp3chair + currentbet_mp3chair) / bblind) Force
+
+// Purpose: reconstruct CO street-start stack in BB.
+// Source/Provenance: T/A runtime stack/currentbet arithmetic.
+##f$cc_stack_co_round_start_bb##
+When bblind <= 0 Return -1 Force
+When cutoffchair < 0 Return -1 Force
+When Others Return ((balance_cutoffchair + currentbet_cutoffchair) / bblind) Force
+
+// Purpose: reconstruct BTN/dealer street-start stack in BB.
+// Source/Provenance: T/A runtime stack/currentbet arithmetic.
+##f$cc_stack_btn_round_start_bb##
+When bblind <= 0 Return -1 Force
+When dealerchair < 0 Return -1 Force
+When Others Return ((balance_dealerchair + currentbet_dealerchair) / bblind) Force
+
+// Purpose: reconstruct SB street-start stack in BB.
+// Source/Provenance: T/A runtime stack/currentbet arithmetic.
+##f$cc_stack_sb_round_start_bb##
+When bblind <= 0 Return -1 Force
+When smallblindchair < 0 Return -1 Force
+When Others Return ((balance_smallblindchair + currentbet_smallblindchair) / bblind) Force
+
+// Purpose: reconstruct BB seat street-start stack in BB.
+// Source/Provenance: T/A runtime stack/currentbet arithmetic.
+##f$cc_stack_bb_round_start_bb##
+When bblind <= 0 Return -1 Force
+When bigblindchair < 0 Return -1 Force
+When Others Return ((balance_bigblindchair + currentbet_bigblindchair) / bblind) Force
+
+// Purpose: return the sole current HU Villain's street-start stack by exact
+// canonical position, not by a generic shortest-player approximation.
+// Source/Provenance: A dispatcher over T/A seat stack reconstructions.
+// Safety: non-HU/unknown Villain -> -1.
+##f$cc_hu_villain_stack_round_start_bb##
+When !f$cc_hu Return -1 Force
+When f$cc_hu_villain_pos_id = 1 Return f$cc_stack_utg_round_start_bb Force
+When f$cc_hu_villain_pos_id = 2 Return f$cc_stack_hj_round_start_bb Force
+When f$cc_hu_villain_pos_id = 3 Return f$cc_stack_co_round_start_bb Force
+When f$cc_hu_villain_pos_id = 4 Return f$cc_stack_btn_round_start_bb Force
+When f$cc_hu_villain_pos_id = 5 Return f$cc_stack_sb_round_start_bb Force
+When f$cc_hu_villain_pos_id = 6 Return f$cc_stack_bb_round_start_bb Force
+When Others Return -1 Force
+
+// Purpose: effective HU stack at street start = min(Hero, sole Villain).
+// Source/Provenance: standard poker geometry implemented from T/A runtime values.
+// Safety: invalid source stack -> -1.
+##f$cc_hu_effective_stack_round_start_bb##
+When !f$cc_hu Return -1 Force
+When f$cc_hero_stack_round_start_bb < 0 Return -1 Force
+When f$cc_hu_villain_stack_round_start_bb < 0 Return -1 Force
+When f$cc_hero_stack_round_start_bb <= f$cc_hu_villain_stack_round_start_bb Return f$cc_hero_stack_round_start_bb Force
+When Others Return f$cc_hu_villain_stack_round_start_bb Force
+
+// -----------------------------------------------------------------------------
+// 00D.02 — Legacy/coarse multiway shallowest-live effective stack
+// IMPORTANT: this is only a COARSE context descriptor retained for compatibility.
+// Exact multiway strategy uses CashCrusher_Multiway_StackGeometry dual bounds.
+// A decision versus one specific bettor/raiser uses actor-specific effective stack.
+// -----------------------------------------------------------------------------
+
+// Purpose: find shortest street-start stack among currently live opponents.
+// Source/Provenance: A mechanical comparison over exact live-position flags.
+// Safety: used only for coarse multiway diagnostics; it must not price a decision
+// versus a different deep actor or justify a whole-field low-SPR exception.
+##f$cc_min_live_opp_stack_round_start_bb##
+When f$cc_opp_live_utg && (!f$cc_opp_live_hj || f$cc_stack_utg_round_start_bb <= f$cc_stack_hj_round_start_bb) && (!f$cc_opp_live_co || f$cc_stack_utg_round_start_bb <= f$cc_stack_co_round_start_bb) && (!f$cc_opp_live_btn || f$cc_stack_utg_round_start_bb <= f$cc_stack_btn_round_start_bb) && (!f$cc_opp_live_sb || f$cc_stack_utg_round_start_bb <= f$cc_stack_sb_round_start_bb) && (!f$cc_opp_live_bb || f$cc_stack_utg_round_start_bb <= f$cc_stack_bb_round_start_bb) Return f$cc_stack_utg_round_start_bb Force
+When f$cc_opp_live_hj && (!f$cc_opp_live_utg || f$cc_stack_hj_round_start_bb <= f$cc_stack_utg_round_start_bb) && (!f$cc_opp_live_co || f$cc_stack_hj_round_start_bb <= f$cc_stack_co_round_start_bb) && (!f$cc_opp_live_btn || f$cc_stack_hj_round_start_bb <= f$cc_stack_btn_round_start_bb) && (!f$cc_opp_live_sb || f$cc_stack_hj_round_start_bb <= f$cc_stack_sb_round_start_bb) && (!f$cc_opp_live_bb || f$cc_stack_hj_round_start_bb <= f$cc_stack_bb_round_start_bb) Return f$cc_stack_hj_round_start_bb Force
+When f$cc_opp_live_co && (!f$cc_opp_live_utg || f$cc_stack_co_round_start_bb <= f$cc_stack_utg_round_start_bb) && (!f$cc_opp_live_hj || f$cc_stack_co_round_start_bb <= f$cc_stack_hj_round_start_bb) && (!f$cc_opp_live_btn || f$cc_stack_co_round_start_bb <= f$cc_stack_btn_round_start_bb) && (!f$cc_opp_live_sb || f$cc_stack_co_round_start_bb <= f$cc_stack_sb_round_start_bb) && (!f$cc_opp_live_bb || f$cc_stack_co_round_start_bb <= f$cc_stack_bb_round_start_bb) Return f$cc_stack_co_round_start_bb Force
+When f$cc_opp_live_btn && (!f$cc_opp_live_utg || f$cc_stack_btn_round_start_bb <= f$cc_stack_utg_round_start_bb) && (!f$cc_opp_live_hj || f$cc_stack_btn_round_start_bb <= f$cc_stack_hj_round_start_bb) && (!f$cc_opp_live_co || f$cc_stack_btn_round_start_bb <= f$cc_stack_co_round_start_bb) && (!f$cc_opp_live_sb || f$cc_stack_btn_round_start_bb <= f$cc_stack_sb_round_start_bb) && (!f$cc_opp_live_bb || f$cc_stack_btn_round_start_bb <= f$cc_stack_bb_round_start_bb) Return f$cc_stack_btn_round_start_bb Force
+When f$cc_opp_live_sb && (!f$cc_opp_live_utg || f$cc_stack_sb_round_start_bb <= f$cc_stack_utg_round_start_bb) && (!f$cc_opp_live_hj || f$cc_stack_sb_round_start_bb <= f$cc_stack_hj_round_start_bb) && (!f$cc_opp_live_co || f$cc_stack_sb_round_start_bb <= f$cc_stack_co_round_start_bb) && (!f$cc_opp_live_btn || f$cc_stack_sb_round_start_bb <= f$cc_stack_btn_round_start_bb) && (!f$cc_opp_live_bb || f$cc_stack_sb_round_start_bb <= f$cc_stack_bb_round_start_bb) Return f$cc_stack_sb_round_start_bb Force
+When f$cc_opp_live_bb && (!f$cc_opp_live_utg || f$cc_stack_bb_round_start_bb <= f$cc_stack_utg_round_start_bb) && (!f$cc_opp_live_hj || f$cc_stack_bb_round_start_bb <= f$cc_stack_hj_round_start_bb) && (!f$cc_opp_live_co || f$cc_stack_bb_round_start_bb <= f$cc_stack_co_round_start_bb) && (!f$cc_opp_live_btn || f$cc_stack_bb_round_start_bb <= f$cc_stack_btn_round_start_bb) && (!f$cc_opp_live_sb || f$cc_stack_bb_round_start_bb <= f$cc_stack_sb_round_start_bb) Return f$cc_stack_bb_round_start_bb Force
+When Others Return -1 Force
+
+// Purpose: coarse effective stack versus the shallowest live opponent in
+// multiway, or the exact HU effective stack when only two remain.
+// Source/Provenance: A/P compatibility geometry helper.
+// Safety: exact multiway strategic policy must use explicit dual-bound/actor stack.
+##f$cc_multiway_min_effective_stack_round_start_bb##
+When f$cc_hu Return f$cc_hu_effective_stack_round_start_bb Force
+When f$cc_min_live_opp_stack_round_start_bb < 0 Return -1 Force
+When f$cc_hero_stack_round_start_bb < 0 Return -1 Force
+When f$cc_hero_stack_round_start_bb <= f$cc_min_live_opp_stack_round_start_bb Return f$cc_hero_stack_round_start_bb Force
+When Others Return f$cc_min_live_opp_stack_round_start_bb Force
+
+// -----------------------------------------------------------------------------
+// 00D.03 — Pot and SPR at beginning of current street
+// OpenHoldem `potcommon` excludes players' CURRENT-street bets, which is why it
+// remains the stable denominator even while a bet is in front of Hero.
+// -----------------------------------------------------------------------------
+
+// Purpose: street-start common pot expressed in BB.
+// Source/Provenance: OpenHoldem `potcommon`/`bblind` semantics, T/A.
+##f$cc_round_start_pot_bb##
+When bblind <= 0 Return -1 Force
+When potcommon <= 0 Return -1 Force
+When Others Return (potcommon / bblind) Force
+
+// Purpose: raw SPR compatibility descriptor at current street start.
+// HU: exact Hero-v-Villain effective SPR.
+// Multiway: SHALLOWEST-live coarse SPR retained for old/context diagnostics only.
+// Source/Provenance: standard SPR arithmetic, A/P compatibility implementation.
+// Safety: multiway strategic code must NOT treat this as a universal SPR; use
+// explicit shallowest/deepest/actor-specific helpers instead.
+##f$cc_spr_round_start##
+When f$cc_round_start_pot_bb <= 0 Return -1 Force
+When f$cc_hu && f$cc_hu_effective_stack_round_start_bb >= 0 Return (f$cc_hu_effective_stack_round_start_bb / f$cc_round_start_pot_bb) Force
+When !f$cc_hu && f$cc_multiway_min_effective_stack_round_start_bb >= 0 Return (f$cc_multiway_min_effective_stack_round_start_bb / f$cc_round_start_pot_bb) Force
+When Others Return -1 Force
+
+// Purpose: effective street-start stack specifically versus current `raischair`.
+// Source/Provenance: T/A runtime stack reconstruction; critical for multiway
+// calls/raises where a different short third player must not distort pricing.
+// Safety: invalid/self raischair -> -1.
+##f$cc_effective_stack_vs_raischair_round_start_bb##
+When bblind <= 0 Return -1 Force
+When raischair < 0 Return -1 Force
+When raischair = userchair Return -1 Force
+When (balance_raischair + currentbet_raischair) < 0 Return -1 Force
+When (balance + currentbet) <= (balance_raischair + currentbet_raischair) Return ((balance + currentbet) / bblind) Force
+When Others Return ((balance_raischair + currentbet_raischair) / bblind) Force
+
+// Purpose: raw SPR specifically versus current bettor/raiser.
+// Source/Provenance: P/A actor-specific SPR geometry.
+// Safety: preferred by defense/raise nodes over any coarse multiway SPR.
+##f$cc_spr_vs_raischair_round_start##
+When f$cc_round_start_pot_bb <= 0 Return -1 Force
+When f$cc_effective_stack_vs_raischair_round_start_bb < 0 Return -1 Force
+When Others Return (f$cc_effective_stack_vs_raischair_round_start_bb / f$cc_round_start_pot_bb) Force
+
+// -----------------------------------------------------------------------------
+// 00D.04 — Engineering SPR buckets
+// -----------------------------------------------------------------------------
+
+// Purpose: coarse compatibility SPR routing/audit ID: <1, 1-2, 2-4, 4-6,
+// 6-10, 10-15, 15+.
+// Source: no literal Spin threshold is retained.
+// Provenance: P engineering bins only, explicitly not solver/GTO boundaries.
+// Safety: in multiway these bucket the shallowest coarse descriptor and therefore
+// are forbidden in reviewed multiway CBet strategy code.
+##f$cc_spr_bucket_id##
+When f$cc_spr_round_start < 0 Return 0 Force
+When f$cc_spr_round_start < 1 Return 1 Force
+When f$cc_spr_round_start < 2 Return 2 Force
+When f$cc_spr_round_start < 4 Return 3 Force
+When f$cc_spr_round_start < 6 Return 4 Force
+When f$cc_spr_round_start < 10 Return 5 Force
+When f$cc_spr_round_start < 15 Return 6 Force
+When Others Return 7 Force
+
+// Purpose: shortcut for SPR <1 engineering bucket.
+// Source/Provenance: P alias; no automatic commitment instruction.
+##f$cc_spr_sub1##
+f$cc_spr_bucket_id = 1
+
+// Purpose: shortcut for SPR 1 to <2.
+// Source/Provenance: P alias.
+##f$cc_spr_1_to_2##
+f$cc_spr_bucket_id = 2
+
+// Purpose: shortcut for SPR 2 to <4.
+// Source/Provenance: P alias.
+##f$cc_spr_2_to_4##
+f$cc_spr_bucket_id = 3
+
+// Purpose: shortcut for SPR 4 to <6.
+// Source/Provenance: P alias.
+##f$cc_spr_4_to_6##
+f$cc_spr_bucket_id = 4
+
+// Purpose: shortcut for SPR 6 to <10.
+// Source/Provenance: P alias.
+##f$cc_spr_6_to_10##
+f$cc_spr_bucket_id = 5
+
+// Purpose: shortcut for SPR 10 to <15.
+// Source/Provenance: P alias.
+##f$cc_spr_10_to_15##
+f$cc_spr_bucket_id = 6
+
+// Purpose: shortcut for SPR >=15.
+// Source/Provenance: P alias.
+##f$cc_spr_15plus##
+f$cc_spr_bucket_id = 7
+
+// Purpose: raw SPR validity predicate used by generic/HU context guards.
+// Source/Provenance: P/A compatibility safety alias; negative means unusable.
+// Safety: multiway strategy that needs depth must additionally validate/use the
+// explicit dual-bound geometry rather than infer strategy from this boolean.
+##f$cc_spr_valid##
+f$cc_spr_round_start >= 0
+
+// ============================================================================
+// End Gate 00D.
+// Commitment/all-in behavior is intentionally deferred to node-specific audit.
+// Explicit multiway dual-bound geometry lives in CashCrusher_Multiway_StackGeometry.
+// ============================================================================

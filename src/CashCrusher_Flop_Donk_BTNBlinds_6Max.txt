@@ -1,0 +1,293 @@
+// ============================================================================
+// CashCrusher_Flop_Donk_BTNBlinds_6Max.txt
+// Gate 07C — 4-6 handed BTN + both-blinds Flop Donk adaptation
+// ============================================================================
+// Purpose:
+//   Adapt the high-ancestry `(BBorSB)v2pp` source shell to a hand that was dealt
+//   4-6 handed but reached the flop exactly BTN+SB+BB.  Limped and BTN-open SRP
+//   origins remain separate, and BB may exploit the extra fact that SB checked.
+//
+// Source boundary:
+//   A = dedicated `(BBorSB)v2pp` source principles: multiway honesty, Axx/high
+//       board caution, value/protection leads, 50/75/POT sizing ancestry.
+//   P = all 4-6h range-frequency decisions below. Earlier-position folds change
+//       BTN/blind ranges, so this file is NOT direct source coverage.
+//   T = exact deal size, preflop chronology, Hero position, board/hand/SPR facts.
+//
+// Cash-depth contract:
+//   * source low-SPR logic is reviewed rather than deleted;
+//   * POT survives only for robust 2P+ value on draw-heavy deepest SPR <=1.25;
+//   * one-pair hands and draws never inherit a future Turn jam from that sizing;
+//   * no Donk-vs-raise defense is encoded here.
+//
+// Safety:
+//   * no pure-air baseline;
+//   * BTN-limp != BTN-open SRP;
+//   * SB FIRST != BB MIDDLE-after-SB-check;
+//   * no shortest-effective SPR, BetMax, HandPower, random or commitment helper.
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// FD6.01 — exact 4-6 handed preflop origins
+// -----------------------------------------------------------------------------
+
+// Purpose: 4-6h hand reduced preflop to BTN limp + SB call + BB check.
+// Source ancestry: native 3h source shape #1.
+// Provenance: T exact pot/call facts + A/P range-origin adaptation.
+##f$cc_flop_donk_6max_limped_context##
+f$cc_flop_donk_sixmax_btn_blinds_ancestry_context &&
+f$cc_pot_family_id = 1 &&
+f$cc_pf_raise_count = 0 &&
+f$cc_pf_call_btn &&
+f$cc_pf_call_sb
+
+// Purpose: 4-6h hand reduced preflop to BTN open + SB call + BB call.
+// Source ancestry: native 3h source shape #2.
+// Provenance: T exact ordinary-SRP raiser/call facts + P six-max range adaptation.
+##f$cc_flop_donk_6max_btnopen_context##
+f$cc_flop_donk_sixmax_btn_blinds_ancestry_context &&
+f$cc_pot_family_id = 2 &&
+f$cc_pf_one_raise_ordinary_srp &&
+f$cc_pf_single_raiser_pos_id = 4 &&
+f$cc_pf_call_sb &&
+f$cc_pf_call_bb
+
+// Purpose: limped-pot SB acts FIRST into BB+BTN.
+// Source/Provenance: T canonical position/order + P distinct policy owner.
+##f$cc_flop_donk_6max_limped_sb_context##
+f$cc_flop_donk_6max_limped_context &&
+f$cc_hero_pos_id = 5 &&
+f$cc_relpos_id = 1
+
+// Purpose: limped-pot BB acts MIDDLE only after SB has checked.
+// Source/Provenance: T current first-Hero-action + canonical order; P distinct owner.
+##f$cc_flop_donk_6max_limped_bb_context##
+f$cc_flop_donk_6max_limped_context &&
+f$cc_hero_pos_id = 6 &&
+f$cc_relpos_id = 2
+
+// Purpose: BTN-open SRP SB acts FIRST into BB+BTN.
+// Source/Provenance: T position/order + P selected three-way SRP Donk owner.
+##f$cc_flop_donk_6max_btnopen_sb_context##
+f$cc_flop_donk_6max_btnopen_context &&
+f$cc_hero_pos_id = 5 &&
+f$cc_relpos_id = 1
+
+// Purpose: BTN-open SRP BB acts MIDDLE after SB has checked.
+// Source/Provenance: T position/order + P selected three-way SRP Donk owner.
+##f$cc_flop_donk_6max_btnopen_bb_context##
+f$cc_flop_donk_6max_btnopen_context &&
+f$cc_hero_pos_id = 6 &&
+f$cc_relpos_id = 2
+
+// Purpose: count mutually exclusive adapted BTN+blinds policy parents.
+// Source/Provenance: P safety invariant over T/A exact contexts.
+##f$cc_flop_donk_6max_parent_count##
+(f$cc_flop_donk_6max_limped_sb_context * 1) +
+(f$cc_flop_donk_6max_limped_bb_context * 1) +
+(f$cc_flop_donk_6max_btnopen_sb_context * 1) +
+(f$cc_flop_donk_6max_btnopen_bb_context * 1)
+
+// Purpose: stable parent ID: 1 limp-SB; 2 limp-BB; 3 BTNopen-SB; 4 BTNopen-BB.
+// Source/Provenance: P routing metadata.
+##f$cc_flop_donk_6max_parent_id##
+When f$cc_flop_donk_6max_parent_count != 1 Return 0 Force
+When f$cc_flop_donk_6max_limped_sb_context Return 1 Force
+When f$cc_flop_donk_6max_limped_bb_context Return 2 Force
+When f$cc_flop_donk_6max_btnopen_sb_context Return 3 Force
+When f$cc_flop_donk_6max_btnopen_bb_context Return 4 Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// FD6.02 — adapted hand / board selectors
+// -----------------------------------------------------------------------------
+
+// Purpose: robust value region that can support a selected three-way Donk without
+// treating one-pair as commitment.
+// Source ancestry: TP+ source starts broad; P adaptation tightens its core to 2P+.
+// Provenance: A/P over T contribution-aware hand strength.
+##f$cc_flop_donk_6max_robust_value##
+f$cc_hand_two_pair_or_better
+
+// Purpose: one-pair overpair descriptor below 2P+.
+// Source/Provenance: A source TP+ ingredient; P policy downstream.
+##f$cc_flop_donk_6max_overpair##
+f$cc_cbet_flop_overpair && !f$cc_hand_two_pair_or_better
+
+// Purpose: source-descended low pair <=7, generalized outside native 3h context.
+// Source: dedicated `7 or lower pair` rule.
+// Provenance: A mechanical contribution reconstruction + P use only in selected
+// limped-BB states; it is NOT copied into BTN-open SRP.
+##f$cc_flop_donk_6max_low_pair##
+When f$cc_flop_donk_6max_parent_id <= 0 Return false Force
+When f$cc_hand_top_pair_or_better Return false Force
+When ispair && rankhiplayer <= 7 Return true Force
+When !ispair && RankOfFirstHoleCard <= 7 && (RankOfFirstHoleCard = FirstFlopCard || RankOfFirstHoleCard = SecondFlopCard || RankOfFirstHoleCard = ThirdFlopCard) Return true Force
+When !ispair && RankOfSecondHoleCard <= 7 && (RankOfSecondHoleCard = FirstFlopCard || RankOfSecondHoleCard = SecondFlopCard || RankOfSecondHoleCard = ThirdFlopCard) Return true Force
+When Others Return false Force
+
+// Purpose: boards where the source preferred checking draws and where 4-6h
+// adaptation also avoids manufacturing a lead: A-high, completed, or 2+BW.
+// Source/Provenance: A exact source board lesson + P six-max caution.
+##f$cc_flop_donk_6max_draw_check_parent##
+f$cc_flop_ahigh ||
+f$cc_flop_donk_source_completed ||
+f$cc_flop_donk_source_two_plus_bw
+
+// Purpose: low/mid board families where blind ranges can support selected leads.
+// Source: source leads more on 1BW/NoBW/paired boards.
+// Provenance: A source principle + P six-max pressure abstraction.
+##f$cc_flop_donk_6max_blind_friendly_parent##
+f$cc_flop_static_lowmid_parent ||
+f$cc_flop_dynamic_lowmid_parent ||
+(f$cc_flop_paired_parent && !f$cc_flop_ahigh)
+
+// Purpose: especially interactive low/mid board parent used for tighter BTN-open
+// Donks; static high boards remain mostly check-to-PFA.
+// Source/Provenance: P professional range-interaction abstraction constrained by A.
+##f$cc_flop_donk_6max_aggressive_lowmid_parent##
+!f$cc_flop_ahigh &&
+(f$cc_flop_dynamic_lowmid_parent ||
+ (f$cc_flop_paired_parent && f$cc_flop_donk_source_broadway_count <= 1))
+
+// Purpose: source-descended low-SPR POT-sizing candidate using corrected deepest
+// effective relation; no action follows from this descriptor by itself.
+// Source: mature DeepCrusher biggest-active-opponent / pot <=1.25.
+// Provenance: A exact semantic migration to T corrected multiway geometry.
+##f$cc_flop_donk_6max_drawheavy_low_spr##
+f$cc_flop_donk_6max_parent_id > 0 &&
+f$cc_mw_spr_bounds_valid &&
+f$cc_flop_donk_source_draw_heavy &&
+f$cc_mw_spr_deepest_round_start >= 0 &&
+f$cc_mw_spr_deepest_round_start <= 1.25
+
+// -----------------------------------------------------------------------------
+// FD6.03 — limped-pot SB policy
+// -----------------------------------------------------------------------------
+
+// Purpose: SB FIRST in limped pot; no preflop aggressor exists to supply a cbet,
+// so value/protection Donks survive more often than in BTN-open SRP, but weak TP,
+// low pair and ordinary draw leads are removed from the direct-source frequency.
+// Source/Provenance: A source philosophy + P 4-6h limped-range adaptation.
+##f$cc_flop_donk_6max_limped_sb_action##
+When !f$cc_flop_donk_6max_limped_sb_context Return false Force
+When f$cc_flop_donk_6max_robust_value && !f$cc_flop_ahigh Return true Force
+When f$cc_flop_donk_6max_robust_value && f$cc_flop_ahigh && f$cc_flop_donk_source_draw_heavy Return true Force
+When f$cc_flop_donk_6max_robust_value Return false Force
+When f$cc_flop_donk_6max_overpair && !f$cc_flop_ahigh && !f$cc_flop_donk_source_two_plus_bw Return true Force
+When f$cc_cbet_flop_strong_top_pair && !f$cc_flop_ahigh && !f$cc_flop_donk_source_two_plus_bw && f$cc_flop_donk_6max_blind_friendly_parent Return true Force
+When f$cc_hand_top_pair_or_better Return false Force
+When f$cc_flop_donk_6max_low_pair Return false Force
+When f$cc_cbet_flop_premium_draw && !f$cc_flop_donk_6max_draw_check_parent && f$cc_flop_donk_6max_blind_friendly_parent Return true Force
+When f$cc_real_frontdoor_draw Return false Force
+When Others Return false Force
+
+// -----------------------------------------------------------------------------
+// FD6.04 — limped-pot BB policy after SB checked
+// -----------------------------------------------------------------------------
+
+// Purpose: BB may lead somewhat wider after SB checks, but still no pure air.
+// Medium TP and <=7 pair acquire only narrow low-board limped-pot leads.
+// Source/Provenance: A source checked-to geometry + P information/range adaptation.
+##f$cc_flop_donk_6max_limped_bb_action##
+When !f$cc_flop_donk_6max_limped_bb_context Return false Force
+When f$cc_flop_donk_6max_robust_value && !f$cc_flop_ahigh Return true Force
+When f$cc_flop_donk_6max_robust_value && f$cc_flop_ahigh && f$cc_flop_donk_source_draw_heavy Return true Force
+When f$cc_flop_donk_6max_robust_value Return false Force
+When f$cc_flop_donk_6max_overpair && !f$cc_flop_ahigh && !f$cc_flop_donk_source_two_plus_bw Return true Force
+When f$cc_cbet_flop_strong_top_pair && !f$cc_flop_ahigh && !f$cc_flop_donk_source_two_plus_bw && f$cc_flop_donk_6max_blind_friendly_parent Return true Force
+When f$cc_cbet_flop_medium_top_pair && !f$cc_flop_ahigh && f$cc_flop_donk_source_zero_bw && !f$cc_flop_donk_source_completed Return true Force
+When f$cc_hand_top_pair_or_better Return false Force
+When f$cc_flop_donk_6max_low_pair && !f$cc_flop_donk_source_completed && (f$cc_flop_donk_source_zero_bw || PairOnFlop) Return true Force
+When f$cc_flop_donk_6max_low_pair Return false Force
+When f$cc_cbet_flop_premium_draw && !f$cc_flop_donk_6max_draw_check_parent && f$cc_flop_donk_6max_blind_friendly_parent Return true Force
+When f$cc_cbet_flop_good_draw && !f$cc_flop_donk_6max_draw_check_parent && (f$cc_flop_donk_source_zero_bw || f$cc_flop_donk_source_one_bw || PairOnFlop) Return true Force
+When f$cc_real_frontdoor_draw Return false Force
+When Others Return false Force
+
+// -----------------------------------------------------------------------------
+// FD6.05 — BTN-open SRP SB policy
+// -----------------------------------------------------------------------------
+
+// Purpose: SB FIRST versus the preflop raiser checks most of its range. Donks are
+// restricted to robust value and nut/combo-draw pressure on low/mid structures.
+// Source ancestry is informative, but direct TP+/low-pair frequency is not copied.
+// Source/Provenance: A source board lesson + P professional three-way SRP policy.
+##f$cc_flop_donk_6max_btnopen_sb_action##
+When !f$cc_flop_donk_6max_btnopen_sb_context Return false Force
+When f$cc_flop_donk_6max_robust_value && f$cc_flop_donk_6max_aggressive_lowmid_parent Return true Force
+When f$cc_hand_top_pair_or_better Return false Force
+When f$cc_flop_donk_6max_low_pair Return false Force
+When f$cc_nut_or_combo_draw && !f$cc_flop_donk_6max_draw_check_parent && f$cc_flop_donk_6max_aggressive_lowmid_parent Return true Force
+When f$cc_real_frontdoor_draw Return false Force
+When Others Return false Force
+
+// -----------------------------------------------------------------------------
+// FD6.06 — BTN-open SRP BB policy after SB checked
+// -----------------------------------------------------------------------------
+
+// Purpose: BB MIDDLE gets one extra check of information and therefore retains a
+// selected one-pair / premium-draw lead on blind-favorable low/mid boards. This is
+// still much tighter than the native 3h TP+ source tree.
+// Source/Provenance: A checked-to source geometry + P six-max BTN-open adaptation.
+##f$cc_flop_donk_6max_btnopen_bb_action##
+When !f$cc_flop_donk_6max_btnopen_bb_context Return false Force
+When f$cc_flop_donk_6max_robust_value && f$cc_flop_donk_6max_aggressive_lowmid_parent Return true Force
+When f$cc_flop_donk_6max_overpair && f$cc_flop_dynamic_lowmid_parent && !f$cc_flop_donk_source_completed Return true Force
+When f$cc_cbet_flop_strong_top_pair && f$cc_flop_dynamic_lowmid_parent && !f$cc_flop_donk_source_completed Return true Force
+When f$cc_hand_top_pair_or_better Return false Force
+When f$cc_flop_donk_6max_low_pair Return false Force
+When f$cc_cbet_flop_premium_draw && !f$cc_flop_donk_6max_draw_check_parent && f$cc_flop_donk_6max_aggressive_lowmid_parent Return true Force
+When f$cc_cbet_flop_good_draw && !f$cc_flop_donk_6max_draw_check_parent && f$cc_flop_dynamic_lowmid_parent Return true Force
+When f$cc_real_frontdoor_draw Return false Force
+When Others Return false Force
+
+// -----------------------------------------------------------------------------
+// FD6.07 — canonical action / size / coverage
+// -----------------------------------------------------------------------------
+
+// Purpose: adapted 4-6h action dispatcher by exact preflop origin and Hero order.
+// Source/Provenance: P exact-parent routing over T/A contexts.
+##f$cc_flop_donk_6max_action##
+When f$cc_flop_donk_6max_limped_sb_context Return f$cc_flop_donk_6max_limped_sb_action Force
+When f$cc_flop_donk_6max_limped_bb_context Return f$cc_flop_donk_6max_limped_bb_action Force
+When f$cc_flop_donk_6max_btnopen_sb_context Return f$cc_flop_donk_6max_btnopen_sb_action Force
+When f$cc_flop_donk_6max_btnopen_bb_context Return f$cc_flop_donk_6max_btnopen_bb_action Force
+When Others Return false Force
+
+// Purpose: strategic size owner for positive adapted Donks.
+// Source ancestry: 50 one-pair/low-pair, 75 pressure/value/draw, POT at source-
+// descended deepest-SPR<=1.25 geometry.
+// Provenance: A sizing ancestry + P cash restriction.
+// Safety: POT is restricted to robust 2P+ value; no draw/one-pair automatic commit.
+##f$cc_flop_donk_6max_size_id##
+When !f$cc_flop_donk_6max_action Return 0 Force
+When f$cc_flop_donk_6max_robust_value && f$cc_flop_donk_6max_drawheavy_low_spr Return f$cc_flop_donk_size_100_id Force
+When f$cc_flop_donk_6max_robust_value Return f$cc_flop_donk_size_75_id Force
+When f$cc_flop_donk_6max_overpair Return f$cc_flop_donk_size_50_id Force
+When f$cc_cbet_flop_strong_top_pair || f$cc_cbet_flop_medium_top_pair Return f$cc_flop_donk_size_50_id Force
+When f$cc_flop_donk_6max_low_pair Return f$cc_flop_donk_size_50_id Force
+When f$cc_cbet_flop_premium_draw || f$cc_cbet_flop_good_draw Return f$cc_flop_donk_size_75_id Force
+When Others Return 0 Force
+
+// Purpose: exact adapted BTN+both-blinds state has been reviewed, including check.
+// Source/Provenance: P coverage contract; explicitly separate from source coverage.
+##f$cc_flop_donk_6max_covered##
+f$cc_flop_donk_6max_parent_id > 0
+
+// Purpose: action/size integrity for 4-6h adaptation.
+// Source/Provenance: P engineering invariant.
+##f$cc_flop_donk_6max_size_consistent##
+When !f$cc_flop_donk_6max_action Return f$cc_flop_donk_6max_size_id = 0 Force
+When f$cc_flop_donk_6max_action Return f$cc_flop_donk_6max_size_id >= 1 && f$cc_flop_donk_6max_size_id <= 3 Force
+When Others Return false Force
+
+// Purpose: visible proof that this professional adaptation never masquerades as
+// the native 3h source policy.
+// Source/Provenance: P source-fidelity invariant.
+##f$cc_flop_donk_6max_not_source_covered##
+f$cc_flop_donk_6max_covered && !f$cc_flop_donk_source_covered
+
+// ============================================================================
+// End Gate07C BTN+both-blinds 4-6h adaptation.
+// ============================================================================

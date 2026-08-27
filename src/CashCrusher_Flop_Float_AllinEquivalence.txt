@@ -1,0 +1,92 @@
+// ============================================================================
+// CashCrusher_Flop_Float_AllinEquivalence.txt
+// Gate 04G.2B — natural/mechanical all-in equivalence for Flop Float
+// ============================================================================
+// Purpose:
+//   Convert a reviewed Float size to BetMax only when that size already reaches
+//   Hero's stack or every currently live effective relationship.
+//
+// Source boundary:
+//   Legacy 3wBBvSB Float check-raise shove plans and generic ~50/55/60% short-stack
+//   promotion are NOT encoded here. They remain defense/exact-node review evidence.
+//
+// Source/Provenance:
+//   T = OpenPPL BetMax and exact stack geometry.
+//   A = mechanical-equivalence separation already frozen in CBet gates.
+//   P = multiway sidepot safety + plan diagnostics.
+// ============================================================================
+
+// Purpose: requested Float covers every currently matchable opponent relation.
+// Source/Provenance: T/A HU exact or multiway deepest-effective definition.
+##f$cc_flop_float_requested_reaches_all_live_effective##
+When !f$cc_flop_float_stackgeom_clean Return false Force
+When f$cc_hu && f$cc_flop_float_requested_reaches_hu_effective Return true Force
+When f$cc_multiway && f$cc_flop_float_requested_reaches_mw_deepest Return true Force
+When Others Return false Force
+
+// Purpose: decide only natural/mechanical local BetMax equivalence.
+// Source/Provenance: T/A mechanical cap, not strategic commitment.
+// Safety: historical near-all-in review and shallowest-only sidepot reach excluded.
+##f$cc_flop_float_natural_allin_equivalent##
+When !f$cc_flop_float_runtime_size_ready Return false Force
+When !f$cc_flop_float_stackgeom_clean Return false Force
+When f$cc_flop_float_requested_reaches_hero_stack Return true Force
+When f$cc_flop_float_requested_reaches_all_live_effective Return true Force
+When Others Return false Force
+
+// Purpose: diagnostic reason ID for natural Float all-in equivalence.
+// IDs: 1 Hero stack | 2 HU effective | 3 multiway deepest/all-live | 0 none.
+// Source/Provenance: P metadata over T/A mechanical conditions.
+##f$cc_flop_float_natural_allin_reason_id##
+When !f$cc_flop_float_natural_allin_equivalent Return 0 Force
+When f$cc_flop_float_requested_reaches_hero_stack Return 1 Force
+When f$cc_hu && f$cc_flop_float_requested_reaches_hu_effective Return 2 Force
+When f$cc_multiway && f$cc_flop_float_requested_reaches_mw_deepest Return 3 Force
+When Others Return 0 Force
+
+// Purpose: final local Float execution size and persistent PRE-ACTION plan markers.
+// Source: T OpenPPL reviewed sizing/BetMax execution path.
+// Provenance: T/A execution adapter + P cross-street plan metadata.
+// Safety: these booleans never prove that OpenHoldem actually executed the bet.
+##f$cc_flop_float_execution_betsize##
+When !f$cc_flop_float_runtime_size_ready Return 0 Force
+When f$cc_flop_float_runtime_size_ready Set user_cc_flop_float_plan_bet_seen
+When f$cc_flop_float_runtime_size_ready Set user_cc_flop_float_plan_size_recorded
+When f$cc_flop_float_size_id = 1 Set user_cc_flop_float_plan_size_25
+When f$cc_flop_float_size_id = 2 Set user_cc_flop_float_plan_size_33
+When f$cc_flop_float_size_id = 3 Set user_cc_flop_float_plan_size_50
+When f$cc_flop_float_size_id = 4 Set user_cc_flop_float_plan_size_75
+When f$cc_flop_float_size_id = 5 Set user_cc_flop_float_plan_size_100
+When f$cc_flop_float_natural_allin_equivalent Set user_cc_flop_float_plan_expected_allin
+When f$cc_flop_float_natural_allin_equivalent Return BetMax Force
+When Others Return f$cc_flop_float_requested_betsize Force
+
+// Purpose: count mutually-exclusive Float plan-size markers.
+// Source/Provenance: P integrity check over T per-hand boolean user variables.
+##f$cc_flop_float_plan_size_marker_count##
+(user_cc_flop_float_plan_size_25 * 1) +
+(user_cc_flop_float_plan_size_33 * 1) +
+(user_cc_flop_float_plan_size_50 * 1) +
+(user_cc_flop_float_plan_size_75 * 1) +
+(user_cc_flop_float_plan_size_100 * 1)
+
+// Purpose: validate stored Float plan markers without recomputing old flop stack.
+// Source/Provenance: P cross-street-stable marker invariant.
+##f$cc_flop_float_plan_markers_consistent##
+When user_cc_flop_float_plan_size_recorded && !user_cc_flop_float_plan_bet_seen Return false Force
+When user_cc_flop_float_plan_bet_seen && !user_cc_flop_float_plan_size_recorded Return false Force
+When user_cc_flop_float_plan_size_recorded && f$cc_flop_float_plan_size_marker_count != 1 Return false Force
+When !user_cc_flop_float_plan_size_recorded && f$cc_flop_float_plan_size_marker_count != 0 Return false Force
+When user_cc_flop_float_plan_expected_allin && !user_cc_flop_float_plan_size_recorded Return false Force
+When Others Return true Force
+
+// Purpose: prove a shortest-only sidepot reach cannot trigger whole-field BetMax.
+// Source/Provenance: P invariant over T dual-bound geometry.
+##f$cc_flop_float_sidepot_divergence_not_promoted##
+When !f$cc_flop_float_mw_sidepot_divergence_candidate Return true Force
+When f$cc_flop_float_natural_allin_equivalent Return false Force
+When Others Return true Force
+
+// ============================================================================
+// End Gate04G.2B local Float execution equivalence.
+// ============================================================================

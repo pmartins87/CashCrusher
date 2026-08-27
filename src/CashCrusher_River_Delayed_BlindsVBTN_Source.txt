@@ -1,0 +1,92 @@
+// ============================================================================
+// CashCrusher_River_Delayed_BlindsVBTN_Source.txt
+// Gate 13F — native true-multiway 3wBlinds-v-BTN direct no-action source
+// ============================================================================
+// Purpose:
+//   Close the exact Gate12A family-8 lineage: Hero is SB/BB in a three-handed
+//   field with BTN + other blind live, flop checked through, Gate12A reviewed a
+//   scenario-wide Turn CHECK, and Turn actually checked through. At River the
+//   mature source gives air 75%, exact third-pair/pocket 25%, then scenario CHECK.
+//
+// Source boundary:
+//   The separate `user_DC7_MW_DrawDonk` River75 branch is NOT this history: it
+//   descends from flop draw-donk aggression and can reduce to HU versus BB. This
+//   file consumes only the clean no-action family-8 parent, so draw-donk ancestry
+//   cannot be smuggled into Gate13.
+//
+// Provenance:
+//   T = mature `f$river_lead_noaction` 3wBlinds_vBTN order/sizes plus CLOSED
+//       Gate12A round-3 history.
+//   A = exact native geometry/current-field equality and portable current classes.
+//   P = normalized IDs / full exact-family coverage metadata only.
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// RDMW.01 — exact clean no-action parent
+// -----------------------------------------------------------------------------
+
+// Purpose: exact Gate12A family-8 River parent, still true-multiway with the same
+// two opponents that faced Hero's Turn decision.
+// Source/Provenance: T/A family snapshot + CLOSED X/X + stable live-field proof.
+##f$cc_river_delayed_3w_blindsvbtn_context##
+f$cc_river_delayed_base_opportunity &&
+f$cc_hist_river_delayed_cbet_check_parent_valid &&
+f$cc_hist_turn_delayed_cbet_family_id = 8 &&
+f$cc_deal_size = 3 &&
+f$cc_flop_entry_count = 3 &&
+f$cc_multiway &&
+f$cc_hist_turn_delayed_cbet_player_count = 3 &&
+f$cc_opp_live_mask = f$cc_hist_turn_delayed_cbet_live_opp_mask &&
+(f$cc_hero_pos_id = 5 || f$cc_hero_pos_id = 6)
+
+// Purpose: source River air class. In mature DeepCrusher `f$hand_Air` reduces to
+// `f$NoMadeHand` on River because `f$hand_Gutshot_or_BetterDraw` hard-returns
+// false on River; use the existing current no-made mechanical equivalent.
+// Source/Provenance: T/A exact River specialization.
+##f$cc_river_delayed_3w_blindsvbtn_source_air##
+f$cc_river_delayed_3w_blindsvbtn_context &&
+f$cc_river_delayed_no_made
+
+// Purpose: source exact third-pair/pocket River class.
+// Source/Provenance: T/A portable exact tier; fourth/worse pair is not widened.
+##f$cc_river_delayed_3w_blindsvbtn_source_thirdpair##
+f$cc_river_delayed_3w_blindsvbtn_context &&
+f$cc_river_delayed_third_pair
+
+// -----------------------------------------------------------------------------
+// RDMW.02 — direct source action / sizes
+// -----------------------------------------------------------------------------
+
+// Purpose: preserve mature source order: clean no-action air75 precedes the later
+// third-pair25 branch; all remaining family-8 states check.
+// Source/Provenance: T direct source ordering.
+##f$cc_river_delayed_3w_blindsvbtn_source_action##
+When !f$cc_river_delayed_3w_blindsvbtn_context Return false Force
+When f$cc_river_delayed_3w_blindsvbtn_source_air Return true Force
+When f$cc_river_delayed_3w_blindsvbtn_source_thirdpair Return true Force
+When Others Return false Force
+
+// Purpose: exact source fixed sizes: air75, exact third-pair/pocket25.
+// Source/Provenance: T direct River75 / River25 translation.
+##f$cc_river_delayed_3w_blindsvbtn_source_size_id##
+When !f$cc_river_delayed_3w_blindsvbtn_source_action Return 0 Force
+When f$cc_river_delayed_3w_blindsvbtn_source_air Return f$cc_river_delayed_size_75_id Force
+When f$cc_river_delayed_3w_blindsvbtn_source_thirdpair Return f$cc_river_delayed_size_25_id Force
+When Others Return 0 Force
+
+// Purpose: family-8 exact no-action scenario is fully source-reviewed: the two
+// positives above are followed by the mature scenario-wide false fallback.
+// Source/Provenance: T/A exact scenario coverage.
+##f$cc_river_delayed_3w_blindsvbtn_source_covered##
+f$cc_river_delayed_3w_blindsvbtn_context
+
+// Purpose: local action/size integrity.
+// Source/Provenance: P deterministic safety invariant.
+##f$cc_river_delayed_3w_blindsvbtn_source_size_consistent##
+When !f$cc_river_delayed_3w_blindsvbtn_source_action Return f$cc_river_delayed_3w_blindsvbtn_source_size_id = 0 Force
+When f$cc_river_delayed_3w_blindsvbtn_source_action Return f$cc_river_delayed_3w_blindsvbtn_source_size_id >= 1 && f$cc_river_delayed_3w_blindsvbtn_source_size_id <= 6 Force
+When Others Return false Force
+
+// ============================================================================
+// End Gate13F true-multiway 3wBlinds-v-BTN source child.
+// ============================================================================

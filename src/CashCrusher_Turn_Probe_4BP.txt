@@ -1,0 +1,178 @@
+// ============================================================================
+// CashCrusher_Turn_Probe_4BP.txt
+// Gate 10I — clean caller-side 4BP Turn Probe
+// ============================================================================
+// Purpose:
+//   Support only the clean three-raise caller chronology that aggregate history
+//   proves strongly enough for a Turn Probe:
+//
+//      opener -> Hero 3bet -> opener 4bet -> Hero call
+//      flop checks through -> Hero is OOP on Turn -> Probe opportunity.
+//
+// Source boundary:
+//   DeepCrusher has no dedicated deep-stack 4BP Turn-Probe tree. Chronology and
+//   ownership are A/T; action/sizing is P-heavy and intentionally value/equity
+//   weighted. A reduced-HU caller that is IP/LAST belongs delayed-stab ownership,
+//   not Probe. Multiway 4BP caller provenance remains insufficiently resolved.
+//
+// Provenance:
+//   T = persisted raise/call bits, Gate10 closed flop history/current geometry.
+//   A = conservative standard opener4-v-Hero3bettor chronology reconstruction.
+//   P = 100bb condensed-range Turn lead policy.
+//   X = generic TP/OP stackoff, pure-air baseline, unresolved cold4/backraise/
+//       limp-reraise/multiway caller inheritance and strategic all-in promotion.
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// TP4B.01 — clean caller-side chronology
+// -----------------------------------------------------------------------------
+
+// Purpose: in a three-raise/two-raiser pot where Hero called after having raised,
+// return the sole other raiser's canonical position.
+// Source/Provenance: A mechanical persisted-raiser scan over T history.
+##f$cc_turn_probe_4bp_other_raiser_pos_id##
+When f$cc_pf_raise_count != 3 Return 0 Force
+When !f$cc_pf_role_call_4bet Return 0 Force
+When !f$cc_pf_hero_ever_raised Return 0 Force
+When f$cc_pf_unique_raiser_count != 2 Return 0 Force
+When f$cc_pf_raise_utg && f$cc_hero_pos_id != 1 Return 1 Force
+When f$cc_pf_raise_hj && f$cc_hero_pos_id != 2 Return 2 Force
+When f$cc_pf_raise_co && f$cc_hero_pos_id != 3 Return 3 Force
+When f$cc_pf_raise_btn && f$cc_hero_pos_id != 4 Return 4 Force
+When f$cc_pf_raise_sb && f$cc_hero_pos_id != 5 Return 5 Force
+When f$cc_pf_raise_bb && f$cc_hero_pos_id != 6 Return 6 Force
+When Others Return 0 Force
+
+// Purpose: prove ordinary opener -> Hero later 3bet -> opener 4bet -> Hero call.
+// Source/Provenance: P conservative chronology proof over A/T aggregate history.
+// Safety: reversed/backraise-like other>=Hero remains unsupported.
+##f$cc_turn_probe_4bp_opener4_vs_hero3bettor_proven##
+f$cc_pf_raise_count = 3 &&
+f$cc_pf_role_call_4bet &&
+f$cc_pf_hero_ever_raised &&
+f$cc_pf_unique_raiser_count = 2 &&
+f$cc_turn_probe_4bp_other_raiser_pos_id > 0 &&
+f$cc_turn_probe_4bp_other_raiser_pos_id < f$cc_hero_pos_id
+
+// Purpose: exact clean HU 4BP Turn-Probe owner. Actual OOP proof, rather than
+// numeric position order alone, handles true-HU SB/Button rules correctly and
+// also admits any reduced-HU blind geometry that is genuinely OOP.
+// Source/Provenance: T/A current HU position + P chronology owner.
+##f$cc_turn_probe_4bp_clean_hu_context##
+f$cc_turn_probe_hu_opportunity &&
+f$cc_turn_probe_snapshot_valid &&
+f$cc_pot_family_id = 4 &&
+f$cc_turn_probe_4bp_opener4_vs_hero3bettor_proven &&
+f$cc_hu_villain_pos_id = f$cc_turn_probe_4bp_other_raiser_pos_id &&
+f$cc_hu_oop
+
+// Purpose: expose the especially clear true-HU descendant for audit/logging.
+// Source: true-HU SB/Button open -> BB 3bet -> SB 4bet -> BB call; BB is OOP.
+// Provenance: T/A exact topology fact; action still P.
+##f$cc_turn_probe_4bp_true_hu_context##
+f$cc_turn_probe_4bp_clean_hu_context &&
+f$cc_true_hu &&
+f$cc_hero_pos_id = 6 &&
+f$cc_hu_villain_pos_id = 5
+
+// Purpose: clean reduced-HU OOP descendant when actual postflop geometry proves
+// Hero is first despite the standard opener4 chronology.
+// Source/Provenance: A/P explicit non-true-HU range family.
+##f$cc_turn_probe_4bp_reduced_hu_context##
+f$cc_turn_probe_4bp_clean_hu_context && f$cc_hu_origin_preflop_reduced
+
+// -----------------------------------------------------------------------------
+// TP4B.02 — current strength / cash-depth descriptors
+// -----------------------------------------------------------------------------
+
+// Purpose: exact overpair below 2P+.
+// Source/Provenance: T current hand class.
+##f$cc_turn_probe_4bp_overpair##
+IsTurn && HaveOverPair && !f$cc_hand_two_pair_or_better
+
+// Purpose: strong exact top pair, still one pair rather than stackoff class.
+// Source: DeepCrusher kicker stratification concept.
+// Provenance: A/P <=2 better-kicker split.
+##f$cc_turn_probe_4bp_strong_tp##
+IsTurn && f$cc_hand_just_top_pair && f$cc_number_better_kickers <= 2
+
+// Purpose: premium no-made draw with no jam implication.
+// Source/Provenance: A/P cleaned high-equity draw family.
+##f$cc_turn_probe_4bp_premium_draw##
+IsTurn && f$cc_hand_no_made &&
+(f$cc_real_combo_draw || f$cc_real_nut_fd ||
+ (f$cc_real_oesd && f$cc_two_overcards) ||
+ (f$cc_real_fd && f$cc_two_overcards))
+
+// Purpose: exact HU Turn SPR descriptor, not an automatic commitment command.
+// Source/Provenance: T Gate00 raw HU SPR + P local threshold metadata.
+##f$cc_turn_probe_4bp_hu_spr_below_2##
+f$cc_turn_probe_4bp_clean_hu_context &&
+f$cc_spr_round_start >= 0 && f$cc_spr_round_start < 2
+
+// Purpose: conservative bad-pressure Turn for one-pair/draw leads.
+// Source/Provenance: A source completion principle + P 4BP condensed-range caution.
+##f$cc_turn_probe_4bp_bad_pressure_turn##
+f$cc_turn_completed ||
+PairOnBoard ||
+AcePresentOnFlop ||
+f$cc_turn_is_ace
+
+// -----------------------------------------------------------------------------
+// TP4B.03 — P-heavy action / size
+// -----------------------------------------------------------------------------
+
+// Purpose: clean OOP caller-side 4BP Turn lead. Robust value probes; OP may lead
+// on calm runouts or very low natural SPR; strong TP and premium draws require a
+// calm runout. Lower pairs and pure air check.
+// Source/Provenance: P professional condensed-range policy over T/A owner.
+// Safety: SPR<2 influences an exact OP node only; it never globally stacks TP+.
+##f$cc_turn_probe_4bp_action##
+When !f$cc_turn_probe_4bp_clean_hu_context Return false Force
+When f$cc_hand_two_pair_or_better Return true Force
+When f$cc_turn_probe_4bp_overpair && !f$cc_turn_probe_4bp_bad_pressure_turn Return true Force
+When f$cc_turn_probe_4bp_overpair && f$cc_turn_probe_4bp_hu_spr_below_2 Return true Force
+When f$cc_turn_probe_4bp_overpair Return false Force
+When f$cc_turn_probe_4bp_strong_tp && !f$cc_turn_probe_4bp_bad_pressure_turn Return true Force
+When f$cc_hand_top_pair_or_better Return false Force
+When f$cc_turn_probe_second_pair Return false Force
+When f$cc_turn_probe_low_pair Return false Force
+When f$cc_turn_probe_4bp_premium_draw && !f$cc_turn_probe_4bp_bad_pressure_turn Return true Force
+When f$cc_turn_probe_air Return false Force
+When Others Return false Force
+
+// Purpose: clean 4BP strategic size map. Lower natural SPR favors 33/50 rather
+// than automatically translating one-pair value into all-in.
+// Source/Provenance: P deterministic 33/50/75 sizing.
+##f$cc_turn_probe_4bp_size_id##
+When !f$cc_turn_probe_4bp_action Return 0 Force
+When f$cc_hand_two_pair_or_better && f$cc_turn_completed Return f$cc_turn_probe_size_75_id Force
+When f$cc_hand_two_pair_or_better Return f$cc_turn_probe_size_50_id Force
+When f$cc_turn_probe_4bp_overpair Return f$cc_turn_probe_size_50_id Force
+When f$cc_turn_probe_4bp_strong_tp Return f$cc_turn_probe_size_33_id Force
+When f$cc_turn_probe_4bp_premium_draw Return f$cc_turn_probe_size_33_id Force
+When Others Return 0 Force
+
+// Purpose: complete strategy coverage only for the clean HU caller-side owner.
+// Source/Provenance: P coverage metadata.
+##f$cc_turn_probe_4bp_covered##
+f$cc_turn_probe_4bp_clean_hu_context
+
+// Purpose: legal 4BP Probe opportunity outside clean HU chronology/position.
+// Multiway, cold4-caller, reversed and unresolved histories remain explicit.
+// Source/Provenance: P fail-closed diagnostic.
+##f$cc_turn_probe_4bp_uncovered_context##
+f$cc_turn_probe_base_opportunity &&
+f$cc_pot_family_id = 4 &&
+!f$cc_turn_probe_4bp_covered
+
+// Purpose: action/size integrity.
+// Source/Provenance: P invariant.
+##f$cc_turn_probe_4bp_size_consistent##
+When !f$cc_turn_probe_4bp_action Return f$cc_turn_probe_4bp_size_id = 0 Force
+When f$cc_turn_probe_4bp_action Return f$cc_turn_probe_4bp_size_id >= 1 && f$cc_turn_probe_4bp_size_id <= 7 Force
+When Others Return false Force
+
+// ============================================================================
+// End Gate10I clean caller-side 4BP Turn Probe.
+// ============================================================================

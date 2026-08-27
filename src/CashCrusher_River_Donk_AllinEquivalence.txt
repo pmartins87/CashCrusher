@@ -1,0 +1,101 @@
+// ============================================================================
+// CashCrusher_River_Donk_AllinEquivalence.txt
+// Gate 09H.3 — local natural/mechanical all-in equivalence for River Donk
+// ============================================================================
+// Purpose:
+//   Convert a reviewed River-Donk size to BetMax ONLY when that requested size
+//   already reaches Hero's balance or every currently live effective relation.
+//
+// Source boundary:
+//   Historical DeepCrusher RiverMax and ~50/55/60 promotion mechanisms remain
+//   diagnostics. They are not one global CashCrusher River-Donk rule. Exact-node
+//   strategic jams may be added later if a reviewed range/runout node justifies it.
+//
+// Source/Provenance:
+//   T = OpenHoldem BetMax/balance/effective-stack execution geometry.
+//   A = natural-equivalence contract frozen on prior CashCrusher attack families.
+//   P = multiway sidepot safety and pre-action defense provenance markers.
+//
+// Safety:
+//   * no hand class creates BetMax by itself;
+//   * shortest-only MW reach never promotes;
+//   * plan markers record intent only, not executed River history;
+//   * a later raise versus this Donk belongs to the future defensive owner.
+// ============================================================================
+
+// Purpose: requested River Donk reaches every matchable live effective relation.
+// Source/Provenance: T/A HU exact / MW deepest all-live definition.
+##f$cc_river_donk_requested_reaches_all_live_effective##
+When !f$cc_river_donk_stackgeom_clean Return false Force
+When f$cc_hu && f$cc_river_donk_requested_reaches_hu_effective Return true Force
+When f$cc_multiway && f$cc_river_donk_requested_reaches_mw_deepest Return true Force
+When Others Return false Force
+
+// Purpose: local natural all-in equivalence for reviewed River Donk.
+// Source/Provenance: T/A mechanical equivalence, not strategic commitment.
+##f$cc_river_donk_natural_allin_equivalent##
+When !f$cc_river_donk_runtime_size_ready Return false Force
+When !f$cc_river_donk_stackgeom_clean Return false Force
+When f$cc_river_donk_requested_reaches_hero_stack Return true Force
+When f$cc_river_donk_requested_reaches_all_live_effective Return true Force
+When Others Return false Force
+
+// Purpose: reason natural all-in equivalence fired.
+// IDs: 1 Hero stack; 2 HU effective; 3 MW deepest/all-live; 0 none.
+// Source/Provenance: P metadata over T/A geometry.
+##f$cc_river_donk_natural_allin_reason_id##
+When !f$cc_river_donk_natural_allin_equivalent Return 0 Force
+When f$cc_river_donk_requested_reaches_hero_stack Return 1 Force
+When f$cc_hu && f$cc_river_donk_requested_reaches_hu_effective Return 2 Force
+When f$cc_multiway && f$cc_river_donk_requested_reaches_mw_deepest Return 3 Force
+When Others Return 0 Force
+
+// Purpose: final River-Donk execution betsize plus pre-action defense provenance.
+// Source/Provenance: T OpenPPL action + A/P plan markers.
+// Safety: these markers do not prove what actually happened; defense must inspect
+// current round-4 counters/history if Villain responds.
+##f$cc_river_donk_execution_betsize##
+When !f$cc_river_donk_runtime_size_ready Return 0 Force
+When f$cc_river_donk_runtime_size_ready Set user_cc_river_donk_opportunity_seen
+When f$cc_river_donk_runtime_size_ready Set user_cc_river_donk_plan_bet_seen
+When f$cc_river_donk_runtime_size_ready Set user_cc_river_donk_plan_size_recorded
+When f$cc_river_donk_size_id = 1 Set user_cc_river_donk_plan_size_25
+When f$cc_river_donk_size_id = 2 Set user_cc_river_donk_plan_size_30
+When f$cc_river_donk_size_id = 3 Set user_cc_river_donk_plan_size_33
+When f$cc_river_donk_size_id = 4 Set user_cc_river_donk_plan_size_50
+When f$cc_river_donk_size_id = 5 Set user_cc_river_donk_plan_size_75
+When f$cc_river_donk_size_id = 6 Set user_cc_river_donk_plan_size_100
+When f$cc_river_donk_natural_allin_equivalent Set user_cc_river_donk_plan_expected_allin
+When f$cc_river_donk_natural_allin_equivalent Return BetMax Force
+When Others Return f$cc_river_donk_requested_betsize Force
+
+// Purpose: count mutually exclusive stored River-Donk plan-size markers.
+// Source/Provenance: P integrity over T user variables.
+##f$cc_river_donk_plan_size_marker_count##
+(user_cc_river_donk_plan_size_25 * 1) +
+(user_cc_river_donk_plan_size_30 * 1) +
+(user_cc_river_donk_plan_size_33 * 1) +
+(user_cc_river_donk_plan_size_50 * 1) +
+(user_cc_river_donk_plan_size_75 * 1) +
+(user_cc_river_donk_plan_size_100 * 1)
+
+// Purpose: validate stored River-Donk pre-action plan markers.
+// Source/Provenance: P engineering invariant.
+##f$cc_river_donk_plan_markers_consistent##
+When user_cc_river_donk_plan_size_recorded && !user_cc_river_donk_plan_bet_seen Return false Force
+When user_cc_river_donk_plan_bet_seen && !user_cc_river_donk_plan_size_recorded Return false Force
+When user_cc_river_donk_plan_size_recorded && f$cc_river_donk_plan_size_marker_count != 1 Return false Force
+When !user_cc_river_donk_plan_size_recorded && f$cc_river_donk_plan_size_marker_count != 0 Return false Force
+When user_cc_river_donk_plan_expected_allin && !user_cc_river_donk_plan_size_recorded Return false Force
+When Others Return true Force
+
+// Purpose: prove shortest-only sidepot reach cannot trigger whole-field BetMax.
+// Source/Provenance: P invariant over T dual-bound geometry.
+##f$cc_river_donk_sidepot_divergence_not_promoted##
+When !f$cc_river_donk_mw_sidepot_divergence_candidate Return true Force
+When f$cc_river_donk_natural_allin_equivalent Return false Force
+When Others Return true Force
+
+// ============================================================================
+// End Gate09H.3 River Donk execution equivalence.
+// ============================================================================

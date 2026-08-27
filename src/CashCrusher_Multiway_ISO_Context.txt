@@ -1,0 +1,105 @@
+// ============================================================================
+// CashCrusher_Multiway_ISO_Context.txt
+// Gate 01E.3 context — true-threeway isolation-raised flop
+// ============================================================================
+// Purpose:
+//   Before a multiway ISO CBet fires, preserve whether the two surviving
+//   opponents were original limpers or players who cold-called after the raise.
+//
+// Composition IDs:
+//   1 = TWO_LIMPERS
+//   2 = ONE_LIMPER_ONE_POSTRAISE_COLD_CALLER
+//   3 = TWO_POSTRAISE_COLD_CALLERS
+//   0 = unresolved / outside exact true3 ISO
+//
+// Source/Provenance:
+//   A = exact masks reconstructed in CashCrusher_ISO_Context.txt.
+//   P = composition-parent grouping for six-max cash policy.
+// ============================================================================
+
+// Purpose: exact true-threeway ISO PFA flop context.
+// Context: exactly three entered and remain; Hero sole raiser after proven limp;
+// Hero owns initiative and faces no flop bet.
+// Source/Provenance: A exact ISO history + Gate00 multiway mechanics.
+// Safety: four-way+ origin and ordinary SRP are excluded.
+##f$cc_mw_iso_true3_pfa_context##
+f$cc_threeway &&
+f$cc_flop_entry_count = 3 &&
+f$cc_multiway_context_valid &&
+f$cc_pot_family_id = 2 &&
+f$cc_pf_role_pfa &&
+f$cc_pf_iso_proven &&
+f$cc_flop_cbet_opportunity &&
+f$cc_spr_valid
+
+// Purpose: count live original limpers in exact true3 ISO.
+// Source/Provenance: A alias over exact ISO live mask intersection.
+##f$cc_mw_iso_true3_limper_count##
+When !f$cc_mw_iso_true3_pfa_context Return 0 Force
+When Others Return f$cc_mw_iso_live_limper_count Force
+
+// Purpose: count live post-raise cold callers in exact true3 ISO.
+// Source/Provenance: A alias over exact ISO live mask intersection.
+##f$cc_mw_iso_true3_postraise_coldcaller_count##
+When !f$cc_mw_iso_true3_pfa_context Return 0 Force
+When Others Return f$cc_mw_iso_live_postraise_coldcaller_count Force
+
+// Purpose: stable true3 ISO survivor-composition ID.
+// Source/Provenance: P range-parent abstraction over A exact masks.
+// Safety: exactly two opponents must be classified.
+##f$cc_mw_iso_true3_comp_id##
+When !f$cc_mw_iso_true3_pfa_context Return 0 Force
+When f$cc_mw_iso_true3_limper_count = 2 && f$cc_mw_iso_true3_postraise_coldcaller_count = 0 Return 1 Force
+When f$cc_mw_iso_true3_limper_count = 1 && f$cc_mw_iso_true3_postraise_coldcaller_count = 1 Return 2 Force
+When f$cc_mw_iso_true3_limper_count = 0 && f$cc_mw_iso_true3_postraise_coldcaller_count = 2 Return 3 Force
+When Others Return 0 Force
+
+// Purpose: both surviving opponents are original pre-raise limpers.
+// Source/Provenance: P range parent over A exact survivor evidence.
+##f$cc_mw_iso_true3_two_limpers##
+f$cc_mw_iso_true3_comp_id = 1
+
+// Purpose: one surviving original limper plus one post-raise cold caller.
+// Source/Provenance: P mixed-range parent.
+##f$cc_mw_iso_true3_limper_plus_coldcaller##
+f$cc_mw_iso_true3_comp_id = 2
+
+// Purpose: original limpers folded; both surviving Villains cold-called after raise.
+// Source/Provenance: P selected/condensed range parent.
+##f$cc_mw_iso_true3_two_coldcallers##
+f$cc_mw_iso_true3_comp_id = 3
+
+// Purpose: exact true3 ISO PFA acting FIRST.
+// Source/Provenance: A relative-position mechanics + P strategy parent.
+##f$cc_mw_iso_true3_first_context##
+f$cc_mw_iso_true3_pfa_context && f$cc_multiway_rel_first
+
+// Purpose: exact true3 ISO PFA acting MIDDLE.
+// Source/Provenance: A relative-position mechanics + P strategy parent.
+##f$cc_mw_iso_true3_middle_context##
+f$cc_mw_iso_true3_pfa_context && f$cc_multiway_rel_middle
+
+// Purpose: exact true3 ISO PFA acting LAST after both opponents check.
+// Source/Provenance: A relative-position mechanics + P strategy parent.
+##f$cc_mw_iso_true3_last_context##
+f$cc_mw_iso_true3_pfa_context && f$cc_multiway_rel_last
+
+// Purpose: consistency guard requiring both current opponents to be explained by
+// exact limper/post-raise-coldcaller provenance.
+// Source/Provenance: P safety invariant over A exact masks.
+##f$cc_mw_iso_true3_context_consistent##
+When !f$cc_mw_iso_true3_pfa_context Return false Force
+When f$cc_mw_iso_true3_comp_id <= 0 Return false Force
+When (f$cc_mw_iso_true3_limper_count + f$cc_mw_iso_true3_postraise_coldcaller_count) != 2 Return false Force
+When Others Return true Force
+
+// Purpose: compact exact audit key retaining Hero pos, exact opponent mask,
+// composition and relative position.
+// Source/Provenance: P engineering metadata; never a solved strategy lookup.
+##f$cc_mw_iso_true3_range_key##
+When !f$cc_mw_iso_true3_pfa_context Return 0 Force
+When Others Return ((f$cc_hero_pos_id * 10000) + (f$cc_opp_live_mask * 100) + (f$cc_mw_iso_true3_comp_id * 10) + f$cc_relpos_id) Force
+
+// ============================================================================
+// End true-threeway ISO context.
+// ============================================================================

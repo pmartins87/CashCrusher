@@ -1,0 +1,255 @@
+// ============================================================================
+// CashCrusher_Flop_CBet_SRP_IP.txt
+// Gate 01B — HU ordinary-SRP PFA IP flop CBet
+// ============================================================================
+// Covered families:
+//   1) TRUE HU deal: SB/Button open-raises, BB calls (HUSB ancestry).
+//   2) 3-6h deal reduced HU: PFA IP versus BB.
+//   3) 3-6h deal reduced HU: PFA IP versus SB.
+//
+// Not covered here:
+//   ISO, 3BP, squeeze, 4BP, OOP PFA, multiway, or origin=3 postflop-reduced HU.
+//
+// Source hierarchy:
+//   * HUSB is the direct true-HU source ancestor.
+//   * 3wBTNvBB is the strongest BTN-v-BB ordinary-SRP ancestor.
+//   * 3wBTNvSB is the strongest BTN-v-SB ordinary-SRP ancestor.
+//   * earlier-position opens reuse positional architecture only; exact range
+//     frequencies are six-max professional-theory fills.
+//
+// Provenance:
+//   A = audited DeepCrusher hand/board/action concepts adapted to deep cash.
+//   P = exact six-max deep-stack combo selection / SPR adjustments.
+//   X = shallow commitment, blanket residual-air tails and automatic jam plans.
+//
+// OpenPPL safety:
+//   Every WHEN is complete and owns its Return.  No strategic scope depends on
+//   indentation.  Evaluation order is intentional: exceptions precede parents.
+//
+// Size IDs: 1 ~33% | 2 ~50% | 3 ~75% | 0 check
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// IP.00 — Context guards and opener-band descriptors
+// -----------------------------------------------------------------------------
+
+// Purpose: exact TRUE-HU ordinary-SRP PFA-IP context.
+// Context: 2 dealt, SB/Button open, BB calls, Hero has initiative and is IP.
+// Source/Provenance: HUSB direct ancestry A; mechanics from Gate00 T/A.
+// Safety: valid SPR and CBet opportunity required before policy can fire.
+##f$cc_cbet_srp_ip_true_hu_context##
+f$cc_srp_true_hu_sb_pfa_ip_vs_bb &&
+f$cc_flop_cbet_opportunity &&
+f$cc_spr_valid
+
+// Purpose: ordinary reduced-HU PFA-IP versus BB context.
+// Context: 3-6 players dealt, folds preflop leave Hero opener vs BB caller.
+// Source/Provenance: 3wBTNvBB A parent; exact matchup retained for P adjustment.
+##f$cc_cbet_srp_ip_vs_bb_context##
+f$cc_srp_pfa_ip_vs_bb &&
+f$cc_flop_cbet_opportunity &&
+f$cc_spr_valid
+
+// Purpose: ordinary reduced-HU PFA-IP versus SB cold-call context.
+// Context: 3-6 players dealt, Hero opener remains IP versus SB caller.
+// Source/Provenance: 3wBTNvSB A parent; earlier opens require P adjustment.
+##f$cc_cbet_srp_ip_vs_sb_context##
+f$cc_srp_pfa_ip_vs_sb &&
+f$cc_flop_cbet_opportunity &&
+f$cc_spr_valid
+
+// Purpose: distinguish CO/BTN opens versus BB for wider late-range pressure.
+// Source/Provenance: P six-max range-topology modifier; not a Crusher position copy.
+##f$cc_cbet_srp_ip_vs_bb_late_open##
+f$cc_cbet_srp_ip_vs_bb_context && (f$cc_hero_pos_id = 3 || f$cc_hero_pos_id = 4)
+
+// Purpose: distinguish UTG/HJ opens versus BB for stronger/narrower PFA ranges.
+// Source/Provenance: P six-max range-topology modifier.
+##f$cc_cbet_srp_ip_vs_bb_early_open##
+f$cc_cbet_srp_ip_vs_bb_context && (f$cc_hero_pos_id = 1 || f$cc_hero_pos_id = 2)
+
+// Purpose: distinguish CO/BTN opens versus SB cold call.
+// Source/Provenance: P six-max range-topology modifier; SB flat range remains
+// site/rake dependent and is never assumed identical to BB defense.
+##f$cc_cbet_srp_ip_vs_sb_late_open##
+f$cc_cbet_srp_ip_vs_sb_context && (f$cc_hero_pos_id = 3 || f$cc_hero_pos_id = 4)
+
+// Purpose: distinguish UTG/HJ opens versus SB cold call.
+// Source/Provenance: P six-max range-topology modifier.
+##f$cc_cbet_srp_ip_vs_sb_early_open##
+f$cc_cbet_srp_ip_vs_sb_context && (f$cc_hero_pos_id = 1 || f$cc_hero_pos_id = 2)
+
+// -----------------------------------------------------------------------------
+// IP.01 — TRUE HU SB/Button PFA IP vs BB
+// -----------------------------------------------------------------------------
+
+// Purpose: choose flop CBet/check for true-HU SB/Button PFA IP versus BB.
+// Context: true HU ordinary SRP only.
+// Source: audited HUSB bets TP+, MP/BP and real draws broadly; straight-possible
+// air checks. Source also had shallow <=16/20BB exceptions and broad residual air.
+// Provenance: A preserves source high-frequency IP spirit and straight-air check;
+// P builds deep-stack check-back/mixed subsets; X removes shallow/blanket tails.
+// Decision logic: robust value -> bet; medium/weak one-pair increasingly checks
+// on dynamic/high-SPR boards; premium draws bet; air requires backdoors/pressure.
+// Safety/Limits: not exact HU solver GTO; downstream raise-defense is separate.
+##f$cc_cbet_srp_ip_true_hu_action##
+When !f$cc_cbet_srp_ip_true_hu_context Return false Force
+When f$cc_cbet_flop_very_strong_value Return true Force
+When f$cc_cbet_flop_overpair Return true Force
+When f$cc_cbet_flop_strong_top_pair Return true Force
+When f$cc_cbet_flop_medium_top_pair && f$cc_flop_dynamic_lowmid_parent && f$cc_cbet_high_spr Return false Force
+When f$cc_cbet_flop_medium_top_pair Return true Force
+When f$cc_cbet_flop_weak_top_pair && f$cc_cbet_board_small_bet_parent Return true Force
+When f$cc_cbet_flop_weak_top_pair && f$cc_flop_static_lowmid_parent && !f$cc_cbet_very_high_spr Return true Force
+When f$cc_cbet_flop_weak_top_pair Return false Force
+When f$cc_hand_second_pair_or_pocket && f$cc_cbet_board_small_bet_parent && !f$cc_cbet_very_high_spr Return true Force
+When f$cc_hand_second_pair_or_pocket && f$cc_pair_plus_draw Return true Force
+When f$cc_cbet_flop_showdown_pair Return false Force
+When f$cc_cbet_flop_premium_draw Return true Force
+When f$cc_cbet_flop_good_draw && !f$cc_flop_dynamic_lowmid_parent Return true Force
+When f$cc_cbet_flop_good_draw && f$cc_flop_dynamic_lowmid_parent && f$cc_one_or_more_overcards Return true Force
+When f$cc_cbet_flop_weak_draw && f$cc_cbet_board_small_bet_parent Return true Force
+When f$cc_real_frontdoor_draw Return false Force
+When f$cc_air_no_frontdoor && f$cc_flop_straight_possible Return false Force
+When f$cc_cbet_flop_quality_air && (f$cc_flop_static_high_parent || f$cc_flop_paired_parent) Return true Force
+When f$cc_cbet_flop_quality_air && f$cc_flop_static_lowmid_parent && f$cc_two_overcards Return true Force
+When f$cc_cbet_flop_quality_air && f$cc_flop_dynamic_high_parent && f$cc_cbet_flop_air_best_backdoors Return true Force
+When Others Return false Force
+
+// Purpose: choose reviewed size ID for positive true-HU IP CBet.
+// Source: HUSB small/medium source sizing and general dry-small/dynamic-larger
+// patterns from DeepCrusher.
+// Provenance: A/P maps to clean 33/50/75 cash palette; source exact 40/50 is not
+// copied literally and no size implies commitment.
+// Safety: returns 0 whenever action function checks.
+##f$cc_cbet_srp_ip_true_hu_size_id##
+When !f$cc_cbet_srp_ip_true_hu_action Return 0 Force
+When f$cc_flop_dynamic_lowmid_parent && (f$cc_cbet_flop_very_strong_value || f$cc_cbet_flop_premium_draw) Return 3 Force
+When f$cc_flop_dynamic_lowmid_parent Return 2 Force
+When f$cc_flop_dynamic_high_parent Return 2 Force
+When f$cc_flop_static_lowmid_parent && (f$cc_cbet_flop_very_strong_value || f$cc_cbet_flop_overpair || f$cc_cbet_flop_premium_draw) Return 2 Force
+When f$cc_flop_static_lowmid_parent Return 1 Force
+When f$cc_cbet_board_small_bet_parent Return 1 Force
+When Others Return 2 Force
+
+// -----------------------------------------------------------------------------
+// IP.02 — 3-6h PFA IP versus BB
+// -----------------------------------------------------------------------------
+
+// Purpose: choose ordinary-SRP CBet/check when PFA is IP versus BB.
+// Context: exact matchups UTG/HJ/CO/BTN vs BB after preflop folds leave HU.
+// Source: 3wBTNvBB direct for BTN-v-BB; same positional skeleton for earlier opens.
+// Provenance: A high-confidence BTN source; P absolute-position/range adjustment;
+// X removes the source's blanket residual no-made bet in deep cash.
+// Decision logic: robust value broad; marginal pairs selective; draws graded;
+// quality backdoors select bluffs, especially on static-high/paired boards.
+// Safety/Limits: absolute matchup is preserved; this function does not pretend
+// UTG-v-BB has BTN-v-BB frequencies.
+##f$cc_cbet_srp_ip_vs_bb_action##
+When !f$cc_cbet_srp_ip_vs_bb_context Return false Force
+When f$cc_cbet_flop_very_strong_value Return true Force
+When f$cc_cbet_flop_overpair Return true Force
+When f$cc_cbet_flop_strong_top_pair Return true Force
+When f$cc_cbet_flop_medium_top_pair && f$cc_flop_dynamic_lowmid_parent && f$cc_cbet_high_spr Return false Force
+When f$cc_cbet_flop_medium_top_pair Return true Force
+When f$cc_cbet_flop_weak_top_pair && f$cc_flop_static_high_parent && f$cc_cbet_very_high_spr Return false Force
+When f$cc_cbet_flop_weak_top_pair && (f$cc_flop_static_high_parent || f$cc_flop_paired_parent) Return true Force
+When f$cc_cbet_flop_weak_top_pair && f$cc_flop_static_lowmid_parent && !f$cc_cbet_high_spr Return true Force
+When f$cc_cbet_flop_weak_top_pair Return false Force
+When f$cc_hand_second_pair_or_pocket && f$cc_pair_plus_draw Return true Force
+When f$cc_hand_second_pair_or_pocket && f$cc_cbet_board_small_bet_parent && f$cc_cbet_srp_ip_vs_bb_late_open && !f$cc_cbet_very_high_spr Return true Force
+When f$cc_hand_second_pair_or_pocket && f$cc_flop_static_lowmid_parent && f$cc_cbet_srp_ip_vs_bb_late_open && !f$cc_cbet_high_spr Return true Force
+When f$cc_cbet_flop_showdown_pair Return false Force
+When f$cc_cbet_flop_premium_draw Return true Force
+When f$cc_cbet_flop_good_draw && !f$cc_flop_dynamic_lowmid_parent Return true Force
+When f$cc_cbet_flop_good_draw && f$cc_flop_dynamic_lowmid_parent && (f$cc_two_overcards || f$cc_real_nut_fd) Return true Force
+When f$cc_cbet_flop_weak_draw && f$cc_cbet_board_small_bet_parent && f$cc_cbet_srp_ip_vs_bb_late_open Return true Force
+When f$cc_real_frontdoor_draw Return false Force
+When f$cc_cbet_flop_quality_air && (f$cc_flop_static_high_parent || f$cc_flop_paired_parent) Return true Force
+When f$cc_cbet_flop_quality_air && f$cc_flop_static_lowmid_parent && f$cc_cbet_srp_ip_vs_bb_late_open && f$cc_two_overcards Return true Force
+When f$cc_cbet_flop_air_best_backdoors && f$cc_flop_dynamic_high_parent && f$cc_cbet_srp_ip_vs_bb_late_open Return true Force
+When Others Return false Force
+
+// Purpose: choose size ID for PFA-IP versus BB positive CBet.
+// Source: 3wBTNvBB dry-small/dynamic-medium/larger concepts.
+// Provenance: A/P 33/50/75 normalization; exact source 30/50 not treated as sacred.
+// Safety: 0 on check, no automatic all-in conversion.
+##f$cc_cbet_srp_ip_vs_bb_size_id##
+When !f$cc_cbet_srp_ip_vs_bb_action Return 0 Force
+When f$cc_flop_dynamic_lowmid_parent && (f$cc_cbet_flop_very_strong_value || f$cc_cbet_flop_premium_draw) Return 3 Force
+When f$cc_flop_dynamic_lowmid_parent Return 2 Force
+When f$cc_flop_dynamic_high_parent Return 2 Force
+When f$cc_flop_static_lowmid_parent && (f$cc_cbet_flop_very_strong_value || f$cc_cbet_flop_overpair || f$cc_cbet_flop_premium_draw) Return 2 Force
+When f$cc_flop_static_lowmid_parent Return 1 Force
+When f$cc_cbet_board_small_bet_parent Return 1 Force
+When Others Return 2 Force
+
+// -----------------------------------------------------------------------------
+// IP.03 — 3-6h PFA IP versus SB cold caller
+// -----------------------------------------------------------------------------
+
+// Purpose: choose ordinary-SRP CBet/check when PFA is IP versus SB caller.
+// Context: exact matchups UTG/HJ/CO/BTN versus SB that cold-called the open.
+// Source: 3wBTNvSB direct for BTN-v-SB and useful structural parent otherwise.
+// Provenance: A source concept; P six-max range adjustment.  SB continuing range
+// is treated more selectively than BB, but no exact site-independent flat range
+// is invented.
+// Decision logic: robust value bets; marginal pairs check often; good draws bet
+// mainly on favorable parents; air needs strong backdoor/board support.
+// Safety/Limits: no blanket late-position low-board bluff tail versus SB.
+##f$cc_cbet_srp_ip_vs_sb_action##
+When !f$cc_cbet_srp_ip_vs_sb_context Return false Force
+When f$cc_cbet_flop_very_strong_value Return true Force
+When f$cc_cbet_flop_overpair Return true Force
+When f$cc_cbet_flop_strong_top_pair Return true Force
+When f$cc_cbet_flop_medium_top_pair && f$cc_flop_dynamic_lowmid_parent && f$cc_cbet_high_spr Return false Force
+When f$cc_cbet_flop_medium_top_pair Return true Force
+When f$cc_cbet_flop_weak_top_pair && f$cc_cbet_board_small_bet_parent && !f$cc_cbet_very_high_spr Return true Force
+When f$cc_cbet_flop_weak_top_pair Return false Force
+When f$cc_cbet_flop_showdown_pair && f$cc_pair_plus_draw Return true Force
+When f$cc_cbet_flop_showdown_pair Return false Force
+When f$cc_cbet_flop_premium_draw Return true Force
+When f$cc_cbet_flop_good_draw && (f$cc_flop_static_high_parent || f$cc_flop_dynamic_high_parent || f$cc_flop_paired_parent) Return true Force
+When f$cc_cbet_flop_good_draw && f$cc_flop_static_lowmid_parent && f$cc_one_or_more_overcards Return true Force
+When f$cc_real_frontdoor_draw Return false Force
+When f$cc_cbet_flop_quality_air && f$cc_flop_static_high_parent Return true Force
+When f$cc_cbet_flop_air_best_backdoors && f$cc_flop_paired_parent Return true Force
+When f$cc_cbet_flop_air_best_backdoors && f$cc_flop_dynamic_high_parent && f$cc_cbet_srp_ip_vs_sb_late_open Return true Force
+When Others Return false Force
+
+// Purpose: choose size ID for positive PFA-IP versus SB CBet.
+// Source: 3wBTNvSB uses larger sizes on more dynamic/value-heavy branches.
+// Provenance: A/P 33/50/75 normalization.
+// Safety: action=false always maps to size 0.
+##f$cc_cbet_srp_ip_vs_sb_size_id##
+When !f$cc_cbet_srp_ip_vs_sb_action Return 0 Force
+When f$cc_flop_dynamic_lowmid_parent && (f$cc_cbet_flop_very_strong_value || f$cc_cbet_flop_premium_draw) Return 3 Force
+When f$cc_flop_dynamic_lowmid_parent Return 2 Force
+When f$cc_flop_dynamic_high_parent Return 2 Force
+When f$cc_flop_static_lowmid_parent Return 2 Force
+When f$cc_cbet_board_small_bet_parent Return 1 Force
+When Others Return 2 Force
+
+// -----------------------------------------------------------------------------
+// IP.04 — Reduced-HU dispatchers for ordinary SRP PFA IP
+// -----------------------------------------------------------------------------
+
+// Purpose: route reduced-HU ordinary-SRP IP CBet to BB or SB family.
+// Source/Provenance: A/P topology router; it does not merge opponent ranges.
+// Safety: any other opponent/context fails closed.
+##f$cc_cbet_srp_ip_reduced_action##
+When f$cc_cbet_srp_ip_vs_bb_context Return f$cc_cbet_srp_ip_vs_bb_action Force
+When f$cc_cbet_srp_ip_vs_sb_context Return f$cc_cbet_srp_ip_vs_sb_action Force
+When Others Return false Force
+
+// Purpose: route reduced-HU ordinary-SRP IP size to the same exact family that
+// owns the action.
+// Source/Provenance: A/P safety router; 0 for uncovered context.
+##f$cc_cbet_srp_ip_reduced_size_id##
+When f$cc_cbet_srp_ip_vs_bb_context Return f$cc_cbet_srp_ip_vs_bb_size_id Force
+When f$cc_cbet_srp_ip_vs_sb_context Return f$cc_cbet_srp_ip_vs_sb_size_id Force
+When Others Return 0 Force
+
+// ============================================================================
+// End SRP IP CBet implementation.
+// ============================================================================

@@ -1,0 +1,122 @@
+// ============================================================================
+// CashCrusher_Turn_Probe_Multiway_SourceGaps.txt
+// Gate 10D — native true-multiway `(BBorSB)v2pp` reviewed Probe gaps
+// ============================================================================
+// Purpose:
+//   Restore the two explicit Retro Nothing-Here 04 Turn-Probe descendants that
+//   sit outside the Starting-Strategy second-pair/low-pair rules already owned by
+//   Gate10B.2:
+//     1) flop TP+ checked on Axx, still TP+ on Turn;
+//     2) flop draw-check, still no-made with a live real frontdoor draw on Turn.
+//
+// Source hierarchy:
+//   T = exact Gate07 flop decision facts, Gate10A.5 snapshot, current Turn hand,
+//       and DeepCrusher `f$BetsizeTurnMultiway` fallback order.
+//   A = Retro Nothing-Here 04 / reviewed CrusherTBP gap interpretation mapped to
+//       canonical CashCrusher topology.
+//   X = pure-air multiway Probe import. DeepCrusher explicitly leaves that for a
+//       later delayed-Probe River owner rather than this Turn node.
+//
+// Sizing source:
+//   RNH04 sets no `user_TurnXX` size flag. Therefore the exact source execution
+//   falls through `f$BetsizeTurnMultiway` to 33% when PotSize>3 and 50% when
+//   PotSize<=3. This is source execution behavior, not a new cash-theory guess.
+//
+// Safety:
+//   Initial Turn lead only. No River plan, raise-defense, stackoff, shortest-stack
+//   commitment or strategic BetMax promotion is imported.
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// TPMW.01 — exact source-gap context
+// -----------------------------------------------------------------------------
+
+// Purpose: native true three-way `(BBorSB)v2pp` Probe state not already owned by
+// direct second-/low-pair Starting-Strategy descendants.
+// Source/Provenance: A precedence firewall over Gate10B.2 exact context.
+##f$cc_turn_probe_mw_gap_context##
+f$cc_turn_probe_3w_blinds_vbtn_context &&
+!f$cc_turn_probe_3w_mw_covered
+
+// -----------------------------------------------------------------------------
+// TPMW.02 — exact persisted flop provenance
+// -----------------------------------------------------------------------------
+
+// Purpose: reconstruct `user_DC7_MW_ValueCheckAxx` from the pre-action snapshot
+// plus the fact the entire flop really checked through.
+// Source: Gate07 direct source checks TP+ on Ace-present flop; in native 3-handed
+// topology A-present is A-high. A positive Donk cannot coexist with closed X/X/X.
+// Provenance: T/A exact cross-street reconstruction.
+##f$cc_turn_probe_mw_gap_flop_valuecheck_axx##
+f$cc_turn_probe_mw_gap_context &&
+f$cc_turn_probe_flop_had_tpplus &&
+user_cc_turn_probe_flop_was_ahigh
+
+// Purpose: reconstruct a real flop draw-check provenance.
+// Source: Gate07 direct source stores `MW_DrawCheck` for checked good/medium/weak
+// draw families. A positive draw Donk cannot reach the closed-X/X/X Turn owner.
+// Provenance: T/A cleaned real-frontdoor snapshot + executed check-through.
+##f$cc_turn_probe_mw_gap_flop_drawcheck##
+f$cc_turn_probe_mw_gap_context && f$cc_turn_probe_flop_had_frontdoor_draw
+
+// -----------------------------------------------------------------------------
+// TPMW.03 — reviewed RNH04 positive actions
+// -----------------------------------------------------------------------------
+
+// Purpose: Axx historical value-check that remains TP+ now takes the Turn Probe.
+// Source: RNH04 `MW_ValueCheckAxx && current TP+ -> true`.
+// Provenance: A reviewed TBP action over T/A persisted provenance.
+##f$cc_turn_probe_mw_gap_value_probe##
+f$cc_turn_probe_mw_gap_flop_valuecheck_axx && f$cc_turn_probe_tpplus
+
+// Purpose: historical draw-check that remains no-made with a live real frontdoor
+// draw takes the Turn Probe. Clean real-draw semantics replace old dead/zombie
+// board-only draw leakage rather than importing those global legacy helpers.
+// Source: RNH04 `MW_DrawCheck && NoMadeHand && live draw && !dead/zombie`.
+// Provenance: A reviewed TBP action over cleaned T/A draw primitives.
+##f$cc_turn_probe_mw_gap_draw_probe##
+f$cc_turn_probe_mw_gap_flop_drawcheck && f$cc_turn_probe_live_frontdoor_draw
+
+// Purpose: exact reviewed RNH04 coverage; source-silent pure air remains outside.
+// Source/Provenance: P firewall around A positive source-gap descendants.
+##f$cc_turn_probe_mw_gap_covered##
+f$cc_turn_probe_mw_gap_value_probe || f$cc_turn_probe_mw_gap_draw_probe
+
+// Purpose: RNH04 action router.
+// Source/Provenance: A direct reviewed gap action.
+##f$cc_turn_probe_mw_gap_action##
+When !f$cc_turn_probe_mw_gap_context Return false Force
+When f$cc_turn_probe_mw_gap_value_probe Return true Force
+When f$cc_turn_probe_mw_gap_draw_probe Return true Force
+When Others Return false Force
+
+// -----------------------------------------------------------------------------
+// TPMW.04 — exact source sizing fallback
+// -----------------------------------------------------------------------------
+
+// Purpose: source fallback size after RNH04 sets no explicit Turn-size marker.
+// Source: `f$BetsizeTurnMultiway`: AmountToCall=0 && PotSize>3 -> BetThirdPot;
+// PotSize<=3 -> BetHalfPot. Gate10 opportunity already proves AmountToCall=0.
+// Provenance: T source execution translated to normalized size IDs.
+##f$cc_turn_probe_mw_gap_size_id##
+When !f$cc_turn_probe_mw_gap_action Return 0 Force
+When PotSize > 3 Return f$cc_turn_probe_size_33_id Force
+When PotSize <= 3 Return f$cc_turn_probe_size_50_id Force
+When Others Return 0 Force
+
+// Purpose: expose source-silent remainder instead of contaminating it with the
+// RNH04 positive families. In particular pure air is not imported here.
+// Source/Provenance: P fail-closed metadata.
+##f$cc_turn_probe_mw_gap_uncovered_context##
+f$cc_turn_probe_mw_gap_context && !f$cc_turn_probe_mw_gap_covered
+
+// Purpose: action/size integrity.
+// Source/Provenance: P safety invariant.
+##f$cc_turn_probe_mw_gap_size_consistent##
+When !f$cc_turn_probe_mw_gap_action Return f$cc_turn_probe_mw_gap_size_id = 0 Force
+When f$cc_turn_probe_mw_gap_action Return f$cc_turn_probe_mw_gap_size_id = f$cc_turn_probe_size_33_id || f$cc_turn_probe_mw_gap_size_id = f$cc_turn_probe_size_50_id Force
+When Others Return false Force
+
+// ============================================================================
+// End Gate10D.
+// ============================================================================

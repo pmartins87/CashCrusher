@@ -1,0 +1,213 @@
+// ============================================================================
+// CashCrusher_Flop_CBet_3BP_ColdCaller.txt
+// Gate 01F.2 — HU PLAIN 3BP CBet versus POST-3BET COLD CALLER
+// ============================================================================
+// Scope:
+//   3-6 handed deal -> ordinary first-orbit 3bet -> a player positioned after
+//   Hero's 3bet cold-calls -> original opener folds -> flop is HU.
+//
+// Example IP:
+//   UTG open -> BTN 3bet -> BB coldcall -> UTG fold. Hero BTN is IP vs BB.
+//
+// Example OOP:
+//   HJ open -> CO 3bet -> BTN coldcall -> HJ fold. Hero CO is OOP vs BTN.
+//
+// RANGE WARNING:
+//   Villain is NOT the original opener-call range.  A post-3bet cold call is a
+//   selected/condensed continuation family and must not inherit the ordinary
+//   opener-call 3BP policy simply because the pot has two raises.
+//
+// Source hierarchy:
+//   A — DeepCrusher contributes initiative/IP-OOP, hand-quality, board-dynamism
+//       and protected-checking concepts only.
+//   P — the exact deep-stack six-max cold-call-3bet strategy is a format gap and
+//       is therefore an explicit professional-theory fill.
+//   X — all short-stack TP+/overpair commitment implications, StackOffDraws,
+//       f$Raise_Committed and automatic jam plans.
+//
+// CRITICAL COMMITMENT RULE:
+//   A `true` action in this file authorizes THIS FLOP CBET ONLY.  Top pair,
+//   overpair, two pair or a draw is NOT thereby authorized to call a raise,
+//   3bet a raise, barrel future streets, or play for stacks.  Those decisions
+//   belong to their own reviewed nodes using the new deep-stack commitment
+//   contract.
+//
+// OpenPPL safety:
+//   flat complete WHEN rules only; no indentation-based scope.
+// Size IDs: 1 ~33% | 2 ~50% | 3 ~75% | 0 check
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// 3BP.CC00 — Exact contexts and range-shape modifiers
+// -----------------------------------------------------------------------------
+
+// Purpose: prove Hero 3bettor IP versus a post-3bet cold caller in plain 3BP.
+// Context: reduced-HU origin, plain two-raise history, survivor type=3.
+// Source/Provenance: P six-max range family over A/T history reconstruction.
+// Safety: true HU, squeeze, opener-call and unknown survivor types are excluded.
+##f$cc_cbet_plain3bp_postcoldcaller_ip_context##
+f$cc_flop_cbet_opportunity &&
+f$cc_hu_origin_preflop_reduced &&
+f$cc_hu_plain3bp_vs_post3bet_coldcaller &&
+f$cc_hu_ip &&
+f$cc_spr_valid
+
+// Purpose: prove Hero 3bettor OOP versus a post-3bet cold caller in plain 3BP.
+// Source/Provenance: P six-max range family constrained by A OOP architecture.
+// Safety: exact survivor provenance is mandatory.
+##f$cc_cbet_plain3bp_postcoldcaller_oop_context##
+f$cc_flop_cbet_opportunity &&
+f$cc_hu_origin_preflop_reduced &&
+f$cc_hu_plain3bp_vs_post3bet_coldcaller &&
+f$cc_hu_oop &&
+f$cc_spr_valid
+
+// Purpose: mark the common IP case where cold caller is SB/BB.
+// Source/Provenance: P range-topology descriptor; exact preflop composition is
+// still site/rake/sizing dependent and no fixed range is invented here.
+##f$cc_cbet_plain3bp_postcoldcaller_blind##
+(f$cc_cbet_plain3bp_postcoldcaller_ip_context || f$cc_cbet_plain3bp_postcoldcaller_oop_context) &&
+(f$cc_hu_villain_pos_id = 5 || f$cc_hu_villain_pos_id = 6)
+
+// Purpose: mark post-3bet cold caller from HJ/CO/BTN rather than blinds.
+// Source/Provenance: P descriptor used only for cautious deterministic mixing.
+##f$cc_cbet_plain3bp_postcoldcaller_nonblind##
+(f$cc_cbet_plain3bp_postcoldcaller_ip_context || f$cc_cbet_plain3bp_postcoldcaller_oop_context) &&
+(f$cc_hu_villain_pos_id >= 2 && f$cc_hu_villain_pos_id <= 4)
+
+// -----------------------------------------------------------------------------
+// 3BP.CC01 — Hero 3bettor IP versus post-3bet cold caller
+// -----------------------------------------------------------------------------
+
+// Purpose: choose flop CBet/check IP versus the selected cold-call-3bet range.
+// Context: plain 3BP, Hero final 3bettor IP, original opener folded preflop.
+// Source: no direct Crusher range parent.  A-level source only supports general
+// IP CBet architecture and high/static versus low/dynamic differentiation.
+// Provenance: P-heavy explicit tapa-buraco for six-max cash.
+// Professional fill: cold-call-3bet range is treated as stronger/more condensed
+// than ordinary opener-call in many middling holdings; therefore marginal TP,
+// lower pairs and air bet less indiscriminately.  Static A/K/Q and paired boards
+// remain best small-pressure parents for selected value/backdoor bluffs.
+// Safety/Limits: `true` means BET FLOP, not stack off.  Any response to a raise
+// must re-evaluate Villain range, raise size, SPR, board and nut class separately.
+##f$cc_cbet_plain3bp_postcoldcaller_ip_action##
+When !f$cc_cbet_plain3bp_postcoldcaller_ip_context Return false Force
+When f$cc_cbet_flop_very_strong_value Return true Force
+When f$cc_cbet_flop_overpair Return true Force
+When f$cc_cbet_flop_strong_top_pair && f$cc_flop_dynamic_lowmid_parent && f$cc_cbet_high_spr Return false Force
+When f$cc_cbet_flop_strong_top_pair Return true Force
+When f$cc_cbet_flop_medium_top_pair && (f$cc_flop_static_high_parent || f$cc_flop_paired_parent) Return true Force
+When f$cc_cbet_flop_medium_top_pair && f$cc_pair_plus_draw Return true Force
+When f$cc_cbet_flop_medium_top_pair && f$cc_flop_dynamic_high_parent && f$cc_spr_round_start < 4 Return true Force
+When f$cc_cbet_flop_medium_top_pair Return false Force
+When f$cc_cbet_flop_weak_top_pair Return false Force
+When f$cc_cbet_flop_showdown_pair && f$cc_pair_plus_draw Return true Force
+When f$cc_cbet_flop_showdown_pair Return false Force
+When f$cc_cbet_flop_premium_draw Return true Force
+When f$cc_cbet_flop_good_draw && (f$cc_flop_static_high_parent || f$cc_flop_dynamic_high_parent || f$cc_flop_paired_parent) Return true Force
+When f$cc_cbet_flop_good_draw && f$cc_flop_static_lowmid_parent && f$cc_two_overcards Return true Force
+When f$cc_real_frontdoor_draw Return false Force
+When f$cc_cbet_flop_quality_air && f$cc_flop_static_high_parent Return true Force
+When f$cc_cbet_flop_air_best_backdoors && f$cc_flop_paired_parent Return true Force
+When f$cc_cbet_flop_air_best_backdoors && f$cc_flop_dynamic_high_parent && f$cc_cbet_plain3bp_postcoldcaller_blind Return true Force
+When Others Return false Force
+
+// Purpose: choose flop size for positive IP 3BP CBet versus post-3bet coldcaller.
+// Source/Provenance: A calm-small/dynamic-larger concept + P coldcaller range map.
+// Decision logic: static high/paired uses 33; dynamic high usually 50 only for
+// stronger region; dynamic low uses 75 only with robust value/premium equity.
+// Safety/Limits: no size ID carries commitment or future-street authorization.
+##f$cc_cbet_plain3bp_postcoldcaller_ip_size_id##
+When !f$cc_cbet_plain3bp_postcoldcaller_ip_action Return 0 Force
+When f$cc_flop_dynamic_lowmid_parent && (f$cc_cbet_flop_very_strong_value || f$cc_cbet_flop_premium_draw) Return 3 Force
+When f$cc_flop_dynamic_lowmid_parent Return 2 Force
+When f$cc_flop_dynamic_high_parent && (f$cc_cbet_flop_very_strong_value || f$cc_cbet_flop_overpair || f$cc_cbet_flop_premium_draw) Return 2 Force
+When f$cc_flop_dynamic_high_parent Return 1 Force
+When f$cc_flop_static_lowmid_parent && (f$cc_cbet_flop_very_strong_value || f$cc_cbet_flop_overpair || f$cc_cbet_flop_premium_draw) Return 2 Force
+When f$cc_flop_static_lowmid_parent Return 1 Force
+When f$cc_flop_static_high_parent || f$cc_flop_paired_parent Return 1 Force
+When Others Return 1 Force
+
+// -----------------------------------------------------------------------------
+// 3BP.CC02 — Hero 3bettor OOP versus post-3bet cold caller
+// -----------------------------------------------------------------------------
+
+// Purpose: choose flop CBet/check OOP against a selected cold-call-3bet range.
+// Context: plain 3BP; Hero 3bettor acts first; original opener folded.
+// Source: only A-level OOP architecture survives from DeepCrusher; there is no
+// source-equivalent deep-stack cold-call-3bet range.
+// Provenance: P-heavy explicit tapa-buraco.
+// Professional fill: protect checking range heavily.  Strong one-pair may bet
+// favorable static boards but is not treated as a commitment hand.  Dynamic-low
+// one-pair and strong draws often check to preserve XC/XR options.  Air bluffing
+// is restricted mainly to strongest static-high backdoor candidates.
+// Safety/Limits: no TP+/overpair branch here can authorize stack-off by itself.
+##f$cc_cbet_plain3bp_postcoldcaller_oop_action##
+When !f$cc_cbet_plain3bp_postcoldcaller_oop_context Return false Force
+When f$cc_cbet_flop_very_strong_value Return true Force
+When f$cc_cbet_flop_overpair && f$cc_flop_dynamic_lowmid_parent && f$cc_spr_round_start >= 4 Return false Force
+When f$cc_cbet_flop_overpair Return true Force
+When f$cc_cbet_flop_strong_top_pair && (f$cc_flop_static_high_parent || f$cc_flop_paired_parent) Return true Force
+When f$cc_cbet_flop_strong_top_pair && f$cc_pair_plus_draw Return true Force
+When f$cc_cbet_flop_strong_top_pair && f$cc_flop_dynamic_high_parent && f$cc_spr_round_start < 4 Return true Force
+When f$cc_cbet_flop_strong_top_pair Return false Force
+When f$cc_cbet_flop_medium_top_pair && f$cc_flop_static_high_parent && f$cc_spr_round_start < 4 Return true Force
+When f$cc_cbet_flop_medium_top_pair Return false Force
+When f$cc_cbet_flop_weak_top_pair Return false Force
+When f$cc_cbet_flop_showdown_pair Return false Force
+When f$cc_cbet_flop_premium_draw && (f$cc_flop_static_high_parent || f$cc_flop_paired_parent) Return true Force
+When f$cc_cbet_flop_premium_draw && f$cc_flop_dynamic_high_parent && f$cc_spr_round_start < 4 Return true Force
+When f$cc_real_frontdoor_draw Return false Force
+When f$cc_cbet_flop_air_best_backdoors && f$cc_flop_static_high_parent Return true Force
+When Others Return false Force
+
+// Purpose: choose size for positive OOP 3BP CBet versus post-3bet coldcaller.
+// Source/Provenance: A/P; static pressure small, dynamic robust region 50/75.
+// Safety/Limits: one-pair larger sizing remains a street-specific bet, not a
+// declaration that the hand will continue versus a raise.
+##f$cc_cbet_plain3bp_postcoldcaller_oop_size_id##
+When !f$cc_cbet_plain3bp_postcoldcaller_oop_action Return 0 Force
+When f$cc_flop_dynamic_lowmid_parent && f$cc_cbet_flop_very_strong_value Return 3 Force
+When f$cc_flop_dynamic_lowmid_parent Return 2 Force
+When f$cc_flop_dynamic_high_parent && (f$cc_cbet_flop_very_strong_value || f$cc_cbet_flop_overpair) Return 2 Force
+When f$cc_flop_dynamic_high_parent Return 1 Force
+When f$cc_flop_static_lowmid_parent && (f$cc_cbet_flop_very_strong_value || f$cc_cbet_flop_overpair) Return 2 Force
+When f$cc_flop_static_high_parent || f$cc_flop_paired_parent Return 1 Force
+When Others Return 1 Force
+
+// -----------------------------------------------------------------------------
+// 3BP.CC03 — Plain-3BP survivor-aware dispatchers
+// -----------------------------------------------------------------------------
+
+// Purpose: dispatch reduced-HU plain 3BP IP strategy by exact surviving range.
+// Source/Provenance: P/A routing contract; opener-call and post-3bet-coldcaller
+// are distinct children and unknown survivor type checks.
+##f$cc_cbet_plain3bp_ip_survivor_dispatch##
+When f$cc_cbet_plain3bp_vs_opener_ip_context Return f$cc_cbet_plain3bp_vs_opener_ip_action Force
+When f$cc_cbet_plain3bp_postcoldcaller_ip_context Return f$cc_cbet_plain3bp_postcoldcaller_ip_action Force
+When Others Return false Force
+
+// Purpose: dispatch size using the identical IP survivor family as the action.
+// Source/Provenance: P/A safety router; unknown -> 0.
+##f$cc_cbet_plain3bp_ip_survivor_size_id##
+When f$cc_cbet_plain3bp_vs_opener_ip_context Return f$cc_cbet_plain3bp_vs_opener_ip_size_id Force
+When f$cc_cbet_plain3bp_postcoldcaller_ip_context Return f$cc_cbet_plain3bp_postcoldcaller_ip_size_id Force
+When Others Return 0 Force
+
+// Purpose: dispatch reduced-HU plain 3BP OOP strategy by exact surviving range.
+// Source/Provenance: P/A routing contract; no generic "3BP Villain" fallback.
+##f$cc_cbet_plain3bp_oop_survivor_dispatch##
+When f$cc_cbet_plain3bp_vs_opener_oop_context Return f$cc_cbet_plain3bp_vs_opener_oop_action Force
+When f$cc_cbet_plain3bp_postcoldcaller_oop_context Return f$cc_cbet_plain3bp_postcoldcaller_oop_action Force
+When Others Return false Force
+
+// Purpose: dispatch size using the identical OOP survivor family as the action.
+// Source/Provenance: P/A safety router; unknown -> 0.
+##f$cc_cbet_plain3bp_oop_survivor_size_id##
+When f$cc_cbet_plain3bp_vs_opener_oop_context Return f$cc_cbet_plain3bp_vs_opener_oop_size_id Force
+When f$cc_cbet_plain3bp_postcoldcaller_oop_context Return f$cc_cbet_plain3bp_postcoldcaller_oop_size_id Force
+When Others Return 0 Force
+
+// ============================================================================
+// End Gate 01F.2 post-3bet coldcaller baseline.
+// ============================================================================

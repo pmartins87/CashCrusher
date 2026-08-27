@@ -1,0 +1,337 @@
+// ============================================================================
+// CashCrusher_Turn_Donk_ActionHistory.txt
+// Gate 08N — executed Turn Donk provenance for River ownership
+// ============================================================================
+// Purpose:
+//   Preserve what ACTUALLY happened after a reviewed Turn-Donk opportunity. River
+//   Donk/continuation/defense nodes consume closed round-3 history, never a
+//   pre-action strategy result or `user_*` marker by itself.
+//
+// Source/Provenance:
+//   T = OpenHoldem round-3 did* counters, lastraised3 and current live state.
+//   A = Gate01N/02N/05N/07K closed-action architecture.
+//   P = Turn-Donk parent/family/hand/runout/live-field snapshot for later routing.
+//
+// OpenPPL safety:
+//   Every WHEN is complete. Indentation is commentary only and never establishes
+//   logical scope. PRE-ACTION user variables prove plan/provenance only.
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// TDHIST.01 — pre-action opportunity/strategy snapshot
+// -----------------------------------------------------------------------------
+
+// Purpose: canonical strategic action wrapper for eventual whole-bot f$turn.
+// Source/Provenance: A/T Gate08 owner + P snapshot metadata.
+// Safety: positive return remains only a plan until closed did*round3 proves it.
+##f$cc_turn_donk_action_with_history##
+When !f$cc_turn_donk_opportunity Return false Force
+When f$cc_turn_donk_opportunity Set user_cc_turn_donk_opportunity_seen
+When f$cc_turn_donk_opportunity Set user_cc_turn_donk_state_snapshot_recorded
+
+// Exact Gate08A history parent.
+When f$cc_turn_donk_opportunity && f$cc_turn_donk_parent_id = 1 Set user_cc_turn_donk_state_parent_1
+When f$cc_turn_donk_opportunity && f$cc_turn_donk_parent_id = 2 Set user_cc_turn_donk_state_parent_2
+When f$cc_turn_donk_opportunity && f$cc_turn_donk_parent_id = 3 Set user_cc_turn_donk_state_parent_3
+
+// Exact reviewed strategy family. Uncovered family=0 deliberately gets no marker.
+When f$cc_turn_donk_opportunity && f$cc_turn_donk_family_id = 1 Set user_cc_turn_donk_state_family_1
+When f$cc_turn_donk_opportunity && f$cc_turn_donk_family_id = 2 Set user_cc_turn_donk_state_family_2
+When f$cc_turn_donk_opportunity && f$cc_turn_donk_family_id = 3 Set user_cc_turn_donk_state_family_3
+When f$cc_turn_donk_opportunity && f$cc_turn_donk_family_id = 4 Set user_cc_turn_donk_state_family_4
+When f$cc_turn_donk_opportunity && f$cc_turn_donk_family_id = 5 Set user_cc_turn_donk_state_family_5
+When f$cc_turn_donk_opportunity && f$cc_turn_donk_family_id = 6 Set user_cc_turn_donk_state_family_6
+When f$cc_turn_donk_opportunity && f$cc_turn_donk_family_id = 7 Set user_cc_turn_donk_state_family_7
+When f$cc_turn_donk_opportunity && f$cc_turn_donk_family_id = 8 Set user_cc_turn_donk_state_family_8
+When f$cc_turn_donk_opportunity && f$cc_turn_donk_family_id = 9 Set user_cc_turn_donk_state_family_9
+When f$cc_turn_donk_opportunity && f$cc_turn_donk_family_id = 10 Set user_cc_turn_donk_state_family_10
+
+// Mutually-exclusive primary current-Turn made-hand class.
+When f$cc_turn_donk_opportunity && f$cc_hand_two_pair_or_better Set user_cc_turn_donk_state_had_2pplus
+When f$cc_turn_donk_opportunity && !f$cc_hand_two_pair_or_better && (HaveOverPair || f$cc_have_over_nonboard_paired_pocket_pair) Set user_cc_turn_donk_state_had_overpair
+When f$cc_turn_donk_opportunity && f$cc_hand_just_top_pair Set user_cc_turn_donk_state_had_top_pair
+When f$cc_turn_donk_opportunity && f$cc_hand_middle_or_bottom_pair && !f$cc_hand_top_pair_or_better Set user_cc_turn_donk_state_had_lower_pair
+When f$cc_turn_donk_opportunity && f$cc_hand_no_made Set user_cc_turn_donk_state_had_no_made
+
+// Equity overlays. Made hand + draw may coexist by design.
+When f$cc_turn_donk_opportunity && f$cc_real_combo_draw Set user_cc_turn_donk_state_had_combo_draw
+When f$cc_turn_donk_opportunity && f$cc_real_fd Set user_cc_turn_donk_state_had_fd
+When f$cc_turn_donk_opportunity && f$cc_real_oesd Set user_cc_turn_donk_state_had_oesd
+When f$cc_turn_donk_opportunity && f$cc_real_gutshot Set user_cc_turn_donk_state_had_gutshot
+
+// Turn runout snapshot using the already-audited seven-state precedence.
+When f$cc_turn_donk_opportunity && f$cc_turn_runout_id = 1 Set user_cc_turn_donk_state_runout_1
+When f$cc_turn_donk_opportunity && f$cc_turn_runout_id = 2 Set user_cc_turn_donk_state_runout_2
+When f$cc_turn_donk_opportunity && f$cc_turn_runout_id = 3 Set user_cc_turn_donk_state_runout_3
+When f$cc_turn_donk_opportunity && f$cc_turn_runout_id = 4 Set user_cc_turn_donk_state_runout_4
+When f$cc_turn_donk_opportunity && f$cc_turn_runout_id = 5 Set user_cc_turn_donk_state_runout_5
+When f$cc_turn_donk_opportunity && f$cc_turn_runout_id = 6 Set user_cc_turn_donk_state_runout_6
+When f$cc_turn_donk_opportunity && f$cc_turn_runout_id = 7 Set user_cc_turn_donk_state_runout_7
+
+// Player count and exact live-opponent mask BEFORE Hero acts on Turn.
+When f$cc_turn_donk_opportunity && nplayersplaying = 2 Set user_cc_turn_donk_state_players_2
+When f$cc_turn_donk_opportunity && nplayersplaying = 3 Set user_cc_turn_donk_state_players_3
+When f$cc_turn_donk_opportunity && nplayersplaying = 4 Set user_cc_turn_donk_state_players_4
+When f$cc_turn_donk_opportunity && nplayersplaying = 5 Set user_cc_turn_donk_state_players_5
+When f$cc_turn_donk_opportunity && nplayersplaying = 6 Set user_cc_turn_donk_state_players_6
+When f$cc_turn_donk_opportunity && f$cc_opp_live_utg Set user_cc_turn_donk_state_live_utg
+When f$cc_turn_donk_opportunity && f$cc_opp_live_hj Set user_cc_turn_donk_state_live_hj
+When f$cc_turn_donk_opportunity && f$cc_opp_live_co Set user_cc_turn_donk_state_live_co
+When f$cc_turn_donk_opportunity && f$cc_opp_live_btn Set user_cc_turn_donk_state_live_btn
+When f$cc_turn_donk_opportunity && f$cc_opp_live_sb Set user_cc_turn_donk_state_live_sb
+When f$cc_turn_donk_opportunity && f$cc_opp_live_bb Set user_cc_turn_donk_state_live_bb
+
+When f$cc_turn_donk_router Set user_cc_turn_donk_strategy_bet_selected
+When f$cc_turn_donk_router Return true Force
+When Others Return false Force
+
+// -----------------------------------------------------------------------------
+// TDHIST.02 — snapshot marker counts / decoders
+// -----------------------------------------------------------------------------
+
+// Purpose: count exact Gate08A parent markers.
+// Source/Provenance: P integrity over T/A parent taxonomy.
+##f$cc_hist_turn_donk_parent_marker_count##
+(user_cc_turn_donk_state_parent_1 * 1) +
+(user_cc_turn_donk_state_parent_2 * 1) +
+(user_cc_turn_donk_state_parent_3 * 1)
+
+// Purpose: decode stored parent after Turn closes.
+// Source/Provenance: P deterministic marker decoder.
+##f$cc_hist_turn_donk_parent_id##
+When !f$cc_hist_turn_donk_closed Return 0 Force
+When f$cc_hist_turn_donk_parent_marker_count != 1 Return 0 Force
+When user_cc_turn_donk_state_parent_1 Return 1 Force
+When user_cc_turn_donk_state_parent_2 Return 2 Force
+When user_cc_turn_donk_state_parent_3 Return 3 Force
+When Others Return 0 Force
+
+// Purpose: count stored reviewed-family markers.
+// Source/Provenance: P integrity over Gate08 family IDs.
+##f$cc_hist_turn_donk_family_marker_count##
+(user_cc_turn_donk_state_family_1 * 1) +
+(user_cc_turn_donk_state_family_2 * 1) +
+(user_cc_turn_donk_state_family_3 * 1) +
+(user_cc_turn_donk_state_family_4 * 1) +
+(user_cc_turn_donk_state_family_5 * 1) +
+(user_cc_turn_donk_state_family_6 * 1) +
+(user_cc_turn_donk_state_family_7 * 1) +
+(user_cc_turn_donk_state_family_8 * 1) +
+(user_cc_turn_donk_state_family_9 * 1) +
+(user_cc_turn_donk_state_family_10 * 1)
+
+// Purpose: decode stored reviewed family after Turn closes.
+// Source/Provenance: P marker decoder; contradiction/uncovered ->0.
+##f$cc_hist_turn_donk_family_id##
+When !f$cc_hist_turn_donk_closed Return 0 Force
+When f$cc_hist_turn_donk_family_marker_count != 1 Return 0 Force
+When user_cc_turn_donk_state_family_1 Return 1 Force
+When user_cc_turn_donk_state_family_2 Return 2 Force
+When user_cc_turn_donk_state_family_3 Return 3 Force
+When user_cc_turn_donk_state_family_4 Return 4 Force
+When user_cc_turn_donk_state_family_5 Return 5 Force
+When user_cc_turn_donk_state_family_6 Return 6 Force
+When user_cc_turn_donk_state_family_7 Return 7 Force
+When user_cc_turn_donk_state_family_8 Return 8 Force
+When user_cc_turn_donk_state_family_9 Return 9 Force
+When user_cc_turn_donk_state_family_10 Return 10 Force
+When Others Return 0 Force
+
+// Purpose: count mutually-exclusive current-Turn primary made-hand markers.
+// Source/Provenance: P integrity over T/A mechanical hand classes.
+##f$cc_hist_turn_donk_primary_class_marker_count##
+(user_cc_turn_donk_state_had_2pplus * 1) +
+(user_cc_turn_donk_state_had_overpair * 1) +
+(user_cc_turn_donk_state_had_top_pair * 1) +
+(user_cc_turn_donk_state_had_lower_pair * 1) +
+(user_cc_turn_donk_state_had_no_made * 1)
+
+// Purpose: count stored player-count markers.
+// Source/Provenance: P integrity over T nplayersplaying snapshot.
+##f$cc_hist_turn_donk_player_count_marker_count##
+(user_cc_turn_donk_state_players_2 * 1) +
+(user_cc_turn_donk_state_players_3 * 1) +
+(user_cc_turn_donk_state_players_4 * 1) +
+(user_cc_turn_donk_state_players_5 * 1) +
+(user_cc_turn_donk_state_players_6 * 1)
+
+// Purpose: decode player count at Turn-Donk decision.
+// Source/Provenance: P decoder over T snapshot.
+##f$cc_hist_turn_donk_player_count##
+When !f$cc_hist_turn_donk_closed Return 0 Force
+When f$cc_hist_turn_donk_player_count_marker_count != 1 Return 0 Force
+When user_cc_turn_donk_state_players_2 Return 2 Force
+When user_cc_turn_donk_state_players_3 Return 3 Force
+When user_cc_turn_donk_state_players_4 Return 4 Force
+When user_cc_turn_donk_state_players_5 Return 5 Force
+When user_cc_turn_donk_state_players_6 Return 6 Force
+When Others Return 0 Force
+
+// Purpose: exact opponents live before the Turn-Donk/check action.
+// Source/Provenance: A/P canonical position-mask decoder.
+##f$cc_hist_turn_donk_live_opp_mask##
+(user_cc_turn_donk_state_live_utg * 1) +
+(user_cc_turn_donk_state_live_hj * 2) +
+(user_cc_turn_donk_state_live_co * 4) +
+(user_cc_turn_donk_state_live_btn * 8) +
+(user_cc_turn_donk_state_live_sb * 16) +
+(user_cc_turn_donk_state_live_bb * 32)
+
+// Purpose: count exactly one stored Turn-runout marker.
+// Source/Provenance: P integrity over A/T runout snapshot.
+##f$cc_hist_turn_donk_runout_marker_count##
+(user_cc_turn_donk_state_runout_1 * 1) +
+(user_cc_turn_donk_state_runout_2 * 1) +
+(user_cc_turn_donk_state_runout_3 * 1) +
+(user_cc_turn_donk_state_runout_4 * 1) +
+(user_cc_turn_donk_state_runout_5 * 1) +
+(user_cc_turn_donk_state_runout_6 * 1) +
+(user_cc_turn_donk_state_runout_7 * 1)
+
+// -----------------------------------------------------------------------------
+// TDHIST.03 — CLOSED round-3 execution proof
+// -----------------------------------------------------------------------------
+
+// Purpose: round-3 Turn history is closed and safe to interpret.
+// Source/Provenance: T OpenHoldem betround numbering.
+##f$cc_hist_turn_donk_closed##
+IsRiver
+
+// Purpose: Hero actually executed an initial Turn Donk bet.
+// Source/Provenance: T did*round3 + A opportunity marker.
+// Safety: any prior Hero check excludes a later check-raise from initial Donk.
+##f$cc_hist_turn_donk_initial_bet_executed##
+f$cc_hist_turn_donk_closed &&
+user_cc_turn_donk_opportunity_seen &&
+didchecround3 = 0 &&
+(didbetsizeround3 > 0 || didalliround3 > 0)
+
+// Purpose: initial Turn Donk was a normal sized bet.
+// Source/Provenance: T round-3 betsize counter.
+##f$cc_hist_turn_donk_initial_bet_was_sized##
+f$cc_hist_turn_donk_initial_bet_executed && didbetsizeround3 > 0
+
+// Purpose: initial Turn Donk itself was direct all-in.
+// Source/Provenance: T counters + P initial-action disambiguation.
+##f$cc_hist_turn_donk_initial_bet_was_direct_allin##
+f$cc_hist_turn_donk_initial_bet_executed &&
+didalliround3 > 0 &&
+didbetsizeround3 = 0 &&
+didraisround3 = 0
+
+// Purpose: reviewed Turn-Donk opportunity was declined and Hero checked first.
+// Source/Provenance: T exact round-3 action pattern.
+##f$cc_hist_turn_donk_checked##
+f$cc_hist_turn_donk_closed &&
+user_cc_turn_donk_opportunity_seen &&
+didchecround3 > 0 &&
+didcallround3 = 0 &&
+didraisround3 = 0 &&
+didbetsizeround3 = 0 &&
+didalliround3 = 0
+
+// Purpose: Turn Donk was raised and Hero continued by calling.
+// Source/Provenance: T counters + final turn aggressor identity.
+##f$cc_hist_turn_donk_then_called_raise##
+f$cc_hist_turn_donk_initial_bet_executed &&
+didcallround3 > 0 &&
+lastraised3 != userchair
+
+// Purpose: Hero Turn-Donked then re-aggressed on Turn.
+// Source/Provenance: T multiple aggressive action counters.
+##f$cc_hist_turn_donk_then_reaggressed##
+f$cc_hist_turn_donk_initial_bet_executed &&
+(didbetsizeround3 >= 2 || didraisround3 > 0 || (didbetsizeround3 > 0 && didalliround3 > 0))
+
+// Purpose: one normal executed Turn Donk with Hero final Turn aggressor.
+// Source/Provenance: T exact counters + lastraised3.
+##f$cc_hist_turn_donk_standard_parent##
+f$cc_hist_turn_donk_closed &&
+user_cc_turn_donk_opportunity_seen &&
+didchecround3 = 0 &&
+didcallround3 = 0 &&
+didraisround3 = 0 &&
+didbetsizeround3 = 1 &&
+didalliround3 = 0 &&
+lastraised3 = userchair
+
+// Purpose: standard Turn Donk reached a River with at least one opponent still
+// live, which implies the Turn bet was not terminal by folds.
+// Source/Provenance: T current River live field + closed standard parent.
+##f$cc_hist_river_donk_standard_parent_valid##
+f$cc_hist_turn_donk_standard_parent &&
+nplayersplaying >= 2 &&
+f$cc_hist_turn_donk_snapshot_consistent &&
+f$cc_turn_donk_plan_markers_consistent &&
+!f$cc_hist_turn_donk_runtime_mismatch
+
+// -----------------------------------------------------------------------------
+// TDHIST.04 — snapshot / plan integrity and runtime drift
+// -----------------------------------------------------------------------------
+
+// Purpose: validate pre-action Turn-Donk snapshot after Turn closes.
+// Source/Provenance: P integrity over T/A snapshot facts.
+##f$cc_hist_turn_donk_snapshot_consistent##
+When !f$cc_hist_turn_donk_closed Return false Force
+When !user_cc_turn_donk_opportunity_seen Return !user_cc_turn_donk_state_snapshot_recorded Force
+When !user_cc_turn_donk_state_snapshot_recorded Return false Force
+When f$cc_hist_turn_donk_parent_marker_count != 1 Return false Force
+When f$cc_hist_turn_donk_primary_class_marker_count != 1 Return false Force
+When f$cc_hist_turn_donk_player_count_marker_count != 1 Return false Force
+When f$cc_hist_turn_donk_runout_marker_count != 1 Return false Force
+When BitCount(f$cc_hist_turn_donk_live_opp_mask) != (f$cc_hist_turn_donk_player_count - 1) Return false Force
+When user_cc_turn_donk_strategy_bet_selected && f$cc_hist_turn_donk_family_marker_count != 1 Return false Force
+When user_cc_turn_donk_plan_bet_seen && f$cc_hist_turn_donk_family_marker_count != 1 Return false Force
+When Others Return true Force
+
+// Purpose: strategy selected a Turn Donk but runtime records initial check.
+// Source/Provenance: P diagnostic over T closed history.
+##f$cc_hist_turn_donk_planned_bet_but_checked##
+f$cc_hist_turn_donk_closed &&
+user_cc_turn_donk_plan_bet_seen &&
+didchecround3 > 0
+
+// Purpose: executed Turn Donk without the local reviewed size-plan capture.
+// Source/Provenance: P runtime-composition diagnostic.
+##f$cc_hist_turn_donk_executed_without_plan##
+f$cc_hist_turn_donk_initial_bet_executed && !user_cc_turn_donk_plan_bet_seen
+
+// Purpose: planned non-all-in Turn Donk unexpectedly became direct all-in.
+// Source/Provenance: T/P global callback drift diagnostic.
+##f$cc_hist_turn_donk_unexpected_allin_promotion##
+f$cc_hist_turn_donk_closed &&
+user_cc_turn_donk_plan_size_recorded &&
+!user_cc_turn_donk_plan_expected_allin &&
+f$cc_hist_turn_donk_initial_bet_was_direct_allin
+
+// Purpose: local geometry expected BetMax but runtime remained normal size.
+// Source/Provenance: T/P mismatch diagnostic.
+##f$cc_hist_turn_donk_expected_allin_not_executed##
+f$cc_hist_turn_donk_closed &&
+user_cc_turn_donk_plan_expected_allin &&
+f$cc_hist_turn_donk_initial_bet_was_sized &&
+didalliround3 = 0
+
+// Purpose: aggregate runtime mismatch flag for River ownership.
+// Source/Provenance: P composition over T diagnostics.
+##f$cc_hist_turn_donk_runtime_mismatch##
+f$cc_hist_turn_donk_planned_bet_but_checked ||
+f$cc_hist_turn_donk_executed_without_plan ||
+f$cc_hist_turn_donk_unexpected_allin_promotion ||
+f$cc_hist_turn_donk_expected_allin_not_executed
+
+// Purpose: exact plan-size ID recovered from stable user markers after Turn.
+// Source/Provenance: P decoder over Gate08H plan sizes.
+##f$cc_hist_turn_donk_plan_size_id##
+When !f$cc_hist_turn_donk_closed Return 0 Force
+When f$cc_turn_donk_plan_size_marker_count != 1 Return 0 Force
+When user_cc_turn_donk_plan_size_25 Return 1 Force
+When user_cc_turn_donk_plan_size_50 Return 2 Force
+When user_cc_turn_donk_plan_size_75 Return 3 Force
+When user_cc_turn_donk_plan_size_100 Return 4 Force
+When user_cc_turn_donk_plan_size_min Return 5 Force
+When Others Return 0 Force
+
+// ============================================================================
+// End Gate08N closed Turn-Donk provenance.
+// ============================================================================

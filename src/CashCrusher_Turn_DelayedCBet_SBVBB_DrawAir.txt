@@ -1,0 +1,107 @@
+// ============================================================================
+// Gate12A.8B — native 3wSBvBB delayed-CBet draw / air source
+// ============================================================================
+// T = mature DeepCrusher source. A = source-exact draw/dead/zombie translation.
+// Future River plans are metadata only; this file owns only the Turn action/size.
+// ============================================================================
+
+// Purpose: historical real-draw action in exact source order: value; dead/zombie
+// check; connected good/medium50; connected weaker check; other live FDSD75.
+// Source/Provenance: T direct mature source action tree.
+##f$cc_turn_delayed_cbet_3w_sbvbb_draw_action##
+When !f$cc_turn_delayed_cbet_3w_sbvbb_source_context Return false Force
+When !user_cc_turn_delayed_cbet_3w_sbvbb_flop_draw_candidate Return false Force
+When f$cc_turn_delayed_cbet_two_pair_plus_real Return true Force
+When f$cc_turn_delayed_cbet_tpop_real Return true Force
+When f$cc_turn_delayed_cbet_no_made && f$cc_turn_delayed_cbet_source_gutshot_or_better_fdsd && !f$cc_turn_delayed_cbet_source_draw_live_safe Return false Force
+When f$cc_turn_delayed_cbet_no_made && f$cc_turn_delayed_cbet_source_gutshot_or_better_fdsd && StraightPossibleOnFlop && user_cc_turn_delayed_cbet_3w_sbvbb_flop_draw_goodmedium_candidate Return true Force
+When f$cc_turn_delayed_cbet_no_made && f$cc_turn_delayed_cbet_source_gutshot_or_better_fdsd && StraightPossibleOnFlop Return false Force
+When f$cc_turn_delayed_cbet_no_made && f$cc_turn_delayed_cbet_source_gutshot_or_better_fdsd Return true Force
+When Others Return false Force
+
+// Purpose: current 2P+75; TP/OP50; connected good/medium50; other live draw75.
+// Source/Provenance: T exact source sizes.
+##f$cc_turn_delayed_cbet_3w_sbvbb_draw_size_id##
+When !f$cc_turn_delayed_cbet_3w_sbvbb_draw_action Return 0 Force
+When f$cc_turn_delayed_cbet_two_pair_plus_real Return f$cc_turn_delayed_cbet_size_75_id Force
+When f$cc_turn_delayed_cbet_tpop_real Return f$cc_turn_delayed_cbet_size_50_id Force
+When StraightPossibleOnFlop && user_cc_turn_delayed_cbet_3w_sbvbb_flop_draw_goodmedium_candidate Return f$cc_turn_delayed_cbet_size_50_id Force
+When Others Return f$cc_turn_delayed_cbet_size_75_id Force
+
+// Purpose: connected good/medium Delay50 -> River50 plan.
+// Source/Provenance: T direct future-street metadata.
+##f$cc_turn_delayed_cbet_3w_sbvbb_plan_draw_connected_river50##
+f$cc_turn_delayed_cbet_3w_sbvbb_draw_action && StraightPossibleOnFlop &&
+user_cc_turn_delayed_cbet_3w_sbvbb_flop_draw_goodmedium_candidate &&
+f$cc_turn_delayed_cbet_no_made
+
+// Purpose: connected weaker live draw checks Turn (DelDel state).
+// Source/Provenance: T direct source negative-plan metadata.
+##f$cc_turn_delayed_cbet_3w_sbvbb_plan_draw_connected_deldel##
+f$cc_turn_delayed_cbet_3w_sbvbb_source_context &&
+user_cc_turn_delayed_cbet_3w_sbvbb_flop_draw_candidate &&
+f$cc_turn_delayed_cbet_no_made && f$cc_turn_delayed_cbet_source_gutshot_or_better_fdsd &&
+f$cc_turn_delayed_cbet_source_draw_live_safe && StraightPossibleOnFlop &&
+!user_cc_turn_delayed_cbet_3w_sbvbb_flop_draw_goodmedium_candidate
+
+// Purpose: non-connected live draw Delay75 then give up River.
+// Source/Provenance: T direct future-street metadata.
+##f$cc_turn_delayed_cbet_3w_sbvbb_plan_draw75_giveup##
+f$cc_turn_delayed_cbet_3w_sbvbb_draw_action && !StraightPossibleOnFlop && f$cc_turn_delayed_cbet_no_made
+
+// Purpose: historical air-on-straight-flop action: current value; live FDSD50;
+// A/K air check; non-A/K completed/wet50; residual non-A/K dry air75.
+// Source/Provenance: T direct mature source order.
+##f$cc_turn_delayed_cbet_3w_sbvbb_air_action##
+When !f$cc_turn_delayed_cbet_3w_sbvbb_source_context Return false Force
+When !user_cc_turn_delayed_cbet_3w_sbvbb_flop_air_straight_candidate Return false Force
+When f$cc_turn_delayed_cbet_two_pair_plus_real Return true Force
+When f$cc_turn_delayed_cbet_tpop_real Return true Force
+When f$cc_turn_delayed_cbet_no_made && f$cc_turn_delayed_cbet_source_gutshot_or_better_fdsd && f$cc_turn_delayed_cbet_source_draw_live_safe Return true Force
+When f$cc_turn_delayed_cbet_source_air && (hand$A || hand$K) Return false Force
+When f$cc_turn_delayed_cbet_source_air && !(hand$A || hand$K) && (f$cc_turn_delayed_cbet_turn_completed || !f$cc_turn_delayed_cbet_3w_sbvbb_turn_board_dry) Return true Force
+When f$cc_turn_delayed_cbet_source_air && !(hand$A || hand$K) Return true Force
+When Others Return false Force
+
+// Purpose: current 2P+75; TP/OP50; air->live-draw50; wet/completed air50;
+// residual dry air75.
+// Source/Provenance: T exact source sizes.
+##f$cc_turn_delayed_cbet_3w_sbvbb_air_size_id##
+When !f$cc_turn_delayed_cbet_3w_sbvbb_air_action Return 0 Force
+When f$cc_turn_delayed_cbet_two_pair_plus_real Return f$cc_turn_delayed_cbet_size_75_id Force
+When f$cc_turn_delayed_cbet_tpop_real Return f$cc_turn_delayed_cbet_size_50_id Force
+When f$cc_turn_delayed_cbet_no_made && f$cc_turn_delayed_cbet_source_gutshot_or_better_fdsd && f$cc_turn_delayed_cbet_source_draw_live_safe Return f$cc_turn_delayed_cbet_size_50_id Force
+When f$cc_turn_delayed_cbet_source_air && !(hand$A || hand$K) && (f$cc_turn_delayed_cbet_turn_completed || !f$cc_turn_delayed_cbet_3w_sbvbb_turn_board_dry) Return f$cc_turn_delayed_cbet_size_50_id Force
+When f$cc_turn_delayed_cbet_source_air && !(hand$A || hand$K) Return f$cc_turn_delayed_cbet_size_75_id Force
+When Others Return 0 Force
+
+// Purpose: air acquired live draw -> Delay50 CheckRiver.
+// Source/Provenance: T direct source future-street metadata.
+##f$cc_turn_delayed_cbet_3w_sbvbb_plan_air_draw_checkriver##
+f$cc_turn_delayed_cbet_3w_sbvbb_air_action && f$cc_turn_delayed_cbet_no_made &&
+f$cc_turn_delayed_cbet_source_gutshot_or_better_fdsd && f$cc_turn_delayed_cbet_source_draw_live_safe
+
+// Purpose: A/K source air checks for showdown.
+// Source/Provenance: T direct source negative-plan metadata.
+##f$cc_turn_delayed_cbet_3w_sbvbb_plan_air_ak_showdown##
+f$cc_turn_delayed_cbet_3w_sbvbb_source_context &&
+user_cc_turn_delayed_cbet_3w_sbvbb_flop_air_straight_candidate &&
+f$cc_turn_delayed_cbet_source_air && (hand$A || hand$K)
+
+// Purpose: non-A/K wet/completed air Delay50 -> River50.
+// Source/Provenance: T direct source future-street metadata.
+##f$cc_turn_delayed_cbet_3w_sbvbb_plan_air_wet_river50##
+f$cc_turn_delayed_cbet_3w_sbvbb_air_action && f$cc_turn_delayed_cbet_source_air &&
+!(hand$A || hand$K) &&
+(f$cc_turn_delayed_cbet_turn_completed || !f$cc_turn_delayed_cbet_3w_sbvbb_turn_board_dry)
+
+// Purpose: non-A/K dry air Delay75 then give up River.
+// Source/Provenance: T direct source future-street metadata.
+##f$cc_turn_delayed_cbet_3w_sbvbb_plan_air_dry_giveup##
+f$cc_turn_delayed_cbet_3w_sbvbb_air_action && f$cc_turn_delayed_cbet_source_air &&
+!(hand$A || hand$K) && !f$cc_turn_delayed_cbet_turn_completed &&
+f$cc_turn_delayed_cbet_3w_sbvbb_turn_board_dry
+
+// ============================================================================
+// End Gate12A.8B.
+// ============================================================================

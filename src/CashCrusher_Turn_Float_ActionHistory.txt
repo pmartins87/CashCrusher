@@ -1,0 +1,326 @@
+// ============================================================================
+// CashCrusher_Turn_Float_ActionHistory.txt
+// Gate 05H — executed Turn Float provenance for River routing
+// ============================================================================
+// Purpose:
+//   Preserve the difference between a checked-to Turn-Float opportunity/plan and
+//   what OpenHoldem actually executed. Future River Float/Delayed nodes consume
+//   CLOSED round-3 history, never a pre-action strategy result by itself.
+//
+// Source/Provenance:
+//   T = OpenHoldem round-3 did* counters + lastraised3 + current live masks.
+//   A = Gate01N/02N/04H final-action provenance architecture.
+//   P = Turn-Float family/parent/hand/runout/live-field snapshot.
+//
+// OpenPPL safety:
+//   Flat complete WHENs. All `user_*` writes before action describe opportunity,
+//   plan or snapshot only; none proves execution.
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// TFHIST.01 — pre-action snapshot / strategy wrapper
+// -----------------------------------------------------------------------------
+
+// Purpose: effective parent ID including Gate05B.R limped BB-v-SB source repair.
+// IDs: 1 simple call of PFA flop bet; 2 CBet-XR-call; 3 FlopFloat-XR-call;
+// 4 exact unraised SB-limp/BB-check -> SB flop bet -> BB call source repair.
+// Source/Provenance: A/T Gate05 history taxonomy + source repair.
+##f$cc_turn_float_effective_parent_id##
+When f$cc_turn_float_source_limped_bbv_sb_opportunity Return 4 Force
+When f$cc_turn_float_opportunity Return f$cc_turn_float_parent_id Force
+When Others Return 0 Force
+
+// Purpose: canonical action predicate for eventual whole-bot f$turn composition.
+// Source/Provenance: A/T history-aware wrapper + P snapshot metadata.
+// Safety: strategy action itself is returned only after snapshot markers are set.
+##f$cc_turn_float_action_with_history##
+When !f$cc_turn_float_source_any_opportunity Return false Force
+When f$cc_turn_float_source_any_opportunity Set user_cc_turn_float_opportunity_seen
+When f$cc_turn_float_source_any_opportunity Set user_cc_turn_float_state_snapshot_recorded
+
+// Effective parent snapshot.
+When f$cc_turn_float_source_any_opportunity && f$cc_turn_float_effective_parent_id = 1 Set user_cc_turn_float_state_parent_1
+When f$cc_turn_float_source_any_opportunity && f$cc_turn_float_effective_parent_id = 2 Set user_cc_turn_float_state_parent_2
+When f$cc_turn_float_source_any_opportunity && f$cc_turn_float_effective_parent_id = 3 Set user_cc_turn_float_state_parent_3
+When f$cc_turn_float_source_any_opportunity && f$cc_turn_float_effective_parent_id = 4 Set user_cc_turn_float_state_parent_4
+
+// Reviewed family snapshot. Uncovered family=0 deliberately gets no family marker.
+When f$cc_turn_float_source_any_opportunity && f$cc_turn_float_family_id = 1 Set user_cc_turn_float_state_family_1
+When f$cc_turn_float_source_any_opportunity && f$cc_turn_float_family_id = 2 Set user_cc_turn_float_state_family_2
+When f$cc_turn_float_source_any_opportunity && f$cc_turn_float_family_id = 3 Set user_cc_turn_float_state_family_3
+When f$cc_turn_float_source_any_opportunity && f$cc_turn_float_family_id = 4 Set user_cc_turn_float_state_family_4
+When f$cc_turn_float_source_any_opportunity && f$cc_turn_float_family_id = 5 Set user_cc_turn_float_state_family_5
+When f$cc_turn_float_source_any_opportunity && f$cc_turn_float_family_id = 6 Set user_cc_turn_float_state_family_6
+
+// Mutually exclusive primary current TURN hand class.
+When f$cc_turn_float_source_any_opportunity && f$cc_turn_float_robust_value Set user_cc_turn_float_state_had_robust_value
+When f$cc_turn_float_source_any_opportunity && f$cc_turn_float_vulnerable_two_pair_plus Set user_cc_turn_float_state_had_vulnerable_2pplus
+When f$cc_turn_float_source_any_opportunity && f$cc_turn_float_overpair Set user_cc_turn_float_state_had_overpair
+When f$cc_turn_float_source_any_opportunity && f$cc_hand_just_top_pair Set user_cc_turn_float_state_had_top_pair
+When f$cc_turn_float_source_any_opportunity && f$cc_hand_middle_or_bottom_pair && !f$cc_hand_top_pair_or_better Set user_cc_turn_float_state_had_lower_pair
+When f$cc_turn_float_source_any_opportunity && f$cc_hand_no_made Set user_cc_turn_float_state_had_no_made
+
+// Equity/runout overlays.
+When f$cc_turn_float_source_any_opportunity && f$cc_turn_float_premium_draw Set user_cc_turn_float_state_had_premium_draw
+When f$cc_turn_float_source_any_opportunity && f$cc_turn_float_good_draw Set user_cc_turn_float_state_had_good_draw
+When f$cc_turn_float_source_any_opportunity && f$cc_turn_float_weak_draw Set user_cc_turn_float_state_had_weak_draw
+When f$cc_turn_float_source_any_opportunity && f$cc_turn_completed Set user_cc_turn_float_state_turn_completed
+When f$cc_turn_float_source_any_opportunity && f$cc_turn_super_completed Set user_cc_turn_float_state_turn_supercompleted
+When f$cc_turn_float_source_any_opportunity && f$cc_turn_new_completion Set user_cc_turn_float_state_turn_new_completion
+When f$cc_turn_float_source_any_opportunity && f$cc_turn_pairs_flop_rank Set user_cc_turn_float_state_turn_paired_flop
+
+// Player count and exact live-opponent mask before Hero's checked-to action.
+When f$cc_turn_float_source_any_opportunity && nplayersplaying = 2 Set user_cc_turn_float_state_players_2
+When f$cc_turn_float_source_any_opportunity && nplayersplaying = 3 Set user_cc_turn_float_state_players_3
+When f$cc_turn_float_source_any_opportunity && nplayersplaying = 4 Set user_cc_turn_float_state_players_4
+When f$cc_turn_float_source_any_opportunity && nplayersplaying = 5 Set user_cc_turn_float_state_players_5
+When f$cc_turn_float_source_any_opportunity && nplayersplaying = 6 Set user_cc_turn_float_state_players_6
+When f$cc_turn_float_source_any_opportunity && f$cc_opp_live_utg Set user_cc_turn_float_state_live_utg
+When f$cc_turn_float_source_any_opportunity && f$cc_opp_live_hj Set user_cc_turn_float_state_live_hj
+When f$cc_turn_float_source_any_opportunity && f$cc_opp_live_co Set user_cc_turn_float_state_live_co
+When f$cc_turn_float_source_any_opportunity && f$cc_opp_live_btn Set user_cc_turn_float_state_live_btn
+When f$cc_turn_float_source_any_opportunity && f$cc_opp_live_sb Set user_cc_turn_float_state_live_sb
+When f$cc_turn_float_source_any_opportunity && f$cc_opp_live_bb Set user_cc_turn_float_state_live_bb
+
+When f$cc_turn_float_router Return true Force
+When Others Return false Force
+
+// Purpose: count effective-parent markers.
+// Source/Provenance: P integrity over A/T history taxonomy.
+##f$cc_hist_turn_float_parent_marker_count##
+(user_cc_turn_float_state_parent_1 * 1) +
+(user_cc_turn_float_state_parent_2 * 1) +
+(user_cc_turn_float_state_parent_3 * 1) +
+(user_cc_turn_float_state_parent_4 * 1)
+
+// Purpose: decode stored Turn-Float parent after turn closes.
+// Source/Provenance: P stable boolean-marker decoder.
+##f$cc_hist_turn_float_parent_id##
+When !f$cc_hist_turn_float_closed Return 0 Force
+When f$cc_hist_turn_float_parent_marker_count != 1 Return 0 Force
+When user_cc_turn_float_state_parent_1 Return 1 Force
+When user_cc_turn_float_state_parent_2 Return 2 Force
+When user_cc_turn_float_state_parent_3 Return 3 Force
+When user_cc_turn_float_state_parent_4 Return 4 Force
+When Others Return 0 Force
+
+// Purpose: count reviewed family markers.
+// Source/Provenance: P integrity over Gate05 router IDs.
+##f$cc_hist_turn_float_family_marker_count##
+(user_cc_turn_float_state_family_1 * 1) +
+(user_cc_turn_float_state_family_2 * 1) +
+(user_cc_turn_float_state_family_3 * 1) +
+(user_cc_turn_float_state_family_4 * 1) +
+(user_cc_turn_float_state_family_5 * 1) +
+(user_cc_turn_float_state_family_6 * 1)
+
+// Purpose: decode stored Gate05 family after turn closes.
+// Source/Provenance: P boolean-marker decoder; contradiction ->0.
+##f$cc_hist_turn_float_family_id##
+When !f$cc_hist_turn_float_closed Return 0 Force
+When f$cc_hist_turn_float_family_marker_count != 1 Return 0 Force
+When user_cc_turn_float_state_family_1 Return 1 Force
+When user_cc_turn_float_state_family_2 Return 2 Force
+When user_cc_turn_float_state_family_3 Return 3 Force
+When user_cc_turn_float_state_family_4 Return 4 Force
+When user_cc_turn_float_state_family_5 Return 5 Force
+When user_cc_turn_float_state_family_6 Return 6 Force
+When Others Return 0 Force
+
+// Purpose: count primary current-turn hand-class markers.
+// Source/Provenance: P integrity over T/A current hand snapshot.
+##f$cc_hist_turn_float_primary_class_marker_count##
+(user_cc_turn_float_state_had_robust_value * 1) +
+(user_cc_turn_float_state_had_vulnerable_2pplus * 1) +
+(user_cc_turn_float_state_had_overpair * 1) +
+(user_cc_turn_float_state_had_top_pair * 1) +
+(user_cc_turn_float_state_had_lower_pair * 1) +
+(user_cc_turn_float_state_had_no_made * 1)
+
+// Purpose: count stored player-count markers.
+// Source/Provenance: P integrity over T nplayersplaying snapshot.
+##f$cc_hist_turn_float_player_count_marker_count##
+(user_cc_turn_float_state_players_2 * 1) +
+(user_cc_turn_float_state_players_3 * 1) +
+(user_cc_turn_float_state_players_4 * 1) +
+(user_cc_turn_float_state_players_5 * 1) +
+(user_cc_turn_float_state_players_6 * 1)
+
+// Purpose: decode player count at Turn-Float decision.
+// Source/Provenance: P decoder over T snapshot.
+##f$cc_hist_turn_float_player_count##
+When !f$cc_hist_turn_float_closed Return 0 Force
+When f$cc_hist_turn_float_player_count_marker_count != 1 Return 0 Force
+When user_cc_turn_float_state_players_2 Return 2 Force
+When user_cc_turn_float_state_players_3 Return 3 Force
+When user_cc_turn_float_state_players_4 Return 4 Force
+When user_cc_turn_float_state_players_5 Return 5 Force
+When user_cc_turn_float_state_players_6 Return 6 Force
+When Others Return 0 Force
+
+// Purpose: exact opponents live before Hero's Turn-Float/check-back action.
+// Source/Provenance: A/P canonical position-mask decoder.
+##f$cc_hist_turn_float_live_opp_mask##
+(user_cc_turn_float_state_live_utg * 1) +
+(user_cc_turn_float_state_live_hj * 2) +
+(user_cc_turn_float_state_live_co * 4) +
+(user_cc_turn_float_state_live_btn * 8) +
+(user_cc_turn_float_state_live_sb * 16) +
+(user_cc_turn_float_state_live_bb * 32)
+
+// -----------------------------------------------------------------------------
+// TFHIST.02 — closed round-3 execution proof
+// -----------------------------------------------------------------------------
+
+// Purpose: Turn has ended; round-3 action history is final.
+// Source/Provenance: T OpenHoldem betround numbering.
+##f$cc_hist_turn_float_closed##
+IsRiver
+
+// Purpose: prove Hero actually executed the initial Turn Float bet.
+// Source/Provenance: T did*round3 + A opportunity marker.
+// Safety: any prior Hero check means a later check-raise is not initial Turn Float.
+##f$cc_hist_turn_float_initial_bet_executed##
+f$cc_hist_turn_float_closed &&
+user_cc_turn_float_opportunity_seen &&
+didchecround3 = 0 &&
+(didbetsizeround3 > 0 || didalliround3 > 0)
+
+// Purpose: initial Turn Float was a normal sized bet.
+// Source/Provenance: T round-3 betsize counter.
+##f$cc_hist_turn_float_initial_bet_was_sized##
+f$cc_hist_turn_float_initial_bet_executed && didbetsizeround3 > 0
+
+// Purpose: initial Turn Float itself was direct all-in.
+// Source/Provenance: T counters + P initial-action disambiguation.
+##f$cc_hist_turn_float_initial_bet_was_direct_allin##
+f$cc_hist_turn_float_initial_bet_executed &&
+didalliround3 > 0 &&
+didbetsizeround3 = 0 &&
+didraisround3 = 0
+
+// Purpose: Hero declined available Turn Float and checked back as exact LAST actor.
+// Source/Provenance: T/A exact check-back history.
+##f$cc_hist_turn_float_checked_back##
+f$cc_hist_turn_float_closed &&
+user_cc_turn_float_opportunity_seen &&
+didchecround3 > 0 &&
+didcallround3 = 0 &&
+didraisround3 = 0 &&
+didbetsizeround3 = 0 &&
+didalliround3 = 0
+
+// Purpose: Turn Float was raised and Hero continued by calling.
+// Source/Provenance: T action counters + final aggressor identity.
+##f$cc_hist_turn_float_then_called_raise##
+f$cc_hist_turn_float_initial_bet_executed &&
+didcallround3 > 0 &&
+lastraised3 != userchair
+
+// Purpose: Hero Turn-Float bet then re-aggressed on turn.
+// Source/Provenance: T multiple aggressive action counters.
+##f$cc_hist_turn_float_then_reaggressed##
+f$cc_hist_turn_float_initial_bet_executed &&
+(didbetsizeround3 >= 2 || didraisround3 > 0 || (didbetsizeround3 > 0 && didalliround3 > 0))
+
+// Purpose: one normal executed Turn Float with Hero final turn aggressor.
+// Source/Provenance: T lastraised3 + exact action-counter pattern.
+##f$cc_hist_turn_float_standard_parent##
+f$cc_hist_turn_float_closed &&
+user_cc_turn_float_opportunity_seen &&
+didchecround3 = 0 &&
+didcallround3 = 0 &&
+didraisround3 = 0 &&
+didbetsizeround3 = 1 &&
+didalliround3 = 0 &&
+lastraised3 = userchair
+
+// -----------------------------------------------------------------------------
+// TFHIST.03 — snapshot / plan integrity and runtime drift
+// -----------------------------------------------------------------------------
+
+// Purpose: validate pre-action Turn-Float snapshot after turn closes.
+// Source/Provenance: P integrity over T/A snapshot facts.
+##f$cc_hist_turn_float_snapshot_consistent##
+When !f$cc_hist_turn_float_closed Return false Force
+When !user_cc_turn_float_opportunity_seen Return !user_cc_turn_float_state_snapshot_recorded Force
+When !user_cc_turn_float_state_snapshot_recorded Return false Force
+When f$cc_hist_turn_float_parent_marker_count != 1 Return false Force
+When f$cc_hist_turn_float_primary_class_marker_count != 1 Return false Force
+When f$cc_hist_turn_float_player_count_marker_count != 1 Return false Force
+When BitCount(f$cc_hist_turn_float_live_opp_mask) != (f$cc_hist_turn_float_player_count - 1) Return false Force
+When user_cc_turn_float_plan_bet_seen && f$cc_hist_turn_float_family_marker_count != 1 Return false Force
+When Others Return true Force
+
+// Purpose: strategy planned Turn Float but runtime records initial check-back.
+// Source/Provenance: P diagnostic over T closed history.
+##f$cc_hist_turn_float_planned_bet_but_checked##
+f$cc_hist_turn_float_closed && user_cc_turn_float_plan_bet_seen && didchecround3 > 0
+
+// Purpose: executed Turn Float without reviewed size-plan capture.
+// Source/Provenance: P runtime-composition diagnostic.
+##f$cc_hist_turn_float_executed_without_plan##
+f$cc_hist_turn_float_initial_bet_executed && !user_cc_turn_float_plan_bet_seen
+
+// Purpose: planned normal Turn Float unexpectedly became direct all-in.
+// Source/Provenance: T/P global-callback drift diagnostic.
+##f$cc_hist_turn_float_unexpected_allin_promotion##
+f$cc_hist_turn_float_closed &&
+user_cc_turn_float_plan_size_recorded &&
+!user_cc_turn_float_plan_expected_allin &&
+f$cc_hist_turn_float_initial_bet_was_direct_allin
+
+// Purpose: local execution expected BetMax but runtime remained normal size.
+// Source/Provenance: T/P mismatch diagnostic.
+##f$cc_hist_turn_float_expected_allin_not_executed##
+f$cc_hist_turn_float_closed &&
+user_cc_turn_float_plan_expected_allin &&
+f$cc_hist_turn_float_initial_bet_was_sized &&
+didalliround3 = 0
+
+// Purpose: compact Turn-Float runtime mismatch flag.
+// Source/Provenance: P union of T/A plan/snapshot/action inconsistencies.
+##f$cc_hist_turn_float_runtime_mismatch##
+When !f$cc_hist_turn_float_closed Return false Force
+When !f$cc_turn_float_plan_markers_consistent Return true Force
+When !f$cc_hist_turn_float_snapshot_consistent Return true Force
+When f$cc_hist_turn_float_planned_bet_but_checked Return true Force
+When f$cc_hist_turn_float_executed_without_plan Return true Force
+When f$cc_hist_turn_float_unexpected_allin_promotion Return true Force
+When f$cc_hist_turn_float_expected_allin_not_executed Return true Force
+When Others Return false Force
+
+// Purpose: valid normal executed Turn Float parent for future River Float logic.
+// Source/Provenance: P fail-closed wrapper over actual T/A execution history.
+##f$cc_hist_river_float_standard_parent_valid##
+f$cc_hist_turn_float_standard_parent &&
+f$cc_turn_float_plan_markers_consistent &&
+f$cc_hist_turn_float_snapshot_consistent &&
+!f$cc_hist_turn_float_runtime_mismatch
+
+// Purpose: valid Turn-Float opportunity that Hero checked back; future river
+// delayed/no-action logic owns it rather than River Float continuation.
+// Source/Provenance: A/T exact check-back parent with snapshot integrity.
+##f$cc_hist_turn_float_checkback_parent_valid##
+f$cc_hist_turn_float_checked_back &&
+f$cc_hist_turn_float_snapshot_consistent &&
+!f$cc_hist_turn_float_runtime_mismatch
+
+// Purpose: source-explicit river barrel plan is usable only if Turn Float truly
+// executed normally; a pre-action marker alone cannot force River Float.
+// Source/Provenance: A source plan + T actual execution proof.
+##f$cc_hist_turn_float_source_barrel_plan_valid##
+f$cc_hist_river_float_standard_parent_valid &&
+user_cc_turn_float_plan_barrel_river &&
+!user_cc_turn_float_plan_giveup_river
+
+// Purpose: source-explicit river give-up plan after actual normal Turn Float.
+// Source/Provenance: A source plan + T actual execution proof.
+##f$cc_hist_turn_float_source_giveup_plan_valid##
+f$cc_hist_river_float_standard_parent_valid &&
+user_cc_turn_float_plan_giveup_river &&
+!user_cc_turn_float_plan_barrel_river
+
+// ============================================================================
+// End Gate05H Turn Float action provenance.
+// ============================================================================

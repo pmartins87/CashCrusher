@@ -1,0 +1,183 @@
+// ============================================================================
+// CashCrusher_River_Float_4BP.txt
+// Gate 06F — clean HU four-bet-pot River Float
+// ============================================================================
+// Purpose:
+//   Review only the clean HU 4BP River-Float histories that aggregate preflop
+//   evidence can identify safely.  Multiway/post-multiway 4BP, other-caller,
+//   reversed/backraise/limp-reraise and 5bet+ remain fail-closed.
+//
+// Source boundary:
+//   DeepCrusher has no dedicated deep-stack 4BP River-Float table.  The portable
+//   Gate06B generic River-Float value ladder is admitted only through the new
+//   reviewed 4BP pot-domain firewall.  Everything source-silent below is P-heavy.
+//
+// Provenance:
+//   T = Gate06A closed Turn-call parent + current HU aggressor identity.
+//   A = Gate01I clean 4BP subtype/survivor + Gate04F/05A caller chronology.
+//   P = selected-range River checks and explicit unsupported-history boundary.
+//
+// Stack-depth contract:
+//   100bb 4BP naturally reaches low SPR, but River Float still owns only the
+//   bet/check decision and strategic size.  TP/OP is never generic stackoff.
+//   Natural all-in equivalence belongs to Gate06H runtime geometry.
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// RF4.01 — clean caller-side 4BP
+// -----------------------------------------------------------------------------
+
+// Purpose: one caller-side 4BP chronology currently provable strongly enough:
+// opener -> Hero 3bet -> opener 4bet -> Hero call, clean HU from flop, then Hero
+// called that same Villain's Turn aggression and Villain checks River.
+// Source: no dedicated 4BP River Float strategy.
+// Provenance: A/T Gate04F+05A chronology + P River family owner.
+##f$cc_river_float_4bp_caller_clean_hu_context##
+f$cc_river_float_opportunity &&
+f$cc_pot_family_id = 4 &&
+f$cc_river_float_current_hu_from_hu_flop &&
+f$cc_river_float_hu_aggressor_is_current_villain &&
+f$cc_turn_float_pf_fourbet_caller_supported &&
+f$cc_hu_villain_pos_id = f$cc_flop_float_4bp_other_raiser_pos_id
+
+// -----------------------------------------------------------------------------
+// RF4.02 — Hero is clean final 4bettor
+// -----------------------------------------------------------------------------
+
+// Purpose: clean HU 4BP where Hero was final 4bettor and current Villain is a
+// proven original opener or original 3bettor, never unresolved other caller.
+// Source/Provenance: A/T Gate01I subtype/survivor + P River ownership guard.
+##f$cc_river_float_4bp_hero4_clean_hu_context##
+f$cc_river_float_opportunity &&
+f$cc_pot_family_id = 4 &&
+f$cc_river_float_current_hu_from_hu_flop &&
+f$cc_river_float_hu_aggressor_is_current_villain &&
+f$cc_pf_role_4bettor &&
+f$cc_pf_4bet_subtype_id > 0 &&
+f$cc_hu_4bp_survivor_consistent &&
+f$cc_hu_4bp_survivor_type_id >= 1 &&
+f$cc_hu_4bp_survivor_type_id <= 2
+
+// Purpose: true-HU / reduced-HU standard opener4 versus original 3bettor.
+// Source/Provenance: A exact clean subtype + P range family label.
+##f$cc_river_float_4bp_opener4_vs_threebettor##
+f$cc_river_float_4bp_hero4_clean_hu_context &&
+f$cc_pf_4bet_standard_opener4_proven &&
+f$cc_hu_4bp_villain_is_threebettor
+
+// Purpose: cold4 versus original opener survivor.
+// Source/Provenance: A clean cold4 topology + P strong/condensed range family.
+##f$cc_river_float_4bp_cold4_vs_opener##
+f$cc_river_float_4bp_hero4_clean_hu_context &&
+f$cc_pf_4bet_standard_cold4_proven &&
+f$cc_hu_4bp_villain_is_opener
+
+// Purpose: cold4 versus original 3bettor survivor.
+// Source/Provenance: A clean cold4 topology + P selected 3bettor continuation.
+##f$cc_river_float_4bp_cold4_vs_threebettor##
+f$cc_river_float_4bp_hero4_clean_hu_context &&
+f$cc_pf_4bet_standard_cold4_proven &&
+f$cc_hu_4bp_villain_is_threebettor
+
+// Purpose: exactly one clean Hero-4bettor range family must own current state.
+// Source/Provenance: P fail-closed exclusivity invariant.
+##f$cc_river_float_4bp_hero4_family_count##
+(f$cc_river_float_4bp_opener4_vs_threebettor * 1) +
+(f$cc_river_float_4bp_cold4_vs_opener * 1) +
+(f$cc_river_float_4bp_cold4_vs_threebettor * 1)
+
+// Purpose: Hero-4bettor clean family remains internally unique.
+// Source/Provenance: P safety invariant.
+##f$cc_river_float_4bp_hero4_family_consistent##
+When !f$cc_river_float_4bp_hero4_clean_hu_context Return false Force
+When f$cc_river_float_4bp_hero4_family_count != 1 Return false Force
+When Others Return true Force
+
+// -----------------------------------------------------------------------------
+// RF4.03 — topology / reviewed source-silent check ownership
+// -----------------------------------------------------------------------------
+
+// Purpose: compact clean-HU 4BP River-Float topology ID.
+// 1 caller-side Hero3bet/call4; 2 opener4-v-3bettor; 3 cold4-v-opener;
+// 4 cold4-v-3bettor; 0 unsupported.
+// Source/Provenance: P audit metadata over A/T exact clean histories.
+##f$cc_river_float_4bp_topology_id##
+When f$cc_river_float_4bp_caller_clean_hu_context Return 1 Force
+When f$cc_river_float_4bp_opener4_vs_threebettor && f$cc_river_float_4bp_hero4_family_consistent Return 2 Force
+When f$cc_river_float_4bp_cold4_vs_opener && f$cc_river_float_4bp_hero4_family_consistent Return 3 Force
+When f$cc_river_float_4bp_cold4_vs_threebettor && f$cc_river_float_4bp_hero4_family_consistent Return 4 Force
+When Others Return 0 Force
+
+// Purpose: current no-made clean 4BP River Float lacks exact Turn-call draw /
+// blocker provenance required for a principled low-SPR bluff.
+// Source: no dedicated 4BP source bluff; generic source bluff is history-specific.
+// Provenance: A source-information lesson + P deep-cash selection safety.
+##f$cc_river_float_4bp_nomade_snapshot_missing##
+f$cc_river_float_4bp_topology_id > 0 && f$cc_river_no_made
+
+// Purpose: weak River showdown value that is deliberately checked after calling
+// Turn aggression in a condensed 4BP range.
+// Source/Provenance: P professional cash baseline; Gate06B already owns source-
+// sized TP-top4/OP/2P+ value where the reviewed 4BP pot-domain gate permits it.
+##f$cc_river_float_4bp_weak_showdown_value##
+f$cc_river_float_4bp_topology_id > 0 &&
+((f$cc_river_top_pair && f$cc_number_better_kickers > 4) ||
+ f$cc_river_second_pair ||
+ f$cc_river_third_or_worse_pair)
+
+// Purpose: source-silent clean-HU 4BP state reviewed by Gate06F after Gate06B
+// portable source value has first priority.
+// Source/Provenance: P coverage contract.
+##f$cc_river_float_4bp_covered##
+!f$cc_river_float_source_covered &&
+f$cc_river_float_4bp_topology_id > 0
+
+// Purpose: source-silent clean-HU 4BP action.
+// Source/Provenance: P conservative policy: no additional positive River action
+// is manufactured from current hand alone.  Reviewed weak/no-made states check.
+// Strong source-sized value is already owned by Gate06B before this branch.
+##f$cc_river_float_4bp_action##
+When !f$cc_river_float_4bp_covered Return false Force
+When Others Return false Force
+
+// Purpose: paired clean-HU 4BP size owner; reviewed check ->0.
+// Source/Provenance: P exact owner.
+##f$cc_river_float_4bp_size_id##
+When !f$cc_river_float_4bp_action Return 0 Force
+When Others Return 0 Force
+
+// Purpose: explicit reviewed-check metadata.
+// Source/Provenance: P audit visibility.
+##f$cc_river_float_4bp_reviewed_check##
+f$cc_river_float_4bp_covered && !f$cc_river_float_4bp_action
+
+// Purpose: positive-size integrity (currently vacuous because Gate06F adds no
+// source-silent positive action, but frozen for future exact-node expansion).
+// Source/Provenance: P engineering invariant.
+##f$cc_river_float_4bp_size_consistent##
+When !f$cc_river_float_4bp_action Return f$cc_river_float_4bp_size_id = 0 Force
+When f$cc_river_float_4bp_action Return f$cc_river_float_4bp_size_id >= 1 && f$cc_river_float_4bp_size_id <= 5 Force
+When Others Return false Force
+
+// -----------------------------------------------------------------------------
+// RF4.04 — unsupported chronology diagnostics
+// -----------------------------------------------------------------------------
+
+// Purpose: visible 4BP River-Float opportunity outside the clean HU families.
+// Source/Provenance: P fail-closed diagnostic.
+// Includes multiway/postmultiway, othercaller, reversed/backraise/limp-reraise.
+##f$cc_river_float_4bp_uncovered##
+f$cc_river_float_opportunity &&
+f$cc_pot_family_id = 4 &&
+!f$cc_river_float_source_covered &&
+!f$cc_river_float_4bp_covered
+
+// Purpose: explicit five-bet-plus River-Float unsupported diagnostic.
+// Source: no reviewed source/cash family exists yet.
+// Provenance: P fail-closed visibility.
+##f$cc_river_float_5betplus_uncovered##
+f$cc_river_float_opportunity && f$cc_pot_family_id = 5
+
+// ============================================================================
+// End Gate06F clean HU 4BP River Float adaptation.
+// ============================================================================

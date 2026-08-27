@@ -1,0 +1,158 @@
+// ============================================================================
+// Gate12A.8A — native 3wSBvBB delayed-CBet value / pair source
+// ============================================================================
+// T = mature DeepCrusher source. A = canonical geometry / CF7-safe translation.
+// Source check-XR and River plans below are metadata only; they never execute a
+// defensive or later-street action from this Turn attack node.
+// ============================================================================
+
+// Purpose: native 3-handed SB-v-BB after source snapshot + CLOSED flop X/X.
+// Source/Provenance: T/A exact `game_3wSBvBB` reconstruction.
+##f$cc_turn_delayed_cbet_3w_sbvbb_source_context##
+f$cc_turn_delayed_cbet_snapshot_valid &&
+f$cc_deal_size = 3 && f$cc_flop_entry_count = 2 && f$cc_hu &&
+f$cc_hero_pos_id = 5 && f$cc_hu_villain_pos_id = 6
+
+// Purpose: exact Turn branch of source `f$board_dry` using persisted `user_WetFlop`.
+// Source/Provenance: T direct source mechanics.
+##f$cc_turn_delayed_cbet_3w_sbvbb_turn_board_dry##
+When !f$cc_turn_delayed_cbet_3w_sbvbb_source_context Return false Force
+When FlushDrawPossible && OpenEndedStraightDrawPossibleOnFlop Return false Force
+When user_cc_turn_delayed_cbet_3w_sbvbb_flop_wet_source Return false Force
+When SuitsOnBoard <= 2 Return false Force
+When f$cc_turn_delayed_cbet_source_hand_zombie Return false Force
+When nstraightcommon >= 3 Return false Force
+When Others Return true Force
+
+// Purpose: source `f$pot_Limped` = no preflop raise.
+// Source/Provenance: T/A exact zero-raise translation.
+##f$cc_turn_delayed_cbet_3w_sbvbb_limped_pot##
+f$cc_turn_delayed_cbet_3w_sbvbb_source_context && f$cc_pot_family_id = 1
+
+// Purpose: historical TP+ now current contributed 2P+/nuts.
+// Source/Provenance: T/A direct source class.
+##f$cc_turn_delayed_cbet_3w_sbvbb_tp_hist_2pplus##
+f$cc_turn_delayed_cbet_3w_sbvbb_source_context &&
+user_cc_turn_delayed_cbet_3w_sbvbb_flop_tpplus_candidate &&
+f$cc_turn_delayed_cbet_two_pair_plus_real
+
+// Purpose: first source check-XR exception — Turn overcard.
+// Source/Provenance: T direct source plan metadata.
+##f$cc_turn_delayed_cbet_3w_sbvbb_2p_checkxr_overcard##
+f$cc_turn_delayed_cbet_3w_sbvbb_tp_hist_2pplus && TurnCardIsOvercardToBoard > 0
+
+// Purpose: second source check-XR exception — super-completed/four-card board.
+// Source/Provenance: T direct source plan metadata.
+##f$cc_turn_delayed_cbet_3w_sbvbb_2p_checkxr_heavy##
+f$cc_turn_delayed_cbet_3w_sbvbb_tp_hist_2pplus &&
+!f$cc_turn_delayed_cbet_3w_sbvbb_2p_checkxr_overcard &&
+(f$cc_turn_delayed_cbet_turn_supercompleted || nstraightcommon >= 4 || nsuitedcommon >= 4)
+
+// Purpose: exact source 2P+ positive action after check-XR exceptions.
+// Source/Provenance: T direct mature source ordering.
+##f$cc_turn_delayed_cbet_3w_sbvbb_2p_action##
+When !f$cc_turn_delayed_cbet_3w_sbvbb_tp_hist_2pplus Return false Force
+When f$cc_turn_delayed_cbet_3w_sbvbb_2p_checkxr_overcard Return false Force
+When f$cc_turn_delayed_cbet_3w_sbvbb_2p_checkxr_heavy Return false Force
+When f$cc_turn_delayed_cbet_turn_completed Return true Force
+When f$cc_turn_delayed_cbet_turn_under && f$cc_turn_delayed_cbet_3w_sbvbb_turn_board_dry Return true Force
+When f$cc_turn_delayed_cbet_turn_under && !f$cc_turn_delayed_cbet_3w_sbvbb_turn_board_dry Return true Force
+When Others Return false Force
+
+// Purpose: completed100; under dry50; under wet limped150; under wet raised100.
+// Source/Provenance: T exact source sizes.
+##f$cc_turn_delayed_cbet_3w_sbvbb_2p_size_id##
+When !f$cc_turn_delayed_cbet_3w_sbvbb_2p_action Return 0 Force
+When f$cc_turn_delayed_cbet_turn_completed Return f$cc_turn_delayed_cbet_size_100_id Force
+When f$cc_turn_delayed_cbet_turn_under && f$cc_turn_delayed_cbet_3w_sbvbb_turn_board_dry Return f$cc_turn_delayed_cbet_size_50_id Force
+When f$cc_turn_delayed_cbet_turn_under && f$cc_turn_delayed_cbet_3w_sbvbb_limped_pot Return f$cc_turn_delayed_cbet_size_150_id Force
+When f$cc_turn_delayed_cbet_turn_under Return f$cc_turn_delayed_cbet_size_100_id Force
+When Others Return 0 Force
+
+// Purpose: source future plans for positive 2P+ branches; Gate13 owns River.
+// Source/Provenance: T direct source metadata.
+##f$cc_turn_delayed_cbet_3w_sbvbb_plan_2p_completed_xr_river##
+f$cc_turn_delayed_cbet_3w_sbvbb_2p_action && f$cc_turn_delayed_cbet_turn_completed
+
+// Source/Provenance: T direct River50 metadata.
+##f$cc_turn_delayed_cbet_3w_sbvbb_plan_2p_river50##
+f$cc_turn_delayed_cbet_3w_sbvbb_2p_action && f$cc_turn_delayed_cbet_turn_under &&
+(f$cc_turn_delayed_cbet_3w_sbvbb_turn_board_dry || f$cc_turn_delayed_cbet_3w_sbvbb_limped_pot)
+
+// Source/Provenance: T direct River33 metadata.
+##f$cc_turn_delayed_cbet_3w_sbvbb_plan_2p_river33##
+f$cc_turn_delayed_cbet_3w_sbvbb_2p_action && f$cc_turn_delayed_cbet_turn_under &&
+!f$cc_turn_delayed_cbet_3w_sbvbb_turn_board_dry && !f$cc_turn_delayed_cbet_3w_sbvbb_limped_pot
+
+// Purpose: historical TP+ becomes second pair after Turn overcard.
+// Source/Provenance: T exact source branch.
+##f$cc_turn_delayed_cbet_3w_sbvbb_tp_to_second_action##
+f$cc_turn_delayed_cbet_3w_sbvbb_source_context &&
+user_cc_turn_delayed_cbet_3w_sbvbb_flop_tpplus_candidate &&
+f$cc_turn_delayed_cbet_second_pair && TurnCardIsOvercardToBoard > 0
+
+// Source/Provenance: T exact Turn50.
+##f$cc_turn_delayed_cbet_3w_sbvbb_tp_to_second_size_id##
+When f$cc_turn_delayed_cbet_3w_sbvbb_tp_to_second_action Return f$cc_turn_delayed_cbet_size_50_id Force
+When Others Return 0 Force
+
+// Purpose: source CPL/nCPL split preserved for later response ownership.
+// Source/Provenance: T direct source metadata.
+##f$cc_turn_delayed_cbet_3w_sbvbb_tp_to_second_completed##
+f$cc_turn_delayed_cbet_3w_sbvbb_tp_to_second_action && f$cc_turn_delayed_cbet_turn_completed
+
+// Source/Provenance: T direct source metadata.
+##f$cc_turn_delayed_cbet_3w_sbvbb_tp_to_second_noncompleted##
+f$cc_turn_delayed_cbet_3w_sbvbb_tp_to_second_action && !f$cc_turn_delayed_cbet_turn_completed
+
+// Purpose: historical TP+ remains current real TP/OP.
+// Source/Provenance: T/A exact current source class.
+##f$cc_turn_delayed_cbet_3w_sbvbb_tpop_action##
+f$cc_turn_delayed_cbet_3w_sbvbb_source_context &&
+user_cc_turn_delayed_cbet_3w_sbvbb_flop_tpplus_candidate &&
+f$cc_turn_delayed_cbet_tpop_real
+
+// Purpose: under dry75; under wet100; Ace75; completed75; residual50.
+// Source/Provenance: T direct source order/size.
+##f$cc_turn_delayed_cbet_3w_sbvbb_tpop_size_id##
+When !f$cc_turn_delayed_cbet_3w_sbvbb_tpop_action Return 0 Force
+When f$cc_turn_delayed_cbet_turn_under && f$cc_turn_delayed_cbet_3w_sbvbb_turn_board_dry Return f$cc_turn_delayed_cbet_size_75_id Force
+When f$cc_turn_delayed_cbet_turn_under && !f$cc_turn_delayed_cbet_3w_sbvbb_turn_board_dry Return f$cc_turn_delayed_cbet_size_100_id Force
+When TurnCard = 14 Return f$cc_turn_delayed_cbet_size_75_id Force
+When f$cc_turn_delayed_cbet_turn_completed Return f$cc_turn_delayed_cbet_size_75_id Force
+When Others Return f$cc_turn_delayed_cbet_size_50_id Force
+
+// Purpose: source TPDelay future-state marker; Gate13 owns River.
+// Source/Provenance: T direct source metadata.
+##f$cc_turn_delayed_cbet_3w_sbvbb_plan_tpdelay##
+f$cc_turn_delayed_cbet_3w_sbvbb_tpop_action
+
+// Purpose: flop second pair remains second pair on strict undercard -> Turn75.
+// Source/Provenance: T direct source positive branch.
+##f$cc_turn_delayed_cbet_3w_sbvbb_secondpair_action##
+f$cc_turn_delayed_cbet_3w_sbvbb_source_context &&
+user_cc_turn_delayed_cbet_3w_sbvbb_flop_secondpair_candidate &&
+f$cc_turn_delayed_cbet_second_pair && f$cc_turn_delayed_cbet_turn_under
+
+// Source/Provenance: T exact Turn75.
+##f$cc_turn_delayed_cbet_3w_sbvbb_secondpair_size_id##
+When f$cc_turn_delayed_cbet_3w_sbvbb_secondpair_action Return f$cc_turn_delayed_cbet_size_75_id Force
+When Others Return 0 Force
+
+// Purpose: source second-pair River75 plan; metadata only.
+// Source/Provenance: T direct source future-state marker.
+##f$cc_turn_delayed_cbet_3w_sbvbb_plan_secondpair_river75##
+f$cc_turn_delayed_cbet_3w_sbvbb_secondpair_action
+
+// Purpose: historical third/fourth pair is explicit Turn check + DelDel River50.
+// Source/Provenance: T direct source negative branch.
+##f$cc_turn_delayed_cbet_3w_sbvbb_lowpair_check##
+f$cc_turn_delayed_cbet_3w_sbvbb_source_context && user_cc_turn_delayed_cbet_3w_sbvbb_flop_lowpair_candidate
+
+// Source/Provenance: T direct future-state marker.
+##f$cc_turn_delayed_cbet_3w_sbvbb_plan_lowpair_deldel_river50##
+f$cc_turn_delayed_cbet_3w_sbvbb_lowpair_check
+
+// ============================================================================
+// End Gate12A.8A.
+// ============================================================================

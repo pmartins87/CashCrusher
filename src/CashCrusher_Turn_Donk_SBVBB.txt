@@ -1,0 +1,300 @@
+// ============================================================================
+// CashCrusher_Turn_Donk_SBVBB.txt
+// Gate 08C.3 — `3wSBvBB` Turn Donk source mapping
+// ============================================================================
+// Purpose:
+//   Map the dedicated SB-v-BB Starting Strategy after an ACTUAL flop X/C while
+//   preserving both preflop origins described by the source:
+//     A) SB limp -> BB check (limped pot);
+//     B) SB raise -> BB call (MNR/SRP pot).
+//
+// Primary source: `6- CRUSHFEST 3wSBvBB`.
+//   * medium/weak draw flop X/C is price/range sensitive;
+//   * if that draw IMPROVES on an overcard Turn -> Donk 75-100%;
+//   * if it improves on an undercard Turn -> CHECK with X/R intention;
+//   * source rationale for 75-100 is to create ~1:1 river SPR and then shove.
+//
+// Deep-cash migration review:
+//   The Turn lead itself and the 75-100 interval are direct source facts (T).
+//   The mature DeepCrusher implementation chooses pot at local SPR <=1.80 and
+//   otherwise 75%, while also scheduling a River shove. Those are short-stack
+//   implementation details, not direct Starting-Strategy thresholds.
+//
+//   CashCrusher therefore keeps the directly authored LOWER size (75%) at this
+//   gate and does NOT persist a River-shove plan. Pot sizing is not globally
+//   prohibited: it may be re-enabled in this exact node when later runtime/solver
+//   evidence shows the source's ~1:1 target is appropriate for current cash SPR.
+//   This is node-by-node review, not blanket removal of short-stack logic.
+//
+// Evidence boundary:
+//   The exact flop draw class and faced price belong Flop defense. Three dedicated
+//   defense-owned markers are reserved below. Until one is written by the audited
+//   Flop Call-vs-Bet owner, the no-made source branch deliberately fails closed.
+//
+// Source/Provenance:
+//   T = direct 3wSBvBB topology, X/C draw branch, OC-vs-UC action split, 75-100.
+//   A = `improve` resolved as current PairOrBetter, matching mature implementation;
+//       Gate08A clean-X/C parent repair; deterministic 75% deep-cash size choice.
+//   A/P = exact 4-6h SB-v-BB descendants after every earlier seat folds.
+//   X = generic inherited <=1.80 -> pot and automatic River-shove implication.
+//
+// Safety:
+//   No Turn jam, no River action, no generic TP/OP lead, no HandPower/random,
+//   no `Raise_Committed`, and no strategy is inferred from the scenario label.
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// TDSBB.01 — exact closed X/C + SB-v-BB range ancestry
+// -----------------------------------------------------------------------------
+
+// Purpose: source lineage accepts reviewed Gate07 X/C parent or repaired clean-X/C
+// parent 3. Donk-B/C parent 2 is not part of this source branch.
+// Source/Provenance: T actual X/C history + A Gate08A ownership repair.
+##f$cc_turn_donk_sbvbb_xc_parent_proven##
+f$cc_turn_donk_parent_id = 1 || f$cc_turn_donk_parent_id = 3
+
+// Purpose: common exact current SB-v-BB state after BTN/earlier seats are gone.
+// Source: old 3wSBvBB = Hero SB, sole live Villain BB.
+// Provenance: T old strategic shape + A canonical 2-6h reconstruction.
+##f$cc_turn_donk_sbvbb_common_context##
+f$cc_turn_donk_opportunity &&
+f$cc_turn_donk_sbvbb_xc_parent_proven &&
+f$cc_flop_entry_count = 2 &&
+f$cc_hu_origin_preflop_reduced &&
+f$cc_hu &&
+f$cc_hu_oop &&
+f$cc_hero_pos_id = 5 &&
+f$cc_hu_villain_pos_id = 6 &&
+f$cc_turn_donk_hu_aggressor_is_current_villain &&
+f$cc_turn_donk_flop_aggressor_pos_id = 6
+
+// Purpose: direct 3-handed source ancestry.
+// Source/Provenance: T literal old dealt-player topology after BTN folds.
+##f$cc_turn_donk_sbvbb_threehanded_common##
+f$cc_turn_donk_sbvbb_common_context &&
+f$cc_deal_size = 3
+
+// Purpose: exact 4-6h structural descendant after all non-blind players fold
+// preflop and only SB+BB reach the flop.
+// Source/Provenance: A/P range-topology adaptation, never relabeled as literal T.
+##f$cc_turn_donk_sbvbb_sixmax_common##
+f$cc_turn_donk_sbvbb_common_context &&
+f$cc_deal_size >= 4 && f$cc_deal_size <= 6
+
+// -----------------------------------------------------------------------------
+// TDSBB.02 — two source preflop origins kept separate
+// -----------------------------------------------------------------------------
+
+// Purpose: source limped-pot origin = Hero SB limp/call action, no preflop raise,
+// BB reaches flop as sole opponent.
+// Source: `BBvSB checks vs LIMP = HU SB LIMPS`.
+// Provenance: T source shape + A persisted role/call reconstruction.
+##f$cc_turn_donk_sbvbb_limped_origin##
+f$cc_turn_donk_sbvbb_common_context &&
+f$cc_pot_family_id = 1 &&
+f$cc_pf_raise_count = 0 &&
+f$cc_pf_role_unraised_caller &&
+f$cc_pf_call_sb
+
+// Purpose: source MNR/SRP origin = Hero SB raises, BB calls, BTN/others absent.
+// Source: `BBvSB calls vs Raise = HU SB L/C`.
+// Provenance: T source shape + A canonical one-raise chronology.
+##f$cc_turn_donk_sbvbb_mnr_origin##
+f$cc_turn_donk_sbvbb_common_context &&
+f$cc_pot_family_id = 2 &&
+f$cc_pf_one_raise_ordinary_srp &&
+f$cc_pf_role_pfa &&
+f$cc_pf_single_raiser_pos_id = 5 &&
+f$cc_pf_call_bb
+
+// Purpose: exactly one of the two source origins must be proven.
+// Source/Provenance: P integrity over T/A range histories.
+##f$cc_turn_donk_sbvbb_preflop_origin_count##
+(f$cc_turn_donk_sbvbb_limped_origin * 1) +
+(f$cc_turn_donk_sbvbb_mnr_origin * 1)
+
+// Purpose: compact source origin ID: 1=3h limped; 2=3h MNR; 3=4-6h limped;
+// 4=4-6h MNR; 0=unknown/contradiction.
+// Source/Provenance: P audit metadata over T/A/P exact parents.
+##f$cc_turn_donk_sbvbb_origin_id##
+When f$cc_turn_donk_sbvbb_preflop_origin_count != 1 Return 0 Force
+When f$cc_turn_donk_sbvbb_threehanded_common && f$cc_turn_donk_sbvbb_limped_origin Return 1 Force
+When f$cc_turn_donk_sbvbb_threehanded_common && f$cc_turn_donk_sbvbb_mnr_origin Return 2 Force
+When f$cc_turn_donk_sbvbb_sixmax_common && f$cc_turn_donk_sbvbb_limped_origin Return 3 Force
+When f$cc_turn_donk_sbvbb_sixmax_common && f$cc_turn_donk_sbvbb_mnr_origin Return 4 Force
+When Others Return 0 Force
+
+// Purpose: exact reviewed SB-v-BB ancestry only.
+// Source/Provenance: A/P union preserving direct-vs-adapted origin ID.
+##f$cc_turn_donk_sbvbb_context##
+f$cc_turn_donk_sbvbb_origin_id > 0
+
+// Purpose: literal 3h source versus structural 4-6h descendant metadata.
+// Source/Provenance: P provenance descriptor.
+##f$cc_turn_donk_sbvbb_is_direct_threehanded_source##
+f$cc_turn_donk_sbvbb_origin_id = 1 || f$cc_turn_donk_sbvbb_origin_id = 2
+
+// -----------------------------------------------------------------------------
+// TDSBB.03 — defense-owned source draw/price provenance
+// -----------------------------------------------------------------------------
+
+// Purpose: future Flop defense proves LIMPed-pot medium/weak draw X/C was legal
+// under source ceiling <=50% and actually became this clean closed X/C.
+// Source: limped pot `Med/weak draws - X/C up to 50%`.
+// Provenance: T source threshold + P ownership bridge to Flop defense.
+##f$cc_turn_donk_sbvbb_limped_draw_xc_defense_proven##
+user_cc_flop_sbvbb_limped_medweak_draw_called_le50
+
+// Purpose: future Flop defense proves MNR medium-draw X/C under source <=100%.
+// Source: MNR `Med draws X/C up to 100%`.
+// Provenance: T source threshold + P defense-owned bridge.
+##f$cc_turn_donk_sbvbb_mnr_medium_xc_defense_proven##
+user_cc_flop_sbvbb_mnr_medium_draw_called_le100
+
+// Purpose: future Flop defense proves MNR weak-draw X/C under source <=33%.
+// Source: MNR `Weak draws X/C up to 33%`.
+// Provenance: T source threshold + P defense-owned bridge.
+##f$cc_turn_donk_sbvbb_mnr_weak_xc_defense_proven##
+user_cc_flop_sbvbb_mnr_weak_draw_called_le33
+
+// Purpose: count source-compatible defensive X/C provenance markers.
+// Source/Provenance: P integrity over T source classes.
+##f$cc_turn_donk_sbvbb_draw_xc_marker_count##
+(f$cc_turn_donk_sbvbb_limped_draw_xc_defense_proven * 1) +
+(f$cc_turn_donk_sbvbb_mnr_medium_xc_defense_proven * 1) +
+(f$cc_turn_donk_sbvbb_mnr_weak_xc_defense_proven * 1)
+
+// Purpose: exact marker must match exact preflop origin; a marker from the other
+// source pot type cannot authorize Turn strategy.
+// Source/Provenance: P fail-closed provenance firewall.
+##f$cc_turn_donk_sbvbb_draw_xc_defense_proven##
+When !f$cc_turn_donk_sbvbb_context Return false Force
+When f$cc_turn_donk_sbvbb_draw_xc_marker_count != 1 Return false Force
+When f$cc_turn_donk_sbvbb_limped_origin && f$cc_turn_donk_sbvbb_limped_draw_xc_defense_proven Return true Force
+When f$cc_turn_donk_sbvbb_mnr_origin && f$cc_turn_donk_sbvbb_mnr_medium_xc_defense_proven Return true Force
+When f$cc_turn_donk_sbvbb_mnr_origin && f$cc_turn_donk_sbvbb_mnr_weak_xc_defense_proven Return true Force
+When Others Return false Force
+
+// Purpose: source-shaped SB-v-BB X/C exists but exact draw/price provenance is
+// absent, contradictory or belongs the wrong preflop origin.
+// Source/Provenance: P diagnostic, never an action.
+##f$cc_turn_donk_sbvbb_needs_defense_provenance##
+f$cc_turn_donk_sbvbb_context &&
+!f$cc_turn_donk_sbvbb_draw_xc_defense_proven
+
+// -----------------------------------------------------------------------------
+// TDSBB.04 — `improve` + OC/UC source action split
+// -----------------------------------------------------------------------------
+
+// Purpose: source phrase `improve our draw OTT` resolved as current made
+// PairOrBetter, matching the mature audited implementation (`f$hand_PairOrBetter`).
+// Source/Provenance: T improvement concept + A deterministic ambiguity resolution.
+##f$cc_turn_donk_sbvbb_draw_improved##
+f$cc_turn_donk_sbvbb_draw_xc_defense_proven &&
+f$cc_hand_pair_or_better
+
+// Purpose: source explicitly owns only strict overcard and strict undercard branches.
+// Neutral/intermediate/pairing cards remain uncovered rather than guessed.
+// Source/Provenance: T OC/UC wording + P source-boundary guard.
+##f$cc_turn_donk_sbvbb_source_runout_covered##
+f$cc_turn_overcard_to_flop || f$cc_turn_undercard
+
+// Purpose: direct source positive Turn Donk = proved draw X/C, improved, overcard.
+// Source: `OC ---> ... donkbet 75-100%`.
+// Provenance: T action after A-defined improvement predicate.
+##f$cc_turn_donk_sbvbb_draw_oc_action##
+f$cc_turn_donk_sbvbb_context &&
+f$cc_turn_donk_sbvbb_draw_improved &&
+f$cc_turn_overcard_to_flop
+
+// Purpose: direct source undercard branch is CHECK now, intending X/R if BB bets.
+// This file owns only first-action Turn Donk; the X/R belongs Turn defense.
+// Source: `UC ---> ... X/R ...`.
+// Provenance: T direct action ownership separator.
+##f$cc_turn_donk_sbvbb_draw_uc_checkraise_owner##
+f$cc_turn_donk_sbvbb_context &&
+f$cc_turn_donk_sbvbb_draw_improved &&
+f$cc_turn_undercard
+
+// Purpose: if the draw did not improve, source's positive Donk/XR condition never
+// activates; on an explicitly classified OC/UC this node remains a reviewed check.
+// Source/Provenance: T condition complement, no invented bluff lead.
+##f$cc_turn_donk_sbvbb_unimproved_check##
+f$cc_turn_donk_sbvbb_context &&
+f$cc_turn_donk_sbvbb_draw_xc_defense_proven &&
+f$cc_turn_donk_sbvbb_source_runout_covered &&
+!f$cc_turn_donk_sbvbb_draw_improved
+
+// Purpose: source is silent for Turn ranks that are neither strict OC nor strict UC.
+// Source/Provenance: X as direct-source action; future A/P review may fill it.
+##f$cc_turn_donk_sbvbb_neutral_runout_source_gap##
+f$cc_turn_donk_sbvbb_context &&
+f$cc_turn_donk_sbvbb_draw_xc_defense_proven &&
+!f$cc_turn_donk_sbvbb_source_runout_covered
+
+// -----------------------------------------------------------------------------
+// TDSBB.05 — reviewed 75-100 short-stack size interval
+// -----------------------------------------------------------------------------
+
+// Purpose: deterministic CashCrusher Turn size for the source OC lead.
+// Source says 75-100 to create ~1:1 River SPR. Mature source's <=1.80 ->100 plus
+// River-shove plan is secondary short-stack implementation. At this gate we keep
+// the direct lower bound 75 and defer any exact pot-size promotion to later local
+// cash-SPR/runtime review rather than importing the shallow threshold globally.
+// Source/Provenance: T 75-100 interval + A conservative deep-cash resolution.
+##f$cc_turn_donk_sbvbb_draw_oc_size_id##
+When f$cc_turn_donk_sbvbb_draw_oc_action Return f$cc_turn_donk_size_75_id Force
+When Others Return 0 Force
+
+// Purpose: visible audit diagnostic that the source allowed a 100% upper size but
+// current exact node intentionally selected its 75% lower bound.
+// Source/Provenance: T source interval + A migration metadata; no action implication.
+##f$cc_turn_donk_sbvbb_source_pot_upper_bound_reviewed##
+f$cc_turn_donk_sbvbb_draw_oc_action
+
+// -----------------------------------------------------------------------------
+// TDSBB.06 — dispatcher / coverage
+// -----------------------------------------------------------------------------
+
+// Purpose: exact SB-v-BB Turn Donk action dispatcher.
+// Source/Provenance: T/A/P exact range/history owner.
+##f$cc_turn_donk_sbvbb_action##
+When !f$cc_turn_donk_sbvbb_context Return false Force
+When !f$cc_turn_donk_sbvbb_draw_xc_defense_proven Return false Force
+When f$cc_turn_donk_sbvbb_neutral_runout_source_gap Return false Force
+When f$cc_turn_donk_sbvbb_draw_oc_action Return true Force
+When f$cc_turn_donk_sbvbb_draw_uc_checkraise_owner Return false Force
+When f$cc_turn_donk_sbvbb_unimproved_check Return false Force
+When Others Return false Force
+
+// Purpose: paired size dispatcher; every source check is size 0.
+// Source/Provenance: T/A exact owner.
+##f$cc_turn_donk_sbvbb_size_id##
+When !f$cc_turn_donk_sbvbb_context Return 0 Force
+When f$cc_turn_donk_sbvbb_draw_oc_action Return f$cc_turn_donk_sbvbb_draw_oc_size_id Force
+When Others Return 0 Force
+
+// Purpose: report only states whose exact source decision is known. Missing
+// defense provenance and neutral/non-OC/non-UC runouts remain uncovered.
+// Source/Provenance: P coverage firewall over T/A source descendants.
+##f$cc_turn_donk_sbvbb_covered##
+f$cc_turn_donk_sbvbb_context &&
+f$cc_turn_donk_sbvbb_draw_xc_defense_proven &&
+f$cc_turn_donk_sbvbb_source_runout_covered
+
+// Purpose: action/size integrity.
+// Source/Provenance: P safety invariant.
+##f$cc_turn_donk_sbvbb_size_consistent##
+When !f$cc_turn_donk_sbvbb_action Return f$cc_turn_donk_sbvbb_size_id = 0 Force
+When f$cc_turn_donk_sbvbb_action Return f$cc_turn_donk_sbvbb_size_id = f$cc_turn_donk_size_75_id Force
+When Others Return false Force
+
+// Purpose: exact SB-v-BB opportunity held closed because source provenance or
+// exact OC/UC runout coverage is incomplete.
+// Source/Provenance: P audit diagnostic.
+##f$cc_turn_donk_sbvbb_uncovered_context##
+f$cc_turn_donk_sbvbb_context && !f$cc_turn_donk_sbvbb_covered
+
+// ============================================================================
+// End Gate08C.3 SB-v-BB Turn Donk.
+// ============================================================================

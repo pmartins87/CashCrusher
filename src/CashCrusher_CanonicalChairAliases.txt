@@ -1,0 +1,59 @@
+// ============================================================================
+// CashCrusher_CanonicalChairAliases.txt
+// Gate 00C compatibility adapter — canonical position/chair aliases
+// ============================================================================
+// Purpose:
+//   Expose the already-defined dynamic 2-6h chair map under stable f$cc names for
+//   street-history modules that must map lastraisedN chairs back to UTG/HJ/CO.
+//
+// Source/Provenance:
+//   T = OpenHoldem utgchair/mp3chair/cutoffchair symbols.
+//   A = exact same 6max-equivalent mapping frozen in CashCrusher_Context.txt:
+//       6h UTG; 5h+ HJ=mp3; 4h+ CO=cutoff.
+//
+// Safety:
+//   `*_exists` prevents reading an absolute position that does not exist at the
+//   current deal size. This file contains no poker strategy.
+// ============================================================================
+
+// Purpose: UTG exists only in a six-handed deal.
+// Source/Provenance: T/A canonical mapping.
+##f$cc_utg_exists##
+f$cc_deal_size = 6
+
+// Purpose: canonical UTG chair when it exists.
+// Source/Provenance: T OpenHoldem `utgchair`.
+##f$cc_utg_chair##
+When !f$cc_utg_exists Return -1 Force
+When Others Return utgchair Force
+
+// Purpose: HJ exists in five- or six-handed deals and maps to OpenHoldem mp3chair.
+// Source/Provenance: T/A canonical mapping.
+##f$cc_hj_exists##
+f$cc_deal_size >= 5
+
+// Purpose: canonical HJ chair.
+// Source/Provenance: T OpenHoldem `mp3chair` under CashCrusher mapping.
+##f$cc_hj_chair##
+When !f$cc_hj_exists Return -1 Force
+When Others Return mp3chair Force
+
+// Purpose: CO exists in four-, five- or six-handed deals.
+// Source/Provenance: T/A canonical mapping.
+##f$cc_co_exists##
+f$cc_deal_size >= 4
+
+// Purpose: canonical CO chair.
+// Source/Provenance: T OpenHoldem `cutoffchair`.
+##f$cc_co_chair##
+When !f$cc_co_exists Return -1 Force
+When Others Return cutoffchair Force
+
+// Purpose: compatibility name for the canonical postflop relative-position ID.
+// Source/Provenance: A alias only; canonical owner remains f$cc_relpos_id.
+##f$cc_relative_postflop_pos_id##
+f$cc_relpos_id
+
+// ============================================================================
+// End canonical chair aliases.
+// ============================================================================

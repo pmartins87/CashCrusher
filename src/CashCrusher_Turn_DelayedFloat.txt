@@ -1,0 +1,136 @@
+// ============================================================================
+// CashCrusher_Turn_DelayedFloat.txt
+// Gate 12B — canonical Turn Delayed-Float strategy router
+// ============================================================================
+// Reviewed children, strict source-first order:
+//   1  native 3wBBvSB direct-source delayed family (ISO/LP/SRP)
+//   2  4-6h ordinary SRP HU                    [P]
+//   3  4-6h ordinary SRP current multiway      [P]
+//   4  4-6h ISO HU original limper             [P]
+//   5  4-6h ISO HU post-raise coldcaller       [P]
+//   6  4-6h ISO current multiway               [P]
+//   7  4-6h plain 3BP HU caller                [P]
+//   8  4-6h plain 3BP current multiway         [P]
+//   9  4-6h squeeze HU caller                  [P]
+//   10 4-6h squeeze current multiway           [P]
+//   11 clean 4-6h HU caller-side 4BP           [P]
+//   12 4-6h unraised HU no-initiative          [P]
+//   13 4-6h unraised current multiway          [P]
+//
+// Source-negative:
+//   current true-HU HUSB missed-ISO-CBet source belongs to immediate Gate04 Float;
+//   reaching 12B is a mismatch, never a fallback strategy.
+// ============================================================================
+
+// Purpose: compact reviewed family ID.
+// Source/Provenance: P routing metadata over exact T/A/P reviewed children.
+##f$cc_turn_delayed_float_family_id##
+When !f$cc_turn_delayed_float_base_opportunity Return 0 Force
+When f$cc_turn_delayed_float_3w_bbvsb_source_covered Return 1 Force
+When f$cc_turn_delayed_float_srp6_hu_context Return 2 Force
+When f$cc_turn_delayed_float_srp6_mw_context Return 3 Force
+When f$cc_turn_delayed_float_iso_hu_limper Return 4 Force
+When f$cc_turn_delayed_float_iso_hu_coldcaller Return 5 Force
+When f$cc_turn_delayed_float_iso_mw_context Return 6 Force
+When f$cc_turn_delayed_float_plain3bp_hu_context Return 7 Force
+When f$cc_turn_delayed_float_plain3bp_mw_context Return 8 Force
+When f$cc_turn_delayed_float_squeeze_hu_context Return 9 Force
+When f$cc_turn_delayed_float_squeeze_mw_context Return 10 Force
+When f$cc_turn_delayed_float_4bp_covered Return 11 Force
+When f$cc_turn_delayed_float_unraised6_hu_context Return 12 Force
+When f$cc_turn_delayed_float_unraised6_mw_context Return 13 Force
+When Others Return 0 Force
+
+// Purpose: source-first delayed-float action router.
+// Source/Provenance: T/A direct source first, then explicit P six-max families.
+##f$cc_turn_delayed_float_router##
+When !f$cc_turn_delayed_float_base_opportunity Return false Force
+When f$cc_turn_delayed_float_3w_bbvsb_source_covered Return f$cc_turn_delayed_float_3w_bbvsb_source_action Force
+When f$cc_turn_delayed_float_unraised6_covered Return f$cc_turn_delayed_float_unraised6_action Force
+When f$cc_turn_delayed_float_srp6_covered Return f$cc_turn_delayed_float_srp6_action Force
+When f$cc_turn_delayed_float_iso_covered Return f$cc_turn_delayed_float_iso_action Force
+When f$cc_turn_delayed_float_plain3bp_covered Return f$cc_turn_delayed_float_plain3bp_action Force
+When f$cc_turn_delayed_float_squeeze_covered Return f$cc_turn_delayed_float_squeeze_action Force
+When f$cc_turn_delayed_float_4bp_covered Return f$cc_turn_delayed_float_4bp_action Force
+When Others Return false Force
+
+// Purpose: paired strategic size ID.
+// Source/Provenance: T/A/P exact child owner; check/uncovered ->0.
+##f$cc_turn_delayed_float_size_id##
+When !f$cc_turn_delayed_float_base_opportunity Return 0 Force
+When f$cc_turn_delayed_float_3w_bbvsb_source_covered Return f$cc_turn_delayed_float_3w_bbvsb_source_size_id Force
+When f$cc_turn_delayed_float_unraised6_covered Return f$cc_turn_delayed_float_unraised6_size_id Force
+When f$cc_turn_delayed_float_srp6_covered Return f$cc_turn_delayed_float_srp6_size_id Force
+When f$cc_turn_delayed_float_iso_covered Return f$cc_turn_delayed_float_iso_size_id Force
+When f$cc_turn_delayed_float_plain3bp_covered Return f$cc_turn_delayed_float_plain3bp_size_id Force
+When f$cc_turn_delayed_float_squeeze_covered Return f$cc_turn_delayed_float_squeeze_size_id Force
+When f$cc_turn_delayed_float_4bp_covered Return f$cc_turn_delayed_float_4bp_size_id Force
+When Others Return 0 Force
+
+// Purpose: all currently positive/reviewed strategy families. Source-negative HUSB
+// is deliberately excluded because it is runtime/source mismatch, not coverage.
+// Source/Provenance: P coverage metadata over exact children.
+##f$cc_turn_delayed_float_strategy_covered##
+f$cc_turn_delayed_float_3w_bbvsb_source_covered ||
+f$cc_turn_delayed_float_unraised6_covered ||
+f$cc_turn_delayed_float_srp6_covered ||
+f$cc_turn_delayed_float_iso_covered ||
+f$cc_turn_delayed_float_plain3bp_covered ||
+f$cc_turn_delayed_float_squeeze_covered ||
+f$cc_turn_delayed_float_4bp_covered
+
+// Purpose: legal delayed-float opportunity awaiting audited source/adaptation.
+// Source-negative/mismatch histories are separated below, not silently counted.
+// Source/Provenance: X fail-closed gap metadata.
+##f$cc_turn_delayed_float_uncovered_context##
+f$cc_turn_delayed_float_base_opportunity &&
+!f$cc_turn_delayed_float_strategy_covered &&
+!f$cc_turn_delayed_float_husb_reviewed_negative &&
+!f$cc_turn_delayed_float_3w_bbvsb_unexpected_check_history
+
+// Purpose: exact source topology reached X/X contrary to reviewed source behavior.
+// This is runtime/source-composition drift, never permission for a generic stab.
+// Source/Provenance: X diagnostic union.
+##f$cc_turn_delayed_float_source_mismatch##
+f$cc_turn_delayed_float_3w_bbvsb_unexpected_check_history ||
+f$cc_turn_delayed_float_husb_source_mismatch
+
+// Purpose: action/size integrity across all reviewed positive children.
+// Source/Provenance: P safety invariant; only normalized 33/50/75 are legal now.
+##f$cc_turn_delayed_float_size_consistent##
+When !f$cc_turn_delayed_float_router Return f$cc_turn_delayed_float_size_id = 0 Force
+When f$cc_turn_delayed_float_router Return f$cc_turn_delayed_float_size_id = f$cc_turn_delayed_float_size_33_id || f$cc_turn_delayed_float_size_id = f$cc_turn_delayed_float_size_50_id || f$cc_turn_delayed_float_size_id = f$cc_turn_delayed_float_size_75_id Force
+When Others Return false Force
+
+// Purpose: count coarse mutually-exclusive positive family owners.
+// Source/Provenance: P exact pot/family exclusivity metadata.
+##f$cc_turn_delayed_float_child_owner_count##
+(f$cc_turn_delayed_float_3w_bbvsb_source_covered * 1) +
+(f$cc_turn_delayed_float_unraised6_covered * 1) +
+(f$cc_turn_delayed_float_srp6_covered * 1) +
+(f$cc_turn_delayed_float_iso_covered * 1) +
+(f$cc_turn_delayed_float_plain3bp_covered * 1) +
+(f$cc_turn_delayed_float_squeeze_covered * 1) +
+(f$cc_turn_delayed_float_4bp_covered * 1)
+
+// Purpose: top-level Gate12B history/owner/size consistency.
+// Source/Provenance: P/X fail-closed composition.
+##f$cc_turn_delayed_float_router_consistent##
+When !f$cc_turn_delayed_float_history_consistent Return false Force
+When !f$cc_turn_delayed_float_3w_bbvsb_size_consistent Return false Force
+When !f$cc_turn_delayed_float_unraised6_size_consistent Return false Force
+When !f$cc_turn_delayed_float_srp6_size_consistent Return false Force
+When !f$cc_turn_delayed_float_iso_size_consistent Return false Force
+When !f$cc_turn_delayed_float_plain3bp_size_consistent Return false Force
+When !f$cc_turn_delayed_float_squeeze_size_consistent Return false Force
+When !f$cc_turn_delayed_float_4bp_size_consistent Return false Force
+When f$cc_turn_delayed_float_source_mismatch Return false Force
+When f$cc_turn_delayed_float_strategy_covered && f$cc_turn_delayed_float_child_owner_count != 1 Return false Force
+When !f$cc_turn_delayed_float_strategy_covered && f$cc_turn_delayed_float_family_id != 0 Return false Force
+When f$cc_turn_delayed_float_strategy_covered && f$cc_turn_delayed_float_family_id <= 0 Return false Force
+When !f$cc_turn_delayed_float_size_consistent Return false Force
+When Others Return true Force
+
+// ============================================================================
+// End Gate12B canonical strategy router.
+// ============================================================================

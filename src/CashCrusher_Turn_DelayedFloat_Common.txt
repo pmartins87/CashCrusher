@@ -1,0 +1,159 @@
+// ============================================================================
+// CashCrusher_Turn_DelayedFloat_Common.txt
+// Gate 12B.2 — shared Delayed-Float current-strength / source-size vocabulary
+// ============================================================================
+// Purpose:
+//   Reuse only MECHANICAL current-Turn hand/runout/sizing translations already
+//   audited for Gate12A, then expose the CLOSED Gate04 check-back snapshot needed
+//   by source-silent six-max adaptations. No Gate12A strategic action, family or
+//   frequency is inherited.
+//
+// Provenance:
+//   T/A = aliases to audited mechanical hand/runout/draw translations.
+//   A   = Gate04 CLOSED checked-back Float provenance.
+//   P   = deterministic six-max delayed-stab ingredients only.
+// ============================================================================
+
+// Purpose: current contribution-aware 2P+ tier.
+// Source/Provenance: T/A alias to the audited Gate12A mechanical hierarchy.
+##f$cc_turn_delayed_float_two_pair_plus_real##
+f$cc_turn_delayed_cbet_two_pair_plus_real
+
+// Purpose: current real TP/OP tier below 2P+.
+// Source/Provenance: T/A alias to the audited Gate12A mechanical hierarchy.
+##f$cc_turn_delayed_float_tpop_real##
+f$cc_turn_delayed_cbet_tpop_real
+
+// Purpose: current second-pair/pocket tier below TP.
+// Source/Provenance: T/A alias to the audited Gate12A mechanical hierarchy.
+##f$cc_turn_delayed_float_second_pair##
+f$cc_turn_delayed_cbet_second_pair
+
+// Purpose: current third-pair/pocket tier below second pair.
+// Source/Provenance: T/A alias to the audited Gate12A mechanical hierarchy.
+##f$cc_turn_delayed_float_third_pair##
+f$cc_turn_delayed_cbet_third_pair
+
+// Purpose: current source-compatible no-made state.
+// Source/Provenance: T/A alias to the audited Gate12A mechanical hierarchy.
+##f$cc_turn_delayed_float_no_made##
+f$cc_turn_delayed_cbet_no_made
+
+// Purpose: source Turn completion = straight or flush possible.
+// Source/Provenance: T/A alias to audited Gate12A source translation.
+##f$cc_turn_delayed_float_turn_completed##
+f$cc_turn_delayed_cbet_turn_completed
+
+// Purpose: exact legacy dead/zombie draw-safety gate.
+// Source/Provenance: T/A alias to audited Gate12A source translation.
+##f$cc_turn_delayed_float_source_draw_live_safe##
+f$cc_turn_delayed_cbet_source_draw_live_safe
+
+// Purpose: source-compatible real GS/OESD/FD with no made hand.
+// Source/Provenance: T/A canonical real-frontdoor primitives.
+##f$cc_turn_delayed_float_real_gutshot_plus##
+f$cc_turn_delayed_float_no_made &&
+(f$cc_real_gutshot || f$cc_real_oesd || f$cc_real_fd)
+
+// Purpose: live source draw eligible to continue on completed Turns.
+// Source/Provenance: T/A direct conjunction of real draw and audited safety.
+##f$cc_turn_delayed_float_live_real_draw##
+f$cc_turn_delayed_float_real_gutshot_plus &&
+f$cc_turn_delayed_float_source_draw_live_safe
+
+// -----------------------------------------------------------------------------
+// Gate04 CLOSED check-back bridge for source-silent six-max families
+// -----------------------------------------------------------------------------
+
+// Purpose: prove the flop check-back came from a reviewed Gate04 checked-to Float
+// opportunity and was actually executed cleanly, not merely planned.
+// Source/Provenance: A/T direct alias to Gate04H CLOSED history contract.
+##f$cc_turn_delayed_float_gate04_checkback_valid##
+f$cc_hist_flop_float_checkback_parent_valid
+
+// Purpose: exact reviewed Gate04 family ID captured before the flop disappeared.
+// Source/Provenance: A persistent Gate04 family decoder.
+##f$cc_turn_delayed_float_gate04_family_id##
+When !f$cc_turn_delayed_float_gate04_checkback_valid Return 0 Force
+When Others Return f$cc_hist_flop_float_family_id Force
+
+// Purpose: saved flop robust value class.
+// Source/Provenance: A/P alias to Gate04 pre-action snapshot marker.
+##f$cc_turn_delayed_float_flop_had_2pplus##
+f$cc_turn_delayed_float_gate04_checkback_valid && user_cc_flop_float_state_had_2pplus
+
+// Purpose: saved flop overpair class.
+// Source/Provenance: A/P alias to Gate04 pre-action snapshot marker.
+##f$cc_turn_delayed_float_flop_had_overpair##
+f$cc_turn_delayed_float_gate04_checkback_valid && user_cc_flop_float_state_had_overpair
+
+// Purpose: saved flop top-pair class.
+// Source/Provenance: A/P alias to Gate04 pre-action snapshot marker.
+##f$cc_turn_delayed_float_flop_had_top_pair##
+f$cc_turn_delayed_float_gate04_checkback_valid && user_cc_flop_float_state_had_top_pair
+
+// Purpose: saved flop lower-pair class.
+// Source/Provenance: A/P alias to Gate04 pre-action snapshot marker.
+##f$cc_turn_delayed_float_flop_had_lower_pair##
+f$cc_turn_delayed_float_gate04_checkback_valid && user_cc_flop_float_state_had_lower_pair
+
+// Purpose: saved flop no-made class.
+// Source/Provenance: A/P alias to Gate04 pre-action snapshot marker.
+##f$cc_turn_delayed_float_flop_had_no_made##
+f$cc_turn_delayed_float_gate04_checkback_valid && user_cc_flop_float_state_had_no_made
+
+// Purpose: saved flop real-draw class selected by Gate04 quality split.
+// Source/Provenance: A/P union of persistent premium/good-draw markers.
+##f$cc_turn_delayed_float_flop_had_real_draw##
+f$cc_turn_delayed_float_gate04_checkback_valid &&
+(user_cc_flop_float_state_had_premium_draw || user_cc_flop_float_state_had_good_draw)
+
+// Purpose: saved flop pure-air class.
+// Source/Provenance: A/P persistent Gate04 air marker.
+##f$cc_turn_delayed_float_flop_had_air##
+f$cc_turn_delayed_float_gate04_checkback_valid && user_cc_flop_float_state_had_air
+
+// Purpose: calm Turn for thin delayed value: the Turn did not newly complete a
+// straight/flush and did not create the source super-completed structure.
+// Source/Provenance: P professional thin-value filter over T/A runout facts.
+##f$cc_turn_delayed_float_thin_value_runout##
+IsTurn && !f$cc_turn_new_completion && !f$cc_turn_super_completed
+
+// Purpose: credible delayed-bluff pressure card after a flop check-back. The card
+// must be a meaningful overcard and must neither pair the flop nor newly complete
+// straight/flush topology.
+// Source/Provenance: P professional delayed-stab ingredient over T/A mechanics.
+##f$cc_turn_delayed_float_bluff_pressure_card##
+IsTurn &&
+f$cc_turn_meaningful_overcard &&
+!f$cc_turn_pairs_flop_rank &&
+!f$cc_turn_new_completion
+
+// Purpose: current strong no-made semibluff, requiring a live real draw.
+// Source/Provenance: P deterministic quality filter over T/A draw safety.
+##f$cc_turn_delayed_float_semibluff_candidate##
+f$cc_turn_delayed_float_no_made &&
+f$cc_turn_delayed_float_live_real_draw
+
+// -----------------------------------------------------------------------------
+// Normalized size aliases
+// -----------------------------------------------------------------------------
+
+// Purpose: professional one-third-pot delayed thin-value/bluff size ID.
+// Source/Provenance: P alias to Gate12A reviewed 33% normalized size; not source-exact.
+##f$cc_turn_delayed_float_size_33_id##
+f$cc_turn_delayed_cbet_size_33_id
+
+// Purpose: exact source half-pot strategic size ID.
+// Source/Provenance: T/A alias to Gate12A normalized source size.
+##f$cc_turn_delayed_float_size_50_id##
+f$cc_turn_delayed_cbet_size_50_id
+
+// Purpose: exact source three-quarter-pot strategic size ID.
+// Source/Provenance: T/A alias to Gate12A normalized source size.
+##f$cc_turn_delayed_float_size_75_id##
+f$cc_turn_delayed_cbet_size_75_id
+
+// ============================================================================
+// End Gate12B.2 common vocabulary.
+// ============================================================================

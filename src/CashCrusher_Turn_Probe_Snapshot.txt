@@ -1,0 +1,247 @@
+// ============================================================================
+// CashCrusher_Turn_Probe_Snapshot.txt
+// Gate 10A.5 / Gate 11B-D — pre-action flop provenance for later Probe streets
+// ============================================================================
+// Purpose:
+//   Persist ONLY flop facts that cannot be reconstructed once Turn/River arrives.
+//   This writer is evaluated at the canonical Flop-Donk/no-initiative decision,
+//   before Hero checks or leads. A later Probe may consume a saved fact only if
+//   CLOSED history independently proves the required executed flop action.
+//
+// Why this is necessary:
+//   Source branches distinguish what Hero held on FLOP rather than merely current
+//   Turn/River strength. Reconstructing that state after new board cards arrive
+//   would create false provenance.
+//
+// Source/Provenance:
+//   T/A = portable hand/draw/texture descriptors evaluated while IsFlop is true.
+//   A = exact DeepCrusher historical-state requirement.
+//   P = generic persistence wrapper and source-specific Gate11 candidate labels.
+//
+// Safety:
+//   Snapshot = historical observation, NOT proof of an executed check/call/check.
+//   Turn Probe still requires Gate10A CLOSED X/X history. River Probe Gate11 must
+//   independently prove CLOSED flop X/C -> turn X/X before using Gate11 flags.
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// TPS.01 — capture eligibility
+// -----------------------------------------------------------------------------
+
+// Purpose: capture only the first Hero action in a Flop Donk/no-initiative owner
+// with no bet currently facing. FIRST/MIDDLE are future Probe positions.
+// Source/Provenance: T/A current flop ownership facts.
+##f$cc_turn_probe_snapshot_capture_eligible##
+IsFlop &&
+f$cc_context_valid &&
+f$cc_flop_donk_opportunity &&
+BotsActionsOnThisRoundIncludingChecks = 0 &&
+AmountToCall = 0 &&
+(f$cc_relpos_id = 1 || f$cc_relpos_id = 2) &&
+!f$cc_pf_role_pfa &&
+!f$cc_pf_role_3bettor &&
+!f$cc_pf_role_4bettor
+
+// Purpose: no-made/no-frontdoor source-compatible air on flop.
+// Source: DeepCrusher `f$hand_Air` = NoMadeHand without Gutshot-or-better draw.
+// Source/Provenance: T/A using portable CashCrusher draw primitives.
+##f$cc_turn_probe_snapshot_flop_air##
+f$cc_turn_probe_snapshot_capture_eligible && f$cc_air_no_frontdoor
+
+// Purpose: lower pair family used by HUBB source histories.
+// Source/Provenance: A exact 3rd/4th/5th pair union from source Probe tree.
+##f$cc_turn_probe_snapshot_flop_low_pair##
+f$cc_turn_probe_snapshot_capture_eligible &&
+(f$cc_hand_third_pair_or_pocket || f$cc_hand_fourth_pair_or_pocket || f$cc_hand_fifth_pair_or_pocket)
+
+// -----------------------------------------------------------------------------
+// TPS.01R1 — Gate11 exact 3wSBvBTN source-candidate observations
+// -----------------------------------------------------------------------------
+
+// Purpose: literal native 3-handed SB caller versus BTN opener at the moment
+// before Hero's first flop check. This matches the later Gate10 source context but
+// can be evaluated while IsFlop is true.
+// Source/Provenance: A canonical reconstruction of legacy `game_3wSBvBTN`.
+##f$cc_river_probe_snapshot_3w_sbvbtn_context##
+f$cc_turn_probe_snapshot_capture_eligible &&
+f$cc_deal_size = 3 &&
+f$cc_flop_entry_count = 2 &&
+f$cc_hero_pos_id = 5 &&
+f$cc_pot_family_id = 2 &&
+f$cc_pf_one_raise_ordinary_srp &&
+f$cc_pf_role_srp_caller &&
+f$cc_pf_single_raiser_pos_id = 4
+
+// Purpose: source non-best real-draw class that is eligible to become a 3wSBvBTN
+// flop X/C marker IF closed history later proves Hero actually called.
+// Source: mature Retro11 final-action writer excludes combo draws, 2HC straight-
+// draw+2OC and one-suit FD+2OC best-draw classes.
+// Source/Provenance: T/A direct condition translated to portable OH symbols.
+##f$cc_river_probe_snapshot_3w_sbvbtn_nonbest_draw_candidate##
+When !f$cc_river_probe_snapshot_3w_sbvbtn_context Return false Force
+When !f$cc_hand_no_made Return false Force
+When !(HaveStraightDraw || HaveInsideStraightDraw || HaveFlushDraw || f$cc_real_gutshot) Return false Force
+When HaveFlushDraw && (HaveStraightDraw || HaveInsideStraightDraw) Return false Force
+When (HaveStraightDraw || HaveInsideStraightDraw) && (nstraightfillcommon - nstraightfill = 2) && Overcards = 2 Return false Force
+When HaveFlushDraw && SuitsInHand = 1 && Overcards = 2 Return false Force
+When Others Return true Force
+
+// Purpose: exact source high-air/backdoor class eligible to become a River-Probe
+// parent only after actual flop X/C is later proven.
+// Source: mature Retro11 final-action writer: A-high+BDSD OR non-A high card with
+// BDFD and at least one overcard.
+// Source/Provenance: T/A direct translation.
+##f$cc_river_probe_snapshot_3w_sbvbtn_highair_candidate##
+When !f$cc_river_probe_snapshot_3w_sbvbtn_context Return false Force
+When !f$cc_air_no_frontdoor Return false Force
+When hand$A && HaveBackdoorStraightDraw Return true Force
+When !hand$A && HaveBackdoorFlushDraw && Overcards > 0 Return true Force
+When Others Return false Force
+
+// -----------------------------------------------------------------------------
+// TPS.01R2 — Gate11 3wBBvBTN source-candidate observations
+// -----------------------------------------------------------------------------
+
+// Purpose: native 3-handed BB caller versus BTN opener, SB folded preflop.
+// Source/Provenance: A exact reconstruction of legacy `game_3wBBvBTN`.
+##f$cc_river_probe_snapshot_3w_bbvbtn_context##
+f$cc_turn_probe_snapshot_capture_eligible &&
+f$cc_deal_size = 3 &&
+f$cc_flop_entry_count = 2 &&
+f$cc_hero_pos_id = 6 &&
+f$cc_pot_family_id = 2 &&
+f$cc_pf_one_raise_ordinary_srp &&
+f$cc_pf_role_srp_caller &&
+f$cc_pf_single_raiser_pos_id = 4
+
+// Purpose: conservative mechanically provable subset of the source TP+/strong
+// final-call marker. Full CF7 non-nut straight/flush equivalence is NOT invented.
+// Source: Retro11 TP marker = NutClass/RealTrips/Set/Exact2P/OP/TP real.
+// Source/Provenance: T source region, A contribution-safe subset.
+##f$cc_river_probe_snapshot_3w_bbvbtn_made_candidate##
+When !f$cc_river_probe_snapshot_3w_bbvbtn_context Return false Force
+When HaveNuts Return true Force
+When HaveSet Return true Force
+When HaveTrips && !TripsOnBoard && npcbits > 0 Return true Force
+When HaveQuads && pokerval > pokervalcommon Return true Force
+When HaveFullHouse && pokerval > pokervalcommon Return true Force
+When HaveTwoPair && !TwoPairOnBoard Return true Force
+When HaveOverPair && PairInHand && npcbits > 0 Return true Force
+When f$cc_hand_just_top_pair && !TwoPairOnBoard && npcbits > 0 Return true Force
+When Others Return false Force
+
+// Purpose: exact portable MP/BP tiers saved by the source's dedicated MPBP marker.
+// Source: DeepCrusher `f$hand_MPBP` = second/third/fourth/fifth pair tiers.
+// Source/Provenance: T/A portable pair-ladder translation.
+##f$cc_river_probe_snapshot_3w_bbvbtn_mpbp_candidate##
+f$cc_river_probe_snapshot_3w_bbvbtn_context &&
+(f$cc_hand_second_pair_or_pocket ||
+ f$cc_hand_third_pair_or_pocket ||
+ f$cc_hand_fourth_pair_or_pocket ||
+ f$cc_hand_fifth_pair_or_pocket)
+
+// Purpose: source non-best draw final-call candidate for 3wBBvBTN.
+// Source/Provenance: T identical exclusion hierarchy to native 3wSBvBTN.
+##f$cc_river_probe_snapshot_3w_bbvbtn_nonbest_draw_candidate##
+When !f$cc_river_probe_snapshot_3w_bbvbtn_context Return false Force
+When !f$cc_hand_no_made Return false Force
+When !(HaveStraightDraw || HaveInsideStraightDraw || HaveFlushDraw || f$cc_real_gutshot) Return false Force
+When HaveFlushDraw && (HaveStraightDraw || HaveInsideStraightDraw) Return false Force
+When (HaveStraightDraw || HaveInsideStraightDraw) && (nstraightfillcommon - nstraightfill = 2) && Overcards = 2 Return false Force
+When HaveFlushDraw && SuitsInHand = 1 && Overcards = 2 Return false Force
+When Others Return true Force
+
+// Purpose: exact 3wBBvBTN high-air/backdoor final-call candidate.
+// Source/Provenance: T/A same source writer condition as 3wSBvBTN.
+##f$cc_river_probe_snapshot_3w_bbvbtn_highair_candidate##
+When !f$cc_river_probe_snapshot_3w_bbvbtn_context Return false Force
+When !f$cc_air_no_frontdoor Return false Force
+When hand$A && HaveBackdoorStraightDraw Return true Force
+When !hand$A && HaveBackdoorFlushDraw && Overcards > 0 Return true Force
+When Others Return false Force
+
+// -----------------------------------------------------------------------------
+// TPS.02 — side-effect writer
+// -----------------------------------------------------------------------------
+// The writer RETURNS TRUE only after a successful eligible capture so the Flop
+// Donk router can evaluate it in a non-terminal `Set` line and then continue to
+// its normal action Returns. It never returns an action itself.
+
+// Purpose: persist source-relevant flop class/texture snapshot.
+// Source/Provenance: T/A exact current facts; P generic persistence wrapper.
+##f$cc_turn_probe_snapshot_writer##
+When !f$cc_turn_probe_snapshot_capture_eligible Return false Force
+When f$cc_turn_probe_snapshot_capture_eligible Set user_cc_turn_probe_flop_snapshot_seen
+When f$cc_hand_top_pair_or_better Set user_cc_turn_probe_flop_had_tpplus
+When f$cc_hand_second_pair_or_pocket && !f$cc_hand_top_pair_or_better Set user_cc_turn_probe_flop_had_second_pair
+When f$cc_turn_probe_snapshot_flop_low_pair Set user_cc_turn_probe_flop_had_low_pair
+When f$cc_hand_no_made Set user_cc_turn_probe_flop_had_no_made
+When f$cc_real_fd Set user_cc_turn_probe_flop_had_real_fd
+When f$cc_real_oesd Set user_cc_turn_probe_flop_had_real_oesd
+When f$cc_real_gutshot Set user_cc_turn_probe_flop_had_real_gutshot
+When f$cc_backdoor_fd Set user_cc_turn_probe_flop_had_bdfd
+When f$cc_backdoor_sd Set user_cc_turn_probe_flop_had_bdsd
+When f$cc_turn_probe_snapshot_flop_air Set user_cc_turn_probe_flop_had_air
+When f$cc_flop_paired Set user_cc_turn_probe_flop_was_paired
+When f$cc_flop_ahigh Set user_cc_turn_probe_flop_was_ahigh
+When f$cc_flop_1bw Set user_cc_turn_probe_flop_had_1bw
+When (f$cc_flop_2bw || f$cc_flop_3bw) Set user_cc_turn_probe_flop_had_2plusbw
+When f$cc_flop_9low Set user_cc_turn_probe_flop_was_9low
+When f$cc_flop_straight_possible Set user_cc_turn_probe_flop_straight_possible
+// Gate11 3wSBvBTN source candidates.
+When f$cc_river_probe_snapshot_3w_sbvbtn_nonbest_draw_candidate Set user_cc_river_probe_flop_3w_sbvbtn_nonbest_draw_candidate
+When f$cc_river_probe_snapshot_3w_sbvbtn_highair_candidate Set user_cc_river_probe_flop_3w_sbvbtn_highair_candidate
+// Gate11 3wBBvBTN source candidates; closed X/C remains mandatory on River.
+When f$cc_river_probe_snapshot_3w_bbvbtn_made_candidate Set user_cc_river_probe_flop_3w_bbvbtn_made_candidate
+When f$cc_river_probe_snapshot_3w_bbvbtn_mpbp_candidate Set user_cc_river_probe_flop_3w_bbvbtn_mpbp_candidate
+When f$cc_river_probe_snapshot_3w_bbvbtn_nonbest_draw_candidate Set user_cc_river_probe_flop_3w_bbvbtn_nonbest_draw_candidate
+When f$cc_river_probe_snapshot_3w_bbvbtn_highair_candidate Set user_cc_river_probe_flop_3w_bbvbtn_highair_candidate
+When Others Return true Force
+
+// -----------------------------------------------------------------------------
+// TPS.03 — Turn-side validation/decoders
+// -----------------------------------------------------------------------------
+
+// Purpose: snapshot becomes trustworthy for Turn Probe only after CLOSED flop
+// history proves Hero's planned/check-capable node actually checked through.
+// Source/Provenance: A/T cross-street provenance contract.
+##f$cc_turn_probe_snapshot_valid##
+IsTurn &&
+f$cc_hist_turn_probe_flop_checkthrough_clean &&
+user_cc_turn_probe_flop_snapshot_seen
+
+// Purpose: decode saved flop TP+ only under validated Turn-Probe history.
+// Source/Provenance: T/A persisted flop class + closed history.
+##f$cc_turn_probe_flop_had_tpplus##
+f$cc_turn_probe_snapshot_valid && user_cc_turn_probe_flop_had_tpplus
+
+// Purpose: decode saved flop second-pair class only under validated history.
+// Source/Provenance: T/A persisted flop class + closed history.
+##f$cc_turn_probe_flop_had_second_pair##
+f$cc_turn_probe_snapshot_valid && user_cc_turn_probe_flop_had_second_pair
+
+// Purpose: decode saved flop lower-pair class only under validated history.
+// Source/Provenance: T/A persisted flop class + closed history.
+##f$cc_turn_probe_flop_had_low_pair##
+f$cc_turn_probe_snapshot_valid && user_cc_turn_probe_flop_had_low_pair
+
+// Purpose: decode saved flop air class only under validated history.
+// Source/Provenance: T/A persisted flop class + closed history.
+##f$cc_turn_probe_flop_had_air##
+f$cc_turn_probe_snapshot_valid && user_cc_turn_probe_flop_had_air
+
+// Purpose: decode any saved real frontdoor flop draw under validated history.
+// Source/Provenance: T/A persisted draw facts + closed history.
+##f$cc_turn_probe_flop_had_frontdoor_draw##
+f$cc_turn_probe_snapshot_valid &&
+(user_cc_turn_probe_flop_had_real_fd || user_cc_turn_probe_flop_had_real_oesd || user_cc_turn_probe_flop_had_real_gutshot)
+
+// Purpose: decode saved flop backdoor equity under validated history.
+// Source/Provenance: T/A persisted backdoor facts + closed history.
+##f$cc_turn_probe_flop_had_backdoor##
+f$cc_turn_probe_snapshot_valid &&
+(user_cc_turn_probe_flop_had_bdfd || user_cc_turn_probe_flop_had_bdsd)
+
+// ============================================================================
+// End shared Probe snapshot contract.
+// ============================================================================

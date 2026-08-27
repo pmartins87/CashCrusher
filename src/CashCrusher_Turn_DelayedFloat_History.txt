@@ -1,0 +1,112 @@
+// ============================================================================
+// CashCrusher_Turn_DelayedFloat_History.txt
+// Gate 12B.1 — canonical Turn Delayed-Float ownership from CLOSED flop X/X
+// ============================================================================
+// Purpose:
+//   Own the first Turn decision after Hero had NO flop initiative, acted LAST on
+//   a checked-to flop, actually checked back, and the Turn again checks to Hero.
+//   This is distinct from Gate12A Delayed CBet (Hero had initiative) and Gate10
+//   Probe (no initiative, but Hero acts FIRST/MIDDLE on Turn).
+//
+// Source routing:
+//   Crusher Framework 5 `f$turn_Raise_Noaction` first evaluates
+//     [Position = First || Position = Middle]
+//   and sends no-initiative states to Probe. Only the subsequent LAST branch can
+//   reach `f$move_turn_Delayed_FloatBet`. Although the second textual condition
+//   also spells `|| Position = Middle`, that Middle is unreachable because the
+//   preceding ternary has already consumed it. CashCrusher therefore uses exact
+//   LAST (`f$cc_relpos_id = 3`) rather than widening 12B to MIDDLE.
+//
+// Provenance:
+//   T = CLOSED flop check-through counters + current first-Turn-action facts.
+//   A = Framework initiative/position routing and Gate10 role taxonomy.
+//   P = explicit 2-6h pot-family and field-origin firewalls.
+// ============================================================================
+
+// Purpose: Hero owns no audited preflop/flop initiative in a supported family.
+// Source/Provenance: A/P same mechanical role split used by Gate10 Probe, kept
+// local so 12B ownership does not depend on a strategy child from another node.
+##f$cc_turn_delayed_float_preflop_noinitiative##
+When f$cc_pot_family_id <= 0 Return false Force
+When f$cc_pot_family_id >= 5 Return false Force
+When f$cc_pf_role_pfa Return false Force
+When f$cc_pf_role_3bettor Return false Force
+When f$cc_pf_role_4bettor Return false Force
+When f$cc_native_limped_initiative Return false Force
+When f$cc_pf_role_srp_caller Return true Force
+When f$cc_pf_role_open_call_3bet Return true Force
+When f$cc_pf_role_cold_call_3bet Return true Force
+When f$cc_pf_role_call_4bet Return true Force
+When f$cc_pf_role_unraised_caller Return true Force
+When f$cc_pf_role_bb_check Return true Force
+When Others Return false Force
+
+// Purpose: first Hero Turn decision, checked to Hero, with Hero exact LAST.
+// Source/Provenance: T current action facts + A Framework routing precedence.
+##f$cc_turn_delayed_float_first_turn_action_clean##
+IsTurn &&
+BotsActionsOnThisRoundIncludingChecks = 0 &&
+AmountToCall = 0 &&
+balance > 0 &&
+f$cc_relpos_id = 3
+
+// Purpose: canonical Gate12B owner after an ACTUAL flop check-through.
+// `f$cc_hist_turn_probe_flop_checkthrough_clean` is a node-neutral mechanical
+// CLOSED-history proof despite its historical Gate10 name: Hero checked exactly
+// once, no flop aggression occurred, and the field did not change.
+// Source/Provenance: T/A/P exact delayed-float routing.
+##f$cc_turn_delayed_float_base_opportunity##
+When !f$cc_context_valid Return false Force
+When !f$cc_turn_delayed_float_first_turn_action_clean Return false Force
+When !f$cc_hist_turn_probe_flop_checkthrough_clean Return false Force
+When !f$cc_turn_delayed_float_preflop_noinitiative Return false Force
+When Others Return true Force
+
+// Purpose: current HU owner; origin remains separately visible.
+// Source/Provenance: T/A field split over canonical 12B history.
+##f$cc_turn_delayed_float_hu_opportunity##
+f$cc_turn_delayed_float_base_opportunity && f$cc_hu
+
+// Purpose: current multiway exact-LAST delayed-float owner.
+// Source/Provenance: T/A Framework has no HU-only restriction on this route.
+##f$cc_turn_delayed_float_multiway_opportunity##
+f$cc_turn_delayed_float_base_opportunity && f$cc_multiway
+
+// Purpose: check-through cannot reduce the field postflop before this Turn.
+// Source/Provenance: T/P cross-street invariant.
+##f$cc_turn_delayed_float_postflop_reduced_hu_impossible##
+f$cc_turn_delayed_float_hu_opportunity && f$cc_hu_origin_postflop_reduced
+
+// Purpose: stable field-origin metadata: 1 true HU, 2 preflop-reduced HU,
+// 3 current multiway. Postflop-reduced HU is deliberately absent.
+// Source/Provenance: P metadata over T handedness history.
+##f$cc_turn_delayed_float_field_origin_id##
+When !f$cc_turn_delayed_float_base_opportunity Return 0 Force
+When f$cc_turn_delayed_float_hu_opportunity && f$cc_true_hu Return 1 Force
+When f$cc_turn_delayed_float_hu_opportunity && f$cc_hu_origin_preflop_reduced Return 2 Force
+When f$cc_turn_delayed_float_multiway_opportunity Return 3 Force
+When Others Return 0 Force
+
+// Purpose: explicit anti-overlap with Gate10 Probe.
+// Source/Provenance: P invariant over exact LAST vs FIRST/MIDDLE ownership.
+##f$cc_turn_delayed_float_probe_overlap##
+f$cc_turn_delayed_float_base_opportunity && f$cc_turn_probe_base_opportunity
+
+// Purpose: explicit anti-overlap with Gate12A Delayed CBet.
+// Source/Provenance: P invariant over mutually-exclusive initiative ownership.
+##f$cc_turn_delayed_float_delayed_cbet_overlap##
+f$cc_turn_delayed_float_base_opportunity && f$cc_turn_delayed_cbet_base_opportunity
+
+// Purpose: top-level ownership consistency before any strategy child may fire.
+// Source/Provenance: P fail-closed safety composition.
+##f$cc_turn_delayed_float_history_consistent##
+When f$cc_turn_delayed_float_postflop_reduced_hu_impossible Return false Force
+When f$cc_turn_delayed_float_probe_overlap Return false Force
+When f$cc_turn_delayed_float_delayed_cbet_overlap Return false Force
+When f$cc_turn_delayed_float_base_opportunity && f$cc_turn_delayed_float_field_origin_id <= 0 Return false Force
+When f$cc_turn_delayed_float_base_opportunity && !f$cc_turn_delayed_float_preflop_noinitiative Return false Force
+When Others Return true Force
+
+// ============================================================================
+// End Gate12B.1 ownership/history.
+// ============================================================================

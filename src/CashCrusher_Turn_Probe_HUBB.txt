@@ -1,0 +1,130 @@
+// ============================================================================
+// CashCrusher_Turn_Probe_HUBB.txt
+// Gate 10B.1 — true-HU HUBB Turn Probe, newest source-first tree
+// ============================================================================
+// Purpose:
+//   Transplant the newest audited HUBB flop-X/X -> Turn Probe policy only into
+//   literal true-HU BB-versus-SB/Button geometry.
+//
+// Source:
+//   DeepCrusher `f$move_turn_Probe` newest NOVO CRUSHFEST HUBB tree, cross-checked
+//   against Starting Strategy "AFTER FLOP X/X - PROBE OPPORTUNITY".
+//
+// Provenance:
+//   T = direct current hand/board/source sizes where mechanically equivalent.
+//   A = old `Gutshot_or_BetterFDSD` translated to cleaned real-frontdoor draw;
+//       old game_HUBB translated to exact true-HU position/history context.
+//   X = any generic short-stack stackoff/promotion not present in this node.
+//
+// Critical source behavior:
+//   * TP+ probes 50 ONLY on broad source `turn_Completed`; otherwise CHECK.
+//   * 2nd pair probes 50; 3rd/4th/5th pair uses source `TurnMin`.
+//   * live no-made frontdoor draws probe 50.
+//   * air is exception-first: completed, unpaired <=9-high and unpaired strict
+//     overcard turns CHECK; remaining air probes 50.
+//
+// Safety:
+//   This is only the initial Turn lead. Response to XR and River plan are later
+//   owners. `TurnMin` is preserved symbolically, not approximated as 25/33%.
+// ============================================================================
+
+// Purpose: exact literal source ancestry.
+// Source/Provenance: A/T true-HU replacement for legacy `f$game_HUBB`.
+##f$cc_turn_probe_hubb_context##
+f$cc_turn_probe_hu_opportunity &&
+f$cc_true_hu &&
+f$cc_flop_entry_count = 2 &&
+f$cc_hero_pos_id = 6 &&
+f$cc_hu_villain_pos_id = 5 &&
+(f$cc_pot_family_id = 1 || f$cc_pot_family_id = 2)
+
+// Purpose: source TP+ completed-turn positive branch.
+// Source/Provenance: T/A exact newest NCF condition.
+##f$cc_turn_probe_hubb_tpplus_completed##
+f$cc_turn_probe_hubb_context &&
+f$cc_turn_probe_tpplus &&
+f$cc_turn_completed
+
+// Purpose: source TP+ non-completed explicit check branch.
+// Source/Provenance: T/A exact newest NCF negative action.
+##f$cc_turn_probe_hubb_tpplus_check##
+f$cc_turn_probe_hubb_context &&
+f$cc_turn_probe_tpplus &&
+!f$cc_turn_completed
+
+// Purpose: source air exception: broad completed structure checks.
+// Source/Provenance: T/A exact NCF branch.
+##f$cc_turn_probe_hubb_air_check_completed##
+f$cc_turn_probe_hubb_context && f$cc_turn_probe_air && f$cc_turn_completed
+
+// Purpose: source air exception: unpaired current board <=9-high checks.
+// Source: `!PairOnBoard && rankhicommon <= 9`.
+// Provenance: T direct current board fact.
+##f$cc_turn_probe_hubb_air_check_low_unpaired##
+f$cc_turn_probe_hubb_context &&
+f$cc_turn_probe_air &&
+!PairOnBoard &&
+rankhicommon <= 9
+
+// Purpose: source air exception: unpaired strict Turn board-overcard checks.
+// Source: `!PairOnBoard && TurnCardIsOvercardToBoard`.
+// Provenance: T direct runtime fact.
+##f$cc_turn_probe_hubb_air_check_overcard##
+f$cc_turn_probe_hubb_context &&
+f$cc_turn_probe_air &&
+!PairOnBoard &&
+TurnCardIsOvercardToBoard > 0
+
+// Purpose: any source air check exception.
+// Source/Provenance: A union of direct NCF negative branches.
+##f$cc_turn_probe_hubb_air_check##
+f$cc_turn_probe_hubb_air_check_completed ||
+f$cc_turn_probe_hubb_air_check_low_unpaired ||
+f$cc_turn_probe_hubb_air_check_overcard
+
+// Purpose: source remaining-air Probe50 branch after exception precedence.
+// Source/Provenance: T/A exact NCF fallback inside HUBB only.
+##f$cc_turn_probe_hubb_air_probe##
+f$cc_turn_probe_hubb_context &&
+f$cc_turn_probe_air &&
+!f$cc_turn_probe_hubb_air_check
+
+// Purpose: canonical HUBB action preserving source precedence.
+// Source/Provenance: T/A direct source strategy.
+##f$cc_turn_probe_hubb_action##
+When !f$cc_turn_probe_hubb_context Return false Force
+When f$cc_turn_probe_hubb_tpplus_completed Return true Force
+When f$cc_turn_probe_hubb_tpplus_check Return false Force
+When f$cc_turn_probe_second_pair Return true Force
+When f$cc_turn_probe_low_pair Return true Force
+When f$cc_turn_probe_live_frontdoor_draw Return true Force
+When f$cc_turn_probe_hubb_air_check Return false Force
+When f$cc_turn_probe_hubb_air_probe Return true Force
+When Others Return false Force
+
+// Purpose: paired source size owner.
+// Source/Provenance: T/A newest HUBB table; MIN remains exact symbolic source size.
+##f$cc_turn_probe_hubb_size_id##
+When !f$cc_turn_probe_hubb_action Return 0 Force
+When f$cc_turn_probe_hubb_tpplus_completed Return f$cc_turn_probe_size_50_id Force
+When f$cc_turn_probe_second_pair Return f$cc_turn_probe_size_50_id Force
+When f$cc_turn_probe_low_pair Return f$cc_turn_probe_size_min_id Force
+When f$cc_turn_probe_live_frontdoor_draw Return f$cc_turn_probe_size_50_id Force
+When f$cc_turn_probe_hubb_air_probe Return f$cc_turn_probe_size_50_id Force
+When Others Return 0 Force
+
+// Purpose: literal HUBB context is fully source-reviewed, including explicit checks.
+// Source/Provenance: T/A complete newest HUBB branch coverage.
+##f$cc_turn_probe_hubb_covered##
+f$cc_turn_probe_hubb_context
+
+// Purpose: action/size consistency.
+// Source/Provenance: P invariant around direct source child.
+##f$cc_turn_probe_hubb_size_consistent##
+When !f$cc_turn_probe_hubb_action Return f$cc_turn_probe_hubb_size_id = 0 Force
+When f$cc_turn_probe_hubb_action Return f$cc_turn_probe_hubb_size_id >= 1 && f$cc_turn_probe_hubb_size_id <= 6 Force
+When Others Return false Force
+
+// ============================================================================
+// End Gate10B.1 HUBB source strategy.
+// ============================================================================

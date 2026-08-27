@@ -1,0 +1,106 @@
+// ============================================================================
+// CashCrusher_Turn_4BP_Context.txt
+// Gate 02I.0 — clean HU four-bet-pot Turn-CBet provenance
+// ============================================================================
+// Purpose:
+//   Admit only clean 4BP families that already had supported flop-HU CBet
+//   ownership and now reach turn after an ACTUAL standard flop CBet.
+//
+// Source/Provenance:
+//   T/A = Gate01 clean 4BP subtype/survivor + Gate01N executed flop history.
+//   P   = turn range-family/selection metadata for deep cash.
+//
+// Safety:
+//   Multiway 4BP, postflop-reduced HU from a multiway 4BP flop, other-caller
+//   survivor, reversed/backraise/limp-reraise and 5bet+ remain unsupported.
+// ============================================================================
+
+// Purpose: generic clean 4BP Turn-CBet context.
+// Source/Provenance: A/T exact role/pot/history gate.
+##f$cc_turn_4bp_context##
+f$cc_turn_cbet_4bp_context &&
+f$cc_pf_4bet_subtype_id > 0 &&
+f$cc_hu &&
+!f$cc_hu_origin_postflop_reduced &&
+f$cc_hu_4bp_survivor_consistent &&
+f$cc_hu_4bp_survivor_type_id > 0 &&
+f$cc_hu_4bp_survivor_type_id < 3 &&
+f$cc_turn_cbet_hu_spr_valid
+
+// Purpose: true-HU standard SB/Button opener4 versus BB 3bettor-call.
+// Source/Provenance: T/A exact true-HU clean topology.
+##f$cc_turn_4bp_truehu_opener4_vs_threebettor##
+f$cc_turn_4bp_context &&
+f$cc_true_hu &&
+f$cc_pf_4bet_standard_opener4_proven &&
+f$cc_hu_4bp_villain_is_threebettor &&
+f$cc_hu_ip
+
+// Purpose: reduced-HU opener4 versus original 3bettor-call.
+// Source/Provenance: A/P exact six-max clean family.
+##f$cc_turn_4bp_opener4_vs_threebettor##
+f$cc_turn_4bp_context &&
+f$cc_hu_origin_preflop_reduced &&
+f$cc_pf_4bet_standard_opener4_proven &&
+f$cc_hu_4bp_villain_is_threebettor
+
+// Purpose: reduced-HU cold4 versus original opener-call.
+// Source/Provenance: P strong/condensed continuation family.
+##f$cc_turn_4bp_cold4_vs_opener##
+f$cc_turn_4bp_context &&
+f$cc_hu_origin_preflop_reduced &&
+f$cc_pf_4bet_standard_cold4_proven &&
+f$cc_hu_4bp_villain_is_opener
+
+// Purpose: reduced-HU cold4 versus original 3bettor-call.
+// Source/Provenance: P selected original-3bettor continuation family.
+##f$cc_turn_4bp_cold4_vs_threebettor##
+f$cc_turn_4bp_context &&
+f$cc_hu_origin_preflop_reduced &&
+f$cc_pf_4bet_standard_cold4_proven &&
+f$cc_hu_4bp_villain_is_threebettor
+
+// Purpose: stable clean 4BP turn family ID:
+// 1 trueHU opener4-v-3bettor | 2 reduced opener4-v-3bettor |
+// 3 cold4-v-opener | 4 cold4-v-3bettor | 0 unsupported.
+// Source/Provenance: P routing metadata over T/A exact contexts.
+##f$cc_turn_4bp_family_id##
+When f$cc_turn_4bp_truehu_opener4_vs_threebettor Return 1 Force
+When f$cc_turn_4bp_opener4_vs_threebettor Return 2 Force
+When f$cc_turn_4bp_cold4_vs_opener Return 3 Force
+When f$cc_turn_4bp_cold4_vs_threebettor Return 4 Force
+When Others Return 0 Force
+
+// Purpose: strongest selected-range flag in clean 4BP family.
+// Source/Provenance: P; cold4 continuation is treated more condensed than
+// ordinary opener4-v-3bettor, and a large flop CBet further selects.
+##f$cc_turn_4bp_strong_selection##
+f$cc_turn_4bp_context &&
+(f$cc_pf_4bet_standard_cold4_proven || f$cc_hist_flop_cbet_plan_size_id >= 3)
+
+// Purpose: current HU 4BP SPR below 1.
+// Source/Provenance: T/P geometry descriptor; no automatic stackoff action.
+##f$cc_turn_4bp_spr_below_1##
+f$cc_turn_4bp_context && f$cc_spr_round_start >= 0 && f$cc_spr_round_start < 1
+
+// Purpose: current HU 4BP SPR below 1.5.
+// Source/Provenance: T/P geometry descriptor; not a global jam threshold.
+##f$cc_turn_4bp_spr_below_15##
+f$cc_turn_4bp_context && f$cc_spr_round_start >= 0 && f$cc_spr_round_start < 1.5
+
+// Purpose: current HU 4BP SPR below 2.
+// Source/Provenance: T/P geometry descriptor only.
+##f$cc_turn_4bp_spr_below_2##
+f$cc_turn_4bp_context && f$cc_spr_round_start >= 0 && f$cc_spr_round_start < 2
+
+// Purpose: final consistency: exactly one supported family owns current 4BP turn.
+// Source/Provenance: P fail-closed invariant.
+##f$cc_turn_4bp_context_consistent##
+When !f$cc_turn_4bp_context Return false Force
+When (f$cc_turn_4bp_truehu_opener4_vs_threebettor + f$cc_turn_4bp_opener4_vs_threebettor + f$cc_turn_4bp_cold4_vs_opener + f$cc_turn_4bp_cold4_vs_threebettor) != 1 Return false Force
+When f$cc_turn_4bp_family_id <= 0 Return false Force
+When Others Return true Force
+
+// ============================================================================
+// End Gate 02I.0.
+// ============================================================================

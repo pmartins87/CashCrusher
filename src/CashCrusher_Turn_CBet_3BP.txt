@@ -1,0 +1,179 @@
+// ============================================================================
+// CashCrusher_Turn_CBet_3BP.txt
+// Gate 02G — plain 3-bet-pot Turn CBet
+// ============================================================================
+// Source boundary: no dedicated deep-stack 3BP second-barrel tree exists in the
+// Spin source. Exact policy is P-heavy, constrained by A current-strength/IP-OOP/
+// runout/check-range principles. Opener-call and post-3bet coldcaller stay distinct.
+// TP/OP betting is never stack-off permission. No BetMax lives here.
+// ============================================================================
+
+// Purpose: dangerous/completed 3BP turn for one-pair value.
+// Source/Provenance: A runout caution + P 3BP application.
+##f$cc_turn_plain3bp_dangerous_runout##
+f$cc_turn_new_completion || f$cc_turn_four_card_straight_or_flush || f$cc_turn_super_completed
+
+// Purpose: clean plain3BP turn.
+// Source/Provenance: A/P complement of dangerous runout.
+##f$cc_turn_plain3bp_clean_turn##
+!f$cc_turn_plain3bp_dangerous_runout
+
+// Purpose: clean A/K range-pressure turn.
+// Source/Provenance: P 3bettor range-advantage selector; no action alone.
+##f$cc_turn_plain3bp_high_pressure_turn##
+f$cc_turn_plain3bp_clean_turn && f$cc_turn_overcard_to_flop && !f$cc_turn_pairs_flop_rank && (f$cc_turn_is_ace || f$cc_turn_is_king)
+
+// -----------------------------------------------------------------------------
+// P3.01 — HU versus ORIGINAL OPENER-CALL
+// -----------------------------------------------------------------------------
+
+// Purpose: P-heavy plain3BP second barrel versus original opener-call.
+// Source: A generic DeepCrusher second-barrel architecture only; no dedicated
+// 3BP frequency source.
+// Provenance: P professional deep-stack 3BP fill.
+// Logic: robust value broad; clean OP/strong TP remain value; medium TP and good
+// draws are IP/selection-sensitive; premium draws continue; narrow IP air uses
+// high-pressure turns after a small quality-air flop plan.
+// Safety: low natural 3BP SPR influences exact conditions but does not create TP+ jam.
+##f$cc_turn_plain3bp_hu_opener_action##
+When !f$cc_turn_plain3bp_hu_context_consistent Return false Force
+When !f$cc_turn_plain3bp_hu_vs_opener Return false Force
+When f$cc_hand_trips_or_better Return true Force
+When HaveTwoPair && f$cc_turn_four_card_straight_or_flush && f$cc_turn_cbet_hu_high_spr Return false Force
+When HaveTwoPair Return true Force
+When f$cc_turn_cbet_overpair && f$cc_turn_plain3bp_dangerous_runout && f$cc_turn_cbet_hu_high_spr Return false Force
+When f$cc_turn_cbet_overpair Return true Force
+When f$cc_turn_cbet_strong_top_pair && f$cc_turn_plain3bp_dangerous_runout && f$cc_turn_cbet_hu_high_spr Return false Force
+When f$cc_turn_cbet_strong_top_pair Return true Force
+When f$cc_turn_cbet_medium_top_pair && f$cc_hu_ip && f$cc_turn_plain3bp_clean_turn && !f$cc_turn_plain3bp_hu_strong_selection Return true Force
+When f$cc_turn_cbet_medium_top_pair && f$cc_pair_plus_draw && !f$cc_turn_super_completed && !f$cc_turn_plain3bp_hu_postmw_origin Return true Force
+When f$cc_turn_cbet_medium_top_pair Return false Force
+When f$cc_turn_cbet_weak_top_pair Return false Force
+When f$cc_turn_cbet_second_pair Return false Force
+When f$cc_turn_cbet_third_or_worse_pair Return false Force
+When f$cc_hand_no_made && f$cc_turn_cbet_premium_draw && !f$cc_turn_super_completed Return true Force
+When f$cc_hand_no_made && f$cc_turn_cbet_good_draw && f$cc_hu_ip && f$cc_turn_plain3bp_high_pressure_turn && !f$cc_turn_plain3bp_hu_strong_selection Return true Force
+When f$cc_hand_no_made && f$cc_real_frontdoor_draw Return false Force
+When f$cc_turn_cbet_air && f$cc_hu_ip && !f$cc_turn_plain3bp_hu_strong_selection && user_cc_flop_cbet_had_quality_air && f$cc_hist_flop_cbet_plan_size_id = 1 && f$cc_turn_plain3bp_high_pressure_turn Return true Force
+When Others Return false Force
+
+// Purpose: plain3BP opener-call HU turn sizing.
+// Source/Provenance: P 33/50/75 map informed by lower-SPR 3BP geometry.
+##f$cc_turn_plain3bp_hu_opener_size_id##
+When !f$cc_turn_plain3bp_hu_opener_action Return 0 Force
+When f$cc_hand_trips_or_better Return f$cc_turn_size_75_id Force
+When HaveTwoPair && f$cc_turn_plain3bp_dangerous_runout Return f$cc_turn_size_50_id Force
+When HaveTwoPair Return f$cc_turn_size_75_id Force
+When f$cc_turn_cbet_overpair Return f$cc_turn_size_50_id Force
+When f$cc_turn_cbet_strong_top_pair Return f$cc_turn_size_50_id Force
+When f$cc_turn_cbet_medium_top_pair Return f$cc_turn_size_33_id Force
+When f$cc_hand_no_made && f$cc_turn_cbet_premium_draw Return f$cc_turn_size_75_id Force
+When f$cc_hand_no_made && f$cc_turn_cbet_good_draw Return f$cc_turn_size_50_id Force
+When f$cc_turn_cbet_air Return f$cc_turn_size_50_id Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// P3.02 — HU versus POST-3BET COLD CALLER
+// -----------------------------------------------------------------------------
+
+// Purpose: P-heavy second barrel versus a selected post-3bet coldcaller range.
+// Source: no dedicated DeepCrusher source.
+// Provenance: P, intentionally tighter than opener-call family.
+// Logic: medium/weak TP and marginal draws check; robust value persists; premium
+// draws barrel primarily IP/clean. Pure air is omitted in first deterministic baseline.
+##f$cc_turn_plain3bp_hu_coldcaller_action##
+When !f$cc_turn_plain3bp_hu_context_consistent Return false Force
+When !f$cc_turn_plain3bp_hu_vs_coldcaller Return false Force
+When f$cc_hand_trips_or_better Return true Force
+When HaveTwoPair && f$cc_turn_plain3bp_dangerous_runout && f$cc_turn_cbet_hu_high_spr Return false Force
+When HaveTwoPair Return true Force
+When f$cc_turn_cbet_overpair && f$cc_turn_plain3bp_dangerous_runout Return false Force
+When f$cc_turn_cbet_overpair && f$cc_hu_ip Return true Force
+When f$cc_turn_cbet_overpair && f$cc_hu_oop && !f$cc_turn_cbet_hu_high_spr && f$cc_turn_plain3bp_clean_turn Return true Force
+When f$cc_turn_cbet_overpair Return false Force
+When f$cc_turn_cbet_strong_top_pair && f$cc_hu_ip && f$cc_turn_plain3bp_clean_turn Return true Force
+When f$cc_turn_cbet_strong_top_pair && f$cc_hu_oop && f$cc_pair_plus_draw && !f$cc_turn_super_completed && !f$cc_turn_cbet_hu_high_spr Return true Force
+When f$cc_turn_cbet_top_pair Return false Force
+When f$cc_turn_cbet_second_pair Return false Force
+When f$cc_turn_cbet_third_or_worse_pair Return false Force
+When f$cc_hand_no_made && f$cc_turn_cbet_premium_draw && f$cc_hu_ip && !f$cc_turn_super_completed Return true Force
+When f$cc_hand_no_made && f$cc_turn_cbet_premium_draw && f$cc_hu_oop && f$cc_turn_plain3bp_high_pressure_turn && !f$cc_turn_plain3bp_hu_postmw_origin Return true Force
+When f$cc_hand_no_made && f$cc_real_frontdoor_draw Return false Force
+When f$cc_turn_cbet_air Return false Force
+When Others Return false Force
+
+// Purpose: post-3bet-coldcaller HU turn size map.
+// Source/Provenance: P conservative 50/75 map.
+##f$cc_turn_plain3bp_hu_coldcaller_size_id##
+When !f$cc_turn_plain3bp_hu_coldcaller_action Return 0 Force
+When f$cc_hand_trips_or_better Return f$cc_turn_size_75_id Force
+When HaveTwoPair && f$cc_turn_plain3bp_dangerous_runout Return f$cc_turn_size_50_id Force
+When HaveTwoPair Return f$cc_turn_size_75_id Force
+When f$cc_turn_cbet_overpair Return f$cc_turn_size_50_id Force
+When f$cc_turn_cbet_strong_top_pair Return f$cc_turn_size_50_id Force
+When f$cc_hand_no_made && f$cc_turn_cbet_premium_draw Return f$cc_turn_size_75_id Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// P3.03 — MULTIWAY plain3BP
+// -----------------------------------------------------------------------------
+
+// Purpose: value-heavy plain3BP second-barrel policy while 2+ opponents remain.
+// Source: no dedicated source; mature multiway selectivity supplies A constraint.
+// Provenance: P-heavy.
+// Logic: trips+/clean two-pair primary value; OP/strong TP only LAST and with
+// favorable composition/deepest-SPR; premium draws mostly LAST; no pure air.
+##f$cc_turn_plain3bp_mw_action##
+When !f$cc_turn_plain3bp_mw_context_consistent Return false Force
+When f$cc_hand_trips_or_better && !f$cc_turn_super_completed Return true Force
+When f$cc_hand_trips_or_better && f$cc_turn_super_completed && f$cc_turn_plain3bp_mw_all_effective_spr_below_3 Return true Force
+When HaveTwoPair && f$cc_turn_plain3bp_clean_turn Return true Force
+When HaveTwoPair && f$cc_turn_plain3bp_dangerous_runout && f$cc_turn_plain3bp_mw_all_effective_spr_below_3 Return true Force
+When HaveTwoPair Return false Force
+When f$cc_turn_cbet_overpair && f$cc_multiway_rel_last && f$cc_turn_plain3bp_clean_turn && f$cc_turn_plain3bp_mw_comp_id = 1 && f$cc_turn_plain3bp_mw_all_effective_spr_below_4 Return true Force
+When f$cc_turn_cbet_overpair Return false Force
+When f$cc_turn_cbet_strong_top_pair && f$cc_multiway_rel_last && f$cc_turn_plain3bp_clean_turn && f$cc_turn_plain3bp_mw_comp_id = 1 && f$cc_turn_plain3bp_mw_all_effective_spr_below_3 Return true Force
+When f$cc_turn_cbet_top_pair Return false Force
+When f$cc_turn_cbet_second_pair Return false Force
+When f$cc_turn_cbet_third_or_worse_pair Return false Force
+When f$cc_hand_no_made && f$cc_turn_cbet_premium_draw && f$cc_multiway_rel_last && f$cc_turn_plain3bp_clean_turn && f$cc_turn_plain3bp_mw_comp_id = 1 Return true Force
+When f$cc_real_frontdoor_draw Return false Force
+When f$cc_turn_cbet_air Return false Force
+When Others Return false Force
+
+// Purpose: multiway plain3BP turn size map.
+// Source/Provenance: P value-heavy 50/75 sizing.
+##f$cc_turn_plain3bp_mw_size_id##
+When !f$cc_turn_plain3bp_mw_action Return 0 Force
+When f$cc_hand_trips_or_better Return f$cc_turn_size_75_id Force
+When HaveTwoPair && f$cc_turn_plain3bp_dangerous_runout Return f$cc_turn_size_50_id Force
+When HaveTwoPair Return f$cc_turn_size_75_id Force
+When f$cc_turn_cbet_overpair Return f$cc_turn_size_50_id Force
+When f$cc_turn_cbet_strong_top_pair Return f$cc_turn_size_50_id Force
+When f$cc_hand_no_made && f$cc_turn_cbet_premium_draw Return f$cc_turn_size_75_id Force
+When Others Return 0 Force
+
+// Purpose: exact plain3BP Turn-CBet action dispatcher.
+// Source/Provenance: P/A exact survivor/composition router.
+##f$cc_turn_plain3bp_action##
+When f$cc_turn_plain3bp_hu_vs_opener && f$cc_turn_plain3bp_hu_context_consistent Return f$cc_turn_plain3bp_hu_opener_action Force
+When f$cc_turn_plain3bp_hu_vs_coldcaller && f$cc_turn_plain3bp_hu_context_consistent Return f$cc_turn_plain3bp_hu_coldcaller_action Force
+When f$cc_turn_plain3bp_mw_context_consistent Return f$cc_turn_plain3bp_mw_action Force
+When Others Return false Force
+
+// Purpose: paired plain3BP Turn size dispatcher.
+// Source/Provenance: P/A safety router; uncovered/check -> 0.
+##f$cc_turn_plain3bp_size_id##
+When f$cc_turn_plain3bp_hu_vs_opener && f$cc_turn_plain3bp_hu_context_consistent Return f$cc_turn_plain3bp_hu_opener_size_id Force
+When f$cc_turn_plain3bp_hu_vs_coldcaller && f$cc_turn_plain3bp_hu_context_consistent Return f$cc_turn_plain3bp_hu_coldcaller_size_id Force
+When f$cc_turn_plain3bp_mw_context_consistent Return f$cc_turn_plain3bp_mw_size_id Force
+When Others Return 0 Force
+
+// Purpose: coverage flag for Gate02G plain3BP Turn CBet.
+// Source/Provenance: P engineering metadata.
+##f$cc_turn_plain3bp_covered##
+(f$cc_turn_plain3bp_hu_context_consistent && (f$cc_turn_plain3bp_hu_vs_opener || f$cc_turn_plain3bp_hu_vs_coldcaller)) || f$cc_turn_plain3bp_mw_context_consistent
+
+// ============================================================================
+// End Gate 02G.
+// ============================================================================

@@ -1,0 +1,150 @@
+// ============================================================================
+// CashCrusher_River_Texture.txt
+// Gate 03A.1 — portable River/runout texture descriptors
+// ============================================================================
+// Purpose:
+//   Rebuild the mechanical River board/runout facts used by audited DeepCrusher
+//   River-CBet rules without importing any game label, bet size or commitment.
+//
+// Source hierarchy:
+//   T = OpenPPL/OpenHoldem River/Turn public-card symbols.
+//   A = direct mechanical descendants of DeepCrusher `f$river_Completed`,
+//       `f$river_SuperCompleted`, `f$RiverCardCompletedTheBoard`, `f$river_mOC`,
+//       `f$river_UnderFlop`, `f$river_UnderBoard`, `f$river_Paired` and CF8
+//       four-card-completion helpers.
+//   P = compact River runout IDs used only for routing/logging.
+//
+// Safety:
+//   These functions describe public-card topology only. Completed/paired/OC
+//   never means bet/check/jam by itself.
+// ============================================================================
+
+// Purpose: public River board allows a made straight.
+// Source/Provenance: T OpenPPL `StraightPossible` on River.
+##f$cc_river_straight_possible##
+IsRiver && StraightPossible
+
+// Purpose: public River board allows a made flush.
+// Source/Provenance: T OpenPPL `FlushPossible` on River.
+##f$cc_river_flush_possible##
+IsRiver && FlushPossible
+
+// Purpose: source-compatible broad completed-River descriptor.
+// Source: DeepCrusher `f$river_Completed` = FlushPossible OR StraightPossible.
+// Provenance: T/A direct mechanical transplant.
+##f$cc_river_completed##
+IsRiver && (FlushPossible || StraightPossible)
+
+// Purpose: source-compatible super-completed River: both straight and flush
+// topologies are possible from the public board.
+// Source: DeepCrusher `f$river_SuperCompleted`.
+// Provenance: T/A direct mechanical transplant.
+##f$cc_river_super_completed##
+IsRiver && FlushPossible && StraightPossible
+
+// Purpose: River newly changes board from no straight-possible Turn to
+// straight-possible River.
+// Source: first branch of DeepCrusher `f$RiverCardCompletedTheBoard`.
+// Provenance: T/A exact mechanical condition.
+##f$cc_river_new_straight_completion##
+IsRiver && !StraightPossibleOnTurn && StraightPossible
+
+// Purpose: River newly changes board from no flush-possible Turn to
+// flush-possible River.
+// Source: second branch of DeepCrusher River-card completion logic; old source
+// also carried a Turn flush-draw marker because of its state-machine design.
+// Provenance: T/A simplified to the exact persistent public-board transition.
+##f$cc_river_new_flush_completion##
+IsRiver && !FlushPossibleOnTurn && FlushPossible
+
+// Purpose: exact CashCrusher union for a River-created straight/flush completion.
+// Source/Provenance: A union of the two direct source-shaped transitions.
+##f$cc_river_new_completion##
+f$cc_river_new_straight_completion || f$cc_river_new_flush_completion
+
+// Purpose: River is a strict overcard to the prior board.
+// Source/Provenance: T OpenPPL `RiverCardIsOvercardToBoard`.
+##f$cc_river_overcard_to_board##
+IsRiver && RiverCardIsOvercardToBoard > 0
+
+// Purpose: source-compatible River mOC: above flop second-highest card OR strict
+// River overcard to board.
+// Source: DeepCrusher `f$river_mOC`.
+// Provenance: T/A direct mechanical transplant.
+##f$cc_river_meaningful_overcard##
+IsRiver && (SecondTopFlopCard < RiverCard || RiverCardIsOvercardToBoard > 0)
+
+// Purpose: River is below every flop rank.
+// Source: DeepCrusher `f$river_UnderFlop`.
+// Provenance: T/A direct mechanical transplant.
+##f$cc_river_under_flop##
+IsRiver && RiverCard < LowestFlopCard
+
+// Purpose: River is below every flop rank AND below Turn card.
+// Source: DeepCrusher `f$river_UnderBoard`.
+// Provenance: T/A direct mechanical transplant.
+##f$cc_river_under_board##
+IsRiver && RiverCard < LowestFlopCard && RiverCard < TurnCard
+
+// Purpose: River pairs any previous board rank (flop or Turn).
+// Source: DeepCrusher `f$river_Paired`.
+// Provenance: T/A direct mechanical transplant.
+##f$cc_river_pairs_previous_board##
+IsRiver && (RiverCard = FirstFlopCard || RiverCard = SecondFlopCard || RiverCard = ThirdFlopCard || RiverCard = TurnCard)
+
+// Purpose: River public board exposes a four-card one-card-straight or one-card-
+// flush completion structure.
+// Source: DeepCrusher `f$CF8_RiverFourCardCompletion` = OneCardFlushPossible OR
+// OneCardStraightPossible.
+// Provenance: T/A direct source-shaped descriptor.
+##f$cc_river_four_card_completion##
+IsRiver && (OneCardFlushPossible || OneCardStraightPossible)
+
+// Purpose: source-shaped HUBB clean River: no completed straight/flush, no pair,
+// and no four-card one-card completion pressure.
+// Source: DeepCrusher `f$CF8_HUBB_RiverClean`.
+// Provenance: A direct mechanical composition.
+##f$cc_river_hubb_clean##
+IsRiver && !f$cc_river_completed && !f$cc_river_pairs_previous_board && !f$cc_river_four_card_completion
+
+// Purpose: reconstruct on River whether the TURN itself was a meaningful OC.
+// Source: DeepCrusher River rules consume historical `f$turn_mOC`; the original
+// helper is Turn-scoped, but Turn/Flop cards remain persistent on River.
+// Provenance: T/A cross-street mechanical reconstruction, not a user-plan marker.
+##f$cc_river_turn_was_meaningful_overcard##
+IsRiver && (SecondTopFlopCard < TurnCard || TurnCardIsOvercardToBoard > 0)
+
+// Purpose: reconstruct whether Turn board was already broadly completed.
+// Source/Provenance: T/A persistent `FlushPossibleOnTurn/StraightPossibleOnTurn`.
+##f$cc_river_turn_was_completed##
+IsRiver && (FlushPossibleOnTurn || StraightPossibleOnTurn)
+
+// Purpose: reconstruct whether Turn paired a flop rank, independent of the
+// precedence of the stored Gate02 runout ID.
+// Source/Provenance: T/A exact persistent-card history.
+##f$cc_river_turn_paired_flop_rank##
+IsRiver && (TurnCard = FirstFlopCard || TurnCard = SecondFlopCard || TurnCard = ThirdFlopCard)
+
+// Purpose: source-shaped HUSB completed+mOC pressure exception ingredient.
+// Source: HUSB River exception uses completed River AND (`turn_mOC` OR `river_mOC`).
+// Provenance: A exact mechanical predicate; action remains downstream.
+##f$cc_river_husb_completed_moc_pressure##
+f$cc_river_completed && (f$cc_river_turn_was_meaningful_overcard || f$cc_river_meaningful_overcard)
+
+// Purpose: compact River runout ID for logging/tests.
+// IDs: 1 super-completed; 2 newly completed; 3 paired prior board; 4 four-card
+// completion; 5 meaningful OC; 6 under-board; 7 residual/neutral.
+// Source/Provenance: P metadata over T/A facts; never a policy lookup alone.
+##f$cc_river_runout_id##
+When !IsRiver Return 0 Force
+When f$cc_river_super_completed Return 1 Force
+When f$cc_river_new_completion Return 2 Force
+When f$cc_river_pairs_previous_board Return 3 Force
+When f$cc_river_four_card_completion Return 4 Force
+When f$cc_river_meaningful_overcard Return 5 Force
+When f$cc_river_under_board Return 6 Force
+When Others Return 7 Force
+
+// ============================================================================
+// End Gate03A.1 River texture descriptors.
+// ============================================================================

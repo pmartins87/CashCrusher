@@ -1,0 +1,89 @@
+// ============================================================================
+// CashCrusher_River_Delayed_HUSB_Source.txt
+// Gate 13D — newest Starting-Strategy HUSB BxB air descendant
+// ============================================================================
+// Purpose:
+//   Port only the HUSB no-action River branch whose lineage is mechanically exact
+//   from the newest Starting Strategy:
+//
+//     Hero CBet flop with A/K-high, backdoors or pure air -> Turn X/X ->
+//     River checked to Hero -> BxBet 100%.
+//
+// Source hierarchy finding:
+//   `10- NOVO CRUSHFEST HUSB` explicitly answers "Do we want to BxB our air
+//   cards?" with `BxBet 100%`. The same document says that when BB skips the ISO
+//   CBet, Hero Float-bets 50% *without plans for 2Bar or BxB*. Therefore these
+//   two visually similar no-action histories must stay separate.
+//
+// Deliberate boundary:
+//   frontdoor-draw histories are excluded from this exact air child. The newest
+//   source's missed-draw give-up statements concern 3Bar sequences and do not
+//   prove the flop-bet/Turn-check BxB action. HUSB made-hand residuals are also
+//   left for a separate source-hierarchy audit instead of inheriting old CF7/TBP.
+//
+// Provenance:
+//   T = newest Starting Strategy action/size + closed did* history.
+//   A = Gate01N actual flop-CBet snapshot + Gate02N actual Turn check-through.
+//   P = exact source-subset coverage metadata only.
+// ============================================================================
+
+// Purpose: exact true-HU SB/Button-v-BB no-action River after an actual flop CBet
+// and an actual standard Turn-CBet opportunity that checked through.
+// Source/Provenance: T/A exact HUSB geometry + closed Flop/Turn provenance.
+##f$cc_river_delayed_husb_cbet_turncheck_context##
+f$cc_river_delayed_base_opportunity &&
+f$cc_true_hu && f$cc_hu &&
+f$cc_hero_pos_id = 5 && f$cc_hu_villain_pos_id = 6 &&
+f$cc_pot_family_id >= 1 && f$cc_pot_family_id <= 2 &&
+f$cc_river_delayed_after_standard_turncheck_valid &&
+f$cc_hist_flop_initial_cbet_executed &&
+f$cc_hist_flop_cbet_snapshot_consistent &&
+!f$cc_hist_flop_cbet_runtime_mismatch
+
+// Purpose: newest-source air/backdoor/A-K-high flop lineage. All are no-made on
+// flop, but a true frontdoor premium/good/weak draw belongs to the Draws section
+// and must not be silently promoted into the BxB-air rule.
+// Source/Provenance: T source range split + A Gate01N exact flop snapshot.
+##f$cc_river_delayed_husb_flop_air_bxb_lineage##
+f$cc_river_delayed_husb_cbet_turncheck_context &&
+user_cc_flop_cbet_had_no_made &&
+!user_cc_flop_cbet_had_premium_draw &&
+!user_cc_flop_cbet_had_good_draw &&
+!user_cc_flop_cbet_had_weak_draw
+
+// Purpose: exact source action requires the historical air lineage to still be a
+// current no-made River hand. A River-improved made hand is not assigned the air
+// rule and remains pending the made-hand source audit.
+// Source/Provenance: T newest HUSB `air cards -> BxBet 100%`.
+##f$cc_river_delayed_husb_air_bxb100_action##
+f$cc_river_delayed_husb_flop_air_bxb_lineage &&
+f$cc_river_delayed_no_made
+
+// Purpose: exact newest-source HUSB BxB pot-size bet.
+// Source/Provenance: T literal `BxBet 100%`.
+##f$cc_river_delayed_husb_air_bxb100_size_id##
+When f$cc_river_delayed_husb_air_bxb100_action Return f$cc_river_delayed_size_100_id Force
+When Others Return 0 Force
+
+// Purpose: exact source subset covered by this file. Improved made hands and
+// frontdoor-draw flop lineages intentionally remain outside coverage.
+// Source/Provenance: P subset boundary around T/A exact child.
+##f$cc_river_delayed_husb_source_covered##
+f$cc_river_delayed_husb_air_bxb100_action
+
+// Purpose: HUSB source-subset action/size integrity.
+// Source/Provenance: P fail-closed invariant.
+##f$cc_river_delayed_husb_source_size_consistent##
+When !f$cc_river_delayed_husb_source_covered Return f$cc_river_delayed_husb_air_bxb100_size_id = 0 Force
+When Others Return f$cc_river_delayed_husb_air_bxb100_size_id = f$cc_river_delayed_size_100_id Force
+
+// Purpose: explicit HUSB state that resembles the new source child but is not
+// mechanically proven by it. This remains a work queue, not a fallback.
+// Source/Provenance: X source-hierarchy/provenance diagnostic.
+##f$cc_river_delayed_husb_source_pending##
+f$cc_river_delayed_husb_cbet_turncheck_context &&
+!f$cc_river_delayed_husb_source_covered
+
+// ============================================================================
+// End Gate13D newest-source HUSB air BxB child.
+// ============================================================================

@@ -1,0 +1,333 @@
+// ============================================================================
+// CashCrusher_Flop_Float_3BP.txt
+// Gate 04E — plain-3BP and squeeze checked-to Flop Float
+// ============================================================================
+// Purpose:
+//   Give caller-side 3bet-pot ranges an explicit checked-to owner when Hero is
+//   IP/LAST and the final preflop 3bettor declines to CBet. Opener-call,
+//   pre-squeeze caller and post-3bet coldcaller ranges stay distinct.
+//
+// Source boundary:
+//   DeepCrusher has no dedicated deep-stack 3BP/squeeze Float strategy tree.
+//   This gate therefore reuses only T/A context and hand/board architecture;
+//   exact betting policy is P-heavy professional six-max cash fill.
+//
+// Cash-depth safety:
+//   A 3BP begins at lower SPR than SRP but TP/OP are still value classes, not
+//   automatic stackoff classes. This file owns only initial bet/check + size ID.
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// F3.01 — Caller-origin reconstruction
+// -----------------------------------------------------------------------------
+
+// Purpose: Hero is the original opener who called the later 3bet.
+// Source/Provenance: T/A Gate00 role + Gate01F exact first-raiser identity.
+##f$cc_flop_float_3bp_hero_is_opener_call##
+f$cc_pf_role_open_call_3bet &&
+f$cc_pf_3bet_order_supported &&
+f$cc_hero_pos_id = f$cc_pf_3bet_first_raiser_pos_id
+
+// Purpose: Hero called the open before the final 3bettor and then continued
+// against a squeeze.
+// Source/Provenance: A/P exact intersection with pre3bet-coldcaller mask.
+##f$cc_flop_float_3bp_hero_is_pre3bet_coldcaller##
+f$cc_pf_role_cold_call_3bet &&
+f$cc_pf_squeeze_proven &&
+f$cc_flop_float_hero_pos_bit > 0 &&
+((f$cc_pf_pre3bet_coldcaller_mask BitAnd f$cc_flop_float_hero_pos_bit) > 0)
+
+// Purpose: Hero first called only after the final 3bet.
+// Source/Provenance: A/P exact post3bet-coldcaller mask intersection.
+##f$cc_flop_float_3bp_hero_is_post3bet_coldcaller##
+f$cc_pf_role_cold_call_3bet &&
+f$cc_pf_3bet_order_supported &&
+f$cc_flop_float_hero_pos_bit > 0 &&
+((f$cc_pf_post3bet_coldcaller_mask BitAnd f$cc_flop_float_hero_pos_bit) > 0)
+
+// Purpose: reject ambiguous caller-stage reconstruction.
+// Source: aggregate callbits can otherwise classify a repeated caller twice.
+// Provenance: P fail-closed contract over A exact masks.
+##f$cc_flop_float_3bp_hero_origin_consistent##
+When f$cc_flop_float_3bp_hero_is_opener_call && (f$cc_flop_float_3bp_hero_is_pre3bet_coldcaller || f$cc_flop_float_3bp_hero_is_post3bet_coldcaller) Return false Force
+When f$cc_flop_float_3bp_hero_is_pre3bet_coldcaller && f$cc_flop_float_3bp_hero_is_post3bet_coldcaller Return false Force
+When f$cc_flop_float_3bp_hero_is_opener_call || f$cc_flop_float_3bp_hero_is_pre3bet_coldcaller || f$cc_flop_float_3bp_hero_is_post3bet_coldcaller Return true Force
+When Others Return false Force
+
+// Purpose: canonical bit of final 3bettor for live-opponent checks.
+// Source/Provenance: A Gate01F final-raiser bit helper.
+##f$cc_flop_float_3bp_final_raiser_live##
+f$cc_pf_3bet_final_raiser_bit > 0 &&
+((f$cc_opp_live_mask BitAnd f$cc_pf_3bet_final_raiser_bit) > 0)
+
+// -----------------------------------------------------------------------------
+// F3.02 — Exact HU contexts
+// -----------------------------------------------------------------------------
+
+// Purpose: HU plain 3BP opener-call IP after final 3bettor checks.
+// Includes true HU SB/Button open -> BB 3bet -> call when current geometry is IP.
+// Source: no dedicated Float source; true-HU distinction is retained mechanically.
+// Provenance: T/A exact chronology + P strategy owner.
+##f$cc_flop_float_plain3bp_opener_hu_context##
+f$cc_flop_float_hu_opportunity &&
+f$cc_pot_family_id = 3 &&
+f$cc_pf_3bet_plain_proven &&
+f$cc_flop_float_3bp_hero_is_opener_call &&
+f$cc_hu_villain_pos_id = f$cc_pf_3bet_final_raiser_pos_id &&
+f$cc_hu_ip &&
+f$cc_flop_float_3bp_hero_origin_consistent
+
+// Purpose: HU plain 3BP post-3bet coldcaller IP versus final 3bettor.
+// Source/Provenance: P distinct condensed cold-call range family over A evidence.
+##f$cc_flop_float_plain3bp_postcold_hu_context##
+f$cc_flop_float_hu_opportunity &&
+f$cc_pot_family_id = 3 &&
+f$cc_pf_3bet_plain_proven &&
+f$cc_flop_float_3bp_hero_is_post3bet_coldcaller &&
+f$cc_hu_villain_pos_id = f$cc_pf_3bet_final_raiser_pos_id &&
+f$cc_hu_ip &&
+f$cc_flop_float_3bp_hero_origin_consistent
+
+// Purpose: HU squeeze where original opener called and is IP versus squeezer.
+// Source/Provenance: P squeeze-specific range family; final 3bettor identity exact.
+##f$cc_flop_float_squeeze_opener_hu_context##
+f$cc_flop_float_hu_opportunity &&
+f$cc_pot_family_id = 3 &&
+f$cc_pf_squeeze_proven &&
+f$cc_flop_float_3bp_hero_is_opener_call &&
+f$cc_hu_villain_pos_id = f$cc_pf_3bet_final_raiser_pos_id &&
+f$cc_hu_ip &&
+f$cc_flop_float_3bp_hero_origin_consistent
+
+// Purpose: HU squeeze where pre-squeeze coldcaller continued and acts IP.
+// Source/Provenance: P strongly selected continuation range family.
+##f$cc_flop_float_squeeze_precold_hu_context##
+f$cc_flop_float_hu_opportunity &&
+f$cc_pot_family_id = 3 &&
+f$cc_pf_squeeze_proven &&
+f$cc_flop_float_3bp_hero_is_pre3bet_coldcaller &&
+f$cc_hu_villain_pos_id = f$cc_pf_3bet_final_raiser_pos_id &&
+f$cc_hu_ip &&
+f$cc_flop_float_3bp_hero_origin_consistent
+
+// Purpose: HU squeeze where a post-3bet coldcaller survives IP versus squeezer.
+// Source/Provenance: P condensed post-squeeze cold-call range family.
+##f$cc_flop_float_squeeze_postcold_hu_context##
+f$cc_flop_float_hu_opportunity &&
+f$cc_pot_family_id = 3 &&
+f$cc_pf_squeeze_proven &&
+f$cc_flop_float_3bp_hero_is_post3bet_coldcaller &&
+f$cc_hu_villain_pos_id = f$cc_pf_3bet_final_raiser_pos_id &&
+f$cc_hu_ip &&
+f$cc_flop_float_3bp_hero_origin_consistent
+
+// -----------------------------------------------------------------------------
+// F3.03 — HU action policies
+// -----------------------------------------------------------------------------
+
+// Purpose: plain-3BP opener-call checked-to action.
+// Source/Provenance: P professional 3BP IP fill. PFA checks remain protected;
+// value and strong equity stab, while medium SDV often checks behind.
+##f$cc_flop_float_plain3bp_opener_hu_action##
+When !f$cc_flop_float_plain3bp_opener_hu_context Return false Force
+When f$cc_hand_two_pair_or_better Return true Force
+When HaveOverPair && !f$cc_hand_two_pair_or_better Return true Force
+When f$cc_cbet_flop_strong_top_pair Return true Force
+When f$cc_cbet_flop_medium_top_pair && (f$cc_flop_static_high_parent || f$cc_flop_paired_parent) Return true Force
+When f$cc_hand_top_pair_or_better Return false Force
+When f$cc_hand_middle_or_bottom_pair Return false Force
+When f$cc_flop_float_premium_draw Return true Force
+When f$cc_flop_float_good_draw && !f$cc_flop_dynamic_lowmid_parent Return true Force
+When f$cc_flop_float_air && (f$cc_flop_static_high_parent || f$cc_flop_paired_parent) && f$cc_cbet_flop_quality_air Return true Force
+When f$cc_flop_float_air Return false Force
+When Others Return false Force
+
+// Purpose: plain opener-call 3BP Float sizes.
+// Source/Provenance: P low/mid-SPR 33/50/75 deterministic map.
+##f$cc_flop_float_plain3bp_opener_hu_size_id##
+When !f$cc_flop_float_plain3bp_opener_hu_action Return 0 Force
+When f$cc_hand_two_pair_or_better && f$cc_flop_float_wet_parent Return f$cc_flop_float_size_75_id Force
+When f$cc_hand_two_pair_or_better Return f$cc_flop_float_size_50_id Force
+When HaveOverPair && !f$cc_hand_two_pair_or_better Return f$cc_flop_float_size_50_id Force
+When f$cc_cbet_flop_strong_top_pair Return f$cc_flop_float_size_50_id Force
+When f$cc_cbet_flop_medium_top_pair Return f$cc_flop_float_size_33_id Force
+When f$cc_flop_float_premium_draw || f$cc_flop_float_good_draw Return f$cc_flop_float_size_50_id Force
+When f$cc_flop_float_air Return f$cc_flop_float_size_33_id Force
+When Others Return 0 Force
+
+// Purpose: condensed plain-3BP post-coldcaller checked-to action.
+// Source/Provenance: P-heavy. No pure-air baseline; stronger threshold than opener.
+##f$cc_flop_float_plain3bp_postcold_hu_action##
+When !f$cc_flop_float_plain3bp_postcold_hu_context Return false Force
+When f$cc_hand_two_pair_or_better Return true Force
+When HaveOverPair && !f$cc_hand_two_pair_or_better Return true Force
+When f$cc_cbet_flop_strong_top_pair Return true Force
+When f$cc_hand_top_pair_or_better Return false Force
+When f$cc_hand_middle_or_bottom_pair Return false Force
+When f$cc_flop_float_premium_draw Return true Force
+When f$cc_flop_float_good_draw && f$cc_flop_float_dry_parent Return true Force
+When f$cc_flop_float_air Return false Force
+When Others Return false Force
+
+// Purpose: plain post-coldcaller 3BP Float sizes.
+// Source/Provenance: P selected-range 50/75 map.
+##f$cc_flop_float_plain3bp_postcold_hu_size_id##
+When !f$cc_flop_float_plain3bp_postcold_hu_action Return 0 Force
+When f$cc_hand_two_pair_or_better && f$cc_flop_float_wet_parent Return f$cc_flop_float_size_75_id Force
+When f$cc_hand_two_pair_or_better Return f$cc_flop_float_size_50_id Force
+When HaveOverPair && !f$cc_hand_two_pair_or_better Return f$cc_flop_float_size_50_id Force
+When f$cc_cbet_flop_strong_top_pair Return f$cc_flop_float_size_50_id Force
+When f$cc_flop_float_premium_draw || f$cc_flop_float_good_draw Return f$cc_flop_float_size_50_id Force
+When Others Return 0 Force
+
+// Purpose: squeeze opener-call checked-to action.
+// Source/Provenance: P squeeze fill. Opener can retain somewhat more broadway/
+// pair coverage than the two coldcaller branches, but pure-air stabs stay narrow.
+##f$cc_flop_float_squeeze_opener_hu_action##
+When !f$cc_flop_float_squeeze_opener_hu_context Return false Force
+When f$cc_hand_two_pair_or_better Return true Force
+When HaveOverPair && !f$cc_hand_two_pair_or_better Return true Force
+When f$cc_cbet_flop_strong_top_pair Return true Force
+When f$cc_cbet_flop_medium_top_pair && f$cc_flop_static_high_parent Return true Force
+When f$cc_hand_top_pair_or_better Return false Force
+When f$cc_hand_middle_or_bottom_pair Return false Force
+When f$cc_flop_float_premium_draw Return true Force
+When f$cc_flop_float_good_draw && f$cc_flop_float_dry_parent Return true Force
+When f$cc_flop_float_air && f$cc_flop_static_high_parent && f$cc_combo_backdoors Return true Force
+When f$cc_flop_float_air Return false Force
+When Others Return false Force
+
+// Purpose: squeeze opener-call Float sizes.
+// Source/Provenance: P 33/50/75 lower-SPR map.
+##f$cc_flop_float_squeeze_opener_hu_size_id##
+When !f$cc_flop_float_squeeze_opener_hu_action Return 0 Force
+When f$cc_hand_two_pair_or_better && f$cc_flop_float_wet_parent Return f$cc_flop_float_size_75_id Force
+When f$cc_hand_two_pair_or_better Return f$cc_flop_float_size_50_id Force
+When HaveOverPair && !f$cc_hand_two_pair_or_better Return f$cc_flop_float_size_50_id Force
+When f$cc_cbet_flop_strong_top_pair Return f$cc_flop_float_size_50_id Force
+When f$cc_cbet_flop_medium_top_pair Return f$cc_flop_float_size_33_id Force
+When f$cc_flop_float_premium_draw || f$cc_flop_float_good_draw Return f$cc_flop_float_size_50_id Force
+When f$cc_flop_float_air Return f$cc_flop_float_size_33_id Force
+When Others Return 0 Force
+
+// Purpose: very selected squeeze-caller action shared by pre/post coldcaller HU.
+// Source: no literal source tree; both ranges have called significant aggression.
+// Provenance: P conservative professional fill with zero pure-air baseline.
+##f$cc_flop_float_squeeze_coldcaller_hu_action##
+When !(f$cc_flop_float_squeeze_precold_hu_context || f$cc_flop_float_squeeze_postcold_hu_context) Return false Force
+When f$cc_hand_two_pair_or_better Return true Force
+When HaveOverPair && !f$cc_hand_two_pair_or_better Return true Force
+When f$cc_cbet_flop_strong_top_pair && f$cc_flop_float_dry_parent Return true Force
+When f$cc_hand_top_pair_or_better Return false Force
+When f$cc_hand_middle_or_bottom_pair Return false Force
+When f$cc_flop_float_premium_draw Return true Force
+When f$cc_flop_float_good_draw Return false Force
+When f$cc_flop_float_air Return false Force
+When Others Return false Force
+
+// Purpose: selected squeeze-caller Float sizes.
+// Source/Provenance: P 50/75 value-equity map.
+##f$cc_flop_float_squeeze_coldcaller_hu_size_id##
+When !f$cc_flop_float_squeeze_coldcaller_hu_action Return 0 Force
+When f$cc_hand_two_pair_or_better && f$cc_flop_float_wet_parent Return f$cc_flop_float_size_75_id Force
+When f$cc_hand_two_pair_or_better Return f$cc_flop_float_size_50_id Force
+When HaveOverPair && !f$cc_hand_two_pair_or_better Return f$cc_flop_float_size_50_id Force
+When f$cc_cbet_flop_strong_top_pair Return f$cc_flop_float_size_50_id Force
+When f$cc_flop_float_premium_draw Return f$cc_flop_float_size_50_id Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// F3.04 — Current multiway 3BP/squeeze, Hero exact LAST
+// -----------------------------------------------------------------------------
+
+// Purpose: caller-side multiway 3BP checked-to context where final 3bettor is
+// still live and therefore actually skipped the CBet before Hero acts last.
+// Source/Provenance: T/A exact live final-raiser proof + P multiway strategy owner.
+##f$cc_flop_float_3bp_multiway_context##
+f$cc_flop_float_multiway_opportunity &&
+f$cc_pot_family_id = 3 &&
+f$cc_flop_float_3bp_hero_origin_consistent &&
+f$cc_flop_float_3bp_final_raiser_live &&
+f$cc_relpos_id = 3
+
+// Purpose: multiway 3BP/squeeze Float action.
+// Source/Provenance: P strongly tightened multiway lower-SPR policy. Pure air is
+// absent; 4+ way requires near-nut value/equity compared with exact three-way.
+##f$cc_flop_float_3bp_multiway_action##
+When !f$cc_flop_float_3bp_multiway_context Return false Force
+When f$cc_hand_two_pair_or_better Return true Force
+When nplayersplaying = 3 && HaveOverPair && !f$cc_hand_two_pair_or_better && f$cc_flop_float_dry_parent Return true Force
+When nplayersplaying = 3 && f$cc_cbet_flop_strong_top_pair && f$cc_flop_static_high_parent Return true Force
+When f$cc_hand_top_pair_or_better Return false Force
+When f$cc_hand_middle_or_bottom_pair Return false Force
+When nplayersplaying = 3 && f$cc_flop_float_premium_draw Return true Force
+When nplayersplaying >= 4 && f$cc_hand_no_made && f$cc_real_combo_draw Return true Force
+When f$cc_flop_float_real_gutshot_plus Return false Force
+When f$cc_flop_float_air Return false Force
+When Others Return false Force
+
+// Purpose: multiway 3BP/squeeze Float sizing.
+// Source/Provenance: P 50/75 robust value/equity map.
+##f$cc_flop_float_3bp_multiway_size_id##
+When !f$cc_flop_float_3bp_multiway_action Return 0 Force
+When f$cc_hand_two_pair_or_better && f$cc_flop_float_wet_parent Return f$cc_flop_float_size_75_id Force
+When f$cc_hand_two_pair_or_better Return f$cc_flop_float_size_50_id Force
+When HaveOverPair && !f$cc_hand_two_pair_or_better Return f$cc_flop_float_size_50_id Force
+When f$cc_cbet_flop_strong_top_pair Return f$cc_flop_float_size_50_id Force
+When f$cc_flop_float_premium_draw || (f$cc_hand_no_made && f$cc_real_combo_draw) Return f$cc_flop_float_size_50_id Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// F3.05 — Dispatch / coverage
+// -----------------------------------------------------------------------------
+
+// Purpose: plain-3BP Float action dispatcher.
+// Source/Provenance: P exact caller-origin router.
+##f$cc_flop_float_plain3bp_action##
+When f$cc_flop_float_plain3bp_opener_hu_context Return f$cc_flop_float_plain3bp_opener_hu_action Force
+When f$cc_flop_float_plain3bp_postcold_hu_context Return f$cc_flop_float_plain3bp_postcold_hu_action Force
+When f$cc_flop_float_3bp_multiway_context && f$cc_pf_3bet_plain_proven Return f$cc_flop_float_3bp_multiway_action Force
+When Others Return false Force
+
+// Purpose: plain-3BP paired size dispatcher.
+// Source/Provenance: P exact owner.
+##f$cc_flop_float_plain3bp_size_id##
+When f$cc_flop_float_plain3bp_opener_hu_context Return f$cc_flop_float_plain3bp_opener_hu_size_id Force
+When f$cc_flop_float_plain3bp_postcold_hu_context Return f$cc_flop_float_plain3bp_postcold_hu_size_id Force
+When f$cc_flop_float_3bp_multiway_context && f$cc_pf_3bet_plain_proven Return f$cc_flop_float_3bp_multiway_size_id Force
+When Others Return 0 Force
+
+// Purpose: squeeze Float action dispatcher.
+// Source/Provenance: P exact caller-origin router.
+##f$cc_flop_float_squeeze_action##
+When f$cc_flop_float_squeeze_opener_hu_context Return f$cc_flop_float_squeeze_opener_hu_action Force
+When f$cc_flop_float_squeeze_precold_hu_context || f$cc_flop_float_squeeze_postcold_hu_context Return f$cc_flop_float_squeeze_coldcaller_hu_action Force
+When f$cc_flop_float_3bp_multiway_context && f$cc_pf_squeeze_proven Return f$cc_flop_float_3bp_multiway_action Force
+When Others Return false Force
+
+// Purpose: squeeze paired size dispatcher.
+// Source/Provenance: P exact owner.
+##f$cc_flop_float_squeeze_size_id##
+When f$cc_flop_float_squeeze_opener_hu_context Return f$cc_flop_float_squeeze_opener_hu_size_id Force
+When f$cc_flop_float_squeeze_precold_hu_context || f$cc_flop_float_squeeze_postcold_hu_context Return f$cc_flop_float_squeeze_coldcaller_hu_size_id Force
+When f$cc_flop_float_3bp_multiway_context && f$cc_pf_squeeze_proven Return f$cc_flop_float_3bp_multiway_size_id Force
+When Others Return 0 Force
+
+// Purpose: report plain-3BP Float strategic coverage.
+// Source/Provenance: P engineering metadata.
+##f$cc_flop_float_plain3bp_covered##
+f$cc_flop_float_plain3bp_opener_hu_context ||
+f$cc_flop_float_plain3bp_postcold_hu_context ||
+(f$cc_flop_float_3bp_multiway_context && f$cc_pf_3bet_plain_proven)
+
+// Purpose: report squeeze Float strategic coverage.
+// Source/Provenance: P engineering metadata.
+##f$cc_flop_float_squeeze_covered##
+f$cc_flop_float_squeeze_opener_hu_context ||
+f$cc_flop_float_squeeze_precold_hu_context ||
+f$cc_flop_float_squeeze_postcold_hu_context ||
+(f$cc_flop_float_3bp_multiway_context && f$cc_pf_squeeze_proven)
+
+// ============================================================================
+// End Gate04E 3BP/squeeze Float.
+// ============================================================================

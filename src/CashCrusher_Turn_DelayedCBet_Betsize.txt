@@ -1,0 +1,119 @@
+// ============================================================================
+// CashCrusher_Turn_DelayedCBet_Betsize.txt
+// Gate 12A.15 — canonical Turn Delayed-CBet runtime betsize adapter
+// ============================================================================
+// Purpose:
+//   Translate the reviewed Gate12A strategy size ID into one exact OpenPPL
+//   initial-bet action without changing the strategic decision.
+//
+// Exact source sizes preserved:
+//   1 MIN      -> BetMin       (DeepCrusher TurnMin; 1bb geometry)
+//   2 50%      -> BetHalfPot
+//   3 62.5%    -> RaiseBy 62.5%
+//   4 75%      -> BetThreeFourthPot
+//   5 100%     -> BetPot
+//   6 150%     -> RaiseBy 150%
+//   7 33% A/P  -> BetThirdPot
+//
+// Source/Provenance:
+//   T = DeepCrusher exact 62.5/150/MIN/50/75/100 sizing plus OpenHoldem
+//       RaiseBy-percent execution semantics.
+//   A/P = reviewed 33% fallback already explicit in Gate12A Common.
+//
+// Safety:
+//   * only a strategy-owned initial Turn bet is executable;
+//   * no fallback sizing for unknown IDs;
+//   * no BetMax / strategic shove promotion here;
+//   * stack reach is measured separately in StackGeometry.
+// ============================================================================
+
+// Purpose: strategy/router has produced one valid owned bet and size ID.
+// Source/Provenance: P runtime ownership gate over reviewed Gate12A router.
+##f$cc_turn_delayed_cbet_runtime_size_ready##
+f$cc_turn_delayed_cbet_router &&
+f$cc_turn_delayed_cbet_router_consistent &&
+f$cc_turn_delayed_cbet_size_consistent &&
+f$cc_turn_delayed_cbet_size_id >= 1 && f$cc_turn_delayed_cbet_size_id <= 7
+
+// Purpose: requested pot fraction; MIN uses -1 sentinel because it is not a fraction.
+// Source/Provenance: T exact source fractions + A/P reviewed 33%; no rounding of 62.5.
+##f$cc_turn_delayed_cbet_requested_pot_fraction##
+When !f$cc_turn_delayed_cbet_runtime_size_ready Return -1 Force
+When f$cc_turn_delayed_cbet_size_id = 1 Return -1 Force
+When f$cc_turn_delayed_cbet_size_id = 2 Return 0.50 Force
+When f$cc_turn_delayed_cbet_size_id = 3 Return 0.625 Force
+When f$cc_turn_delayed_cbet_size_id = 4 Return 0.75 Force
+When f$cc_turn_delayed_cbet_size_id = 5 Return 1.00 Force
+When f$cc_turn_delayed_cbet_size_id = 6 Return 1.50 Force
+When f$cc_turn_delayed_cbet_size_id = 7 Return 0.333 Force
+When Others Return -1 Force
+
+// Purpose: exact OpenPPL requested bet action before stack-reach diagnostics.
+// Source: T DeepCrusher uses RaiseBy 62.5% and RaiseBy 150% verbatim; OpenHoldem
+// parses RaiseBy X% as a floating-point pot-size percentage.
+// Provenance: T exact mapping; ID7 A/P maps to canonical BetThirdPot.
+##f$cc_turn_delayed_cbet_requested_betsize##
+When !f$cc_turn_delayed_cbet_runtime_size_ready Return 0 Force
+When f$cc_turn_delayed_cbet_size_id = 1 Return BetMin Force
+When f$cc_turn_delayed_cbet_size_id = 2 Return BetHalfPot Force
+When f$cc_turn_delayed_cbet_size_id = 3 RaiseBy 62.5% Force
+When f$cc_turn_delayed_cbet_size_id = 4 Return BetThreeFourthPot Force
+When f$cc_turn_delayed_cbet_size_id = 5 Return BetPot Force
+When f$cc_turn_delayed_cbet_size_id = 6 RaiseBy 150% Force
+When f$cc_turn_delayed_cbet_size_id = 7 Return BetThirdPot Force
+When Others Return 0 Force
+
+// Purpose: prove every admitted ID has both a numeric geometry and executable map.
+// Source/Provenance: P runtime integrity invariant.
+##f$cc_turn_delayed_cbet_runtime_mapping_valid##
+When !f$cc_turn_delayed_cbet_runtime_size_ready Return false Force
+When f$cc_turn_delayed_cbet_size_id = 1 Return f$cc_turn_delayed_cbet_requested_pot_fraction = -1 Force
+When f$cc_turn_delayed_cbet_size_id = 2 Return f$cc_turn_delayed_cbet_requested_pot_fraction = 0.50 Force
+When f$cc_turn_delayed_cbet_size_id = 3 Return f$cc_turn_delayed_cbet_requested_pot_fraction = 0.625 Force
+When f$cc_turn_delayed_cbet_size_id = 4 Return f$cc_turn_delayed_cbet_requested_pot_fraction = 0.75 Force
+When f$cc_turn_delayed_cbet_size_id = 5 Return f$cc_turn_delayed_cbet_requested_pot_fraction = 1.00 Force
+When f$cc_turn_delayed_cbet_size_id = 6 Return f$cc_turn_delayed_cbet_requested_pot_fraction = 1.50 Force
+When f$cc_turn_delayed_cbet_size_id = 7 Return f$cc_turn_delayed_cbet_requested_pot_fraction = 0.333 Force
+When Others Return false Force
+
+// Purpose: execute only the reviewed request and persist plan provenance for later
+// closed-history auditing. These markers prove the plan, not that the bet occurred.
+// Source/Provenance: T OpenPPL user-variable persistence + P plan/audit architecture.
+##f$cc_turn_delayed_cbet_execution_betsize##
+When !f$cc_turn_delayed_cbet_runtime_size_ready Return 0 Force
+When !f$cc_turn_delayed_cbet_runtime_mapping_valid Return 0 Force
+When f$cc_turn_delayed_cbet_runtime_size_ready Set user_cc_turn_delayed_cbet_opportunity_seen
+When f$cc_turn_delayed_cbet_runtime_size_ready Set user_cc_turn_delayed_cbet_plan_bet_seen
+When f$cc_turn_delayed_cbet_runtime_size_ready Set user_cc_turn_delayed_cbet_plan_size_recorded
+When f$cc_turn_delayed_cbet_size_id = 1 Set user_cc_turn_delayed_cbet_plan_size_min
+When f$cc_turn_delayed_cbet_size_id = 2 Set user_cc_turn_delayed_cbet_plan_size_50
+When f$cc_turn_delayed_cbet_size_id = 3 Set user_cc_turn_delayed_cbet_plan_size_625
+When f$cc_turn_delayed_cbet_size_id = 4 Set user_cc_turn_delayed_cbet_plan_size_75
+When f$cc_turn_delayed_cbet_size_id = 5 Set user_cc_turn_delayed_cbet_plan_size_100
+When f$cc_turn_delayed_cbet_size_id = 6 Set user_cc_turn_delayed_cbet_plan_size_150
+When f$cc_turn_delayed_cbet_size_id = 7 Set user_cc_turn_delayed_cbet_plan_size_33
+When Others Return f$cc_turn_delayed_cbet_requested_betsize Force
+
+// Purpose: count mutually exclusive strategic-size plan markers.
+// Source/Provenance: P integrity arithmetic over persistent user variables.
+##f$cc_turn_delayed_cbet_plan_size_marker_count##
+(user_cc_turn_delayed_cbet_plan_size_min * 1) +
+(user_cc_turn_delayed_cbet_plan_size_50 * 1) +
+(user_cc_turn_delayed_cbet_plan_size_625 * 1) +
+(user_cc_turn_delayed_cbet_plan_size_75 * 1) +
+(user_cc_turn_delayed_cbet_plan_size_100 * 1) +
+(user_cc_turn_delayed_cbet_plan_size_150 * 1) +
+(user_cc_turn_delayed_cbet_plan_size_33 * 1)
+
+// Purpose: validate stored plan provenance without recomputing historical Turn state.
+// Source/Provenance: P invariant; actual action still requires closed round-3 history.
+##f$cc_turn_delayed_cbet_plan_markers_consistent##
+When user_cc_turn_delayed_cbet_plan_size_recorded && !user_cc_turn_delayed_cbet_plan_bet_seen Return false Force
+When user_cc_turn_delayed_cbet_plan_bet_seen && !user_cc_turn_delayed_cbet_plan_size_recorded Return false Force
+When user_cc_turn_delayed_cbet_plan_size_recorded && f$cc_turn_delayed_cbet_plan_size_marker_count != 1 Return false Force
+When !user_cc_turn_delayed_cbet_plan_size_recorded && f$cc_turn_delayed_cbet_plan_size_marker_count != 0 Return false Force
+When Others Return true Force
+
+// ============================================================================
+// End Gate12A.15 runtime betsize adapter.
+// ============================================================================

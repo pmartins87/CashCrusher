@@ -1,0 +1,152 @@
+// ============================================================================
+// CashCrusher_River_Probe_Multiway_Source.txt
+// Gate 11F — native true-multiway (BBorSB)v2pp River Probe source contract
+// ============================================================================
+// Purpose:
+//   Preserve the only explicit direct true-multiway River-Probe source line:
+//   Hero blind entered a native three-way flop with BTN + both blinds, actually
+//   X/C'd a source-qualified high-air/backdoor hand versus a flop bet no larger
+//   than 33% pot, Turn checked through, then Hero reaches a River Probe.
+//
+// Source parent:
+//   Retro11 writes `user_DC11R_MW_FlopXC_HighAir` only AFTER the actual flop CALL
+//   and only for A-high+BDSD or non-A high-card+BDFD+overcard, with no made hand,
+//   no material frontdoor draw and faced price <=33% pot.
+//
+// Evidence boundary:
+//   OpenHoldem closed history proves the CALL but not its price or exact call-time
+//   high-air class. Therefore Flop defense must eventually write the single exact
+//   bridge `user_cc_flop_mw_highair_called_le33_sourcelegal`. Until then the
+//   native multiway source topology is visible but strategically uncovered.
+//
+// Current River source reclassification:
+//   safe nuts/trips/set ->100; exact 2P ->75; real TP/OP ->50;
+//   current no-made ->50; every other translated state ->CHECK.
+//   Non-nut current straight/flush needing full CF7_NutClass remains unresolved.
+//
+// Source/Provenance:
+//   T = mature DeepCrusher Retro11 `(BBorSB)v2pp` final-call marker + River tree.
+//   A = exact native 3-handed BTN/SB/BB topology and shared contribution helpers.
+//   P = defense-marker / CF7 fail-closed boundaries only.
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// RPMW.01 — exact native multiway source topology
+// -----------------------------------------------------------------------------
+
+// Purpose: literal three-handed deal where BTN and both blinds reached flop;
+// Hero is one blind and had no final preflop initiative. River may remain three-
+// way or become HU after a postflop fold; the three-way flop provenance persists.
+// Source/Provenance: T old `game_3wBlinds_vBTN` shape + A Gate00 reconstruction.
+##f$cc_river_probe_native_mw_context##
+f$cc_river_probe_base_opportunity &&
+f$cc_deal_size = 3 &&
+f$cc_flop_entry_count = 3 &&
+(f$cc_hero_pos_id = 5 || f$cc_hero_pos_id = 6) &&
+(f$cc_pot_family_id = 1 || f$cc_pot_family_id = 2) &&
+!f$cc_pf_role_pfa &&
+!f$cc_pf_role_3bettor &&
+!f$cc_pf_role_4bettor &&
+(f$cc_river_probe_field_origin_id = 3 || f$cc_river_probe_field_origin_id = 4)
+
+// Purpose: defense-owned exact final-call marker: native source high-air/backdoor
+// class AND actual faced flop price <=33%, written only after Hero really CALLs.
+// Source/Provenance: T exact Retro11 marker semantics + P Flop-defense bridge.
+##f$cc_river_probe_native_mw_highair_call_proven##
+user_cc_flop_mw_highair_called_le33_sourcelegal
+
+// Purpose: exact native multiway source parent; generic topology alone grants no bet.
+// Source/Provenance: P firewall over T/A context + defense-owned T fact.
+##f$cc_river_probe_native_mw_source_parent##
+f$cc_river_probe_native_mw_context &&
+f$cc_river_probe_native_mw_highair_call_proven
+
+// Purpose: source topology recognized but call-time class/price is not certified.
+// Source/Provenance: P audit diagnostic only.
+##f$cc_river_probe_native_mw_defense_provenance_pending##
+f$cc_river_probe_native_mw_context &&
+!f$cc_river_probe_native_mw_highair_call_proven
+
+// -----------------------------------------------------------------------------
+// RPMW.02 — current River source reclassification
+// -----------------------------------------------------------------------------
+
+// Purpose: unresolved non-nut current straight/flush needs full CF7_NutClass.
+// Source/Provenance: P evidence gap around T source strong branch.
+##f$cc_river_probe_native_mw_straightflush_translation_pending##
+f$cc_river_probe_native_mw_source_parent &&
+f$cc_river_probe_3w_current_straightflush_pending
+
+// Purpose: contribution-safe current nuts/trips/set branch ->100.
+// Source/Provenance: T/A shared native-3w helper.
+##f$cc_river_probe_native_mw_strong100##
+f$cc_river_probe_native_mw_source_parent && f$cc_river_probe_3w_strong_safe
+
+// Purpose: current exact contributed two pair ->75.
+// Source/Provenance: T/A.
+##f$cc_river_probe_native_mw_exact2p75##
+f$cc_river_probe_native_mw_source_parent &&
+f$cc_river_probe_contributed_exact_two_pair
+
+// Purpose: current contribution-aware TP/OP ->50.
+// Source/Provenance: T/A.
+##f$cc_river_probe_native_mw_tpop50##
+f$cc_river_probe_native_mw_source_parent &&
+f$cc_river_probe_3w_tp_or_op_real
+
+// Purpose: source high-air parent that remains current no-made ->50.
+// Source/Provenance: T explicit River branch.
+##f$cc_river_probe_native_mw_air50##
+f$cc_river_probe_native_mw_source_parent && f$cc_river_probe_air
+
+// Purpose: all other mechanically translated current states are source CHECK;
+// unresolved non-nut straight/flush is kept outside this negative coverage.
+// Source/Provenance: T terminal native-multiway false + P gap exclusion.
+##f$cc_river_probe_native_mw_residual_check##
+f$cc_river_probe_native_mw_source_parent &&
+!f$cc_river_probe_native_mw_straightflush_translation_pending &&
+!f$cc_river_probe_native_mw_strong100 &&
+!f$cc_river_probe_native_mw_exact2p75 &&
+!f$cc_river_probe_native_mw_tpop50 &&
+!f$cc_river_probe_native_mw_air50
+
+// Purpose: reviewed native-multiway source coverage, including explicit check.
+// Source/Provenance: P coverage firewall over T/A branches.
+##f$cc_river_probe_native_mw_covered##
+f$cc_river_probe_native_mw_strong100 ||
+f$cc_river_probe_native_mw_exact2p75 ||
+f$cc_river_probe_native_mw_tpop50 ||
+f$cc_river_probe_native_mw_air50 ||
+f$cc_river_probe_native_mw_residual_check
+
+// Purpose: exact source action dispatcher.
+// Source/Provenance: T/A source order; residual translated state checks.
+##f$cc_river_probe_native_mw_action##
+When !f$cc_river_probe_native_mw_covered Return false Force
+When f$cc_river_probe_native_mw_strong100 Return true Force
+When f$cc_river_probe_native_mw_exact2p75 Return true Force
+When f$cc_river_probe_native_mw_tpop50 Return true Force
+When f$cc_river_probe_native_mw_air50 Return true Force
+When f$cc_river_probe_native_mw_residual_check Return false Force
+When Others Return false Force
+
+// Purpose: exact direct-source positive sizes.
+// Source/Provenance: T Retro11 100/75/50 families.
+##f$cc_river_probe_native_mw_size_id##
+When !f$cc_river_probe_native_mw_covered Return 0 Force
+When f$cc_river_probe_native_mw_strong100 Return f$cc_river_probe_size_100_id Force
+When f$cc_river_probe_native_mw_exact2p75 Return f$cc_river_probe_size_75_id Force
+When f$cc_river_probe_native_mw_tpop50 Return f$cc_river_probe_size_50_id Force
+When f$cc_river_probe_native_mw_air50 Return f$cc_river_probe_size_50_id Force
+When Others Return 0 Force
+
+// Purpose: local action/size integrity.
+// Source/Provenance: P invariant under Gate11 seven-ID palette.
+##f$cc_river_probe_native_mw_size_consistent##
+When !f$cc_river_probe_native_mw_action Return f$cc_river_probe_native_mw_size_id = 0 Force
+When f$cc_river_probe_native_mw_action Return f$cc_river_probe_native_mw_size_id >= 1 && f$cc_river_probe_native_mw_size_id <= 7 Force
+When Others Return false Force
+
+// ============================================================================
+// End Gate11F native true-multiway River Probe source contract.
+// ============================================================================

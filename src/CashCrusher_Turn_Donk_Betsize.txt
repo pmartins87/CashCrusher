@@ -1,0 +1,64 @@
+// ============================================================================
+// CashCrusher_Turn_Donk_Betsize.txt
+// Gate 08H.1 — OpenPPL runtime adapter for reviewed Turn Donk sizes
+// ============================================================================
+// Purpose:
+//   Translate strategic Turn-Donk IDs 25/50/75/100/BetMin into exact OpenPPL
+//   actions without deciding whether the Donk itself is strategically correct.
+//
+// Source/Provenance:
+//   T = OpenPPL native BetFourthPot, BetHalfPot, BetThreeFourthPot, BetPot,
+//       BetMin actions verified in the OpenHoldem/OpenPPL source/library.
+//   T/A = source Turn-Donk size families already audited in Gate08B/C.
+//   P = stable runtime adapter/guards only.
+//
+// Safety:
+//   No all-in promotion is performed here. `BetMin` is deliberately kept as a
+//   distinct runtime size rather than approximated by a pot fraction.
+// ============================================================================
+
+// Purpose: positive reviewed Turn Donk owns one valid runtime size ID.
+// Source/Provenance: P guard over A/T strategy router.
+##f$cc_turn_donk_runtime_size_ready##
+When !f$cc_turn_donk_router Return false Force
+When !f$cc_turn_donk_size_consistent Return false Force
+When f$cc_turn_donk_size_id >= 1 && f$cc_turn_donk_size_id <= 5 Return true Force
+When Others Return false Force
+
+// Purpose: requested contribution as a pot fraction for percentage-sized IDs.
+// BetMin receives its actual dynamic fraction 1bb/current-pot only for geometry.
+// Source: NLHE minimum initial bet is one big blind; OpenPPL `BetMin` maps to the
+// minimum legal bet/raise action.
+// Provenance: T runtime semantics + P normalized geometry descriptor.
+##f$cc_turn_donk_requested_pot_fraction##
+When !f$cc_turn_donk_runtime_size_ready Return 0 Force
+When f$cc_turn_donk_size_id = 1 Return 0.25 Force
+When f$cc_turn_donk_size_id = 2 Return 0.50 Force
+When f$cc_turn_donk_size_id = 3 Return 0.75 Force
+When f$cc_turn_donk_size_id = 4 Return 1.00 Force
+When f$cc_turn_donk_size_id = 5 && f$cc_round_start_pot_bb > 0 Return (1.00 / f$cc_round_start_pot_bb) Force
+When Others Return 0 Force
+
+// Purpose: exact OpenPPL execution size before natural all-in equivalence.
+// Source/Provenance: T native action constants.
+##f$cc_turn_donk_requested_betsize##
+When !f$cc_turn_donk_runtime_size_ready Return 0 Force
+When f$cc_turn_donk_size_id = 1 Return BetFourthPot Force
+When f$cc_turn_donk_size_id = 2 Return BetHalfPot Force
+When f$cc_turn_donk_size_id = 3 Return BetThreeFourthPot Force
+When f$cc_turn_donk_size_id = 4 Return BetPot Force
+When f$cc_turn_donk_size_id = 5 Return BetMin Force
+When Others Return 0 Force
+
+// Purpose: positive action resolves to exactly one positive runtime mapping.
+// Source/Provenance: P invariant over T/A size map.
+##f$cc_turn_donk_runtime_mapping_valid##
+When !f$cc_turn_donk_router Return f$cc_turn_donk_requested_pot_fraction = 0 Force
+When !f$cc_turn_donk_runtime_size_ready Return false Force
+When f$cc_turn_donk_requested_pot_fraction <= 0 Return false Force
+When f$cc_turn_donk_size_id < 1 || f$cc_turn_donk_size_id > 5 Return false Force
+When Others Return true Force
+
+// ============================================================================
+// End Gate08H.1 Turn Donk runtime sizing adapter.
+// ============================================================================

@@ -1,0 +1,172 @@
+// ============================================================================
+// CashCrusher_ISO_Context.txt
+// Gate 01E.0 — isolation-pot survivor provenance
+// ============================================================================
+// Purpose:
+//   Preserve WHO survived a proven isolation raise.  A pot can be an ISO by
+//   history while the flop opponent is not the original limper.
+//
+// Example:
+//   UTG limp -> HJ raise -> BTN call -> UTG fold.
+//   HJ reaches flop HU versus a POST-RAISE COLD CALLER, not the limper.
+//
+// Source/Provenance:
+//   A — built from OpenPPL persisted call/raise bitmasks and the audited
+//       DeepCrusher need to preserve pot-history context.
+//   P — six-max architecture explicitly separates pre-raise limpers from
+//       post-raise cold callers because the Spin source does not model all such
+//       combinations.  This is context reconstruction, not invented frequency.
+//
+// Safety:
+//   True HU is excluded: SB limp -> BB raise is a true-HU limp-raised family,
+//   not ISO.  Unknown/contradictory survivor classification fails closed.
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// ISO.01 — Canonical position bit for HU villain
+// -----------------------------------------------------------------------------
+
+// Purpose: convert current HU Villain absolute-position ID to the canonical bit
+// used by preflop call-history masks.
+// Source/Provenance: Gate00 position contract, A mechanical adapter.
+// Safety: invalid/noncanonical Villain -> 0.
+##f$cc_hu_villain_pos_bit##
+When f$cc_hu_villain_pos_id = 1 Return 1 Force
+When f$cc_hu_villain_pos_id = 2 Return 2 Force
+When f$cc_hu_villain_pos_id = 3 Return 4 Force
+When f$cc_hu_villain_pos_id = 4 Return 8 Force
+When f$cc_hu_villain_pos_id = 5 Return 16 Force
+When f$cc_hu_villain_pos_id = 6 Return 32 Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// ISO.02 — Call masks relative to the sole raiser
+// -----------------------------------------------------------------------------
+// In a supported non-HU one-raise first-orbit history, a call bit BEFORE the
+// sole raiser proves that seat limped before the raise.  A call bit AFTER the
+// sole raiser is evidence of a post-raise caller.  These masks classify action
+// history, not player quality.
+
+// Purpose: reconstruct all canonical seats proven to have called/limped before
+// the sole isolation raiser.
+// Source: persisted `callbits1`, sole-raiser position and normal preflop order.
+// Provenance: A mechanical reconstruction from verified OpenPPL history.
+// Safety: only active after `f$cc_pf_iso_proven`; otherwise returns 0.
+##f$cc_pf_pre_raise_limper_mask##
+When !f$cc_pf_iso_proven Return 0 Force
+When f$cc_pf_single_raiser_pos_id = 2 Return (f$cc_pf_call_utg * 1) Force
+When f$cc_pf_single_raiser_pos_id = 3 Return ((f$cc_pf_call_utg * 1) + (f$cc_pf_call_hj * 2)) Force
+When f$cc_pf_single_raiser_pos_id = 4 Return ((f$cc_pf_call_utg * 1) + (f$cc_pf_call_hj * 2) + (f$cc_pf_call_co * 4)) Force
+When f$cc_pf_single_raiser_pos_id = 5 Return ((f$cc_pf_call_utg * 1) + (f$cc_pf_call_hj * 2) + (f$cc_pf_call_co * 4) + (f$cc_pf_call_btn * 8)) Force
+When f$cc_pf_single_raiser_pos_id = 6 Return ((f$cc_pf_call_utg * 1) + (f$cc_pf_call_hj * 2) + (f$cc_pf_call_co * 4) + (f$cc_pf_call_btn * 8) + (f$cc_pf_call_sb * 16)) Force
+When Others Return 0 Force
+
+// Purpose: reconstruct seats that called after the sole isolation raiser.
+// Source: persisted `callbits1` plus canonical first-orbit order.
+// Provenance: A mechanical reconstruction; strategy later treats these callers
+// as a different range family from original limpers.
+// Safety: only active for proven ISO history; returns 0 otherwise.
+##f$cc_pf_post_raise_coldcaller_mask##
+When !f$cc_pf_iso_proven Return 0 Force
+When f$cc_pf_single_raiser_pos_id = 1 Return ((f$cc_pf_call_hj * 2) + (f$cc_pf_call_co * 4) + (f$cc_pf_call_btn * 8) + (f$cc_pf_call_sb * 16) + (f$cc_pf_call_bb * 32)) Force
+When f$cc_pf_single_raiser_pos_id = 2 Return ((f$cc_pf_call_co * 4) + (f$cc_pf_call_btn * 8) + (f$cc_pf_call_sb * 16) + (f$cc_pf_call_bb * 32)) Force
+When f$cc_pf_single_raiser_pos_id = 3 Return ((f$cc_pf_call_btn * 8) + (f$cc_pf_call_sb * 16) + (f$cc_pf_call_bb * 32)) Force
+When f$cc_pf_single_raiser_pos_id = 4 Return ((f$cc_pf_call_sb * 16) + (f$cc_pf_call_bb * 32)) Force
+When f$cc_pf_single_raiser_pos_id = 5 Return (f$cc_pf_call_bb * 32) Force
+When f$cc_pf_single_raiser_pos_id = 6 Return 0 Force
+When Others Return 0 Force
+
+// Purpose: boolean shortcut showing at least one pre-raise limper was reconstructed.
+// Source/Provenance: A mechanical alias over the proven limper mask.
+##f$cc_pf_iso_has_pre_raise_limper##
+f$cc_pf_pre_raise_limper_mask > 0
+
+// Purpose: boolean shortcut showing at least one post-raise caller existed.
+// Source/Provenance: A mechanical alias over the coldcaller mask.
+##f$cc_pf_iso_has_post_raise_coldcaller##
+f$cc_pf_post_raise_coldcaller_mask > 0
+
+// -----------------------------------------------------------------------------
+// ISO.03 — Current HU survivor type
+// -----------------------------------------------------------------------------
+
+// Purpose: prove that the sole current Villain was one of the original limpers.
+// Context: multi-handed deal reduced to HU preflop, proven ISO history.
+// Source/Provenance: A/P context architecture using persisted masks.
+// Safety: cannot activate in true HU or origin=3 postflop-reduced HU.
+##f$cc_hu_iso_villain_was_limper##
+f$cc_hu_origin_preflop_reduced &&
+f$cc_pf_iso_proven &&
+f$cc_hu_villain_pos_bit > 0 &&
+((f$cc_pf_pre_raise_limper_mask BitAnd f$cc_hu_villain_pos_bit) > 0)
+
+// Purpose: prove that the sole current Villain cold-called after the ISO raise.
+// Context: the original limper may have folded; Villain is from a selected
+// post-raise caller range rather than a limp-call range.
+// Source/Provenance: P six-max survivor distinction built from A mechanics.
+// Safety: no inference if current Villain bit cannot be matched exactly.
+##f$cc_hu_iso_villain_was_postraise_coldcaller##
+f$cc_hu_origin_preflop_reduced &&
+f$cc_pf_iso_proven &&
+f$cc_hu_villain_pos_bit > 0 &&
+((f$cc_pf_post_raise_coldcaller_mask BitAnd f$cc_hu_villain_pos_bit) > 0)
+
+// Purpose: stable HU ISO survivor ID: 1 original limper, 2 post-raise caller,
+// 0 unknown/unproven.
+// Source/Provenance: P engineering contract over A mechanical evidence.
+##f$cc_hu_iso_survivor_type_id##
+When f$cc_hu_iso_villain_was_limper Return 1 Force
+When f$cc_hu_iso_villain_was_postraise_coldcaller Return 2 Force
+When Others Return 0 Force
+
+// Purpose: expose whether the HU ISO opponent range origin is proven.
+// Source/Provenance: P safety alias; policy cannot fire on type 0.
+##f$cc_hu_iso_survivor_proven##
+f$cc_hu_iso_survivor_type_id > 0
+
+// Purpose: reject contradictory or unresolved HU ISO survivor histories.
+// Source: aggregate bitmasks can lose chronology; therefore exact proof is
+// required rather than approximating the surviving player.
+// Provenance: P fail-closed engineering safety.
+// Safety: a single Villain can never legally classify as both categories.
+##f$cc_hu_iso_survivor_consistent##
+When !f$cc_hu_origin_preflop_reduced Return true Force
+When !f$cc_pf_iso_proven Return true Force
+When f$cc_hu_iso_villain_was_limper && f$cc_hu_iso_villain_was_postraise_coldcaller Return false Force
+When f$cc_hu_iso_survivor_proven Return true Force
+When Others Return false Force
+
+// -----------------------------------------------------------------------------
+// ISO.04 — Multiway composition descriptors
+// -----------------------------------------------------------------------------
+
+// Purpose: among opponents still live in a multiway ISO flop, retain only those
+// proven to have limped before the raise.
+// Source/Provenance: A/P exact mask intersection; no strategy frequency implied.
+// Safety: non-multiway or unproven ISO -> 0.
+##f$cc_mw_iso_live_limper_mask##
+When !f$cc_multiway Return 0 Force
+When !f$cc_pf_iso_proven Return 0 Force
+When Others Return (f$cc_opp_live_mask BitAnd f$cc_pf_pre_raise_limper_mask) Force
+
+// Purpose: among live multiway opponents, retain post-raise cold callers.
+// Source/Provenance: A/P exact mask intersection; separate from limper mask.
+// Safety: non-multiway or unproven ISO -> 0.
+##f$cc_mw_iso_live_postraise_coldcaller_mask##
+When !f$cc_multiway Return 0 Force
+When !f$cc_pf_iso_proven Return 0 Force
+When Others Return (f$cc_opp_live_mask BitAnd f$cc_pf_post_raise_coldcaller_mask) Force
+
+// Purpose: count surviving original limpers in a multiway ISO pot.
+// Source/Provenance: A mechanical BitCount over exact live mask.
+##f$cc_mw_iso_live_limper_count##
+BitCount(f$cc_mw_iso_live_limper_mask)
+
+// Purpose: count surviving post-raise cold callers in a multiway ISO pot.
+// Source/Provenance: A mechanical BitCount over exact live mask.
+##f$cc_mw_iso_live_postraise_coldcaller_count##
+BitCount(f$cc_mw_iso_live_postraise_coldcaller_mask)
+
+// ============================================================================
+// End ISO survivor provenance.
+// ============================================================================

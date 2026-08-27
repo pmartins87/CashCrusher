@@ -1,0 +1,199 @@
+// ============================================================================
+// CashCrusher_River_Delayed_BTNvBB_Source.txt
+// Gate 13E — native 3wBTNvBB direct River no-action source
+// ============================================================================
+// Purpose:
+//   Restore the mature 3wBTNvBB `f$river_lead_noaction` positive descendants
+//   only when their earlier source plan can be reconstructed from CLOSED
+//   CashCrusher history. Source branch order is preserved exactly:
+//     TurnX_River75 -> GU_River50 -> GU_River75 -> TP+ overcard River100.
+//
+// Direct source facts:
+//   * source f$flop_2BW means AT LEAST two broadway flop cards (true on 3BW);
+//   * `SuitsOnFlop = 3` is rainbow, so source `SuitsOnFlop < 3` is the persisted
+//     monotone/two-tone subset;
+//   * source f$flop_2verylow means any two flop ranks are both 2..5;
+//   * AcePresentOnFlop precedes all 1BW/2BW no-made plan branches;
+//   * weak carried TP (<T kicker, no flop BDSD) checks Turn and writes River75;
+//   * source River TP-or-better + River overcard writes River100.
+//
+// Provenance:
+//   T = mature DeepCrusher 3wBTNvBB flop/turn/river source + OpenHoldem
+//       RiverCardIsOvercardToBoard.
+//   A = exact persistent source-plan reconstruction from CashCrusher CLOSED
+//       flop/turn history and conservative contributed current-value translation.
+//   P = normalized size IDs / positive-only coverage metadata.
+//   X = source-context residuals remain explicit pending rather than generalized.
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// RDBB.01 — exact native source context
+// -----------------------------------------------------------------------------
+
+// Purpose: exact native 3-handed BTN PFA vs BB ordinary-SRP River after Hero
+// actually CBet flop, had the reviewed source-anchored Turn family and then
+// actually checked Turn through.
+// Source/Provenance: T/A source geometry + CLOSED history.
+##f$cc_river_delayed_3w_btnvbb_context##
+f$cc_river_delayed_after_standard_turncheck_valid &&
+f$cc_deal_size = 3 &&
+f$cc_flop_entry_count = 2 &&
+f$cc_hu &&
+f$cc_hu_origin_preflop_reduced &&
+f$cc_hero_pos_id = 4 &&
+f$cc_hu_villain_pos_id = 6 &&
+f$cc_pot_family_id = 2 &&
+f$cc_pf_role_pfa &&
+f$cc_pf_one_raise_ordinary_srp &&
+f$cc_hist_turn_state_family_id = 1
+
+// Purpose: prove the source-plan reconstruction reads a real executed flop CBet
+// and an internally consistent source snapshot, not a stale pre-action plan.
+// Source/Provenance: T/A closed flop execution + P/X drift guard.
+##f$cc_river_delayed_3w_btnvbb_flop_snapshot_valid##
+f$cc_river_delayed_3w_btnvbb_context &&
+f$cc_hist_flop_initial_cbet_executed &&
+f$cc_hist_flop_cbet_snapshot_consistent &&
+!f$cc_hist_flop_cbet_runtime_mismatch
+
+// -----------------------------------------------------------------------------
+// RDBB.02 — exact historical FLOP source-plan reconstruction
+// -----------------------------------------------------------------------------
+
+// Purpose: source broadway count from persistent flop-card ranks.
+// Source/Provenance: T/A exact arithmetic; source broadway = rank T..A.
+##f$cc_river_delayed_3w_btnvbb_flop_bw_count##
+((FirstFlopCard >= 10 && FirstFlopCard <= 14) ? 1 : 0) +
+((SecondFlopCard >= 10 && SecondFlopCard <= 14) ? 1 : 0) +
+((ThirdFlopCard >= 10 && ThirdFlopCard <= 14) ? 1 : 0)
+
+// Purpose: exact source f$flop_1BW.
+// Source/Provenance: T direct semantic equivalent.
+##f$cc_river_delayed_3w_btnvbb_flop_1bw##
+f$cc_river_delayed_3w_btnvbb_flop_bw_count = 1
+
+// Purpose: exact source f$flop_2BW semantics; it remains true on a 3BW flop.
+// Source/Provenance: T direct pair-of-broadways semantics.
+##f$cc_river_delayed_3w_btnvbb_flop_2bw_or_more##
+f$cc_river_delayed_3w_btnvbb_flop_bw_count >= 2
+
+// Purpose: exact source f$flop_2verylow = any two flop cards both rank 2..5.
+// Source/Provenance: T direct helper translation.
+##f$cc_river_delayed_3w_btnvbb_flop_2verylow##
+((FirstFlopCard >= 2 && FirstFlopCard <= 5) && (SecondFlopCard >= 2 && SecondFlopCard <= 5)) ||
+((FirstFlopCard >= 2 && FirstFlopCard <= 5) && (ThirdFlopCard >= 2 && ThirdFlopCard <= 5)) ||
+((SecondFlopCard >= 2 && SecondFlopCard <= 5) && (ThirdFlopCard >= 2 && ThirdFlopCard <= 5))
+
+// Purpose: AcePresentOnFlop is source-precedence material; compute it directly
+// from persistent flop ranks instead of relying on a current-street alias.
+// Source/Provenance: T/A exact mechanical equivalent.
+##f$cc_river_delayed_3w_btnvbb_flop_had_ace##
+FirstFlopCard = 14 || SecondFlopCard = 14 || ThirdFlopCard = 14
+
+// Purpose: source `SuitsOnFlop < 3`; OpenPPL/CashCrusher suit ID 3 is rainbow,
+// while persisted monotone/two-tone snapshots jointly represent <3.
+// Source/Provenance: T/A exact persistent reconstruction.
+##f$cc_river_delayed_3w_btnvbb_flop_nonrainbow##
+user_cc_flop_cbet_flop_monotone || user_cc_flop_cbet_flop_twotone
+
+// Purpose: source `user_Flop50_TurnGU_River50` parent. Ace branch precedes it;
+// 1BW + (non-rainbow OR two-very-low) with source no-made flop reconstructs it.
+// Source/Provenance: T direct source plan reconstructed from A persistent history.
+##f$cc_river_delayed_3w_btnvbb_gu_r50_plan##
+f$cc_river_delayed_3w_btnvbb_flop_snapshot_valid &&
+user_cc_flop_cbet_had_no_made &&
+!f$cc_river_delayed_3w_btnvbb_flop_had_ace &&
+f$cc_river_delayed_3w_btnvbb_flop_1bw &&
+(f$cc_river_delayed_3w_btnvbb_flop_nonrainbow || f$cc_river_delayed_3w_btnvbb_flop_2verylow)
+
+// Purpose: source `user_Flop33_TurnGU_River75` parent. Source f$flop_2BW is
+// intentionally >=2 broadways, not CashCrusher's exact-two-broadway helper.
+// Source/Provenance: T direct source plan reconstructed from A persistent history.
+##f$cc_river_delayed_3w_btnvbb_gu_r75_plan##
+f$cc_river_delayed_3w_btnvbb_flop_snapshot_valid &&
+user_cc_flop_cbet_had_no_made &&
+!f$cc_river_delayed_3w_btnvbb_flop_had_ace &&
+f$cc_river_delayed_3w_btnvbb_flop_2bw_or_more
+
+// -----------------------------------------------------------------------------
+// RDBB.03 — exact historical TURN source-plan reconstruction
+// -----------------------------------------------------------------------------
+
+// Purpose: exact direct-source `user_TurnX_River75` subset: carried flop TP,
+// current Turn TP, kicker below T, no flop BDSD, and CLOSED standard Turn X/X.
+// Source/Provenance: T direct source condition + A persistent class translation.
+##f$cc_river_delayed_3w_btnvbb_turnx_r75_parent##
+f$cc_river_delayed_3w_btnvbb_flop_snapshot_valid &&
+user_cc_flop_cbet_had_top_pair &&
+user_cc_flop_cbet_tp_kicker_below_t &&
+!user_cc_flop_cbet_had_bdsd &&
+user_cc_turn_state_had_top_pair
+
+// -----------------------------------------------------------------------------
+// RDBB.04 — current River source branches
+// -----------------------------------------------------------------------------
+
+// Purpose: source GU_R50 is live only when River is still no-made.
+// Source/Provenance: T direct `f$NoMadeHand` River gate.
+##f$cc_river_delayed_3w_btnvbb_gu_r50_parent##
+f$cc_river_delayed_3w_btnvbb_gu_r50_plan && f$cc_river_delayed_no_made
+
+// Purpose: source GU_R75 is live only when River is still no-made.
+// Source/Provenance: T direct `f$NoMadeHand` River gate.
+##f$cc_river_delayed_3w_btnvbb_gu_r75_parent##
+f$cc_river_delayed_3w_btnvbb_gu_r75_plan && f$cc_river_delayed_no_made
+
+// Purpose: conservative contributed current TP-or-better subset for source
+// `f$hand_TopPairOrBetter`. Board-only/value-ambiguous states fail closed.
+// Source/Provenance: A conservative translation over current River classes.
+##f$cc_river_delayed_3w_btnvbb_tpplus_real##
+f$cc_river_delayed_tpop_real || f$cc_river_delayed_two_pair_plus_real
+
+// Purpose: source fourth branch: current TP+ and River itself is an overcard to
+// the prior board -> pot-size River100.
+// Source/Provenance: T direct OpenHoldem overcard symbol + A conservative value.
+##f$cc_river_delayed_3w_btnvbb_overcard_value_parent##
+f$cc_river_delayed_3w_btnvbb_context &&
+f$cc_river_delayed_3w_btnvbb_tpplus_real &&
+RiverCardIsOvercardToBoard
+
+// Purpose: exact positive source action order.
+// Source/Provenance: T direct mature `f$river_lead_noaction` ordering.
+##f$cc_river_delayed_3w_btnvbb_source_action##
+When f$cc_river_delayed_3w_btnvbb_turnx_r75_parent Return true Force
+When f$cc_river_delayed_3w_btnvbb_gu_r50_parent Return true Force
+When f$cc_river_delayed_3w_btnvbb_gu_r75_parent Return true Force
+When f$cc_river_delayed_3w_btnvbb_overcard_value_parent Return true Force
+When Others Return false Force
+
+// Purpose: exact source sizes 75 / 50 / 75 / 100 in the same precedence.
+// Source/Provenance: T direct source size markers.
+##f$cc_river_delayed_3w_btnvbb_source_size_id##
+When f$cc_river_delayed_3w_btnvbb_turnx_r75_parent Return f$cc_river_delayed_size_75_id Force
+When f$cc_river_delayed_3w_btnvbb_gu_r50_parent Return f$cc_river_delayed_size_50_id Force
+When f$cc_river_delayed_3w_btnvbb_gu_r75_parent Return f$cc_river_delayed_size_75_id Force
+When f$cc_river_delayed_3w_btnvbb_overcard_value_parent Return f$cc_river_delayed_size_100_id Force
+When Others Return 0 Force
+
+// Purpose: positive-only translated coverage. Residual native BTNvBB histories
+// remain explicit pending until their source-negative equivalence is audited.
+// Source/Provenance: P conservative coverage over T direct positive children.
+##f$cc_river_delayed_3w_btnvbb_source_covered##
+f$cc_river_delayed_3w_btnvbb_source_action
+
+// Purpose: exact native source context still outside current positive checkpoint.
+// Source/Provenance: X work-queue metadata; action remains CHECK.
+##f$cc_river_delayed_3w_btnvbb_source_pending##
+f$cc_river_delayed_3w_btnvbb_context &&
+!f$cc_river_delayed_3w_btnvbb_source_covered
+
+// Purpose: local action/size integrity.
+// Source/Provenance: P safety invariant.
+##f$cc_river_delayed_3w_btnvbb_source_size_consistent##
+When !f$cc_river_delayed_3w_btnvbb_source_action Return f$cc_river_delayed_3w_btnvbb_source_size_id = 0 Force
+When f$cc_river_delayed_3w_btnvbb_source_action Return f$cc_river_delayed_3w_btnvbb_source_size_id >= 1 && f$cc_river_delayed_3w_btnvbb_source_size_id <= 6 Force
+When Others Return false Force
+
+// ============================================================================
+// End Gate13E native 3wBTNvBB direct-source positive checkpoint.
+// ============================================================================

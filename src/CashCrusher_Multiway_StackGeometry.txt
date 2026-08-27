@@ -1,0 +1,174 @@
+// ============================================================================
+// CashCrusher_Multiway_StackGeometry.txt
+// Gate 00D.2 / 01K.3A — explicit multiway stack-depth geometry
+// ============================================================================
+// Purpose:
+//   Preserve BOTH ends of multiway effective-stack geometry instead of forcing
+//   every strategic decision through a single "effective stack" number.
+//
+// Why this exists:
+//   DeepCrusher `f$EffectiveStack_BKP` uses the BIGGEST active opponent stack
+//   and therefore corresponds, after capping by Hero, to the deepest effective
+//   opponent relationship.  CashCrusher's first Gate00 implementation also kept
+//   the shallowest live effective stack as a coarse descriptor.  Both are useful,
+//   but for different questions.
+//
+//   Example: Hero 100bb, Villain A 18bb, Villain B 100bb.
+//     shallowest effective = 18bb
+//     deepest effective    = 100bb
+//   A 3-way one-pair decision must not behave as if the whole pot had 18bb
+//   effective merely because one opponent is short.
+//
+// Source / provenance:
+//   T/A — live seat masks and street-start stack reconstruction from Gate00.
+//   A   — DeepCrusher biggest-active-opponent effective-stack semantics are
+//         preserved here as an AUDIT analogue, not as universal strategy.
+//   P   — naming/dual-bound architecture and CBet caution descriptors.
+//
+// Strategic contract:
+//   * SHALLOWEST answers "does at least one opponent create short-stack/sidepot
+//     geometry?"
+//   * DEEPEST answers "can Hero still face a materially deep effective opponent?"
+//   * actor-specific call/raise decisions continue to use actor-specific stack.
+//   * low-SPR relaxations for multiway one-pair CBet must use DEEPEST unless a
+//     rule explicitly owns a specific opponent/sidepot.
+//
+// OpenPPL safety: flat complete WHENs only; invalid stack evidence fails closed.
+// ============================================================================
+
+// Purpose: verify every currently live opponent has a valid reconstructed stack.
+// Source/Provenance: T/A validation over exact live-position flags.
+##f$cc_mw_live_opp_stacks_valid##
+When !f$cc_multiway Return false Force
+When f$cc_opp_live_utg && f$cc_stack_utg_round_start_bb < 0 Return false Force
+When f$cc_opp_live_hj && f$cc_stack_hj_round_start_bb < 0 Return false Force
+When f$cc_opp_live_co && f$cc_stack_co_round_start_bb < 0 Return false Force
+When f$cc_opp_live_btn && f$cc_stack_btn_round_start_bb < 0 Return false Force
+When f$cc_opp_live_sb && f$cc_stack_sb_round_start_bb < 0 Return false Force
+When f$cc_opp_live_bb && f$cc_stack_bb_round_start_bb < 0 Return false Force
+When BitCount(f$cc_opp_live_mask) != nopponentsplaying Return false Force
+When Others Return true Force
+
+// Purpose: shortest currently live opponent stack at street start.
+// Source/Provenance: A mirror/check of Gate00 minimum-stack geometry.
+// Safety: returns -1 when any live opponent stack is untrusted.
+##f$cc_mw_min_live_opp_stack_round_start_bb##
+When !f$cc_mw_live_opp_stacks_valid Return -1 Force
+When f$cc_opp_live_utg && (!f$cc_opp_live_hj || f$cc_stack_utg_round_start_bb <= f$cc_stack_hj_round_start_bb) && (!f$cc_opp_live_co || f$cc_stack_utg_round_start_bb <= f$cc_stack_co_round_start_bb) && (!f$cc_opp_live_btn || f$cc_stack_utg_round_start_bb <= f$cc_stack_btn_round_start_bb) && (!f$cc_opp_live_sb || f$cc_stack_utg_round_start_bb <= f$cc_stack_sb_round_start_bb) && (!f$cc_opp_live_bb || f$cc_stack_utg_round_start_bb <= f$cc_stack_bb_round_start_bb) Return f$cc_stack_utg_round_start_bb Force
+When f$cc_opp_live_hj && (!f$cc_opp_live_utg || f$cc_stack_hj_round_start_bb <= f$cc_stack_utg_round_start_bb) && (!f$cc_opp_live_co || f$cc_stack_hj_round_start_bb <= f$cc_stack_co_round_start_bb) && (!f$cc_opp_live_btn || f$cc_stack_hj_round_start_bb <= f$cc_stack_btn_round_start_bb) && (!f$cc_opp_live_sb || f$cc_stack_hj_round_start_bb <= f$cc_stack_sb_round_start_bb) && (!f$cc_opp_live_bb || f$cc_stack_hj_round_start_bb <= f$cc_stack_bb_round_start_bb) Return f$cc_stack_hj_round_start_bb Force
+When f$cc_opp_live_co && (!f$cc_opp_live_utg || f$cc_stack_co_round_start_bb <= f$cc_stack_utg_round_start_bb) && (!f$cc_opp_live_hj || f$cc_stack_co_round_start_bb <= f$cc_stack_hj_round_start_bb) && (!f$cc_opp_live_btn || f$cc_stack_co_round_start_bb <= f$cc_stack_btn_round_start_bb) && (!f$cc_opp_live_sb || f$cc_stack_co_round_start_bb <= f$cc_stack_sb_round_start_bb) && (!f$cc_opp_live_bb || f$cc_stack_co_round_start_bb <= f$cc_stack_bb_round_start_bb) Return f$cc_stack_co_round_start_bb Force
+When f$cc_opp_live_btn && (!f$cc_opp_live_utg || f$cc_stack_btn_round_start_bb <= f$cc_stack_utg_round_start_bb) && (!f$cc_opp_live_hj || f$cc_stack_btn_round_start_bb <= f$cc_stack_hj_round_start_bb) && (!f$cc_opp_live_co || f$cc_stack_btn_round_start_bb <= f$cc_stack_co_round_start_bb) && (!f$cc_opp_live_sb || f$cc_stack_btn_round_start_bb <= f$cc_stack_sb_round_start_bb) && (!f$cc_opp_live_bb || f$cc_stack_btn_round_start_bb <= f$cc_stack_bb_round_start_bb) Return f$cc_stack_btn_round_start_bb Force
+When f$cc_opp_live_sb && (!f$cc_opp_live_utg || f$cc_stack_sb_round_start_bb <= f$cc_stack_utg_round_start_bb) && (!f$cc_opp_live_hj || f$cc_stack_sb_round_start_bb <= f$cc_stack_hj_round_start_bb) && (!f$cc_opp_live_co || f$cc_stack_sb_round_start_bb <= f$cc_stack_co_round_start_bb) && (!f$cc_opp_live_btn || f$cc_stack_sb_round_start_bb <= f$cc_stack_btn_round_start_bb) && (!f$cc_opp_live_bb || f$cc_stack_sb_round_start_bb <= f$cc_stack_bb_round_start_bb) Return f$cc_stack_sb_round_start_bb Force
+When f$cc_opp_live_bb && (!f$cc_opp_live_utg || f$cc_stack_bb_round_start_bb <= f$cc_stack_utg_round_start_bb) && (!f$cc_opp_live_hj || f$cc_stack_bb_round_start_bb <= f$cc_stack_hj_round_start_bb) && (!f$cc_opp_live_co || f$cc_stack_bb_round_start_bb <= f$cc_stack_co_round_start_bb) && (!f$cc_opp_live_btn || f$cc_stack_bb_round_start_bb <= f$cc_stack_btn_round_start_bb) && (!f$cc_opp_live_sb || f$cc_stack_bb_round_start_bb <= f$cc_stack_sb_round_start_bb) Return f$cc_stack_bb_round_start_bb Force
+When Others Return -1 Force
+
+// Purpose: deepest currently live opponent stack at street start.
+// Source: DeepCrusher effective-stack ancestry explicitly uses biggest active
+// opponent; this function preserves that mechanical fact without importing its
+// downstream short-stack strategy.
+// Provenance: T/A.
+##f$cc_mw_max_live_opp_stack_round_start_bb##
+When !f$cc_mw_live_opp_stacks_valid Return -1 Force
+When f$cc_opp_live_utg && (!f$cc_opp_live_hj || f$cc_stack_utg_round_start_bb >= f$cc_stack_hj_round_start_bb) && (!f$cc_opp_live_co || f$cc_stack_utg_round_start_bb >= f$cc_stack_co_round_start_bb) && (!f$cc_opp_live_btn || f$cc_stack_utg_round_start_bb >= f$cc_stack_btn_round_start_bb) && (!f$cc_opp_live_sb || f$cc_stack_utg_round_start_bb >= f$cc_stack_sb_round_start_bb) && (!f$cc_opp_live_bb || f$cc_stack_utg_round_start_bb >= f$cc_stack_bb_round_start_bb) Return f$cc_stack_utg_round_start_bb Force
+When f$cc_opp_live_hj && (!f$cc_opp_live_utg || f$cc_stack_hj_round_start_bb >= f$cc_stack_utg_round_start_bb) && (!f$cc_opp_live_co || f$cc_stack_hj_round_start_bb >= f$cc_stack_co_round_start_bb) && (!f$cc_opp_live_btn || f$cc_stack_hj_round_start_bb >= f$cc_stack_btn_round_start_bb) && (!f$cc_opp_live_sb || f$cc_stack_hj_round_start_bb >= f$cc_stack_sb_round_start_bb) && (!f$cc_opp_live_bb || f$cc_stack_hj_round_start_bb >= f$cc_stack_bb_round_start_bb) Return f$cc_stack_hj_round_start_bb Force
+When f$cc_opp_live_co && (!f$cc_opp_live_utg || f$cc_stack_co_round_start_bb >= f$cc_stack_utg_round_start_bb) && (!f$cc_opp_live_hj || f$cc_stack_co_round_start_bb >= f$cc_stack_hj_round_start_bb) && (!f$cc_opp_live_btn || f$cc_stack_co_round_start_bb >= f$cc_stack_btn_round_start_bb) && (!f$cc_opp_live_sb || f$cc_stack_co_round_start_bb >= f$cc_stack_sb_round_start_bb) && (!f$cc_opp_live_bb || f$cc_stack_co_round_start_bb >= f$cc_stack_bb_round_start_bb) Return f$cc_stack_co_round_start_bb Force
+When f$cc_opp_live_btn && (!f$cc_opp_live_utg || f$cc_stack_btn_round_start_bb >= f$cc_stack_utg_round_start_bb) && (!f$cc_opp_live_hj || f$cc_stack_btn_round_start_bb >= f$cc_stack_hj_round_start_bb) && (!f$cc_opp_live_co || f$cc_stack_btn_round_start_bb >= f$cc_stack_co_round_start_bb) && (!f$cc_opp_live_sb || f$cc_stack_btn_round_start_bb >= f$cc_stack_sb_round_start_bb) && (!f$cc_opp_live_bb || f$cc_stack_btn_round_start_bb >= f$cc_stack_bb_round_start_bb) Return f$cc_stack_btn_round_start_bb Force
+When f$cc_opp_live_sb && (!f$cc_opp_live_utg || f$cc_stack_sb_round_start_bb >= f$cc_stack_utg_round_start_bb) && (!f$cc_opp_live_hj || f$cc_stack_sb_round_start_bb >= f$cc_stack_hj_round_start_bb) && (!f$cc_opp_live_co || f$cc_stack_sb_round_start_bb >= f$cc_stack_co_round_start_bb) && (!f$cc_opp_live_btn || f$cc_stack_sb_round_start_bb >= f$cc_stack_btn_round_start_bb) && (!f$cc_opp_live_bb || f$cc_stack_sb_round_start_bb >= f$cc_stack_bb_round_start_bb) Return f$cc_stack_sb_round_start_bb Force
+When f$cc_opp_live_bb && (!f$cc_opp_live_utg || f$cc_stack_bb_round_start_bb >= f$cc_stack_utg_round_start_bb) && (!f$cc_opp_live_hj || f$cc_stack_bb_round_start_bb >= f$cc_stack_hj_round_start_bb) && (!f$cc_opp_live_co || f$cc_stack_bb_round_start_bb >= f$cc_stack_co_round_start_bb) && (!f$cc_opp_live_btn || f$cc_stack_bb_round_start_bb >= f$cc_stack_btn_round_start_bb) && (!f$cc_opp_live_sb || f$cc_stack_bb_round_start_bb >= f$cc_stack_sb_round_start_bb) Return f$cc_stack_bb_round_start_bb Force
+When Others Return -1 Force
+
+// Purpose: Hero-v-shortest-opponent effective stack.
+// Source/Provenance: standard min(Hero, opponent) geometry, T/A.
+##f$cc_mw_shallowest_effective_stack_round_start_bb##
+When !f$cc_mw_live_opp_stacks_valid Return -1 Force
+When f$cc_hero_stack_round_start_bb < 0 Return -1 Force
+When f$cc_mw_min_live_opp_stack_round_start_bb < 0 Return -1 Force
+When f$cc_hero_stack_round_start_bb <= f$cc_mw_min_live_opp_stack_round_start_bb Return f$cc_hero_stack_round_start_bb Force
+When Others Return f$cc_mw_min_live_opp_stack_round_start_bb Force
+
+// Purpose: Hero-v-deepest-opponent effective stack.
+// Source: exact CashCrusher analogue of DeepCrusher `f$EffectiveStack_BKP` in a
+// multiway pot: min(Hero, biggest active opponent).
+// Provenance: A mechanical ancestry; downstream strategy remains separately audited.
+##f$cc_mw_deepest_effective_stack_round_start_bb##
+When !f$cc_mw_live_opp_stacks_valid Return -1 Force
+When f$cc_hero_stack_round_start_bb < 0 Return -1 Force
+When f$cc_mw_max_live_opp_stack_round_start_bb < 0 Return -1 Force
+When f$cc_hero_stack_round_start_bb <= f$cc_mw_max_live_opp_stack_round_start_bb Return f$cc_hero_stack_round_start_bb Force
+When Others Return f$cc_mw_max_live_opp_stack_round_start_bb Force
+
+// Purpose: raw SPR against the shortest effective opponent relation.
+// Source/Provenance: standard SPR arithmetic, P/T geometry descriptor.
+##f$cc_mw_spr_shallowest_round_start##
+When f$cc_round_start_pot_bb <= 0 Return -1 Force
+When f$cc_mw_shallowest_effective_stack_round_start_bb < 0 Return -1 Force
+When Others Return (f$cc_mw_shallowest_effective_stack_round_start_bb / f$cc_round_start_pot_bb) Force
+
+// Purpose: raw SPR against the deepest effective opponent relation.
+// Source: mechanically matches the stack side of DeepCrusher biggest-opponent
+// effective stack, while using CashCrusher's street-start common pot denominator.
+// Provenance: A/P audit geometry.
+##f$cc_mw_spr_deepest_round_start##
+When f$cc_round_start_pot_bb <= 0 Return -1 Force
+When f$cc_mw_deepest_effective_stack_round_start_bb < 0 Return -1 Force
+When Others Return (f$cc_mw_deepest_effective_stack_round_start_bb / f$cc_round_start_pot_bb) Force
+
+// Purpose: raw spread between deepest and shallowest effective relationships.
+// Source/Provenance: T arithmetic; positive value reveals stack-depth asymmetry.
+##f$cc_mw_effective_stack_span_bb##
+When f$cc_mw_shallowest_effective_stack_round_start_bb < 0 Return -1 Force
+When f$cc_mw_deepest_effective_stack_round_start_bb < 0 Return -1 Force
+When Others Return (f$cc_mw_deepest_effective_stack_round_start_bb - f$cc_mw_shallowest_effective_stack_round_start_bb) Force
+
+// Purpose: flag that not all opponents share the same effective depth versus Hero.
+// Source/Provenance: T/P exact geometry descriptor; no strategy implied.
+##f$cc_mw_effective_depth_asymmetric##
+f$cc_mw_effective_stack_span_bb > 0.01
+
+// Purpose: multiway high-SPR caution for one-pair CBet decisions.
+// Source: P professional-theory use; threshold keeps existing CashCrusher >=6
+// engineering boundary but now applies it to DEEPEST effective relation.
+// Provenance: P; this is not a universal solver cutoff.
+##f$cc_mw_cbet_high_spr##
+f$cc_mw_spr_deepest_round_start >= 6
+
+// Purpose: very-high-SPR multiway caution using deepest effective relation.
+// Source/Provenance: P engineering boundary, not a commitment rule.
+##f$cc_mw_cbet_very_high_spr##
+f$cc_mw_spr_deepest_round_start >= 10
+
+// Purpose: low-SPR condition is true only if EVERY effective opponent relation
+// is below 2, because deepest effective relation is the limiting one.
+// Source/Provenance: P/T semantic helper for later exact-node review.
+##f$cc_mw_all_effective_spr_below_2##
+f$cc_mw_spr_deepest_round_start >= 0 && f$cc_mw_spr_deepest_round_start < 2
+
+// Purpose: low-SPR condition true only if every effective relation is below 3.
+// Source/Provenance: P/T semantic helper.
+##f$cc_mw_all_effective_spr_below_3##
+f$cc_mw_spr_deepest_round_start >= 0 && f$cc_mw_spr_deepest_round_start < 3
+
+// Purpose: low-SPR condition true only if every effective relation is below 4.
+// Source/Provenance: P/T semantic helper.
+##f$cc_mw_all_effective_spr_below_4##
+f$cc_mw_spr_deepest_round_start >= 0 && f$cc_mw_spr_deepest_round_start < 4
+
+// Purpose: low-SPR condition true only if every effective relation is below 6.
+// Source/Provenance: P/T semantic helper.
+##f$cc_mw_all_effective_spr_below_6##
+f$cc_mw_spr_deepest_round_start >= 0 && f$cc_mw_spr_deepest_round_start < 6
+
+// Purpose: shortest relation is already below 2 even though deeper opponents may exist.
+// Source/Provenance: T/P sidepot/short-player review descriptor, not action permission.
+##f$cc_mw_any_effective_spr_below_2##
+f$cc_mw_spr_shallowest_round_start >= 0 && f$cc_mw_spr_shallowest_round_start < 2
+
+// Purpose: identify a multiway state where at least one short effective opponent
+// coexists with a materially deeper effective opponent.
+// Source/Provenance: P diagnostic for sidepot-sensitive strategy review.
+##f$cc_mw_short_and_deep_coexist##
+f$cc_mw_any_effective_spr_below_2 && f$cc_mw_spr_deepest_round_start >= 4
+
+// ============================================================================
+// End dual-bound multiway stack geometry.
+// ============================================================================

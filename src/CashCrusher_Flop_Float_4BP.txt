@@ -1,0 +1,135 @@
+// ============================================================================
+// CashCrusher_Flop_Float_4BP.txt
+// Gate 04F — clean caller-IP four-bet-pot Flop Float
+// ============================================================================
+// Purpose:
+//   Support the one clean caller-side 4BP chronology that aggregate preflop
+//   history can prove strongly enough for an IP checked-to Float baseline:
+//
+//     opener -> Hero 3bet -> opener 4bet -> Hero call -> opener checks flop.
+//
+// Source boundary:
+//   DeepCrusher has no dedicated deep-stack 4BP Float tree. Policy is P-heavy.
+//   Reversed/limp-reraise/backraise, cold4-caller and unresolved other-caller
+//   histories remain fail-closed instead of borrowing this range.
+//
+// Cash-depth contract:
+//   Naturally low 4BP SPR is a legitimate input, but TP/OP do NOT become generic
+//   stackoff classes. This file only decides first flop bet/check and size ID.
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// F4.01 — Conservative caller-side chronology reconstruction
+// -----------------------------------------------------------------------------
+
+// Purpose: in a three-raise pot with exactly two unique raisers, Hero called the
+// final 4bet after having raised and return the other raiser's position.
+// Source/Provenance: A mechanical raiser-bit scan + T Hero call/raise history.
+// Safety: this is only a candidate opponent until standard opener4 order is proven.
+##f$cc_flop_float_4bp_other_raiser_pos_id##
+When f$cc_pf_raise_count != 3 Return 0 Force
+When !f$cc_pf_role_call_4bet Return 0 Force
+When !f$cc_pf_hero_ever_raised Return 0 Force
+When f$cc_pf_unique_raiser_count != 2 Return 0 Force
+When f$cc_pf_raise_utg && f$cc_hero_pos_id != 1 Return 1 Force
+When f$cc_pf_raise_hj && f$cc_hero_pos_id != 2 Return 2 Force
+When f$cc_pf_raise_co && f$cc_hero_pos_id != 3 Return 3 Force
+When f$cc_pf_raise_btn && f$cc_hero_pos_id != 4 Return 4 Force
+When f$cc_pf_raise_sb && f$cc_hero_pos_id != 5 Return 5 Force
+When f$cc_pf_raise_bb && f$cc_hero_pos_id != 6 Return 6 Force
+When Others Return 0 Force
+
+// Purpose: prove opponent opened first, Hero 3bet later, opponent 4bet on return,
+// and Hero called. With three raises/two raisers this is the clean opener4 line.
+// Source/Provenance: P conservative chronology proof over A aggregate history.
+// Safety: other>=Hero is reversed/backraise-like and remains unsupported.
+##f$cc_flop_float_4bp_opener4_vs_hero3bettor_proven##
+f$cc_pf_raise_count = 3 &&
+f$cc_pf_role_call_4bet &&
+f$cc_pf_hero_ever_raised &&
+f$cc_pf_unique_raiser_count = 2 &&
+f$cc_flop_float_4bp_other_raiser_pos_id > 0 &&
+f$cc_flop_float_4bp_other_raiser_pos_id < f$cc_hero_pos_id
+
+// Purpose: clean HU caller-IP 4BP Float context.
+// Source: no source strategy; chronology itself is P/A and exact current Villain
+// must be the reconstructed opener/final 4bettor.
+// Provenance: T/A topology + P 4BP range owner.
+// True-HU note: normal HU SB-open/BB-3bet/SB-4bet leaves BB OOP, so this clean IP
+// descendant naturally occurs only in multi-handed canonical position structures.
+##f$cc_flop_float_4bp_hu_context##
+f$cc_flop_float_hu_opportunity &&
+f$cc_pot_family_id = 4 &&
+f$cc_flop_float_4bp_opener4_vs_hero3bettor_proven &&
+f$cc_hu_villain_pos_id = f$cc_flop_float_4bp_other_raiser_pos_id &&
+f$cc_hu_ip
+
+// Purpose: 4BP flop is naturally low SPR under ordinary 100bb sizings.
+// Source: no literal Spin threshold transfers.
+// Provenance: P/T context-local geometry descriptor; no action by itself.
+##f$cc_flop_float_4bp_low_spr##
+f$cc_flop_float_4bp_hu_context && f$cc_spr_round_start >= 0 && f$cc_spr_round_start < 3
+
+// Purpose: very low 4BP flop SPR descriptor.
+// Source/Provenance: P/T exact raw-SPR bucket; still not a stackoff command.
+##f$cc_flop_float_4bp_very_low_spr##
+f$cc_flop_float_4bp_hu_context && f$cc_spr_round_start >= 0 && f$cc_spr_round_start < 2
+
+// -----------------------------------------------------------------------------
+// F4.02 — P-heavy clean 4BP checked-to strategy
+// -----------------------------------------------------------------------------
+
+// Purpose: caller-IP 4BP Float action after opener4 checks.
+// Source: no dedicated DeepCrusher 4BP Float tree.
+// Provenance: P professional condensed-range/low-SPR fill constrained by A current
+// strength and texture. Pure air is deliberately absent in the first baseline.
+// Logic: 2P+ robust value; OP value on calm boards or naturally very low SPR;
+// strong TP only calm/low-SPR; premium draws maintain equity pressure.
+// Safety: positive bet does not pre-authorize continuing versus a check-raise.
+##f$cc_flop_float_4bp_hu_action##
+When !f$cc_flop_float_4bp_hu_context Return false Force
+When f$cc_hand_two_pair_or_better Return true Force
+When HaveOverPair && !f$cc_hand_two_pair_or_better && f$cc_flop_float_dry_parent Return true Force
+When HaveOverPair && !f$cc_hand_two_pair_or_better && f$cc_flop_float_4bp_very_low_spr Return true Force
+When HaveOverPair && !f$cc_hand_two_pair_or_better Return false Force
+When f$cc_cbet_flop_strong_top_pair && f$cc_flop_float_dry_parent && f$cc_flop_float_4bp_low_spr Return true Force
+When f$cc_cbet_flop_strong_top_pair && f$cc_flop_float_4bp_very_low_spr Return true Force
+When f$cc_hand_top_pair_or_better Return false Force
+When f$cc_hand_middle_or_bottom_pair Return false Force
+When f$cc_flop_float_premium_draw && !f$cc_flop_monotone Return true Force
+When f$cc_flop_float_good_draw Return false Force
+When f$cc_flop_float_air Return false Force
+When Others Return false Force
+
+// Purpose: clean 4BP caller-IP Float size map.
+// Source/Provenance: P lower-SPR 33/50/75 map. A large requested size is still a
+// normal sizing request; future mechanical equivalence alone may convert to all-in.
+##f$cc_flop_float_4bp_hu_size_id##
+When !f$cc_flop_float_4bp_hu_action Return 0 Force
+When f$cc_hand_two_pair_or_better && f$cc_flop_float_wet_parent Return f$cc_flop_float_size_75_id Force
+When f$cc_hand_two_pair_or_better Return f$cc_flop_float_size_50_id Force
+When HaveOverPair && !f$cc_hand_two_pair_or_better Return f$cc_flop_float_size_50_id Force
+When f$cc_cbet_flop_strong_top_pair Return f$cc_flop_float_size_33_id Force
+When f$cc_flop_float_premium_draw Return f$cc_flop_float_size_50_id Force
+When Others Return 0 Force
+
+// Purpose: 4BP Float action dispatcher.
+// Source/Provenance: P exact clean-context owner; unsupported 4BP -> check.
+##f$cc_flop_float_4bp_action##
+When f$cc_flop_float_4bp_hu_context Return f$cc_flop_float_4bp_hu_action Force
+When Others Return false Force
+
+// Purpose: paired 4BP Float size dispatcher.
+// Source/Provenance: P exact owner; unsupported/check ->0.
+##f$cc_flop_float_4bp_size_id##
+When f$cc_flop_float_4bp_hu_context Return f$cc_flop_float_4bp_hu_size_id Force
+When Others Return 0 Force
+
+// Purpose: report clean caller-IP 4BP Float coverage.
+// Source/Provenance: P engineering metadata.
+##f$cc_flop_float_4bp_covered##
+f$cc_flop_float_4bp_hu_context
+
+// ============================================================================
+// End Gate04F clean 4BP Float.
+// ============================================================================

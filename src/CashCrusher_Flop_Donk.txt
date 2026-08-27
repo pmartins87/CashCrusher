@@ -1,0 +1,110 @@
+// ============================================================================
+// CashCrusher_Flop_Donk.txt
+// Gate 07 — canonical Flop Donk routing contract
+// ============================================================================
+// Purpose:
+//   Route a valid first-action OOP/non-initiative flop lead only to explicitly
+//   reviewed Donk families. Broad legacy router membership never grants strategy.
+//
+// Current implemented children:
+//   1 = native three-handed `(BBorSB)v2pp` direct/high-ancestry source strategy;
+//   2 = 4-6 handed BTN+SB+BB professional adaptation, with limp/SRP and SB/BB
+//       ownership kept separate;
+//   3 = true-HU / preflop-reduced-HU ordinary-SRP reviewed CHECK baseline;
+//   4 = residual current-multiway ordinary-SRP OOP caller reviewed CHECK baseline;
+//   5 = proven multi-handed ISO OOP caller reviewed CHECK baseline with original-
+//       limper versus post-raise-coldcaller provenance retained;
+//   6 = supported plain-3BP / squeeze OOP caller reviewed CHECK baseline with
+//       opener/pre3bet/post3bet caller provenance retained;
+//   7 = residual unraised current-multiway professional value/equity lead policy;
+//   8 = clean HU opener4-vs-Hero3bettor caller-side 4BP reviewed CHECK baseline.
+//
+// Future children remain fail-closed:
+//   multiway/unresolved 4BP, 5bet+ and unresolved/reversed reraised histories.
+//
+// Cross-street provenance:
+//   Gate10A.5 invokes `f$cc_turn_probe_snapshot_writer` at this exact pre-action
+//   no-initiative owner before any Return. The snapshot never changes the flop
+//   action and is consumable on Turn only if CLOSED history later proves X/X.
+//
+// Source/Provenance:
+//   T/A = Gate07A ownership + Gate07B direct source strategy.
+//   P = Gate07C 4-6h adaptation, Gate07D/E/F/G reviewed check baselines,
+//       Gate07H residual-unraised fill, Gate07I clean-HU-4BP review and explicit
+//       fail-closed metadata.
+// ============================================================================
+
+// Purpose: compact reviewed Flop-Donk family ID.
+// IDs: 1 native source; 2 4-6h BTN+both-blinds adaptation; 3 HU check;
+// 4 residual multiway ordinary-SRP check; 5 ISO check; 6 plain3BP/squeeze check;
+// 7 residual unraised multiway; 8 clean HU caller-side 4BP check; 0 unsupported.
+// Source/Provenance: P routing metadata over A/T/P reviewed coverage.
+##f$cc_flop_donk_family_id##
+When !f$cc_flop_donk_opportunity Return 0 Force
+When f$cc_flop_donk_source_covered Return 1 Force
+When f$cc_flop_donk_6max_covered Return 2 Force
+When f$cc_flop_donk_hu_covered Return 3 Force
+When f$cc_flop_donk_mw_srp_covered Return 4 Force
+When f$cc_flop_donk_iso_covered Return 5 Force
+When f$cc_flop_donk_3bp_covered Return 6 Force
+When f$cc_flop_donk_unraised_mw_covered Return 7 Force
+When f$cc_flop_donk_4bp_covered Return 8 Force
+When Others Return 0 Force
+
+// Purpose: canonical Flop Donk action router.
+// Source/Provenance: A/P source-first exact-family router; unknown ->check.
+// Gate10 note: the snapshot Set is non-terminal and cannot choose the flop action.
+##f$cc_flop_donk_router##
+When !f$cc_flop_donk_opportunity Return false Force
+When f$cc_turn_probe_snapshot_writer Set user_cc_turn_probe_snapshot_writer_invoked
+When f$cc_flop_donk_source_covered Return f$cc_flop_donk_source_action Force
+When f$cc_flop_donk_6max_covered Return f$cc_flop_donk_6max_action Force
+When f$cc_flop_donk_hu_covered Return f$cc_flop_donk_hu_action Force
+When f$cc_flop_donk_mw_srp_covered Return f$cc_flop_donk_mw_srp_action Force
+When f$cc_flop_donk_iso_covered Return f$cc_flop_donk_iso_action Force
+When f$cc_flop_donk_3bp_covered Return f$cc_flop_donk_3bp_action Force
+When f$cc_flop_donk_unraised_mw_covered Return f$cc_flop_donk_unraised_mw_action Force
+When f$cc_flop_donk_4bp_covered Return f$cc_flop_donk_4bp_hu_action Force
+When Others Return false Force
+
+// Purpose: paired strategic size-ID router.
+// Source/Provenance: A/P exact owner; check/uncovered ->0.
+##f$cc_flop_donk_size_id##
+When !f$cc_flop_donk_opportunity Return 0 Force
+When f$cc_flop_donk_source_covered Return f$cc_flop_donk_source_size_id Force
+When f$cc_flop_donk_6max_covered Return f$cc_flop_donk_6max_size_id Force
+When f$cc_flop_donk_hu_covered Return f$cc_flop_donk_hu_size_id Force
+When f$cc_flop_donk_mw_srp_covered Return f$cc_flop_donk_mw_srp_size_id Force
+When f$cc_flop_donk_iso_covered Return f$cc_flop_donk_iso_size_id Force
+When f$cc_flop_donk_3bp_covered Return f$cc_flop_donk_3bp_size_id Force
+When f$cc_flop_donk_unraised_mw_covered Return f$cc_flop_donk_unraised_mw_size_id Force
+When f$cc_flop_donk_4bp_covered Return f$cc_flop_donk_4bp_hu_size_id Force
+When Others Return 0 Force
+
+// Purpose: current Flop Donk state has a reviewed policy, including explicit check.
+// Source/Provenance: P coverage contract over source + adapted families.
+##f$cc_flop_donk_strategy_covered##
+f$cc_flop_donk_source_covered ||
+f$cc_flop_donk_6max_covered ||
+f$cc_flop_donk_hu_covered ||
+f$cc_flop_donk_mw_srp_covered ||
+f$cc_flop_donk_iso_covered ||
+f$cc_flop_donk_3bp_covered ||
+f$cc_flop_donk_unraised_mw_covered ||
+f$cc_flop_donk_4bp_covered
+
+// Purpose: action/size integrity.
+// Source/Provenance: P safety invariant.
+##f$cc_flop_donk_size_consistent##
+When !f$cc_flop_donk_router Return f$cc_flop_donk_size_id = 0 Force
+When f$cc_flop_donk_router Return f$cc_flop_donk_size_id >= 1 && f$cc_flop_donk_size_id <= 3 Force
+When Others Return false Force
+
+// Purpose: visible Donk opportunity not yet reviewed by any child.
+// Source/Provenance: P fail-closed audit metadata.
+##f$cc_flop_donk_uncovered_context##
+f$cc_flop_donk_opportunity && !f$cc_flop_donk_strategy_covered
+
+// ============================================================================
+// End current Flop Donk router.
+// ============================================================================

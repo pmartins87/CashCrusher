@@ -1,0 +1,171 @@
+// ============================================================================
+// CashCrusher_Flop_Float_Source.txt
+// Gate 04B — source-anchored HU Flop Float descendants
+// ============================================================================
+// Source families:
+//   F1 true-HU HUSB: SB/Button limp-call BB raise, BB checks, Hero IP.
+//   F2 reduced-HU 3wBBvSB: SB PFA, BB caller, SB checks, Hero BB IP.
+//
+// Source hierarchy:
+//   clear Starting Strategy direction -> current audited DeepCrusher -> CrusherTBP
+//   human gap interpretation. Generic HandPower/random tails are rejected.
+//
+// Cash-depth contract:
+//   Source bet directions are preserved where the range topology is direct. Old
+//   `<=20bb/>20bb` and check-raise shove plans do NOT imply 100bb stackoff.
+//   This file only chooses initial bet/check and requested size ID.
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// FS.01 — Exact contexts
+// -----------------------------------------------------------------------------
+
+// Purpose: true-HU HUSB limp/call versus BB raise after BB misses flop CBet.
+// Source: direct HUSB `user_GotIsolated` Float parent.
+// Provenance: A high-fidelity structural descendant over T Gate00 topology.
+##f$cc_flop_float_true_hu_husb_context##
+f$cc_flop_float_hu_opportunity &&
+f$cc_true_hu &&
+f$cc_pot_family_id = 2 &&
+f$cc_pf_hu_limp_raise_proven &&
+f$cc_pf_role_srp_caller &&
+f$cc_hu_ip &&
+f$cc_hu_matchup_id = 56
+
+// Purpose: reduced-HU ordinary SRP SB-PFA versus BB-caller checked to BB.
+// Source: direct legacy/current `3wBBvSB` Facing-Check Float tree.
+// Provenance: A high ancestry; exact six-max position/range topology retained.
+##f$cc_flop_float_bb_vs_sb_context##
+f$cc_flop_float_hu_opportunity &&
+f$cc_hu_origin_preflop_reduced &&
+f$cc_pot_family_id = 2 &&
+f$cc_pf_one_raise_ordinary_srp &&
+f$cc_pf_role_srp_caller &&
+f$cc_hero_pos_id = 6 &&
+f$cc_hu_villain_pos_id = 5 &&
+f$cc_hu_matchup_id = 65 &&
+f$cc_hu_ip
+
+// -----------------------------------------------------------------------------
+// FS.02 — HUSB true-HU limp-raised Float
+// -----------------------------------------------------------------------------
+
+// Purpose: source air family in the exact HUSB missed-ISO-CBet topology.
+// Source: current DeepCrusher explicitly Float50s `HUSB + GotIsolated + AirFamily`
+// and tags it no forced 2Bar / no BxB.
+// Provenance: A; CashCrusher portable air definition replaces the legacy CF7 name.
+// Limitation: this is a class translation, not a claim that every old CF7 edge
+// case is byte-for-byte identical.
+##f$cc_flop_float_husb_air_family##
+f$cc_flop_float_true_hu_husb_context && f$cc_flop_float_air
+
+// Purpose: true-HU HUSB initial Float action.
+// Source: current DeepCrusher source-fidelity replacement: air, current pair+ and
+// real GS/OESD/FD all bet after the BB skips the isolation CBet.
+// Provenance: A for direction; stronger-draw 75 split is A/P within source 50-75.
+// Safety: no response to a check-raise or future-street barrel is authorized here.
+##f$cc_flop_float_true_hu_husb_action##
+When !f$cc_flop_float_true_hu_husb_context Return false Force
+When f$cc_hand_pair_or_better Return true Force
+When f$cc_flop_float_premium_draw Return true Force
+When f$cc_flop_float_good_draw Return true Force
+When f$cc_flop_float_husb_air_family Return true Force
+When Others Return false Force
+
+// Purpose: source-shaped true-HU HUSB Float sizing.
+// Source: made pair+ gap fill 50; source draws 50-75; source air Float50.
+// Provenance: A/A-P. No BetMax or commitment threshold is encoded.
+##f$cc_flop_float_true_hu_husb_size_id##
+When !f$cc_flop_float_true_hu_husb_action Return 0 Force
+When f$cc_flop_float_premium_draw Return f$cc_flop_float_size_75_id Force
+When f$cc_flop_float_good_draw Return f$cc_flop_float_size_50_id Force
+When f$cc_hand_pair_or_better Return f$cc_flop_float_size_50_id Force
+When f$cc_flop_float_husb_air_family Return f$cc_flop_float_size_50_id Force
+When Others Return 0 Force
+
+// Purpose: preserve source no-forced-2Bar/no-BxB plan for HUSB air Float.
+// Source: `user_Float50_No2Bar_NoBxB`, `user_Not2Bar`, `user_NotBxB`.
+// Provenance: A plan metadata only; actual execution must later be proven.
+##f$cc_flop_float_husb_air_no_forced_followup##
+f$cc_flop_float_husb_air_family && f$cc_flop_float_true_hu_husb_action
+
+// -----------------------------------------------------------------------------
+// FS.03 — 3wBBvSB / BB caller IP versus SB PFA
+// -----------------------------------------------------------------------------
+
+// Purpose: source exact delayed-bet plan candidates after Hero checks flop.
+// Source: high second pair; low second pair on wet board; wet air all use
+// `Delay_and_Bet` in the audited 3wBBvSB tree.
+// Provenance: A strategic plan descriptor. It is NOT proof Hero actually checked.
+##f$cc_flop_float_bb_vs_sb_plan_delay_and_bet##
+f$cc_flop_float_bb_vs_sb_context &&
+(f$cc_flop_float_second_pair_high ||
+ (f$cc_flop_float_second_pair_low && f$cc_flop_float_wet_parent) ||
+ (f$cc_flop_float_air && f$cc_flop_float_wet_parent))
+
+// Purpose: source delay/showdown plan without the explicit later bet directive.
+// Source: high bottom pair and low bottom pair on wet boards use `Delay`.
+// Provenance: A plan descriptor; later streets must confirm actual check history.
+##f$cc_flop_float_bb_vs_sb_plan_delay_only##
+f$cc_flop_float_bb_vs_sb_context &&
+(f$cc_flop_float_bottom_pair_high ||
+ (f$cc_flop_float_bottom_pair_low && f$cc_flop_float_wet_parent))
+
+// Purpose: source-anchored initial Float action BB versus SB.
+// Source: current DeepCrusher 3wBBvSB Facing Check tree.
+// Provenance: A for action direction. Wet TP+ keeps the source large-bet direction;
+// the old short-stack XR shove response is deliberately outside this node.
+##f$cc_flop_float_bb_vs_sb_action##
+When !f$cc_flop_float_bb_vs_sb_context Return false Force
+When f$cc_hand_top_pair_or_better && f$cc_flop_float_dry_parent Return true Force
+When f$cc_hand_top_pair_or_better && f$cc_flop_float_wet_parent Return true Force
+When f$cc_flop_float_second_pair_high Return false Force
+When f$cc_flop_float_bottom_pair_high Return false Force
+When f$cc_flop_float_second_pair_low && f$cc_flop_float_wet_parent Return false Force
+When f$cc_flop_float_bottom_pair_low && f$cc_flop_float_wet_parent Return false Force
+When (f$cc_flop_float_second_pair_low || f$cc_flop_float_bottom_pair_low) && f$cc_flop_float_dry_parent Return true Force
+When f$cc_flop_float_real_gutshot_plus Return true Force
+When f$cc_flop_float_air && f$cc_flop_float_dry_parent Return true Force
+When f$cc_flop_float_air && f$cc_flop_float_wet_parent Return false Force
+When Others Return false Force
+
+// Purpose: source-shaped BB-v-SB Float sizing with 100bb-safe separation from XR.
+// Source: current DeepCrusher uses 25 dry TP+, 50/75 wet TP+ by Spin depth,
+// 50 low-pair dry, 50 real draws, 25 dry air.
+// Provenance: A for exact source sizes except wet TP+ depth split: CashCrusher uses
+// 75 as the source deeper branch while refusing any implied stackoff versus XR.
+##f$cc_flop_float_bb_vs_sb_size_id##
+When !f$cc_flop_float_bb_vs_sb_action Return 0 Force
+When f$cc_hand_top_pair_or_better && f$cc_flop_float_dry_parent Return f$cc_flop_float_size_25_id Force
+When f$cc_hand_top_pair_or_better && f$cc_flop_float_wet_parent Return f$cc_flop_float_size_75_id Force
+When (f$cc_flop_float_second_pair_low || f$cc_flop_float_bottom_pair_low) && f$cc_flop_float_dry_parent Return f$cc_flop_float_size_50_id Force
+When f$cc_flop_float_real_gutshot_plus Return f$cc_flop_float_size_50_id Force
+When f$cc_flop_float_air && f$cc_flop_float_dry_parent Return f$cc_flop_float_size_25_id Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// FS.04 — Dispatch / coverage
+// -----------------------------------------------------------------------------
+
+// Purpose: dispatch only direct source-anchored Float families.
+// Source/Provenance: A exact-family routing; no generic legacy tail.
+##f$cc_flop_float_source_action##
+When f$cc_flop_float_true_hu_husb_context Return f$cc_flop_float_true_hu_husb_action Force
+When f$cc_flop_float_bb_vs_sb_context Return f$cc_flop_float_bb_vs_sb_action Force
+When Others Return false Force
+
+// Purpose: paired source-anchored Float size dispatcher.
+// Source/Provenance: A exact owner; check/uncovered -> 0.
+##f$cc_flop_float_source_size_id##
+When f$cc_flop_float_true_hu_husb_context Return f$cc_flop_float_true_hu_husb_size_id Force
+When f$cc_flop_float_bb_vs_sb_context Return f$cc_flop_float_bb_vs_sb_size_id Force
+When Others Return 0 Force
+
+// Purpose: report source-anchored Float strategic coverage.
+// Source/Provenance: P engineering metadata over A exact contexts.
+##f$cc_flop_float_source_covered##
+f$cc_flop_float_true_hu_husb_context || f$cc_flop_float_bb_vs_sb_context
+
+// ============================================================================
+// End Gate04B source-anchored HU Float.
+// ============================================================================

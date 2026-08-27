@@ -1,0 +1,221 @@
+// ============================================================================
+// CashCrusher_River_Probe_4BP.txt
+// Gate 11J — clean-HU 4BP River Probe professional adaptation
+// ============================================================================
+// Purpose:
+//   Review only clean two-player four-bet pots after CLOSED flop X/C -> Turn X/X.
+//   Both mechanically provable directions are kept separate:
+//     A) Hero 3bet/call4 versus the opener/final 4bettor's flop bet;
+//     B) Hero is a clean final 4bettor who checked flop and X/C'd a proven
+//        opener/3bettor survivor's stab.
+//
+// Source boundary:
+//   Crusher Framework exposes the River-Probe node but contains no dedicated 4BP
+//   strategy tree; reviewed DeepCrusher source is likewise scenario-specific and
+//   does not license transporting short-stack/native Probe frequencies into 4BP.
+//   Gate01I and generic caller-side 4BP context therefore provide chronology only.
+//
+// Provenance:
+//   T = Gate11 closed X/C-X/X ownership, current HU actor identity, current hand.
+//   A = Gate01I clean 4BP subtype/survivor + caller-side call4 reconstruction.
+//   P = conservative 100bb condensed-range value-only River lead and 33/50/75.
+//   X = pure-air bluff, generic TP lead, unresolved other caller, post-multiway,
+//       reversed/backraise/limp-reraise, 5bet+, commitment or automatic all-in.
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// RP4B.01 — exact clean-HU chronology / actor directions
+// -----------------------------------------------------------------------------
+
+// Purpose: four-bet River Probe that entered flop with exactly two players and
+// remains HU/OOP on River after the exact Gate11 X/C-X/X parent.
+// Source/Provenance: T Gate11 HU owner + A/P clean-flop scope firewall.
+##f$cc_river_probe_4bp_clean_hu_context##
+f$cc_river_probe_hu_opportunity &&
+f$cc_flop_entry_count = 2 &&
+f$cc_pot_family_id = 4
+
+// Purpose: clean caller-side chronology: opener -> Hero 3bet -> opener 4bet ->
+// Hero call. Current Villain must be that opener/final 4bettor. Because Gate11 HU
+// opportunity also requires headsupchair=lastraised2, Villain is the exact flop
+// aggressor Hero actually X/C'd.
+// Source/Provenance: A generic caller-side 4BP reconstruction + T actor identity.
+##f$cc_river_probe_4bp_caller_vs_opener4_context##
+f$cc_river_probe_4bp_clean_hu_context &&
+f$cc_pf_call4_opener4_vs_hero3bettor_proven &&
+f$cc_hu_call4_vs_opener4_context &&
+f$cc_hu_villain_pos_id = f$cc_pf_call4_other_raiser_pos_id
+
+// Purpose: Hero is a clean final 4bettor and sole Villain is a proven original
+// opener or original 3bettor. Other-caller survivor type 3 remains unsupported.
+// Source/Provenance: A Gate01I clean subtype/survivor proof + T current HU state.
+##f$cc_river_probe_4bp_hero4_vs_proven_caller_context##
+f$cc_river_probe_4bp_clean_hu_context &&
+f$cc_pf_role_4bettor &&
+f$cc_pf_4bet_subtype_id > 0 &&
+f$cc_hu_4bp_survivor_consistent &&
+f$cc_hu_4bp_survivor_type_id >= 1 &&
+f$cc_hu_4bp_survivor_type_id <= 2
+
+// Purpose: standard opener4 versus original 3bettor survivor.
+// Source/Provenance: A exact Gate01I subtype/survivor family.
+##f$cc_river_probe_4bp_opener4_vs_threebettor_context##
+f$cc_river_probe_4bp_hero4_vs_proven_caller_context &&
+f$cc_pf_4bet_standard_opener4_proven &&
+f$cc_hu_4bp_villain_is_threebettor
+
+// Purpose: standard cold4 versus original opener survivor.
+// Source/Provenance: A exact Gate01I cold4 range family.
+##f$cc_river_probe_4bp_cold4_vs_opener_context##
+f$cc_river_probe_4bp_hero4_vs_proven_caller_context &&
+f$cc_pf_4bet_standard_cold4_proven &&
+f$cc_hu_4bp_villain_is_opener
+
+// Purpose: standard cold4 versus original 3bettor survivor.
+// Source/Provenance: A exact Gate01I cold4 range family.
+##f$cc_river_probe_4bp_cold4_vs_threebettor_context##
+f$cc_river_probe_4bp_hero4_vs_proven_caller_context &&
+f$cc_pf_4bet_standard_cold4_proven &&
+f$cc_hu_4bp_villain_is_threebettor
+
+// Purpose: compact exact topology ID: 1 call4-v-opener4, 2 opener4-v-3bettor,
+// 3 cold4-v-opener, 4 cold4-v-3bettor; 0 unresolved.
+// Source/Provenance: P routing metadata over A/T clean histories.
+##f$cc_river_probe_4bp_topology_id##
+When f$cc_river_probe_4bp_caller_vs_opener4_context Return 1 Force
+When f$cc_river_probe_4bp_opener4_vs_threebettor_context Return 2 Force
+When f$cc_river_probe_4bp_cold4_vs_opener_context Return 3 Force
+When f$cc_river_probe_4bp_cold4_vs_threebettor_context Return 4 Force
+When Others Return 0 Force
+
+// Purpose: exact reviewed clean-HU 4BP strategy owner.
+// Source/Provenance: P deterministic coverage partition.
+##f$cc_river_probe_4bp_context##
+f$cc_river_probe_4bp_topology_id > 0
+
+// -----------------------------------------------------------------------------
+// RP4B.02 — contribution-aware current River value region
+// -----------------------------------------------------------------------------
+
+// Purpose: strong contributed flush; low one-hole-card flush quality is not
+// treated as automatic robust value in a condensed 4BP range.
+// Source/Provenance: A HUBB flush-quality lesson + P 4BP threshold.
+##f$cc_river_probe_4bp_strong_flush##
+HaveFlush && pokerval > pokervalcommon && NumberOfUnknownSuitedOvercards <= 4
+
+// Purpose: contributed non-under straight.
+// Source/Provenance: A under-straight source lesson + P 4BP threshold.
+##f$cc_river_probe_4bp_strong_straight##
+HaveStraight && pokerval > pokervalcommon && !HaveUnderStraight
+
+// Purpose: premium robust River value.
+// Source/Provenance: T current hand facts + P conservative condensed-range band.
+##f$cc_river_probe_4bp_premium_value##
+When !f$cc_river_probe_4bp_context Return false Force
+When f$cc_river_probe_literal_nuts Return true Force
+When HaveQuads && pokerval > pokervalcommon Return true Force
+When HaveFullHouse && pokerval > pokervalcommon Return true Force
+When f$cc_river_probe_4bp_strong_flush Return true Force
+When f$cc_river_probe_4bp_strong_straight Return true Force
+When Others Return false Force
+
+// Purpose: contributed trips/set/exact 2P below premium.
+// Source/Provenance: A contribution-aware portable classes + P grouping.
+##f$cc_river_probe_4bp_medium_value##
+f$cc_river_probe_4bp_context &&
+!f$cc_river_probe_4bp_premium_value &&
+((HaveTrips && !TripsOnBoard && npcbits > 0) ||
+ HaveSet ||
+ f$cc_river_probe_contributed_exact_two_pair)
+
+// Purpose: contribution-aware overpair below 2P+.
+// Source/Provenance: T/A certified pair primitive.
+##f$cc_river_probe_4bp_overpair_real##
+f$cc_river_probe_4bp_context &&
+HaveOverPair && PairInHand && npcbits > 0 &&
+!f$cc_river_probe_4bp_medium_value &&
+!f$cc_river_probe_4bp_premium_value
+
+// Purpose: safe River for the only reviewed one-pair thin lead (overpair).
+// Source/Provenance: A completed/paired caution + P 4BP cash filter.
+##f$cc_river_probe_4bp_thin_value_river##
+!f$cc_river_probe_paired && !f$cc_river_probe_completed
+
+// Purpose: strong TP remains an explicit reviewed check in 4BP. Current hand
+// quality alone is insufficient to invent a thin lead versus condensed ranges.
+// Source/Provenance: P conservative range-strength boundary.
+##f$cc_river_probe_4bp_top_pair_check##
+f$cc_river_probe_4bp_context &&
+f$cc_hand_just_top_pair && !TwoPairOnBoard && npcbits > 0
+
+// Purpose: all current no-made/air states are reviewed checks; exact flop X/C
+// does not by itself provide enough blocker/frequency provenance for a 4BP bluff.
+// Source/Provenance: P evidence-boundary diagnostic.
+##f$cc_river_probe_4bp_air_check##
+f$cc_river_probe_4bp_context && f$cc_river_probe_air
+
+// -----------------------------------------------------------------------------
+// RP4B.03 — deterministic value-only policy
+// -----------------------------------------------------------------------------
+
+// Purpose: robust value always leads; overpair may thin-probe only on a clean
+// River. TP and all air check. No SPR threshold creates automatic commitment.
+// Source/Provenance: P professional 4BP fill over exact A/T ownership.
+##f$cc_river_probe_4bp_action##
+When !f$cc_river_probe_4bp_context Return false Force
+When f$cc_river_probe_4bp_premium_value Return true Force
+When f$cc_river_probe_4bp_medium_value Return true Force
+When f$cc_river_probe_4bp_overpair_real && f$cc_river_probe_4bp_thin_value_river Return true Force
+When Others Return false Force
+
+// Purpose: premium75 | medium50 | clean overpair33.
+// Source/Provenance: P conservative Gate11 palette; no strategic jam semantics.
+##f$cc_river_probe_4bp_size_id##
+When !f$cc_river_probe_4bp_action Return 0 Force
+When f$cc_river_probe_4bp_premium_value Return f$cc_river_probe_size_75_id Force
+When f$cc_river_probe_4bp_medium_value Return f$cc_river_probe_size_50_id Force
+When f$cc_river_probe_4bp_overpair_real Return f$cc_river_probe_size_33_id Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// RP4B.04 — coverage / unresolved / safety
+// -----------------------------------------------------------------------------
+
+// Purpose: every exact topology above is strategically reviewed, including
+// explicit TP/air checks.
+// Source/Provenance: P coverage metadata.
+##f$cc_river_probe_4bp_covered##
+f$cc_river_probe_4bp_context
+
+// Purpose: 4BP River-Probe opportunity outside exact clean-HU chronology remains
+// fail-closed: post-multiway/current-multiway, othercaller, reversed/backraise/
+// limp-reraise and chronology-unknown call4 states.
+// Source/Provenance: P evidence-boundary diagnostic.
+##f$cc_river_probe_4bp_unresolved##
+f$cc_river_probe_base_opportunity &&
+f$cc_pot_family_id = 4 &&
+!f$cc_river_probe_4bp_covered
+
+// Purpose: explicit unsupported 5bet+ history-shaped River-Probe visibility.
+// Gate11A intentionally excludes pot_family>=5 from the strategic base, so this
+// diagnostic reconstructs the same X/C-X/X/position owner without using base.
+// Source/Provenance: P hard domain boundary over T closed-history predicates.
+##f$cc_river_probe_5betplus_unresolved##
+f$cc_context_valid &&
+f$cc_river_probe_first_river_action_clean &&
+f$cc_hist_river_probe_flop_checkcall_clean &&
+f$cc_hist_river_probe_turn_checkthrough_clean &&
+!f$cc_river_probe_excluded_last &&
+(f$cc_relative_postflop_pos_id = 1 || f$cc_relative_postflop_pos_id = 2) &&
+f$cc_pot_family_id >= 5
+
+// Purpose: local action/size integrity.
+// Source/Provenance: P safety invariant.
+##f$cc_river_probe_4bp_size_consistent##
+When !f$cc_river_probe_4bp_action Return f$cc_river_probe_4bp_size_id = 0 Force
+When f$cc_river_probe_4bp_action Return f$cc_river_probe_4bp_size_id >= 1 && f$cc_river_probe_4bp_size_id <= 7 Force
+When Others Return false Force
+
+// ============================================================================
+// End Gate11J clean-HU 4BP River Probe adaptation.
+// ============================================================================

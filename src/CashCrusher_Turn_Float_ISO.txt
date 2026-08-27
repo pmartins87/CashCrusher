@@ -1,0 +1,318 @@
+// ============================================================================
+// CashCrusher_Turn_Float_ISO.txt
+// Gate 05D — isolation / true-HU limp-raised Turn Float gaps
+// ============================================================================
+// Purpose:
+//   Handle checked-to-turn histories in one-raise pots that are NOT ordinary SRP:
+//   proven multi-handed isolation raises and true-HU SB-limp -> BB-raise pots.
+//   Original limper, post-raise coldcaller and isolator ranges remain distinct.
+//
+// Source boundary:
+//   DeepCrusher has HUSB/3w structure but no complete 100bb six-max Turn-Float
+//   table for these exact histories. Policy is A/P for true-HU ancestry and
+//   P-heavy for multi-handed ISO gaps.
+//
+// Safety:
+//   The direct 3wBBvSB limped-pot source repair lives in Gate05B.R and is not
+//   generalized here. Exact source coverage always precedes this file.
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// TFISO.01 — Hero ISO caller provenance
+// -----------------------------------------------------------------------------
+
+// Purpose: Hero was an original limper before the isolation raise.
+// Source/Provenance: A/T intersection with Gate01E persisted limper mask.
+##f$cc_turn_float_iso_hero_was_limper##
+f$cc_pf_iso_proven &&
+f$cc_turn_float_hero_pos_bit > 0 &&
+((f$cc_pf_pre_raise_limper_mask BitAnd f$cc_turn_float_hero_pos_bit) > 0)
+
+// Purpose: Hero entered only after the isolation raise as a coldcaller.
+// Source/Provenance: A/T post-raise caller mask intersection.
+##f$cc_turn_float_iso_hero_was_postraise_coldcaller##
+f$cc_pf_iso_proven &&
+f$cc_turn_float_hero_pos_bit > 0 &&
+((f$cc_pf_post_raise_coldcaller_mask BitAnd f$cc_turn_float_hero_pos_bit) > 0)
+
+// Purpose: reject ambiguous ISO caller origin.
+// Source/Provenance: P fail-closed integrity over A/T masks.
+##f$cc_turn_float_iso_hero_origin_consistent##
+When !f$cc_pf_iso_proven Return false Force
+When f$cc_turn_float_iso_hero_was_limper && f$cc_turn_float_iso_hero_was_postraise_coldcaller Return false Force
+When f$cc_turn_float_iso_hero_was_limper || f$cc_turn_float_iso_hero_was_postraise_coldcaller Return true Force
+When Others Return false Force
+
+// -----------------------------------------------------------------------------
+// TFISO.02 — HU contexts
+// -----------------------------------------------------------------------------
+
+// Purpose: multi-handed ISO, simple flop-call parent, HU since flop entry.
+// Source/Provenance: T/A exact parent + P caller-origin policy owner.
+##f$cc_turn_float_iso_parent1_hu_context##
+f$cc_turn_float_opportunity &&
+f$cc_turn_float_parent_id = 1 &&
+f$cc_turn_float_current_hu_from_hu_flop &&
+f$cc_turn_float_hu_aggressor_is_current_villain &&
+f$cc_pot_family_id = 2 &&
+f$cc_pf_iso_proven &&
+f$cc_pf_role_srp_caller &&
+f$cc_turn_float_iso_hero_origin_consistent &&
+f$cc_pf_rt_final_aggressor_pos_id = f$cc_turn_float_flop_aggressor_pos_id &&
+!f$cc_turn_float_source_exact_covered
+
+// Purpose: exact true-HU SB/Button limp-call after BB raise, then BB flop bet ->
+// Hero call -> BB turn check. This is a genuine two-seat table state, not reduced HU.
+// Source: HUSB is the closest source ancestry but no exact Turn-Float Q-table exists.
+// Provenance: A true-HU structural ancestry + P 100bb policy fill.
+##f$cc_turn_float_truehu_limpraised_parent1_context##
+f$cc_turn_float_opportunity &&
+f$cc_turn_float_parent_id = 1 &&
+f$cc_true_hu &&
+f$cc_turn_float_current_hu_from_hu_flop &&
+f$cc_turn_float_hu_aggressor_is_current_villain &&
+f$cc_pot_family_id = 2 &&
+f$cc_pf_hu_limp_raise_proven &&
+f$cc_pf_role_srp_caller &&
+f$cc_hero_pos_id = 5 &&
+f$cc_pf_rt_final_aggressor_pos_id = 6 &&
+f$cc_turn_float_flop_aggressor_pos_id = 6 &&
+!f$cc_turn_float_source_exact_covered
+
+// Purpose: isolator CBet -> flop XR -> call, now checked to Hero in HU ISO.
+// Source/Provenance: A/T parent2 + P selected-range policy.
+##f$cc_turn_float_iso_parent2_hu_context##
+f$cc_turn_float_opportunity &&
+f$cc_turn_float_parent_id = 2 &&
+f$cc_turn_float_current_hu_from_hu_flop &&
+f$cc_turn_float_hu_aggressor_is_current_villain &&
+f$cc_pot_family_id = 2 &&
+f$cc_pf_iso_proven &&
+f$cc_pf_role_pfa &&
+!f$cc_turn_float_source_exact_covered
+
+// Purpose: ISO caller Flop-Float -> XR -> call, now checked to Hero in HU.
+// Source/Provenance: A/T parent3 + P strongly selected continuation policy.
+##f$cc_turn_float_iso_parent3_hu_context##
+f$cc_turn_float_opportunity &&
+f$cc_turn_float_parent_id = 3 &&
+f$cc_turn_float_current_hu_from_hu_flop &&
+f$cc_turn_float_hu_aggressor_is_current_villain &&
+f$cc_pot_family_id = 2 &&
+f$cc_pf_iso_proven &&
+f$cc_pf_role_srp_caller &&
+f$cc_turn_float_iso_hero_origin_consistent &&
+!f$cc_turn_float_source_exact_covered
+
+// -----------------------------------------------------------------------------
+// TFISO.03 — HU actions
+// -----------------------------------------------------------------------------
+
+// Purpose: original limper after calling isolation CBet and isolator checks Turn.
+// Provenance: P-heavy. Wider limp-call range permits selected thin value/equity
+// and a narrow high-card scare-card stab; source does not dictate frequencies.
+##f$cc_turn_float_iso_parent1_limper_hu_action##
+When !f$cc_turn_float_iso_parent1_hu_context Return false Force
+When !f$cc_turn_float_iso_hero_was_limper Return false Force
+When f$cc_turn_float_robust_value Return true Force
+When f$cc_turn_float_vulnerable_two_pair_plus && f$cc_turn_float_calm_runout Return true Force
+When f$cc_turn_float_vulnerable_two_pair_plus Return false Force
+When f$cc_turn_float_overpair && f$cc_turn_float_calm_runout Return true Force
+When f$cc_turn_float_overpair Return false Force
+When f$cc_turn_float_strong_top_pair && f$cc_turn_float_calm_runout Return true Force
+When f$cc_turn_float_medium_top_pair && f$cc_turn_float_calm_runout && !f$cc_turn_float_hu_high_spr Return true Force
+When f$cc_turn_float_weak_top_pair Return false Force
+When f$cc_turn_float_second_pair || f$cc_turn_float_third_or_worse_pair Return false Force
+When f$cc_turn_float_premium_draw && !f$cc_turn_super_completed Return true Force
+When f$cc_turn_float_good_draw && f$cc_turn_float_calm_runout Return true Force
+When f$cc_turn_float_weak_draw Return false Force
+When f$cc_turn_float_quality_air_hu Return true Force
+When f$cc_turn_float_current_air Return false Force
+When Others Return false Force
+
+// Purpose: post-raise coldcaller after calling isolation CBet; selected range gets
+// no pure-air baseline and less thin one-pair betting than original limper.
+// Source/Provenance: P-heavy selected-range policy.
+##f$cc_turn_float_iso_parent1_coldcaller_hu_action##
+When !f$cc_turn_float_iso_parent1_hu_context Return false Force
+When !f$cc_turn_float_iso_hero_was_postraise_coldcaller Return false Force
+When f$cc_turn_float_robust_value Return true Force
+When f$cc_turn_float_vulnerable_two_pair_plus && f$cc_turn_float_calm_runout Return true Force
+When f$cc_turn_float_vulnerable_two_pair_plus Return false Force
+When f$cc_turn_float_overpair && (f$cc_turn_float_calm_runout || f$cc_turn_float_hu_low_spr) Return true Force
+When f$cc_turn_float_overpair Return false Force
+When f$cc_turn_float_strong_top_pair && f$cc_turn_float_calm_runout Return true Force
+When f$cc_turn_float_strong_top_pair Return false Force
+When f$cc_hand_top_pair_or_better Return false Force
+When f$cc_turn_float_premium_draw && !f$cc_turn_super_completed Return true Force
+When f$cc_turn_float_good_draw && f$cc_turn_float_calm_runout Return true Force
+When f$cc_turn_float_weak_draw Return false Force
+When f$cc_turn_float_current_air Return false Force
+When Others Return false Force
+
+// Purpose: genuine true-HU limp-raised parent1 policy. HU ranges are much wider
+// than six-max coldcall ranges, but 100bb depth still prevents TP+=stackoff logic.
+// Source/Provenance: A HUSB structural principle + P deep-cash implementation.
+##f$cc_turn_float_truehu_limpraised_parent1_action##
+When !f$cc_turn_float_truehu_limpraised_parent1_context Return false Force
+When f$cc_turn_float_robust_value Return true Force
+When f$cc_turn_float_vulnerable_two_pair_plus && f$cc_turn_float_calm_runout Return true Force
+When f$cc_turn_float_vulnerable_two_pair_plus Return false Force
+When f$cc_turn_float_overpair && !f$cc_turn_float_hostile_runout Return true Force
+When f$cc_turn_float_strong_top_pair && f$cc_turn_float_calm_runout Return true Force
+When f$cc_turn_float_medium_top_pair && f$cc_turn_float_calm_runout && !f$cc_turn_float_hu_high_spr Return true Force
+When f$cc_turn_float_weak_top_pair Return false Force
+When f$cc_turn_float_second_pair || f$cc_turn_float_third_or_worse_pair Return false Force
+When f$cc_turn_float_premium_draw && !f$cc_turn_super_completed Return true Force
+When f$cc_turn_float_good_draw && f$cc_turn_float_calm_runout Return true Force
+When f$cc_turn_float_weak_draw Return false Force
+When f$cc_turn_float_quality_air_hu Return true Force
+When f$cc_turn_float_current_air Return false Force
+When Others Return false Force
+
+// Purpose: parent2 isolator after own CBet was raised/called; selected history.
+// Source/Provenance: P-heavy; no pure-air branch.
+##f$cc_turn_float_iso_parent2_hu_action##
+When !f$cc_turn_float_iso_parent2_hu_context Return false Force
+When f$cc_turn_float_robust_value Return true Force
+When f$cc_turn_float_vulnerable_two_pair_plus && f$cc_turn_float_calm_runout Return true Force
+When f$cc_turn_float_vulnerable_two_pair_plus Return false Force
+When f$cc_turn_float_overpair && (f$cc_turn_float_calm_runout || f$cc_turn_float_hu_low_spr) Return true Force
+When f$cc_turn_float_strong_top_pair && f$cc_turn_float_calm_runout Return true Force
+When f$cc_hand_top_pair_or_better Return false Force
+When f$cc_turn_float_premium_draw && !f$cc_turn_super_completed Return true Force
+When f$cc_turn_float_good_draw || f$cc_turn_float_weak_draw Return false Force
+When f$cc_turn_float_current_air Return false Force
+When Others Return false Force
+
+// Purpose: parent3 ISO caller after Float-XR-call; strongest selection, no air.
+// Source/Provenance: P conservative continuation policy.
+##f$cc_turn_float_iso_parent3_hu_action##
+When !f$cc_turn_float_iso_parent3_hu_context Return false Force
+When f$cc_turn_float_robust_value Return true Force
+When f$cc_turn_float_vulnerable_two_pair_plus && f$cc_turn_float_calm_runout Return true Force
+When f$cc_turn_float_vulnerable_two_pair_plus Return false Force
+When f$cc_turn_float_overpair && f$cc_turn_float_calm_runout Return true Force
+When f$cc_turn_float_strong_top_pair && f$cc_turn_float_calm_runout && f$cc_turn_float_hu_low_spr Return true Force
+When f$cc_hand_top_pair_or_better Return false Force
+When f$cc_turn_float_premium_draw && !f$cc_turn_super_completed Return true Force
+When f$cc_real_frontdoor_draw Return false Force
+When f$cc_turn_float_current_air Return false Force
+When Others Return false Force
+
+// Purpose: shared HU size map for ISO/trueHU policies.
+// Source/Provenance: P 33/50/75 map; exact source 50/33 lives in Gate05B.
+##f$cc_turn_float_iso_hu_size_id##
+When f$cc_turn_float_robust_value && f$cc_turn_completed Return f$cc_turn_float_size_75_id Force
+When f$cc_turn_float_robust_value Return f$cc_turn_float_size_50_id Force
+When f$cc_turn_float_vulnerable_two_pair_plus Return f$cc_turn_float_size_50_id Force
+When f$cc_turn_float_overpair || f$cc_turn_float_strong_top_pair Return f$cc_turn_float_size_50_id Force
+When f$cc_turn_float_medium_top_pair Return f$cc_turn_float_size_33_id Force
+When f$cc_turn_float_premium_draw Return f$cc_turn_float_size_50_id Force
+When f$cc_turn_float_good_draw Return f$cc_turn_float_size_33_id Force
+When f$cc_turn_float_quality_air_hu Return f$cc_turn_float_size_33_id Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// TFISO.04 — multiway-origin and current multiway ISO
+// -----------------------------------------------------------------------------
+
+// Purpose: any supported ISO Turn-Float parent that began flop multiway and is HU now.
+// Source/Provenance: A/T origin preservation + P selected-range policy.
+##f$cc_turn_float_iso_postmultiway_hu_context##
+f$cc_turn_float_opportunity &&
+f$cc_turn_float_postmultiway_to_hu &&
+f$cc_turn_float_hu_aggressor_is_current_villain &&
+f$cc_pot_family_id = 2 &&
+f$cc_pf_iso_proven &&
+!f$cc_turn_float_source_exact_covered
+
+// Purpose: ISO Turn-Float decision remains multiway, Hero exact LAST.
+// Source/Provenance: T/A topology + P multiway policy.
+##f$cc_turn_float_iso_multiway_context##
+f$cc_turn_float_opportunity &&
+f$cc_turn_float_current_multiway &&
+f$cc_pot_family_id = 2 &&
+f$cc_pf_iso_proven &&
+!f$cc_turn_float_source_exact_covered
+
+// Purpose: post-multiway HU ISO action; no pure air/good-draw stab baseline.
+// Source/Provenance: P selected-survivor policy.
+##f$cc_turn_float_iso_postmultiway_hu_action##
+When !f$cc_turn_float_iso_postmultiway_hu_context Return false Force
+When f$cc_turn_float_robust_value Return true Force
+When f$cc_turn_float_vulnerable_two_pair_plus && f$cc_turn_float_calm_runout Return true Force
+When f$cc_turn_float_vulnerable_two_pair_plus Return false Force
+When f$cc_turn_float_overpair && f$cc_turn_float_calm_runout && f$cc_turn_float_hu_low_spr Return true Force
+When f$cc_turn_float_strong_top_pair && f$cc_turn_float_calm_runout && f$cc_turn_float_hu_very_low_spr Return true Force
+When f$cc_hand_top_pair_or_better Return false Force
+When f$cc_turn_float_premium_draw && !f$cc_turn_super_completed Return true Force
+When f$cc_real_frontdoor_draw Return false Force
+When f$cc_turn_float_current_air Return false Force
+When Others Return false Force
+
+// Purpose: current multiway ISO action; 4+ way uses only robust value/combo draws.
+// Source/Provenance: P multiway tightening + T deepest effective SPR.
+##f$cc_turn_float_iso_multiway_action##
+When !f$cc_turn_float_iso_multiway_context Return false Force
+When f$cc_turn_float_robust_value Return true Force
+When nplayersplaying = 3 && f$cc_turn_float_vulnerable_two_pair_plus && f$cc_turn_float_calm_runout Return true Force
+When f$cc_turn_float_vulnerable_two_pair_plus Return false Force
+When nplayersplaying = 3 && f$cc_turn_float_mw_deep_spr_valid && f$cc_mw_spr_deepest_round_start < 2 && f$cc_turn_float_overpair && f$cc_turn_float_calm_runout Return true Force
+When f$cc_hand_top_pair_or_better Return false Force
+When nplayersplaying = 3 && f$cc_turn_float_premium_draw && !f$cc_turn_super_completed Return true Force
+When nplayersplaying >= 4 && f$cc_hand_no_made && f$cc_real_combo_draw && !f$cc_turn_super_completed Return true Force
+When f$cc_real_frontdoor_draw Return false Force
+When f$cc_turn_float_current_air Return false Force
+When Others Return false Force
+
+// Purpose: shared post-multiway/current-multiway ISO size map.
+// Source/Provenance: P robust 50/75 sizing.
+##f$cc_turn_float_iso_multiway_size_id##
+When f$cc_turn_float_robust_value && f$cc_turn_completed Return f$cc_turn_float_size_75_id Force
+When f$cc_turn_float_robust_value Return f$cc_turn_float_size_50_id Force
+When f$cc_turn_float_vulnerable_two_pair_plus Return f$cc_turn_float_size_50_id Force
+When f$cc_turn_float_overpair || f$cc_turn_float_strong_top_pair Return f$cc_turn_float_size_50_id Force
+When f$cc_turn_float_premium_draw || (f$cc_hand_no_made && f$cc_real_combo_draw) Return f$cc_turn_float_size_50_id Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// TFISO.05 — dispatch / coverage
+// -----------------------------------------------------------------------------
+
+// Purpose: ISO/true-HU-limp-raised action dispatcher.
+// Source/Provenance: A/P exact context routing.
+##f$cc_turn_float_iso_gap_action##
+When f$cc_turn_float_truehu_limpraised_parent1_context Return f$cc_turn_float_truehu_limpraised_parent1_action Force
+When f$cc_turn_float_iso_parent1_hu_context && f$cc_turn_float_iso_hero_was_limper Return f$cc_turn_float_iso_parent1_limper_hu_action Force
+When f$cc_turn_float_iso_parent1_hu_context && f$cc_turn_float_iso_hero_was_postraise_coldcaller Return f$cc_turn_float_iso_parent1_coldcaller_hu_action Force
+When f$cc_turn_float_iso_parent2_hu_context Return f$cc_turn_float_iso_parent2_hu_action Force
+When f$cc_turn_float_iso_parent3_hu_context Return f$cc_turn_float_iso_parent3_hu_action Force
+When f$cc_turn_float_iso_postmultiway_hu_context Return f$cc_turn_float_iso_postmultiway_hu_action Force
+When f$cc_turn_float_iso_multiway_context Return f$cc_turn_float_iso_multiway_action Force
+When Others Return false Force
+
+// Purpose: paired size dispatcher.
+// Source/Provenance: P exact owner map.
+##f$cc_turn_float_iso_gap_size_id##
+When f$cc_turn_float_truehu_limpraised_parent1_context Return f$cc_turn_float_iso_hu_size_id Force
+When f$cc_turn_float_iso_parent1_hu_context Return f$cc_turn_float_iso_hu_size_id Force
+When f$cc_turn_float_iso_parent2_hu_context Return f$cc_turn_float_iso_hu_size_id Force
+When f$cc_turn_float_iso_parent3_hu_context Return f$cc_turn_float_iso_hu_size_id Force
+When f$cc_turn_float_iso_postmultiway_hu_context Return f$cc_turn_float_iso_multiway_size_id Force
+When f$cc_turn_float_iso_multiway_context Return f$cc_turn_float_iso_multiway_size_id Force
+When Others Return 0 Force
+
+// Purpose: report all supported ISO/trueHU-limp-raised gap contexts.
+// Source/Provenance: P engineering coverage metadata.
+##f$cc_turn_float_iso_gap_covered##
+f$cc_turn_float_truehu_limpraised_parent1_context ||
+f$cc_turn_float_iso_parent1_hu_context ||
+f$cc_turn_float_iso_parent2_hu_context ||
+f$cc_turn_float_iso_parent3_hu_context ||
+f$cc_turn_float_iso_postmultiway_hu_context ||
+f$cc_turn_float_iso_multiway_context
+
+// ============================================================================
+// End Gate05D ISO Turn Float gaps.
+// ============================================================================

@@ -1,0 +1,297 @@
+// ============================================================================
+// CashCrusher_River_Probe_SRP_Gaps.txt
+// Gate 11G — ordinary-SRP 4-6h River Probe professional adaptation
+// ============================================================================
+// Purpose:
+//   Fill exact 4-6 handed ordinary-SRP River-Probe states after CLOSED flop X/C
+//   -> Turn X/X while preserving whether Hero was the blind caller versus the PFA
+//   or the PFA who checked and called an IP flop stab.
+//
+// Source boundary:
+//   Crusher Framework routes both histories to River Probe because Hero actually
+//   called flop. Direct Spin source is scenario-specific and does not provide a
+//   complete 4-6h tree. Native 3h/HUBB descendants retain router precedence and
+//   are not widened here.
+//
+// Professional six-max fill:
+//   * value leads are built from current contribution-aware strength;
+//   * one-pair thin value is restricted to strong TP/OP on non-paired,
+//     non-completed Rivers;
+//   * caller-vs-BTN may bluff a missed REAL flop draw on a source-shaped good
+//     River because the pre-action flop snapshot plus CLOSED X/C proves provenance;
+//   * no pure-air bluff is created versus CO/UTG/HJ;
+//   * PFA-vs-stab gets no River bluff without an equivalent PFA-flop snapshot;
+//   * no stackoff, jam, random or generic commitment threshold is introduced.
+//
+// Provenance:
+//   T = Gate00 ordinary-SRP roles/chairs + Gate11A.1 closed history/ownership.
+//   A = direct 3w source lessons: current value supersedes stale flop class,
+//       missed-draw bluffing is provenance-sensitive, bad River boards reduce air.
+//   P = conservative 100bb six-max value/bluff thresholds and 33/50/75 sizing.
+//   X = solver-perfect frequency claims, generic no-made bluffing, stackoff logic.
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// RPSRP.01 — exact clean-HU 4-6h ordinary-SRP topology
+// -----------------------------------------------------------------------------
+
+// Purpose: exact 4-6 handed ordinary one-raise pot that entered flop HU and is
+// still HU; Hero is FIRST on River after X/C flop -> X/X Turn.
+// Source/Provenance: T Gate00/11 mechanics + P scope restriction.
+##f$cc_river_probe_srp_4to6_clean_hu_context##
+f$cc_river_probe_hu_opportunity &&
+f$cc_deal_size >= 4 && f$cc_deal_size <= 6 &&
+f$cc_flop_entry_count = 2 &&
+f$cc_hu_origin_preflop_reduced &&
+f$cc_pot_family_id = 2 &&
+f$cc_pf_one_raise_ordinary_srp
+
+// Purpose: map the sole preflop raiser's canonical position to the actual flop
+// aggressor chair. This distinguishes PFA CBet from a caller's flop stab.
+// Source/Provenance: T/A Gate00 position IDs + OpenHoldem lastraised2.
+##f$cc_river_probe_srp_flop_aggressor_is_pfa##
+When f$cc_pf_single_raiser_pos_id = 1 && f$cc_utg_exists && lastraised2 = f$cc_utg_chair Return true Force
+When f$cc_pf_single_raiser_pos_id = 2 && f$cc_hj_exists && lastraised2 = f$cc_hj_chair Return true Force
+When f$cc_pf_single_raiser_pos_id = 3 && f$cc_co_exists && lastraised2 = f$cc_co_chair Return true Force
+When f$cc_pf_single_raiser_pos_id = 4 && lastraised2 = dealerchair Return true Force
+When f$cc_pf_single_raiser_pos_id = 5 && lastraised2 = smallblindchair Return true Force
+When Others Return false Force
+
+// Purpose: blind caller versus the sole opener/PFA who also made the flop bet.
+// Source/Provenance: T exact range/actor history; P 4-6h scope.
+##f$cc_river_probe_srp_caller_vs_pfa_context##
+f$cc_river_probe_srp_4to6_clean_hu_context &&
+f$cc_pf_role_srp_caller &&
+(f$cc_hero_pos_id = 5 || f$cc_hero_pos_id = 6) &&
+f$cc_pf_single_raiser_pos_id >= 1 && f$cc_pf_single_raiser_pos_id <= 4 &&
+f$cc_hu_villain_pos_id = f$cc_pf_single_raiser_pos_id &&
+f$cc_river_probe_srp_flop_aggressor_is_pfa
+
+// Purpose: Hero was PFA, checked flop OOP, then X/C'd the sole caller's stab.
+// This is the 4-6h structural descendant of the source-valid 3wSBvBB MNR history.
+// Source/Provenance: A source ownership shape + T exact role/current actor.
+##f$cc_river_probe_srp_pfa_vs_stab_context##
+f$cc_river_probe_srp_4to6_clean_hu_context &&
+f$cc_pf_role_pfa &&
+f$cc_pf_single_raiser_pos_id = f$cc_hero_pos_id &&
+lastraised2 = headsupchair &&
+!f$cc_river_probe_srp_flop_aggressor_is_pfa
+
+// Purpose: exact ordinary-SRP professional gap union.
+// Source/Provenance: P deterministic partition over T/A owners.
+##f$cc_river_probe_srp_gap_context##
+f$cc_river_probe_srp_caller_vs_pfa_context ||
+f$cc_river_probe_srp_pfa_vs_stab_context
+
+// Purpose: caller-vs-PFA opener range band: 1 BTN, 2 CO, 3 UTG/HJ.
+// Source/Provenance: P metadata over T opener position.
+##f$cc_river_probe_srp_caller_opener_band_id##
+When !f$cc_river_probe_srp_caller_vs_pfa_context Return 0 Force
+When f$cc_pf_single_raiser_pos_id = 4 Return 1 Force
+When f$cc_pf_single_raiser_pos_id = 3 Return 2 Force
+When f$cc_pf_single_raiser_pos_id = 1 || f$cc_pf_single_raiser_pos_id = 2 Return 3 Force
+When Others Return 0 Force
+
+// Purpose: PFA-vs-stab range family: 1 SB-v-BB, 2 nonblind opener OOP.
+// Source/Provenance: P metadata over T positions.
+##f$cc_river_probe_srp_pfa_family_id##
+When !f$cc_river_probe_srp_pfa_vs_stab_context Return 0 Force
+When f$cc_hero_pos_id = 5 && f$cc_hu_villain_pos_id = 6 Return 1 Force
+When f$cc_hero_pos_id >= 1 && f$cc_hero_pos_id <= 3 Return 2 Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// RPSRP.02 — contribution-aware current River value bands
+// -----------------------------------------------------------------------------
+
+// Purpose: strong contributed flush suitable for a value Probe; very low 1HC
+// flushes are excluded by unknown-suited-overcard quality rather than treated
+// as automatic robust value.
+// Source/Provenance: A HUBB 1HC quality concept + P six-max value threshold.
+##f$cc_river_probe_srp_strong_flush##
+HaveFlush &&
+pokerval > pokervalcommon &&
+NumberOfUnknownSuitedOvercards <= 4
+
+// Purpose: strong contributed straight; under-straights remain bluff-catch/check.
+// Source/Provenance: A HUBB under-straight lesson + P cash value threshold.
+##f$cc_river_probe_srp_strong_straight##
+HaveStraight && pokerval > pokervalcommon && !HaveUnderStraight
+
+// Purpose: premium current value for larger River Probe sizing.
+// Source/Provenance: T current hand facts + P conservative value region.
+##f$cc_river_probe_srp_premium_value##
+When !f$cc_river_probe_srp_gap_context Return false Force
+When HaveNuts Return true Force
+When HaveQuads && pokerval > pokervalcommon Return true Force
+When HaveFullHouse && pokerval > pokervalcommon Return true Force
+When f$cc_river_probe_srp_strong_flush Return true Force
+When f$cc_river_probe_srp_strong_straight Return true Force
+When Others Return false Force
+
+// Purpose: strong but non-premium contributed value: real trips/set or exact 2P.
+// Source/Provenance: A contribution-aware source primitives + P value grouping.
+##f$cc_river_probe_srp_medium_value##
+f$cc_river_probe_srp_gap_context &&
+!f$cc_river_probe_srp_premium_value &&
+((HaveTrips && !TripsOnBoard && npcbits > 0) ||
+ HaveSet ||
+ f$cc_river_probe_contributed_exact_two_pair)
+
+// Purpose: contribution-aware overpair below 2P+.
+// Source/Provenance: T/A certified pair primitive.
+##f$cc_river_probe_srp_overpair_real##
+f$cc_river_probe_srp_gap_context &&
+HaveOverPair && PairInHand && npcbits > 0 &&
+!f$cc_river_probe_srp_medium_value &&
+!f$cc_river_probe_srp_premium_value
+
+// Purpose: strong current TP using already-certified better-kicker counter.
+// Source/Provenance: A repeated source kicker principle + P <=2 boundary.
+##f$cc_river_probe_srp_strong_tp##
+f$cc_river_probe_srp_gap_context &&
+f$cc_hand_just_top_pair &&
+!TwoPairOnBoard && npcbits > 0 &&
+f$cc_number_better_kickers <= 2
+
+// Purpose: clean River for thin one-pair value; paired/completed boards check
+// rather than manufacturing thin value in range-shifting structures.
+// Source/Provenance: A source completion caution + P cash filter.
+##f$cc_river_probe_srp_thin_value_river##
+!f$cc_river_probe_paired && !f$cc_river_probe_completed
+
+// -----------------------------------------------------------------------------
+// RPSRP.03 — exact caller-vs-PFA bluff provenance
+// -----------------------------------------------------------------------------
+
+// Purpose: pre-action flop snapshot is valid only because CLOSED Gate11 history
+// later proves the planned check actually became X/C. PFA-vs-stab has no such
+// snapshot in current architecture and is therefore excluded from bluffing.
+// Source/Provenance: A/T Gate10 snapshot + Gate11 closed-history bridge.
+##f$cc_river_probe_srp_caller_snapshot_valid##
+f$cc_river_probe_srp_caller_vs_pfa_context &&
+f$cc_river_probe_snapshot_valid
+
+// Purpose: Hero had a real flop frontdoor draw before the actual X/C.
+// Source/Provenance: T/A persisted exact draw components.
+##f$cc_river_probe_srp_flop_frontdoor_draw_proven##
+f$cc_river_probe_srp_caller_snapshot_valid &&
+(user_cc_turn_probe_flop_had_real_fd ||
+ user_cc_turn_probe_flop_had_real_oesd ||
+ user_cc_turn_probe_flop_had_real_gutshot)
+
+// Purpose: source-shaped good bluff River: no paired/A/2+BW bad-board marker and
+// no straight/flush completion. This is a conservative blocker-light substitute
+// for solver-specific river frequencies, not a claim of universal optimality.
+// Source/Provenance: A `BadToBluffRiver` concept + P stricter completion filter.
+##f$cc_river_probe_srp_good_bluff_river##
+f$cc_river_probe_srp_caller_vs_pfa_context &&
+!f$cc_river_probe_bad_to_bluff_board &&
+!f$cc_river_probe_completed
+
+// Purpose: only BTN-open blind-caller range gets a professional missed-draw bluff;
+// tighter CO/EP opener families retain check with air.
+// Source/Provenance: A native BTN pressure ancestry + P 4-6h range tightening.
+##f$cc_river_probe_srp_btn_missed_draw_bluff##
+f$cc_river_probe_srp_caller_opener_band_id = 1 &&
+f$cc_river_probe_srp_flop_frontdoor_draw_proven &&
+f$cc_river_probe_air &&
+f$cc_river_probe_srp_good_bluff_river
+
+// Purpose: explicit no-bluff firewall for PFA-vs-stab until a PFA-owned flop
+// call-time draw snapshot exists.
+// Source/Provenance: P evidence-boundary diagnostic.
+##f$cc_river_probe_srp_pfa_bluff_provenance_missing##
+f$cc_river_probe_srp_pfa_vs_stab_context && f$cc_river_probe_air
+
+// -----------------------------------------------------------------------------
+// RPSRP.04 — professional action and sizes
+// -----------------------------------------------------------------------------
+
+// Purpose: caller-vs-PFA 4-6h River Probe policy.
+// BTN ranges permit strong-TP thin value and selected missed-draw bluff; versus
+// CO/EP only premium/medium value and overpairs lead, with strong TP checking.
+// Source/Provenance: P professional gap fill constrained by A source range lessons.
+##f$cc_river_probe_srp_caller_action##
+When !f$cc_river_probe_srp_caller_vs_pfa_context Return false Force
+When f$cc_river_probe_srp_premium_value Return true Force
+When f$cc_river_probe_srp_medium_value Return true Force
+When f$cc_river_probe_srp_overpair_real && f$cc_river_probe_srp_thin_value_river Return true Force
+When f$cc_river_probe_srp_caller_opener_band_id = 1 && f$cc_river_probe_srp_strong_tp && f$cc_river_probe_srp_thin_value_river Return true Force
+When f$cc_river_probe_srp_btn_missed_draw_bluff Return true Force
+When Others Return false Force
+
+// Purpose: caller-vs-PFA size map: premium75, medium50, one-pair33, bluff50.
+// Source/Provenance: P conservative cash sizing on existing Gate11 palette.
+##f$cc_river_probe_srp_caller_size_id##
+When !f$cc_river_probe_srp_caller_action Return 0 Force
+When f$cc_river_probe_srp_premium_value Return f$cc_river_probe_size_75_id Force
+When f$cc_river_probe_srp_medium_value Return f$cc_river_probe_size_50_id Force
+When f$cc_river_probe_srp_overpair_real Return f$cc_river_probe_size_33_id Force
+When f$cc_river_probe_srp_strong_tp Return f$cc_river_probe_size_33_id Force
+When f$cc_river_probe_srp_btn_missed_draw_bluff Return f$cc_river_probe_size_50_id Force
+When Others Return 0 Force
+
+// Purpose: PFA-vs-stab 4-6h policy. No bluff is available without a PFA-owned
+// flop snapshot; value can lead after Villain stabs flop and declines Turn barrel.
+// Source/Provenance: A 3wSBvBB MNR ownership/value lesson + P six-max adaptation.
+##f$cc_river_probe_srp_pfa_action##
+When !f$cc_river_probe_srp_pfa_vs_stab_context Return false Force
+When f$cc_river_probe_srp_premium_value Return true Force
+When f$cc_river_probe_srp_medium_value Return true Force
+When f$cc_river_probe_srp_overpair_real && f$cc_river_probe_srp_thin_value_river Return true Force
+When f$cc_river_probe_srp_strong_tp && f$cc_river_probe_srp_thin_value_river Return true Force
+When Others Return false Force
+
+// Purpose: PFA-vs-stab value size map: premium75, medium50, one-pair33.
+// Source/Provenance: P conservative deep-cash sizes; no all-in semantics.
+##f$cc_river_probe_srp_pfa_size_id##
+When !f$cc_river_probe_srp_pfa_action Return 0 Force
+When f$cc_river_probe_srp_premium_value Return f$cc_river_probe_size_75_id Force
+When f$cc_river_probe_srp_medium_value Return f$cc_river_probe_size_50_id Force
+When f$cc_river_probe_srp_overpair_real Return f$cc_river_probe_size_33_id Force
+When f$cc_river_probe_srp_strong_tp Return f$cc_river_probe_size_33_id Force
+When Others Return 0 Force
+
+// Purpose: aggregate professional ordinary-SRP gap action.
+// Source/Provenance: P exact-family dispatcher.
+##f$cc_river_probe_srp_gap_action##
+When f$cc_river_probe_srp_caller_vs_pfa_context Return f$cc_river_probe_srp_caller_action Force
+When f$cc_river_probe_srp_pfa_vs_stab_context Return f$cc_river_probe_srp_pfa_action Force
+When Others Return false Force
+
+// Purpose: aggregate paired size dispatcher.
+// Source/Provenance: P exact-family sizing owner.
+##f$cc_river_probe_srp_gap_size_id##
+When f$cc_river_probe_srp_caller_vs_pfa_context Return f$cc_river_probe_srp_caller_size_id Force
+When f$cc_river_probe_srp_pfa_vs_stab_context Return f$cc_river_probe_srp_pfa_size_id Force
+When Others Return 0 Force
+
+// Purpose: every exact 4-6h clean-HU ordinary-SRP context is strategically
+// reviewed here, including explicit checks. Native 3h source contexts are absent.
+// Source/Provenance: P coverage contract.
+##f$cc_river_probe_srp_gap_covered##
+f$cc_river_probe_srp_gap_context
+
+// Purpose: action/size integrity under Gate11 seven-ID palette.
+// Source/Provenance: P safety invariant.
+##f$cc_river_probe_srp_gap_size_consistent##
+When !f$cc_river_probe_srp_gap_action Return f$cc_river_probe_srp_gap_size_id = 0 Force
+When f$cc_river_probe_srp_gap_action Return f$cc_river_probe_srp_gap_size_id >= 1 && f$cc_river_probe_srp_gap_size_id <= 7 Force
+When Others Return false Force
+
+// Purpose: ordinary-SRP Gate11 opportunity outside reviewed 4-6h entry-HU scope,
+// e.g. post-multiway origin; remains visible for later layers.
+// Source/Provenance: P evidence-boundary diagnostic.
+##f$cc_river_probe_srp_unresolved##
+f$cc_river_probe_base_opportunity &&
+f$cc_pot_family_id = 2 &&
+f$cc_pf_one_raise_ordinary_srp &&
+!f$cc_river_probe_srp_gap_covered &&
+!f$cc_river_probe_hubb_covered &&
+!f$cc_river_probe_sbvbb_covered &&
+!f$cc_river_probe_3w_source_covered
+
+// ============================================================================
+// End Gate11G ordinary-SRP 4-6h professional adaptation.
+// ============================================================================

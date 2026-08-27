@@ -1,0 +1,64 @@
+// ============================================================================
+// CashCrusher_4BP_Caller_Context.txt
+// Generic caller-side clean 4BP chronology
+// ============================================================================
+// Purpose:
+//   Reconstruct the one caller-side four-bet-pot sequence that aggregate
+//   preflop history proves conservatively enough for later street ownership:
+//
+//     opener -> Hero 3bet -> opener 4bet -> Hero call.
+//
+// Source/Provenance:
+//   T = persisted raise count, raiser bits, Hero action/role and canonical seats.
+//   A = caller-side extraction from the already audited Gate04F chronology.
+//   P = strict first-orbit ordering requirement; everything else fails closed.
+//
+// Safety:
+//   This module proves chronology only. It grants no postflop action and does not
+//   classify cold4-call, backraise, limp-reraise, reversed or 5bet+ sequences.
+// ============================================================================
+
+// Purpose: return the other raiser when Hero called the final 4bet after raising.
+// Source/Provenance: A mechanical scan over T persisted raiser bits.
+##f$cc_pf_call4_other_raiser_pos_id##
+When f$cc_pf_raise_count != 3 Return 0 Force
+When !f$cc_pf_role_call_4bet Return 0 Force
+When !f$cc_pf_hero_ever_raised Return 0 Force
+When f$cc_pf_unique_raiser_count != 2 Return 0 Force
+When f$cc_pf_raise_utg && f$cc_hero_pos_id != 1 Return 1 Force
+When f$cc_pf_raise_hj && f$cc_hero_pos_id != 2 Return 2 Force
+When f$cc_pf_raise_co && f$cc_hero_pos_id != 3 Return 3 Force
+When f$cc_pf_raise_btn && f$cc_hero_pos_id != 4 Return 4 Force
+When f$cc_pf_raise_sb && f$cc_hero_pos_id != 5 Return 5 Force
+When f$cc_pf_raise_bb && f$cc_hero_pos_id != 6 Return 6 Force
+When Others Return 0 Force
+
+// Purpose: prove opener -> Hero 3bet -> opener 4bet -> Hero call.
+// Source: identical chronology already audited in Gate04F Flop Float.
+// Provenance: A/P generic extraction; other>=Hero is reversed/backraise-like.
+##f$cc_pf_call4_opener4_vs_hero3bettor_proven##
+f$cc_pf_raise_count = 3 &&
+f$cc_pf_role_call_4bet &&
+f$cc_pf_hero_ever_raised &&
+f$cc_pf_unique_raiser_count = 2 &&
+f$cc_pf_call4_other_raiser_pos_id > 0 &&
+f$cc_pf_call4_other_raiser_pos_id < f$cc_hero_pos_id
+
+// Purpose: current HU survivor is the reconstructed opener/final 4bettor.
+// Source/Provenance: T current HU Villain identity + A/P clean chronology.
+##f$cc_hu_call4_vs_opener4_context##
+f$cc_hu &&
+f$cc_pot_family_id = 4 &&
+f$cc_pf_call4_opener4_vs_hero3bettor_proven &&
+f$cc_hu_villain_pos_id = f$cc_pf_call4_other_raiser_pos_id
+
+// Purpose: flag three-raise caller histories that are outside the clean proof.
+// Source/Provenance: P evidence-limit audit state.
+##f$cc_pf_call4_chronology_unknown##
+f$cc_pot_family_id = 4 &&
+f$cc_pf_role_call_4bet &&
+!f$cc_pf_call4_opener4_vs_hero3bettor_proven
+
+// ============================================================================
+// End generic caller-side 4BP chronology.
+// ============================================================================

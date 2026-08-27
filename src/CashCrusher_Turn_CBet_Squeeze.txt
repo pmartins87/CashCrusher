@@ -1,0 +1,236 @@
+// ============================================================================
+// CashCrusher_Turn_CBet_Squeeze.txt
+// Gate 02H — squeeze-pot Turn CBet
+// ============================================================================
+// Source boundary:
+//   No dedicated deep-stack squeeze 2Bar source exists in DeepCrusher. Exact
+//   policy is P-heavy. A-level constraints: current strength, IP/OOP, runout,
+//   draw quality, protected checks and multiway tightening.
+//
+// Exact range origins:
+//   1 opener-call squeeze | 2 pre3bet coldcaller continued vs squeeze |
+//   3 post3bet coldcaller. These never share a blind generic fallback.
+//
+// Stack-depth contract:
+//   Squeeze pots can naturally reach low SPR at 100bb, so low SPR may justify
+//   more value pressure in exact lines. It still does not make TP+ an automatic
+//   stackoff class. No BetMax or raise-response ownership appears here.
+// ============================================================================
+
+// Purpose: dangerous/completed squeeze turn for one-pair value.
+// Source/Provenance: A runout caution + P squeeze application.
+##f$cc_turn_squeeze_dangerous_runout##
+f$cc_turn_new_completion || f$cc_turn_four_card_straight_or_flush || f$cc_turn_super_completed
+
+// Purpose: clean squeeze turn.
+// Source/Provenance: A/P complement of dangerous runout.
+##f$cc_turn_squeeze_clean_turn##
+!f$cc_turn_squeeze_dangerous_runout
+
+// Purpose: clean A/K turn with plausible 3bettor range pressure.
+// Source/Provenance: P range-advantage selector, not an automatic bluff trigger.
+##f$cc_turn_squeeze_high_pressure_turn##
+f$cc_turn_squeeze_clean_turn && f$cc_turn_overcard_to_flop && !f$cc_turn_pairs_flop_rank && (f$cc_turn_is_ace || f$cc_turn_is_king)
+
+// -----------------------------------------------------------------------------
+// SQ-T.01 — HU versus ORIGINAL OPENER
+// -----------------------------------------------------------------------------
+
+// Purpose: P-heavy squeeze second barrel versus original opener who called.
+// Source: no dedicated squeeze source; A generic second-barrel architecture only.
+// Provenance: P professional deep-stack fill.
+// Logic: this is the least selected of the three squeeze survivor classes, so
+// robust OP/strong TP can value-barrel clean turns; medium TP remains mostly IP
+// and unselected; premium draws continue; pure air is restricted to a narrow
+// IP quality-air + small-flop-size + A/K-pressure configuration.
+// Safety: post-multiway origin/large flop size tightens through strong-selection.
+##f$cc_turn_squeeze_hu_opener_action##
+When !f$cc_turn_squeeze_hu_context_consistent Return false Force
+When !f$cc_turn_squeeze_hu_vs_opener Return false Force
+When f$cc_hand_trips_or_better Return true Force
+When HaveTwoPair && f$cc_turn_squeeze_dangerous_runout && f$cc_turn_cbet_hu_high_spr Return false Force
+When HaveTwoPair Return true Force
+When f$cc_turn_cbet_overpair && f$cc_turn_squeeze_dangerous_runout && f$cc_turn_cbet_hu_high_spr Return false Force
+When f$cc_turn_cbet_overpair Return true Force
+When f$cc_turn_cbet_strong_top_pair && f$cc_turn_squeeze_dangerous_runout && f$cc_turn_cbet_hu_high_spr Return false Force
+When f$cc_turn_cbet_strong_top_pair Return true Force
+When f$cc_turn_cbet_medium_top_pair && f$cc_hu_ip && f$cc_turn_squeeze_clean_turn && !f$cc_turn_squeeze_hu_strong_selection Return true Force
+When f$cc_turn_cbet_medium_top_pair && f$cc_pair_plus_draw && f$cc_turn_cbet_hu_spr_below_3 && !f$cc_turn_super_completed Return true Force
+When f$cc_turn_cbet_medium_top_pair Return false Force
+When f$cc_turn_cbet_weak_top_pair Return false Force
+When f$cc_turn_cbet_second_pair Return false Force
+When f$cc_turn_cbet_third_or_worse_pair Return false Force
+When f$cc_hand_no_made && f$cc_turn_cbet_premium_draw && !f$cc_turn_super_completed Return true Force
+When f$cc_hand_no_made && f$cc_turn_cbet_good_draw && f$cc_hu_ip && f$cc_turn_squeeze_high_pressure_turn && !f$cc_turn_squeeze_hu_strong_selection Return true Force
+When f$cc_hand_no_made && f$cc_real_frontdoor_draw Return false Force
+When f$cc_turn_cbet_air && f$cc_hu_ip && !f$cc_turn_squeeze_hu_strong_selection && user_cc_flop_cbet_had_quality_air && f$cc_hist_flop_cbet_plan_size_id = 1 && f$cc_turn_squeeze_high_pressure_turn Return true Force
+When Others Return false Force
+
+// Purpose: squeeze-vs-opener HU turn sizing.
+// Source/Provenance: P lower-SPR 33/50/75 map; no automatic jam.
+##f$cc_turn_squeeze_hu_opener_size_id##
+When !f$cc_turn_squeeze_hu_opener_action Return 0 Force
+When f$cc_hand_trips_or_better Return f$cc_turn_size_75_id Force
+When HaveTwoPair && f$cc_turn_squeeze_dangerous_runout Return f$cc_turn_size_50_id Force
+When HaveTwoPair Return f$cc_turn_size_75_id Force
+When f$cc_turn_cbet_overpair Return f$cc_turn_size_50_id Force
+When f$cc_turn_cbet_strong_top_pair Return f$cc_turn_size_50_id Force
+When f$cc_turn_cbet_medium_top_pair Return f$cc_turn_size_33_id Force
+When f$cc_hand_no_made && f$cc_turn_cbet_premium_draw Return f$cc_turn_size_75_id Force
+When f$cc_hand_no_made && f$cc_turn_cbet_good_draw Return f$cc_turn_size_50_id Force
+When f$cc_turn_cbet_air Return f$cc_turn_size_50_id Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// SQ-T.02 — HU versus PRE-3BET COLD CALLER who continued versus squeeze
+// -----------------------------------------------------------------------------
+
+// Purpose: second barrel versus the most structurally selected squeeze-call path:
+// flat open first, then call squeeze, then call flop CBet.
+// Source: no literal DeepCrusher range branch.
+// Provenance: P-heavy and intentionally value/equity dense.
+// Logic: medium/weak TP and marginal draws check; OP/strong TP need clean turn or
+// naturally low SPR; premium draws mostly IP; pure air omitted.
+##f$cc_turn_squeeze_hu_pre3bet_action##
+When !f$cc_turn_squeeze_hu_context_consistent Return false Force
+When !f$cc_turn_squeeze_hu_vs_pre3bet_coldcaller Return false Force
+When f$cc_hand_trips_or_better Return true Force
+When HaveTwoPair && f$cc_turn_squeeze_dangerous_runout && !f$cc_turn_cbet_hu_spr_below_3 Return false Force
+When HaveTwoPair Return true Force
+When f$cc_turn_cbet_overpair && f$cc_turn_squeeze_clean_turn && f$cc_hu_ip Return true Force
+When f$cc_turn_cbet_overpair && f$cc_turn_squeeze_clean_turn && f$cc_hu_oop && f$cc_turn_cbet_hu_spr_below_3 Return true Force
+When f$cc_turn_cbet_overpair Return false Force
+When f$cc_turn_cbet_strong_top_pair && f$cc_turn_squeeze_clean_turn && f$cc_hu_ip && !f$cc_turn_cbet_hu_high_spr Return true Force
+When f$cc_turn_cbet_strong_top_pair && f$cc_turn_squeeze_clean_turn && f$cc_hu_oop && f$cc_pair_plus_draw && f$cc_turn_cbet_hu_spr_below_3 Return true Force
+When f$cc_turn_cbet_top_pair Return false Force
+When f$cc_turn_cbet_second_pair Return false Force
+When f$cc_turn_cbet_third_or_worse_pair Return false Force
+When f$cc_hand_no_made && f$cc_turn_cbet_premium_draw && f$cc_hu_ip && f$cc_turn_squeeze_clean_turn Return true Force
+When f$cc_hand_no_made && f$cc_turn_cbet_premium_draw && f$cc_hu_oop && f$cc_turn_squeeze_high_pressure_turn && f$cc_turn_cbet_hu_spr_below_3 Return true Force
+When f$cc_hand_no_made && f$cc_real_frontdoor_draw Return false Force
+When f$cc_turn_cbet_air Return false Force
+When Others Return false Force
+
+// Purpose: pre3bet-coldcaller squeeze turn sizing.
+// Source/Provenance: P 50/75 value/equity map.
+##f$cc_turn_squeeze_hu_pre3bet_size_id##
+When !f$cc_turn_squeeze_hu_pre3bet_action Return 0 Force
+When f$cc_hand_trips_or_better Return f$cc_turn_size_75_id Force
+When HaveTwoPair && f$cc_turn_squeeze_dangerous_runout Return f$cc_turn_size_50_id Force
+When HaveTwoPair Return f$cc_turn_size_75_id Force
+When f$cc_turn_cbet_overpair Return f$cc_turn_size_50_id Force
+When f$cc_turn_cbet_strong_top_pair Return f$cc_turn_size_50_id Force
+When f$cc_hand_no_made && f$cc_turn_cbet_premium_draw Return f$cc_turn_size_75_id Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// SQ-T.03 — HU versus POST-3BET COLD CALLER
+// -----------------------------------------------------------------------------
+
+// Purpose: second barrel versus player who cold-called after the squeeze.
+// Source: no dedicated source.
+// Provenance: P-heavy selected/condensed range baseline.
+// Logic: robust made value remains; OP/strong TP require clean IP or low-SPR OOP;
+// premium draws mostly IP; medium TP/air absent from first baseline.
+##f$cc_turn_squeeze_hu_post3bet_action##
+When !f$cc_turn_squeeze_hu_context_consistent Return false Force
+When !f$cc_turn_squeeze_hu_vs_post3bet_coldcaller Return false Force
+When f$cc_hand_trips_or_better Return true Force
+When HaveTwoPair && f$cc_turn_squeeze_dangerous_runout && !f$cc_turn_cbet_hu_spr_below_3 Return false Force
+When HaveTwoPair Return true Force
+When f$cc_turn_cbet_overpair && f$cc_turn_squeeze_clean_turn && f$cc_hu_ip Return true Force
+When f$cc_turn_cbet_overpair && f$cc_turn_squeeze_clean_turn && f$cc_hu_oop && f$cc_turn_cbet_hu_spr_below_3 Return true Force
+When f$cc_turn_cbet_overpair Return false Force
+When f$cc_turn_cbet_strong_top_pair && f$cc_turn_squeeze_clean_turn && f$cc_hu_ip && !f$cc_turn_cbet_hu_high_spr Return true Force
+When f$cc_turn_cbet_strong_top_pair && f$cc_turn_squeeze_clean_turn && f$cc_hu_oop && f$cc_pair_plus_draw && f$cc_turn_cbet_hu_spr_below_3 Return true Force
+When f$cc_turn_cbet_top_pair Return false Force
+When f$cc_turn_cbet_second_pair Return false Force
+When f$cc_turn_cbet_third_or_worse_pair Return false Force
+When f$cc_hand_no_made && f$cc_turn_cbet_premium_draw && f$cc_hu_ip && f$cc_turn_squeeze_clean_turn Return true Force
+When f$cc_hand_no_made && f$cc_real_frontdoor_draw Return false Force
+When f$cc_turn_cbet_air Return false Force
+When Others Return false Force
+
+// Purpose: post3bet-coldcaller squeeze turn sizing.
+// Source/Provenance: P conservative 50/75 map.
+##f$cc_turn_squeeze_hu_post3bet_size_id##
+When !f$cc_turn_squeeze_hu_post3bet_action Return 0 Force
+When f$cc_hand_trips_or_better Return f$cc_turn_size_75_id Force
+When HaveTwoPair && f$cc_turn_squeeze_dangerous_runout Return f$cc_turn_size_50_id Force
+When HaveTwoPair Return f$cc_turn_size_75_id Force
+When f$cc_turn_cbet_overpair Return f$cc_turn_size_50_id Force
+When f$cc_turn_cbet_strong_top_pair Return f$cc_turn_size_50_id Force
+When f$cc_hand_no_made && f$cc_turn_cbet_premium_draw Return f$cc_turn_size_75_id Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// SQ-T.04 — Current MULTIWAY squeeze
+// -----------------------------------------------------------------------------
+
+// Purpose: value-heavy multiway squeeze second barrel.
+// Source: no dedicated source; mature multiway selectivity is only A constraint.
+// Provenance: P-heavy.
+// Logic: trips+/clean two-pair core; OP/strong TP only LAST with opener-dominant
+// field and low deepest SPR; premium draws only selective LAST; no pure air.
+// Safety: deepest-effective SPR controls field-wide low-SPR relaxation.
+##f$cc_turn_squeeze_mw_action##
+When !f$cc_turn_squeeze_mw_context_consistent Return false Force
+When f$cc_hand_trips_or_better && !f$cc_turn_super_completed Return true Force
+When f$cc_hand_trips_or_better && f$cc_turn_super_completed && f$cc_turn_squeeze_mw_all_effective_spr_below_3 Return true Force
+When HaveTwoPair && f$cc_turn_squeeze_clean_turn && !f$cc_turn_squeeze_mw_strong_selection Return true Force
+When HaveTwoPair && f$cc_turn_squeeze_clean_turn && f$cc_turn_squeeze_mw_all_effective_spr_below_4 Return true Force
+When HaveTwoPair && f$cc_turn_squeeze_dangerous_runout && f$cc_turn_squeeze_mw_all_effective_spr_below_3 Return true Force
+When HaveTwoPair Return false Force
+When f$cc_turn_cbet_overpair && f$cc_multiway_rel_last && f$cc_turn_squeeze_mw_comp_id = 1 && f$cc_turn_squeeze_clean_turn && f$cc_turn_squeeze_mw_all_effective_spr_below_4 Return true Force
+When f$cc_turn_cbet_overpair Return false Force
+When f$cc_turn_cbet_strong_top_pair && f$cc_multiway_rel_last && f$cc_turn_squeeze_mw_comp_id = 1 && f$cc_turn_squeeze_clean_turn && f$cc_turn_squeeze_mw_all_effective_spr_below_3 Return true Force
+When f$cc_turn_cbet_top_pair Return false Force
+When f$cc_turn_cbet_second_pair Return false Force
+When f$cc_turn_cbet_third_or_worse_pair Return false Force
+When f$cc_hand_no_made && f$cc_turn_cbet_premium_draw && f$cc_multiway_rel_last && f$cc_turn_squeeze_clean_turn && f$cc_turn_squeeze_mw_comp_id = 1 Return true Force
+When f$cc_real_frontdoor_draw Return false Force
+When f$cc_turn_cbet_air Return false Force
+When Others Return false Force
+
+// Purpose: multiway squeeze turn size map.
+// Source/Provenance: P value-heavy 50/75 map; no pot/jam default.
+##f$cc_turn_squeeze_mw_size_id##
+When !f$cc_turn_squeeze_mw_action Return 0 Force
+When f$cc_hand_trips_or_better Return f$cc_turn_size_75_id Force
+When HaveTwoPair && f$cc_turn_squeeze_dangerous_runout Return f$cc_turn_size_50_id Force
+When HaveTwoPair Return f$cc_turn_size_75_id Force
+When f$cc_turn_cbet_overpair Return f$cc_turn_size_50_id Force
+When f$cc_turn_cbet_strong_top_pair Return f$cc_turn_size_50_id Force
+When f$cc_hand_no_made && f$cc_turn_cbet_premium_draw Return f$cc_turn_size_75_id Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// SQ-T.05 — Dispatch / coverage
+// -----------------------------------------------------------------------------
+
+// Purpose: exact squeeze Turn-CBet action dispatcher by survivor/composition.
+// Source/Provenance: P/A range-provenance router; no plain3BP fallback.
+##f$cc_turn_squeeze_action##
+When f$cc_turn_squeeze_hu_vs_opener && f$cc_turn_squeeze_hu_context_consistent Return f$cc_turn_squeeze_hu_opener_action Force
+When f$cc_turn_squeeze_hu_vs_pre3bet_coldcaller && f$cc_turn_squeeze_hu_context_consistent Return f$cc_turn_squeeze_hu_pre3bet_action Force
+When f$cc_turn_squeeze_hu_vs_post3bet_coldcaller && f$cc_turn_squeeze_hu_context_consistent Return f$cc_turn_squeeze_hu_post3bet_action Force
+When f$cc_turn_squeeze_mw_context_consistent Return f$cc_turn_squeeze_mw_action Force
+When Others Return false Force
+
+// Purpose: paired squeeze Turn-CBet size dispatcher.
+// Source/Provenance: P/A safety router; check/uncovered -> 0.
+##f$cc_turn_squeeze_size_id##
+When f$cc_turn_squeeze_hu_vs_opener && f$cc_turn_squeeze_hu_context_consistent Return f$cc_turn_squeeze_hu_opener_size_id Force
+When f$cc_turn_squeeze_hu_vs_pre3bet_coldcaller && f$cc_turn_squeeze_hu_context_consistent Return f$cc_turn_squeeze_hu_pre3bet_size_id Force
+When f$cc_turn_squeeze_hu_vs_post3bet_coldcaller && f$cc_turn_squeeze_hu_context_consistent Return f$cc_turn_squeeze_hu_post3bet_size_id Force
+When f$cc_turn_squeeze_mw_context_consistent Return f$cc_turn_squeeze_mw_size_id Force
+When Others Return 0 Force
+
+// Purpose: coverage flag for Gate02H squeeze Turn CBet.
+// Source/Provenance: P engineering metadata.
+##f$cc_turn_squeeze_covered##
+(f$cc_turn_squeeze_hu_context_consistent && f$cc_turn_squeeze_hu_survivor_type_id > 0) || f$cc_turn_squeeze_mw_context_consistent
+
+// ============================================================================
+// End Gate 02H.
+// ============================================================================

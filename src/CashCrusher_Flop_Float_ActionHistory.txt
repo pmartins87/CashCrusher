@@ -1,0 +1,297 @@
+// ============================================================================
+// CashCrusher_Flop_Float_ActionHistory.txt
+// Gate 04H — executed Flop Float provenance for later-street routing
+// ============================================================================
+// Purpose:
+//   Preserve the difference between a checked-to Float opportunity/plan and what
+//   OpenHoldem actually executed. Later Float/Delayed/River nodes consume CLOSED
+//   round-2 history, never a pre-action user marker by itself.
+//
+// Source/Provenance:
+//   T = OpenHoldem did*round2 + lastraised2 execution history.
+//   A = Gate01N/Gate02N final-action provenance architecture.
+//   P = Float family/hand/texture/live-field snapshot needed after flop disappears.
+//
+// OpenPPL safety:
+//   Flat complete WHENs only. Every `user_*` write here is PRE-ACTION provenance,
+//   not proof that the corresponding bet/check actually occurred.
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// FHFloat.01 — PRE-ACTION checked-to snapshot
+// -----------------------------------------------------------------------------
+
+// Purpose: canonical strategy wrapper for eventual f$flop composition.
+// Source: A final-action repair pattern; current strategy is exact Gate04 router.
+// Provenance: A/T wrapper + P Float-state snapshot.
+##f$cc_flop_float_action_with_history##
+When !f$cc_flop_float_opportunity Return false Force
+When f$cc_flop_float_opportunity Set user_cc_flop_float_opportunity_seen
+When f$cc_flop_float_opportunity Set user_cc_flop_float_state_snapshot_recorded
+
+// Primary current FLOP hand class; exactly one is expected in a valid snapshot.
+When f$cc_flop_float_opportunity && f$cc_hand_two_pair_or_better Set user_cc_flop_float_state_had_2pplus
+When f$cc_flop_float_opportunity && HaveOverPair && !f$cc_hand_two_pair_or_better Set user_cc_flop_float_state_had_overpair
+When f$cc_flop_float_opportunity && f$cc_hand_just_top_pair Set user_cc_flop_float_state_had_top_pair
+When f$cc_flop_float_opportunity && f$cc_hand_middle_or_bottom_pair && !f$cc_hand_top_pair_or_better Set user_cc_flop_float_state_had_lower_pair
+When f$cc_flop_float_opportunity && f$cc_hand_no_made Set user_cc_flop_float_state_had_no_made
+
+// Equity provenance may coexist with a made pair by design where applicable.
+When f$cc_flop_float_opportunity && f$cc_flop_float_premium_draw Set user_cc_flop_float_state_had_premium_draw
+When f$cc_flop_float_opportunity && f$cc_flop_float_good_draw Set user_cc_flop_float_state_had_good_draw
+When f$cc_flop_float_opportunity && f$cc_flop_float_air Set user_cc_flop_float_state_had_air
+
+// Exact audited flop pressure parent.
+When f$cc_flop_float_opportunity && f$cc_flop_pressure_id = 1 Set user_cc_flop_float_state_texture_static_high
+When f$cc_flop_float_opportunity && f$cc_flop_pressure_id = 2 Set user_cc_flop_float_state_texture_dynamic_high
+When f$cc_flop_float_opportunity && f$cc_flop_pressure_id = 3 Set user_cc_flop_float_state_texture_static_lowmid
+When f$cc_flop_float_opportunity && f$cc_flop_pressure_id = 4 Set user_cc_flop_float_state_texture_dynamic_lowmid
+When f$cc_flop_float_opportunity && f$cc_flop_pressure_id = 5 Set user_cc_flop_float_state_texture_paired
+
+// Exact Gate04 family ID when strategically recognized.
+When f$cc_flop_float_opportunity && f$cc_flop_float_family_id = 1 Set user_cc_flop_float_state_family_1
+When f$cc_flop_float_opportunity && f$cc_flop_float_family_id = 2 Set user_cc_flop_float_state_family_2
+When f$cc_flop_float_opportunity && f$cc_flop_float_family_id = 3 Set user_cc_flop_float_state_family_3
+When f$cc_flop_float_opportunity && f$cc_flop_float_family_id = 4 Set user_cc_flop_float_state_family_4
+When f$cc_flop_float_opportunity && f$cc_flop_float_family_id = 5 Set user_cc_flop_float_state_family_5
+When f$cc_flop_float_opportunity && f$cc_flop_float_family_id = 6 Set user_cc_flop_float_state_family_6
+
+// Player count and exact live-opponent mask BEFORE the checked-to action.
+When f$cc_flop_float_opportunity && nplayersplaying = 2 Set user_cc_flop_float_state_players_2
+When f$cc_flop_float_opportunity && nplayersplaying = 3 Set user_cc_flop_float_state_players_3
+When f$cc_flop_float_opportunity && nplayersplaying = 4 Set user_cc_flop_float_state_players_4
+When f$cc_flop_float_opportunity && nplayersplaying = 5 Set user_cc_flop_float_state_players_5
+When f$cc_flop_float_opportunity && nplayersplaying = 6 Set user_cc_flop_float_state_players_6
+When f$cc_flop_float_opportunity && f$cc_opp_live_utg Set user_cc_flop_float_state_live_utg
+When f$cc_flop_float_opportunity && f$cc_opp_live_hj Set user_cc_flop_float_state_live_hj
+When f$cc_flop_float_opportunity && f$cc_opp_live_co Set user_cc_flop_float_state_live_co
+When f$cc_flop_float_opportunity && f$cc_opp_live_btn Set user_cc_flop_float_state_live_btn
+When f$cc_flop_float_opportunity && f$cc_opp_live_sb Set user_cc_flop_float_state_live_sb
+When f$cc_flop_float_opportunity && f$cc_opp_live_bb Set user_cc_flop_float_state_live_bb
+
+// Source HUSB air Float explicitly forbids automatically manufacturing later
+// 2Bar/BxB plans. Store that source plan without claiming flop action executed.
+When f$cc_flop_float_husb_air_no_forced_followup Set user_cc_flop_float_plan_no_forced_2bar
+When f$cc_flop_float_husb_air_no_forced_followup Set user_cc_flop_float_plan_no_bxb
+
+When f$cc_flop_float_router Set user_cc_flop_float_plan_bet_seen
+When f$cc_flop_float_router Return true Force
+When Others Return false Force
+
+// Purpose: count mutually-exclusive primary flop Float hand classes.
+// Source/Provenance: P integrity check over T/A hand primitives.
+##f$cc_hist_flop_float_primary_class_marker_count##
+(user_cc_flop_float_state_had_2pplus * 1) +
+(user_cc_flop_float_state_had_overpair * 1) +
+(user_cc_flop_float_state_had_top_pair * 1) +
+(user_cc_flop_float_state_had_lower_pair * 1) +
+(user_cc_flop_float_state_had_no_made * 1)
+
+// Purpose: count exact pressure-parent markers.
+// Source/Provenance: P integrity check over Gate01 texture parents.
+##f$cc_hist_flop_float_texture_marker_count##
+(user_cc_flop_float_state_texture_static_high * 1) +
+(user_cc_flop_float_state_texture_dynamic_high * 1) +
+(user_cc_flop_float_state_texture_static_lowmid * 1) +
+(user_cc_flop_float_state_texture_dynamic_lowmid * 1) +
+(user_cc_flop_float_state_texture_paired * 1)
+
+// Purpose: count stored Gate04 family markers.
+// Source/Provenance: P exact family snapshot integrity.
+##f$cc_hist_flop_float_family_marker_count##
+(user_cc_flop_float_state_family_1 * 1) +
+(user_cc_flop_float_state_family_2 * 1) +
+(user_cc_flop_float_state_family_3 * 1) +
+(user_cc_flop_float_state_family_4 * 1) +
+(user_cc_flop_float_state_family_5 * 1) +
+(user_cc_flop_float_state_family_6 * 1)
+
+// Purpose: decode Gate04 family after flop closes.
+// Source/Provenance: P boolean-marker decoder; contradiction ->0.
+##f$cc_hist_flop_float_family_id##
+When !f$cc_hist_flop_float_closed Return 0 Force
+When f$cc_hist_flop_float_family_marker_count != 1 Return 0 Force
+When user_cc_flop_float_state_family_1 Return 1 Force
+When user_cc_flop_float_state_family_2 Return 2 Force
+When user_cc_flop_float_state_family_3 Return 3 Force
+When user_cc_flop_float_state_family_4 Return 4 Force
+When user_cc_flop_float_state_family_5 Return 5 Force
+When user_cc_flop_float_state_family_6 Return 6 Force
+When Others Return 0 Force
+
+// Purpose: count stored flop player-count markers.
+// Source/Provenance: P integrity check over T nplayersplaying snapshot.
+##f$cc_hist_flop_float_player_count_marker_count##
+(user_cc_flop_float_state_players_2 * 1) +
+(user_cc_flop_float_state_players_3 * 1) +
+(user_cc_flop_float_state_players_4 * 1) +
+(user_cc_flop_float_state_players_5 * 1) +
+(user_cc_flop_float_state_players_6 * 1)
+
+// Purpose: decode number of players facing the checked-to Float decision.
+// Source/Provenance: P decoder over T player-count snapshot.
+##f$cc_hist_flop_float_player_count##
+When !f$cc_hist_flop_float_closed Return 0 Force
+When f$cc_hist_flop_float_player_count_marker_count != 1 Return 0 Force
+When user_cc_flop_float_state_players_2 Return 2 Force
+When user_cc_flop_float_state_players_3 Return 3 Force
+When user_cc_flop_float_state_players_4 Return 4 Force
+When user_cc_flop_float_state_players_5 Return 5 Force
+When user_cc_flop_float_state_players_6 Return 6 Force
+When Others Return 0 Force
+
+// Purpose: reconstruct exact opponents live before Flop Float/check-back.
+// Source/Provenance: A/P canonical position-mask decoder.
+##f$cc_hist_flop_float_live_opp_mask##
+(user_cc_flop_float_state_live_utg * 1) +
+(user_cc_flop_float_state_live_hj * 2) +
+(user_cc_flop_float_state_live_co * 4) +
+(user_cc_flop_float_state_live_btn * 8) +
+(user_cc_flop_float_state_live_sb * 16) +
+(user_cc_flop_float_state_live_bb * 32)
+
+// -----------------------------------------------------------------------------
+// FHFloat.02 — CLOSED round-2 execution primitives
+// -----------------------------------------------------------------------------
+
+// Purpose: flop has ended; round-2 action history is now final.
+// Source/Provenance: T betround numbering.
+##f$cc_hist_flop_float_closed##
+IsTurn || IsRiver
+
+// Purpose: prove Hero really executed the initial Float bet.
+// Source: pre-action opportunity marker + closed OpenHoldem action counters.
+// Provenance: A/T final-action proof.
+// Safety: any prior check means a later check-raise/bet is not initial Float.
+##f$cc_hist_flop_float_initial_bet_executed##
+f$cc_hist_flop_float_closed &&
+user_cc_flop_float_opportunity_seen &&
+didchecround2 = 0 &&
+(didbetsizeround2 > 0 || didalliround2 > 0)
+
+// Purpose: initial Float was a normal sized bet.
+// Source/Provenance: T round-2 betsize counter.
+##f$cc_hist_flop_float_initial_bet_was_sized##
+f$cc_hist_flop_float_initial_bet_executed && didbetsizeround2 > 0
+
+// Purpose: initial Float itself was direct all-in.
+// Source/Provenance: T counters + P initial-action disambiguation.
+##f$cc_hist_flop_float_initial_bet_was_direct_allin##
+f$cc_hist_flop_float_initial_bet_executed &&
+didalliround2 > 0 &&
+didbetsizeround2 = 0 &&
+didraisround2 = 0
+
+// Purpose: Hero declined available Float and checked back as exact LAST actor.
+// Source: canonical opportunity is LAST, so this check closes the flop.
+// Provenance: T/A exact check-back history.
+##f$cc_hist_flop_float_checked_back##
+f$cc_hist_flop_float_closed &&
+user_cc_flop_float_opportunity_seen &&
+didchecround2 > 0 &&
+didcallround2 = 0 &&
+didraisround2 = 0 &&
+didbetsizeround2 = 0 &&
+didalliround2 = 0
+
+// Purpose: Float was later raised and Hero continued by calling.
+// Source/Provenance: T action counters + final aggressor signal.
+##f$cc_hist_flop_float_then_called_raise##
+f$cc_hist_flop_float_initial_bet_executed &&
+didcallround2 > 0 &&
+lastraised2 != userchair
+
+// Purpose: Hero Float-bet then re-aggressed on the flop.
+// Source/Provenance: T multiple aggressive action counters.
+##f$cc_hist_flop_float_then_reaggressed##
+f$cc_hist_flop_float_initial_bet_executed &&
+(didbetsizeround2 >= 2 || didraisround2 > 0 || (didbetsizeround2 > 0 && didalliround2 > 0))
+
+// Purpose: Hero remains final flop aggressor after a normal one-size Float.
+// Source/Provenance: T `lastraised2` + exact counter pattern.
+##f$cc_hist_flop_float_standard_parent##
+f$cc_hist_flop_float_closed &&
+user_cc_flop_float_opportunity_seen &&
+didchecround2 = 0 &&
+didcallround2 = 0 &&
+didraisround2 = 0 &&
+didbetsizeround2 = 1 &&
+didalliround2 = 0 &&
+lastraised2 = userchair
+
+// -----------------------------------------------------------------------------
+// FHFloat.03 — Snapshot / plan integrity and runtime drift
+// -----------------------------------------------------------------------------
+
+// Purpose: validate pre-action Float state after flop closes.
+// Source/Provenance: P integrity contract over T/A snapshot facts.
+##f$cc_hist_flop_float_snapshot_consistent##
+When !f$cc_hist_flop_float_closed Return false Force
+When !user_cc_flop_float_opportunity_seen Return !user_cc_flop_float_state_snapshot_recorded Force
+When !user_cc_flop_float_state_snapshot_recorded Return false Force
+When f$cc_hist_flop_float_primary_class_marker_count != 1 Return false Force
+When f$cc_hist_flop_float_texture_marker_count != 1 Return false Force
+When f$cc_hist_flop_float_player_count_marker_count != 1 Return false Force
+When BitCount(f$cc_hist_flop_float_live_opp_mask) != (f$cc_hist_flop_float_player_count - 1) Return false Force
+When user_cc_flop_float_plan_bet_seen && f$cc_hist_flop_float_family_marker_count != 1 Return false Force
+When Others Return true Force
+
+// Purpose: planned Float but runtime records initial check-back.
+// Source/Provenance: P diagnostic over T closed history.
+##f$cc_hist_flop_float_planned_bet_but_checked##
+f$cc_hist_flop_float_closed && user_cc_flop_float_plan_bet_seen && didchecround2 > 0
+
+// Purpose: executed initial Float without reviewed strategy plan capture.
+// Source/Provenance: P runtime-composition diagnostic.
+##f$cc_hist_flop_float_executed_without_plan##
+f$cc_hist_flop_float_initial_bet_executed && !user_cc_flop_float_plan_bet_seen
+
+// Purpose: planned normal Float unexpectedly became direct all-in.
+// Source/Provenance: T/P external/global sizing drift diagnostic.
+##f$cc_hist_flop_float_unexpected_allin_promotion##
+f$cc_hist_flop_float_closed &&
+user_cc_flop_float_plan_size_recorded &&
+!user_cc_flop_float_plan_expected_allin &&
+f$cc_hist_flop_float_initial_bet_was_direct_allin
+
+// Purpose: local execution expected BetMax but runtime remained normal size.
+// Source/Provenance: T/P mismatch diagnostic.
+##f$cc_hist_flop_float_expected_allin_not_executed##
+f$cc_hist_flop_float_closed &&
+user_cc_flop_float_plan_expected_allin &&
+f$cc_hist_flop_float_initial_bet_was_sized &&
+didalliround2 = 0
+
+// Purpose: compact Float runtime mismatch flag.
+// Source/Provenance: P union of T/A plan/snapshot/action inconsistencies.
+##f$cc_hist_flop_float_runtime_mismatch##
+When !f$cc_hist_flop_float_closed Return false Force
+When !f$cc_flop_float_plan_markers_consistent Return true Force
+When !f$cc_hist_flop_float_snapshot_consistent Return true Force
+When f$cc_hist_flop_float_planned_bet_but_checked Return true Force
+When f$cc_hist_flop_float_executed_without_plan Return true Force
+When f$cc_hist_flop_float_unexpected_allin_promotion Return true Force
+When f$cc_hist_flop_float_expected_allin_not_executed Return true Force
+When Others Return false Force
+
+// Purpose: valid normal executed Flop Float parent for any later street node that
+// specifically needs Hero to have bet the checked-to flop and retained aggression.
+// Source/Provenance: P fail-closed wrapper over T/A actual history.
+##f$cc_hist_flop_float_standard_parent_valid##
+f$cc_hist_flop_float_standard_parent &&
+f$cc_flop_float_plan_markers_consistent &&
+f$cc_hist_flop_float_snapshot_consistent &&
+!f$cc_hist_flop_float_runtime_mismatch
+
+// Purpose: valid checked-back Float opportunity parent for Delayed Float logic.
+// Source: DeepCrusher Gate12B explicitly distinguishes deliberate flop Float
+// check-back from immediate Float and consumes actual no-initiative history.
+// Provenance: A/T exact check-back parent with snapshot integrity.
+##f$cc_hist_flop_float_checkback_parent_valid##
+f$cc_hist_flop_float_checked_back &&
+f$cc_hist_flop_float_snapshot_consistent &&
+!f$cc_hist_flop_float_runtime_mismatch
+
+// ============================================================================
+// End Gate04H Flop Float action provenance.
+// ============================================================================

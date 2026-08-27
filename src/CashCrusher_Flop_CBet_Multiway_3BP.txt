@@ -1,0 +1,208 @@
+// ============================================================================
+// CashCrusher_Flop_CBet_Multiway_3BP.txt
+// Gate 01H.4 — multiway PLAIN 3BP / SQUEEZE PFA flop CBet
+// ============================================================================
+// Source boundary:
+//   no dedicated deep-stack multiway 3BP/squeeze tree exists in DeepCrusher.
+//   Initiative/IP-OOP/texture/hand architecture is A; exact frequencies are P.
+//
+// Range provenance:
+//   original opener, pre-3bet cold callers and post-3bet cold callers remain
+//   separately counted/masked. Plain 3BP and squeeze never share a generic tail.
+//
+// Stack-depth note:
+//   this file decides only first-flop CBet/check + size. Low-SPR predicates may
+//   legitimately influence that choice, but do not globally enable/disable any
+//   later commitment helper. A low-SPR exception is allowed only when the
+//   DEEPEST effective opponent relation is below the threshold; a short third
+//   player cannot collapse a still-deep 3BP decision into short-stack policy.
+//
+// OpenPPL safety: flat complete WHENs; unclassified range composition fails closed.
+// Size IDs: 1 ~33% | 2 ~50% | 3 ~75% | 0 check
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// M3P.01 — EXACT THREE-WAY PLAIN 3BP
+// -----------------------------------------------------------------------------
+
+// Purpose: choose CBet/check in exact-threeway plain 3BP.
+// Context: Hero final 3bettor versus two ranges that are opener/post-3bet-caller
+// origins only; no pre-3bet caller is legal in plain subtype.
+// Provenance: P-heavy; A source supplies generic 3BP/CBet principles only.
+// Decision logic: strong value and static overpairs/TP remain active; marginal
+// one-pair tightens; premium draws selective; air only narrow LAST/static-high
+// best-backdoor case when original opener is still present.
+##f$cc_cbet_mw_plain3bp_exact3_action##
+When !f$cc_mw_plain3bp_exact3_context Return false Force
+When !f$cc_mw_3bp_context_consistent Return false Force
+When f$cc_cbet_flop_very_strong_value Return true Force
+When f$cc_cbet_flop_overpair && f$cc_flop_dynamic_lowmid_parent && !f$cc_mw_all_effective_spr_below_3 Return false Force
+When f$cc_cbet_flop_overpair && (f$cc_flop_static_high_parent || f$cc_flop_static_lowmid_parent || f$cc_flop_paired_parent) Return true Force
+When f$cc_cbet_flop_overpair && f$cc_flop_dynamic_high_parent && !f$cc_mw_3bp_all_live_are_coldcallers Return true Force
+When f$cc_cbet_flop_overpair && f$cc_flop_dynamic_lowmid_parent && f$cc_mw_3bp_last_context && f$cc_mw_all_effective_spr_below_3 Return true Force
+When f$cc_cbet_flop_overpair Return false Force
+When f$cc_cbet_flop_strong_top_pair && f$cc_pair_plus_draw Return true Force
+When f$cc_cbet_flop_strong_top_pair && (f$cc_flop_static_high_parent || f$cc_flop_paired_parent) Return true Force
+When f$cc_cbet_flop_strong_top_pair && f$cc_flop_dynamic_lowmid_parent && f$cc_mw_3bp_last_context && f$cc_mw_all_effective_spr_below_3 Return true Force
+When f$cc_cbet_flop_strong_top_pair Return false Force
+When f$cc_cbet_flop_medium_top_pair && f$cc_flop_static_high_parent && f$cc_mw_3bp_last_context && f$cc_mw_3bp_has_live_opener && f$cc_mw_all_effective_spr_below_4 Return true Force
+When f$cc_cbet_flop_medium_top_pair Return false Force
+When f$cc_cbet_flop_weak_top_pair Return false Force
+When f$cc_cbet_flop_showdown_pair Return false Force
+When f$cc_cbet_flop_premium_draw && f$cc_mw_3bp_last_context Return true Force
+When f$cc_cbet_flop_premium_draw && f$cc_mw_3bp_middle_context && (f$cc_flop_static_high_parent || f$cc_flop_paired_parent) Return true Force
+When f$cc_cbet_flop_premium_draw && f$cc_mw_3bp_first_context && f$cc_flop_static_high_parent && !f$cc_mw_3bp_all_live_are_coldcallers Return true Force
+When f$cc_real_frontdoor_draw Return false Force
+When f$cc_cbet_flop_air_best_backdoors && f$cc_flop_static_high_parent && f$cc_mw_3bp_last_context && f$cc_mw_3bp_has_live_opener && !f$cc_mw_3bp_all_live_are_coldcallers Return true Force
+When Others Return false Force
+
+// Purpose: size positive exact-threeway plain-3BP CBet.
+// Source/Provenance: P 3BP multiway sizing, A texture-sensitive ancestry.
+##f$cc_cbet_mw_plain3bp_exact3_size_id##
+When !f$cc_cbet_mw_plain3bp_exact3_action Return 0 Force
+When f$cc_flop_dynamic_lowmid_parent && (f$cc_cbet_flop_very_strong_value || f$cc_cbet_flop_premium_draw) Return 3 Force
+When f$cc_flop_dynamic_lowmid_parent Return 2 Force
+When f$cc_flop_dynamic_high_parent && (f$cc_cbet_flop_very_strong_value || f$cc_cbet_flop_overpair || f$cc_cbet_flop_premium_draw) Return 2 Force
+When f$cc_flop_dynamic_high_parent Return 1 Force
+When f$cc_flop_static_lowmid_parent && f$cc_cbet_flop_very_strong_value Return 2 Force
+When f$cc_flop_static_high_parent || f$cc_flop_static_lowmid_parent || f$cc_flop_paired_parent Return 1 Force
+When Others Return 2 Force
+
+// -----------------------------------------------------------------------------
+// M3S.02 — EXACT THREE-WAY SQUEEZE
+// -----------------------------------------------------------------------------
+
+// Purpose: choose CBet/check in exact-threeway squeeze pot.
+// Source/Provenance: P-heavy. Squeeze continuing ranges are treated as at least
+// as selected as plain-3BP continuation; no air baseline is imported.
+// Decision logic: strong value/static one-pair; premium equity selective;
+// low/mid dynamic marginal made hands check unless every live effective relation
+// is already very shallow.
+##f$cc_cbet_mw_squeeze_exact3_action##
+When !f$cc_mw_squeeze_exact3_context Return false Force
+When !f$cc_mw_3bp_context_consistent Return false Force
+When f$cc_cbet_flop_very_strong_value Return true Force
+When f$cc_cbet_flop_overpair && f$cc_flop_dynamic_lowmid_parent && !f$cc_mw_all_effective_spr_below_3 Return false Force
+When f$cc_cbet_flop_overpair && (f$cc_flop_static_high_parent || f$cc_flop_static_lowmid_parent || f$cc_flop_paired_parent) Return true Force
+When f$cc_cbet_flop_overpair && f$cc_flop_dynamic_high_parent && f$cc_mw_3bp_has_live_opener Return true Force
+When f$cc_cbet_flop_overpair && f$cc_flop_dynamic_lowmid_parent && f$cc_mw_3bp_last_context && f$cc_mw_all_effective_spr_below_3 Return true Force
+When f$cc_cbet_flop_overpair Return false Force
+When f$cc_cbet_flop_strong_top_pair && f$cc_pair_plus_draw Return true Force
+When f$cc_cbet_flop_strong_top_pair && f$cc_flop_static_high_parent Return true Force
+When f$cc_cbet_flop_strong_top_pair && f$cc_flop_paired_parent && !f$cc_mw_3bp_all_live_are_coldcallers Return true Force
+When f$cc_cbet_flop_strong_top_pair Return false Force
+When f$cc_cbet_flop_medium_top_pair Return false Force
+When f$cc_cbet_flop_weak_top_pair Return false Force
+When f$cc_cbet_flop_showdown_pair Return false Force
+When f$cc_cbet_flop_premium_draw && f$cc_mw_3bp_last_context && !f$cc_flop_dynamic_lowmid_parent Return true Force
+When f$cc_cbet_flop_premium_draw && f$cc_mw_3bp_middle_context && (f$cc_flop_static_high_parent || f$cc_flop_paired_parent) && f$cc_mw_3bp_has_live_opener Return true Force
+When f$cc_real_frontdoor_draw Return false Force
+When Others Return false Force
+
+// Purpose: size positive exact-threeway squeeze CBet.
+// Source/Provenance: P value/equity-dense 33/50/75 baseline.
+##f$cc_cbet_mw_squeeze_exact3_size_id##
+When !f$cc_cbet_mw_squeeze_exact3_action Return 0 Force
+When f$cc_flop_dynamic_lowmid_parent && f$cc_cbet_flop_very_strong_value Return 3 Force
+When f$cc_flop_dynamic_high_parent && (f$cc_cbet_flop_very_strong_value || f$cc_cbet_flop_overpair || f$cc_cbet_flop_premium_draw) Return 2 Force
+When f$cc_flop_dynamic_high_parent Return 1 Force
+When f$cc_flop_static_lowmid_parent && f$cc_cbet_flop_very_strong_value Return 2 Force
+When f$cc_flop_static_high_parent || f$cc_flop_static_lowmid_parent || f$cc_flop_paired_parent Return 1 Force
+When Others Return 2 Force
+
+// -----------------------------------------------------------------------------
+// M4P.03 — FOUR-WAY+ PLAIN 3BP
+// -----------------------------------------------------------------------------
+
+// Purpose: choose CBet/check in 4/5/6-player plain 3BP.
+// Source/Provenance: P-only frequencies. Exact player count progressively tightens.
+// Decision logic: no air; robust value; static overpair/strong TP chiefly exact4;
+// exact5/6 becomes increasingly two-pair+/overpair-static dominated.
+##f$cc_cbet_mw_plain3bp_4plus_action##
+When !f$cc_mw_plain3bp_4plus_context Return false Force
+When !f$cc_mw_3bp_context_consistent Return false Force
+When f$cc_cbet_flop_very_strong_value Return true Force
+When f$cc_mw_3bp_exact4_context && f$cc_cbet_flop_overpair && (f$cc_flop_static_high_parent || f$cc_flop_static_lowmid_parent || f$cc_flop_paired_parent) Return true Force
+When f$cc_mw_3bp_exact4_context && f$cc_cbet_flop_strong_top_pair && f$cc_flop_static_high_parent && !f$cc_mw_3bp_all_live_are_coldcallers Return true Force
+When f$cc_mw_3bp_exact4_context && f$cc_cbet_flop_premium_draw && f$cc_mw_3bp_last_context && (f$cc_flop_static_high_parent || f$cc_flop_paired_parent) Return true Force
+When f$cc_mw_3bp_exact5_context && f$cc_cbet_flop_overpair && f$cc_flop_static_high_parent && f$cc_mw_3bp_has_live_opener Return true Force
+When f$cc_mw_3bp_exact5_context && f$cc_cbet_flop_overpair && f$cc_flop_static_lowmid_parent && f$cc_mw_all_effective_spr_below_3 Return true Force
+When f$cc_mw_3bp_exact6_context && f$cc_cbet_flop_overpair && f$cc_flop_static_high_parent && f$cc_mw_all_effective_spr_below_2 Return true Force
+When f$cc_real_frontdoor_draw Return false Force
+When Others Return false Force
+
+// Purpose: size positive four-way+ plain-3BP CBet.
+// Source/Provenance: P conservative multiway 3BP sizing.
+##f$cc_cbet_mw_plain3bp_4plus_size_id##
+When !f$cc_cbet_mw_plain3bp_4plus_action Return 0 Force
+When f$cc_flop_dynamic_lowmid_parent && f$cc_cbet_flop_very_strong_value Return 2 Force
+When f$cc_flop_dynamic_high_parent && f$cc_cbet_flop_very_strong_value Return 2 Force
+When f$cc_flop_static_lowmid_parent && f$cc_cbet_flop_very_strong_value Return 2 Force
+When f$cc_flop_static_high_parent || f$cc_flop_static_lowmid_parent || f$cc_flop_paired_parent Return 1 Force
+When Others Return 2 Force
+
+// -----------------------------------------------------------------------------
+// M4S.04 — FOUR-WAY+ SQUEEZE
+// -----------------------------------------------------------------------------
+
+// Purpose: choose CBet/check in 4/5/6-player squeeze pot.
+// Source/Provenance: P-only, most selected multiway family implemented so far.
+// Decision logic: overwhelmingly robust value; exact4 may still bet static
+// overpairs; exact5/6 one-pair becomes exceptional and SPR-dependent; no air.
+##f$cc_cbet_mw_squeeze_4plus_action##
+When !f$cc_mw_squeeze_4plus_context Return false Force
+When !f$cc_mw_3bp_context_consistent Return false Force
+When f$cc_cbet_flop_very_strong_value Return true Force
+When f$cc_mw_3bp_exact4_context && f$cc_cbet_flop_overpair && (f$cc_flop_static_high_parent || f$cc_flop_static_lowmid_parent || f$cc_flop_paired_parent) && !f$cc_mw_3bp_all_live_are_coldcallers Return true Force
+When f$cc_mw_3bp_exact4_context && f$cc_cbet_flop_strong_top_pair && f$cc_flop_static_high_parent && f$cc_mw_3bp_has_live_opener && f$cc_mw_all_effective_spr_below_4 Return true Force
+When f$cc_mw_3bp_exact4_context && f$cc_cbet_flop_premium_draw && f$cc_mw_3bp_last_context && f$cc_mw_3bp_has_live_opener && f$cc_flop_static_high_parent Return true Force
+When f$cc_mw_3bp_exact5_context && f$cc_cbet_flop_overpair && f$cc_flop_static_high_parent && f$cc_mw_3bp_has_live_opener && f$cc_mw_all_effective_spr_below_3 Return true Force
+When f$cc_mw_3bp_exact6_context && f$cc_cbet_flop_overpair && f$cc_flop_static_high_parent && f$cc_mw_all_effective_spr_below_2 Return true Force
+When f$cc_real_frontdoor_draw Return false Force
+When Others Return false Force
+
+// Purpose: size positive four-way+ squeeze CBet.
+// Source/Provenance: P conservative static-small / robust-dynamic-medium map.
+##f$cc_cbet_mw_squeeze_4plus_size_id##
+When !f$cc_cbet_mw_squeeze_4plus_action Return 0 Force
+When f$cc_flop_dynamic_lowmid_parent && f$cc_cbet_flop_very_strong_value Return 2 Force
+When f$cc_flop_dynamic_high_parent && f$cc_cbet_flop_very_strong_value Return 2 Force
+When f$cc_flop_static_lowmid_parent && f$cc_cbet_flop_very_strong_value Return 2 Force
+When f$cc_flop_static_high_parent || f$cc_flop_static_lowmid_parent || f$cc_flop_paired_parent Return 1 Force
+When Others Return 2 Force
+
+// -----------------------------------------------------------------------------
+// M3+.05 — Dispatchers
+// -----------------------------------------------------------------------------
+
+// Purpose: route multiway PLAIN 3BP action by exact field size.
+// Source/Provenance: P subtype/count dispatcher.
+##f$cc_cbet_mw_plain3bp_action##
+When f$cc_mw_plain3bp_exact3_context Return f$cc_cbet_mw_plain3bp_exact3_action Force
+When f$cc_mw_plain3bp_4plus_context Return f$cc_cbet_mw_plain3bp_4plus_action Force
+When Others Return false Force
+
+// Purpose: route multiway SQUEEZE action by exact field size.
+// Source/Provenance: P subtype/count dispatcher.
+##f$cc_cbet_mw_squeeze_action##
+When f$cc_mw_squeeze_exact3_context Return f$cc_cbet_mw_squeeze_exact3_action Force
+When f$cc_mw_squeeze_4plus_context Return f$cc_cbet_mw_squeeze_4plus_action Force
+When Others Return false Force
+
+// Purpose: paired size router for multiway plain 3BP.
+// Source/Provenance: P safety dispatcher; check/uncovered -> 0.
+##f$cc_cbet_mw_plain3bp_size_id##
+When f$cc_mw_plain3bp_exact3_context Return f$cc_cbet_mw_plain3bp_exact3_size_id Force
+When f$cc_mw_plain3bp_4plus_context Return f$cc_cbet_mw_plain3bp_4plus_size_id Force
+When Others Return 0 Force
+
+// Purpose: paired size router for multiway squeeze.
+// Source/Provenance: P safety dispatcher; check/uncovered -> 0.
+##f$cc_cbet_mw_squeeze_size_id##
+When f$cc_mw_squeeze_exact3_context Return f$cc_cbet_mw_squeeze_exact3_size_id Force
+When f$cc_mw_squeeze_4plus_context Return f$cc_cbet_mw_squeeze_4plus_size_id Force
+When Others Return 0 Force
+
+// ============================================================================
+// End Gate 01H.4 multiway 3BP/squeeze baseline.
+// ============================================================================

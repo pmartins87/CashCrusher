@@ -1,0 +1,154 @@
+// ============================================================================
+// CashCrusher_Flop_CBet_Multiway_ISO4Plus.txt
+// Gate 01E.4 — 4/5/6-player isolation-raised PFA flop CBet
+// ============================================================================
+// Source boundary:
+//   No direct DeepCrusher four-way+ ISO tree exists.  Frequencies here are P,
+//   constrained by A-level multiway/ISO/texture principles.
+//
+// Range composition:
+//   ALL_LIMPERS is widest; MIXED intermediate; ALL_COLD_CALLERS most selected.
+//   Exact masks/counts remain available and are not replaced by these labels.
+//
+// Stack-depth note:
+//   this node owns only first flop CBet/check + size; commitment helpers remain
+//   available for later exact-node review and are not globally disabled.
+//   Any low-SPR one-pair exception requires all effective opponent relations to
+//   be shallow enough, implemented through the deepest-effective SPR envelope.
+//
+// OpenPPL safety: flat complete WHENs; unresolved composition fails closed.
+// Size IDs: 1 ~33% | 2 ~50% | 3 ~75% | 0 check
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// ISO4.01 — EXACT FOUR-WAY ISO
+// -----------------------------------------------------------------------------
+
+// Purpose: choose CBet/check with Hero isolator versus three surviving players.
+// Source/Provenance: P-heavy four-way ISO theory; A source gives structure only.
+// Decision logic: robust value broad; strong one-pair mainly static; premium draw
+// selection favors LAST and limper-heavy fields; no pure-air baseline.
+##f$cc_cbet_mw_iso_exact4_action##
+When !f$cc_mw_iso_exact4_pfa_context Return false Force
+When !f$cc_mw_iso_4plus_context_consistent Return false Force
+When f$cc_cbet_flop_very_strong_value Return true Force
+When f$cc_cbet_flop_overpair && f$cc_flop_dynamic_lowmid_parent Return false Force
+When f$cc_cbet_flop_overpair && (f$cc_flop_static_high_parent || f$cc_flop_static_lowmid_parent || f$cc_flop_paired_parent) Return true Force
+When f$cc_cbet_flop_overpair && f$cc_flop_dynamic_high_parent && f$cc_mw_iso_4plus_last_context && f$cc_mw_iso_4plus_all_limpers Return true Force
+When f$cc_cbet_flop_overpair Return false Force
+When f$cc_cbet_flop_strong_top_pair && f$cc_pair_plus_draw Return true Force
+When f$cc_cbet_flop_strong_top_pair && f$cc_flop_static_high_parent && !f$cc_mw_iso_4plus_all_coldcallers Return true Force
+When f$cc_cbet_flop_strong_top_pair && f$cc_flop_static_high_parent && f$cc_mw_iso_4plus_all_coldcallers && f$cc_mw_iso_4plus_last_context && f$cc_mw_all_effective_spr_below_4 Return true Force
+When f$cc_cbet_flop_strong_top_pair && f$cc_flop_paired_parent && f$cc_mw_iso_4plus_all_limpers Return true Force
+When f$cc_cbet_flop_strong_top_pair Return false Force
+When f$cc_cbet_flop_medium_top_pair && f$cc_flop_static_high_parent && f$cc_mw_iso_4plus_all_limpers && f$cc_mw_iso_4plus_last_context && f$cc_mw_all_effective_spr_below_4 Return true Force
+When f$cc_cbet_flop_medium_top_pair Return false Force
+When f$cc_cbet_flop_weak_top_pair Return false Force
+When f$cc_cbet_flop_showdown_pair Return false Force
+When f$cc_cbet_flop_premium_draw && f$cc_mw_iso_4plus_last_context && !f$cc_mw_iso_4plus_all_coldcallers && (f$cc_flop_static_high_parent || f$cc_flop_paired_parent || f$cc_flop_dynamic_high_parent) Return true Force
+When f$cc_cbet_flop_premium_draw && f$cc_mw_iso_4plus_middle_context && f$cc_mw_iso_4plus_all_limpers && (f$cc_flop_static_high_parent || f$cc_flop_paired_parent) Return true Force
+When f$cc_real_frontdoor_draw Return false Force
+When Others Return false Force
+
+// Purpose: size positive exact-fourway ISO CBet.
+// Source/Provenance: P baseline; static small, robust dynamic 50/75.
+##f$cc_cbet_mw_iso_exact4_size_id##
+When !f$cc_cbet_mw_iso_exact4_action Return 0 Force
+When f$cc_flop_dynamic_lowmid_parent && f$cc_cbet_flop_very_strong_value Return 3 Force
+When f$cc_flop_dynamic_high_parent && (f$cc_cbet_flop_very_strong_value || f$cc_cbet_flop_premium_draw) Return 2 Force
+When f$cc_flop_dynamic_high_parent Return 1 Force
+When f$cc_flop_static_lowmid_parent && f$cc_cbet_flop_very_strong_value Return 2 Force
+When f$cc_flop_static_high_parent || f$cc_flop_static_lowmid_parent || f$cc_flop_paired_parent Return 1 Force
+When Others Return 2 Force
+
+// -----------------------------------------------------------------------------
+// ISO5.02 — EXACT FIVE-WAY ISO
+// -----------------------------------------------------------------------------
+
+// Purpose: choose CBet/check with Hero isolator versus four surviving players.
+// Source/Provenance: P-only frequencies; increasingly value/equity dense.
+// Decision logic: two-pair+ always baseline-bets; overpair/strong TP static value
+// mainly in limper-heavy fields; only strongest draws survive LAST selection.
+##f$cc_cbet_mw_iso_exact5_action##
+When !f$cc_mw_iso_exact5_pfa_context Return false Force
+When !f$cc_mw_iso_4plus_context_consistent Return false Force
+When f$cc_cbet_flop_very_strong_value Return true Force
+When f$cc_cbet_flop_overpair && (f$cc_flop_static_high_parent || f$cc_flop_static_lowmid_parent || f$cc_flop_paired_parent) && !f$cc_mw_iso_4plus_all_coldcallers Return true Force
+When f$cc_cbet_flop_overpair Return false Force
+When f$cc_cbet_flop_strong_top_pair && f$cc_pair_plus_draw && !f$cc_mw_iso_4plus_all_coldcallers Return true Force
+When f$cc_cbet_flop_strong_top_pair && f$cc_flop_static_high_parent && f$cc_mw_iso_4plus_all_limpers Return true Force
+When f$cc_cbet_flop_strong_top_pair && f$cc_flop_static_high_parent && f$cc_mw_iso_4plus_mixed && f$cc_mw_iso_4plus_last_context Return true Force
+When f$cc_cbet_flop_strong_top_pair Return false Force
+When f$cc_cbet_flop_medium_top_pair Return false Force
+When f$cc_cbet_flop_weak_top_pair Return false Force
+When f$cc_cbet_flop_showdown_pair Return false Force
+When f$cc_cbet_flop_premium_draw && f$cc_mw_iso_4plus_last_context && f$cc_mw_iso_4plus_all_limpers && (f$cc_flop_static_high_parent || f$cc_flop_paired_parent) Return true Force
+When f$cc_real_frontdoor_draw Return false Force
+When Others Return false Force
+
+// Purpose: size positive exact-fiveway ISO CBet.
+// Source/Provenance: P conservative sizing map.
+##f$cc_cbet_mw_iso_exact5_size_id##
+When !f$cc_cbet_mw_iso_exact5_action Return 0 Force
+When f$cc_flop_dynamic_lowmid_parent && f$cc_cbet_flop_very_strong_value Return 3 Force
+When f$cc_flop_dynamic_high_parent && f$cc_cbet_flop_very_strong_value Return 2 Force
+When f$cc_flop_static_lowmid_parent && f$cc_cbet_flop_very_strong_value Return 2 Force
+When f$cc_flop_static_high_parent || f$cc_flop_static_lowmid_parent || f$cc_flop_paired_parent Return 1 Force
+When Others Return 2 Force
+
+// -----------------------------------------------------------------------------
+// ISO6.03 — EXACT SIX-WAY ISO
+// -----------------------------------------------------------------------------
+
+// Purpose: choose CBet/check when Hero's isolation raise is called by five players.
+// Source/Provenance: P-only rare extreme-multiway baseline.
+// Decision logic: robust value; strong one-pair only versus all-limper static
+// fields; draws and air check by default with five opponents.
+##f$cc_cbet_mw_iso_exact6_action##
+When !f$cc_mw_iso_exact6_pfa_context Return false Force
+When !f$cc_mw_iso_4plus_context_consistent Return false Force
+When f$cc_cbet_flop_very_strong_value Return true Force
+When f$cc_cbet_flop_overpair && f$cc_mw_iso_4plus_all_limpers && (f$cc_flop_static_high_parent || f$cc_flop_static_lowmid_parent || f$cc_flop_paired_parent) Return true Force
+When f$cc_cbet_flop_overpair Return false Force
+When f$cc_cbet_flop_strong_top_pair && f$cc_mw_iso_4plus_all_limpers && f$cc_flop_static_high_parent Return true Force
+When f$cc_cbet_flop_strong_top_pair Return false Force
+When f$cc_cbet_flop_medium_top_pair Return false Force
+When f$cc_cbet_flop_weak_top_pair Return false Force
+When f$cc_cbet_flop_showdown_pair Return false Force
+When f$cc_real_frontdoor_draw Return false Force
+When Others Return false Force
+
+// Purpose: size positive exact-sixway ISO CBet.
+// Source/Provenance: P static-small / dynamic-robust-medium baseline.
+##f$cc_cbet_mw_iso_exact6_size_id##
+When !f$cc_cbet_mw_iso_exact6_action Return 0 Force
+When f$cc_flop_dynamic_lowmid_parent && f$cc_cbet_flop_very_strong_value Return 2 Force
+When f$cc_flop_dynamic_high_parent && f$cc_cbet_flop_very_strong_value Return 2 Force
+When f$cc_flop_static_high_parent || f$cc_flop_static_lowmid_parent || f$cc_flop_paired_parent Return 1 Force
+When Others Return 2 Force
+
+// -----------------------------------------------------------------------------
+// ISO+.04 — Dispatchers
+// -----------------------------------------------------------------------------
+
+// Purpose: route four-way+ ISO action by exact flop player count.
+// Source/Provenance: P exact-count dispatcher; unresolved context checks.
+##f$cc_cbet_mw_iso_4plus_action##
+When !f$cc_mw_iso_4plus_context_consistent Return false Force
+When f$cc_mw_iso_exact4_pfa_context Return f$cc_cbet_mw_iso_exact4_action Force
+When f$cc_mw_iso_exact5_pfa_context Return f$cc_cbet_mw_iso_exact5_action Force
+When f$cc_mw_iso_exact6_pfa_context Return f$cc_cbet_mw_iso_exact6_action Force
+When Others Return false Force
+
+// Purpose: paired four-way+ ISO size router.
+// Source/Provenance: P safety dispatcher; check/uncovered -> 0.
+##f$cc_cbet_mw_iso_4plus_size_id##
+When !f$cc_mw_iso_4plus_context_consistent Return 0 Force
+When f$cc_mw_iso_exact4_pfa_context Return f$cc_cbet_mw_iso_exact4_size_id Force
+When f$cc_mw_iso_exact5_pfa_context Return f$cc_cbet_mw_iso_exact5_size_id Force
+When f$cc_mw_iso_exact6_pfa_context Return f$cc_cbet_mw_iso_exact6_size_id Force
+When Others Return 0 Force
+
+// ============================================================================
+// End Gate 01E.4 four-way+ ISO baseline.
+// ============================================================================

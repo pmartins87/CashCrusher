@@ -1,0 +1,49 @@
+// ============================================================================
+// CashCrusher_Turn_Donk_Common.txt
+// Gate 08B/08C — common Turn Donk strategic descriptors
+// ============================================================================
+// Purpose:
+//   Keep Turn-Donk source strategy sizing IDs independent from CBet/Float sizing
+//   ownership. This file contains no action policy and no all-in promotion.
+//
+// Source/Provenance:
+//   T/A = audited Turn-Donk source sizes 25/50/75/100 where explicit.
+//   A   = HUBB source says 1-2bb, max 20% after a big flop CBet; mature audited
+//         implementation resolves that allowed source interval to BetMin (1bb).
+//   P   = stable engineering IDs only.
+//
+// Safety:
+//   IDs are strategic intentions. Runtime mapping, effective-stack clipping and
+//   any mechanically equivalent BetMax conversion belong to a later execution gate.
+// ============================================================================
+
+// Purpose: quarter-pot Turn Donk family used by audited HUBB branches.
+// Source/Provenance: T/A source size family; no action implication here.
+##f$cc_turn_donk_size_25_id##
+1
+
+// Purpose: half-pot Turn Donk family used explicitly by native high-air pickup.
+// Source/Provenance: T direct source size.
+##f$cc_turn_donk_size_50_id##
+2
+
+// Purpose: three-quarter-pot Turn Donk family used by native draw X/C or B/C.
+// Source/Provenance: T direct source size.
+##f$cc_turn_donk_size_75_id##
+3
+
+// Purpose: pot-sized Turn Donk family reserved for exact audited descendants.
+// Source/Provenance: A/P palette entry; no generic commitment meaning.
+##f$cc_turn_donk_size_100_id##
+4
+
+// Purpose: minimum-bet Turn Donk family for the HUBB big-flop-CBet MP/BP line.
+// Source: Starting Strategy says DB 1bb-2bb, max 20%; mature source uses TurnMin.
+// Provenance: T source interval + A deterministic 1bb/BetMin resolution.
+// Safety: this is NOT a generic short-stack/commitment sizing rule.
+##f$cc_turn_donk_size_min_id##
+5
+
+// ============================================================================
+// End common Turn Donk descriptors.
+// ============================================================================

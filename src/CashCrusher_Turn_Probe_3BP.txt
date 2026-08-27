@@ -1,0 +1,375 @@
+// ============================================================================
+// CashCrusher_Turn_Probe_3BP.txt
+// Gate 10H — plain-3BP / squeeze Turn Probe
+// ============================================================================
+// Purpose:
+//   Give non-initiative caller ranges an explicit Turn lead after a CLOSED flop
+//   check-through in supported two-raise pots. Opener-call, pre-squeeze caller
+//   and post-3bet caller origins remain distinct; the final 3bettor must still be
+//   live and must actually be the HU Villain where current field is heads-up.
+//
+// Source boundary:
+//   DeepCrusher has no complete deep-stack 3BP/squeeze Turn-Probe tree. Existing
+//   source material supplies only the ownership principle: Probe belongs to the
+//   non-initiator after a clean flop X/X..., while 3bettor initiative belongs to
+//   Delayed CBet. Exact cash actions below are therefore intentionally P-heavy.
+//
+// Provenance:
+//   T = Gate00/01F exact raise/call chronology, live masks, Gate10 closed history
+//       and current hand/board facts.
+//   A = opener/pre3bet/post3bet caller taxonomy and plain-v-squeeze separation.
+//   P = conservative 100bb six-max action/sizing policy.
+//   X = generic TP/OP stackoff, broad pure-air Probe, shortest-stack commitment,
+//       future River plan, XR/call-v-raise defense and strategic BetMax promotion.
+//
+// Cash-depth principle:
+//   Two-raise pots have lower natural SPR than SRP, but one pair remains one pair.
+//   The checked-back 3bettor range is capped relative to its betting range, not
+//   devoid of traps. Cold-call/squeeze-call ranges are more condensed than an
+//   ordinary opener-call range, so Probe breadth tightens accordingly.
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// TP3B.01 — Hero caller-origin reconstruction
+// -----------------------------------------------------------------------------
+
+// Purpose: canonical Hero position bit for caller-mask intersections.
+// Source/Provenance: T/A Gate00 canonical position mapping.
+##f$cc_turn_probe_3bp_hero_pos_bit##
+When f$cc_hero_pos_id = 1 Return 1 Force
+When f$cc_hero_pos_id = 2 Return 2 Force
+When f$cc_hero_pos_id = 3 Return 4 Force
+When f$cc_hero_pos_id = 4 Return 8 Force
+When f$cc_hero_pos_id = 5 Return 16 Force
+When f$cc_hero_pos_id = 6 Return 32 Force
+When Others Return 0 Force
+
+// Purpose: Hero opened first and later called the 3bet.
+// Source/Provenance: A exact Gate00/01F chronology identity.
+##f$cc_turn_probe_3bp_hero_is_opener_call##
+f$cc_pf_role_open_call_3bet &&
+f$cc_pf_3bet_order_supported &&
+f$cc_hero_pos_id = f$cc_pf_3bet_first_raiser_pos_id
+
+// Purpose: Hero cold-called the open before a later squeeze and continued.
+// Source/Provenance: A exact pre3bet caller-mask intersection.
+##f$cc_turn_probe_3bp_hero_is_pre3bet_coldcaller##
+f$cc_pf_role_cold_call_3bet &&
+f$cc_pf_squeeze_proven &&
+f$cc_turn_probe_3bp_hero_pos_bit > 0 &&
+((f$cc_pf_pre3bet_coldcaller_mask BitAnd f$cc_turn_probe_3bp_hero_pos_bit) > 0)
+
+// Purpose: Hero first entered only after the final 3bet.
+// Source/Provenance: A exact post3bet caller-mask intersection.
+##f$cc_turn_probe_3bp_hero_is_post3bet_coldcaller##
+f$cc_pf_role_cold_call_3bet &&
+f$cc_pf_3bet_order_supported &&
+f$cc_turn_probe_3bp_hero_pos_bit > 0 &&
+((f$cc_pf_post3bet_coldcaller_mask BitAnd f$cc_turn_probe_3bp_hero_pos_bit) > 0)
+
+// Purpose: exactly one caller-stage provenance must be reconstructed.
+// Source/Provenance: P fail-closed invariant over A exact caller classes.
+##f$cc_turn_probe_3bp_hero_origin_consistent##
+When f$cc_turn_probe_3bp_hero_is_opener_call && (f$cc_turn_probe_3bp_hero_is_pre3bet_coldcaller || f$cc_turn_probe_3bp_hero_is_post3bet_coldcaller) Return false Force
+When f$cc_turn_probe_3bp_hero_is_pre3bet_coldcaller && f$cc_turn_probe_3bp_hero_is_post3bet_coldcaller Return false Force
+When f$cc_turn_probe_3bp_hero_is_opener_call || f$cc_turn_probe_3bp_hero_is_pre3bet_coldcaller || f$cc_turn_probe_3bp_hero_is_post3bet_coldcaller Return true Force
+When Others Return false Force
+
+// -----------------------------------------------------------------------------
+// TP3B.02 — exact live final-3bettor proof / parent
+// -----------------------------------------------------------------------------
+
+// Purpose: proven final 3bettor remains a live opponent on Turn.
+// Source/Provenance: T/A exact live-mask intersection with Gate01F raiser bit.
+##f$cc_turn_probe_3bp_final_raiser_live##
+f$cc_pf_3bet_final_raiser_bit > 0 &&
+((f$cc_opp_live_mask BitAnd f$cc_pf_3bet_final_raiser_bit) > 0)
+
+// Purpose: canonical supported two-raise Turn-Probe parent.
+// Source/Provenance: T/A closed history + supported chronology + P caller proof.
+##f$cc_turn_probe_3bp_context##
+f$cc_turn_probe_base_opportunity &&
+f$cc_turn_probe_snapshot_valid &&
+f$cc_pot_family_id = 3 &&
+f$cc_pf_3bet_order_supported &&
+f$cc_turn_probe_3bp_hero_origin_consistent &&
+f$cc_turn_probe_3bp_final_raiser_live
+
+// Purpose: HU child; true-HU opener-call is IP/LAST and therefore excluded by
+// Gate10A ownership. Any legal HU state here must be preflop-reduced HU.
+// Source/Provenance: T/A field-origin invariant.
+##f$cc_turn_probe_3bp_hu_context##
+f$cc_turn_probe_3bp_context &&
+f$cc_turn_probe_hu_opportunity &&
+f$cc_hu_origin_preflop_reduced &&
+f$cc_hu_villain_pos_id = f$cc_pf_3bet_final_raiser_pos_id
+
+// Purpose: current multiway supported 3BP/squeeze child.
+// Source/Provenance: T/A exact current field; clean flop X/X... keeps all flop
+// entrants live, and final 3bettor liveness is independently required above.
+##f$cc_turn_probe_3bp_multiway_context##
+f$cc_turn_probe_3bp_context && f$cc_turn_probe_multiway_opportunity
+
+// -----------------------------------------------------------------------------
+// TP3B.03 — exact HU range families
+// -----------------------------------------------------------------------------
+
+// Purpose: plain 3BP, original opener called and now leads Turn OOP vs 3bettor.
+// Source/Provenance: A exact topology + P strategy owner.
+##f$cc_turn_probe_plain3bp_opener_hu_context##
+f$cc_turn_probe_3bp_hu_context &&
+f$cc_pf_3bet_plain_proven &&
+f$cc_turn_probe_3bp_hero_is_opener_call
+
+// Purpose: plain 3BP post-3bet coldcaller OOP versus final 3bettor.
+// Source/Provenance: A exact selected-range family + P strategy owner.
+##f$cc_turn_probe_plain3bp_postcold_hu_context##
+f$cc_turn_probe_3bp_hu_context &&
+f$cc_pf_3bet_plain_proven &&
+f$cc_turn_probe_3bp_hero_is_post3bet_coldcaller
+
+// Purpose: squeeze pot, original opener continued and is OOP versus squeezer.
+// Source/Provenance: A exact squeeze topology + P strategy owner.
+##f$cc_turn_probe_squeeze_opener_hu_context##
+f$cc_turn_probe_3bp_hu_context &&
+f$cc_pf_squeeze_proven &&
+f$cc_turn_probe_3bp_hero_is_opener_call
+
+// Purpose: squeeze pot, pre-squeeze coldcaller continued and is OOP.
+// Source/Provenance: A exact condensed continuation range.
+##f$cc_turn_probe_squeeze_precold_hu_context##
+f$cc_turn_probe_3bp_hu_context &&
+f$cc_pf_squeeze_proven &&
+f$cc_turn_probe_3bp_hero_is_pre3bet_coldcaller
+
+// Purpose: squeeze pot, post-squeeze coldcaller remains OOP versus squeezer.
+// Source/Provenance: A exact post3bet selected caller range.
+##f$cc_turn_probe_squeeze_postcold_hu_context##
+f$cc_turn_probe_3bp_hu_context &&
+f$cc_pf_squeeze_proven &&
+f$cc_turn_probe_3bp_hero_is_post3bet_coldcaller
+
+// -----------------------------------------------------------------------------
+// TP3B.04 — shared current hand / runout quality
+// -----------------------------------------------------------------------------
+
+// Purpose: exact overpair below 2P+.
+// Source/Provenance: T current hand class.
+##f$cc_turn_probe_3bp_overpair##
+IsTurn && HaveOverPair && !f$cc_hand_two_pair_or_better
+
+// Purpose: strong exact top pair.
+// Source: DeepCrusher kicker stratification principle.
+// Provenance: A source concept + P <=2 better-kicker boundary.
+##f$cc_turn_probe_3bp_strong_tp##
+IsTurn && f$cc_hand_just_top_pair && f$cc_number_better_kickers <= 2
+
+// Purpose: premium no-made draw without stackoff semantics.
+// Source/Provenance: A/P cleaned high-equity draw family.
+##f$cc_turn_probe_3bp_premium_draw##
+IsTurn && f$cc_hand_no_made &&
+(f$cc_real_combo_draw || f$cc_real_nut_fd ||
+ (f$cc_real_oesd && f$cc_two_overcards) ||
+ (f$cc_real_fd && f$cc_two_overcards))
+
+// Purpose: useful draw below premium tier.
+// Source/Provenance: A/P deterministic residue.
+##f$cc_turn_probe_3bp_good_draw##
+IsTurn && f$cc_hand_no_made &&
+!f$cc_turn_probe_3bp_premium_draw &&
+(f$cc_real_fd || f$cc_real_oesd || (f$cc_real_gutshot && f$cc_two_overcards))
+
+// Purpose: conservative bad pressure Turn in a condensed two-raise pot.
+// Source: paired/A/2+BW completed-board caution reused as a range-pressure
+// principle only; exact 3BP action is P.
+// Provenance: A source board principle + P 3BP caution.
+##f$cc_turn_probe_3bp_bad_pressure_turn##
+PairOnBoard ||
+AcePresentOnFlop ||
+f$cc_turn_is_ace ||
+user_cc_turn_probe_flop_had_2plusbw ||
+(user_cc_turn_probe_flop_had_1bw && f$cc_turn_is_broadway) ||
+f$cc_turn_completed
+
+// Purpose: favorable Turn for thinner 3BP value/equity leads.
+// Source/Provenance: P complement inside exact 3BP owner.
+##f$cc_turn_probe_3bp_favorable_turn##
+f$cc_turn_probe_3bp_context && !f$cc_turn_probe_3bp_bad_pressure_turn
+
+// -----------------------------------------------------------------------------
+// TP3B.05 — HU plain opener-call
+// -----------------------------------------------------------------------------
+
+// Purpose: broadest two-raise caller family, but still no pure-air Probe baseline.
+// Source/Provenance: P professional 100bb 3BP fill.
+##f$cc_turn_probe_plain3bp_opener_hu_action##
+When !f$cc_turn_probe_plain3bp_opener_hu_context Return false Force
+When f$cc_hand_two_pair_or_better Return true Force
+When f$cc_turn_probe_3bp_overpair Return true Force
+When f$cc_turn_probe_3bp_strong_tp && f$cc_turn_probe_3bp_favorable_turn Return true Force
+When f$cc_hand_top_pair_or_better Return false Force
+When f$cc_turn_probe_second_pair Return false Force
+When f$cc_turn_probe_low_pair Return false Force
+When f$cc_turn_probe_3bp_premium_draw && f$cc_turn_probe_3bp_favorable_turn Return true Force
+When f$cc_turn_probe_3bp_good_draw Return false Force
+When f$cc_turn_probe_air Return false Force
+When Others Return false Force
+
+// Purpose: opener-call size map; 33/50 normally, 75 only robust value on completed.
+// Source/Provenance: P deterministic deep-stack sizing.
+##f$cc_turn_probe_plain3bp_opener_hu_size_id##
+When !f$cc_turn_probe_plain3bp_opener_hu_action Return 0 Force
+When f$cc_hand_two_pair_or_better && f$cc_turn_completed Return f$cc_turn_probe_size_75_id Force
+When f$cc_hand_two_pair_or_better Return f$cc_turn_probe_size_50_id Force
+When f$cc_turn_probe_3bp_overpair Return f$cc_turn_probe_size_50_id Force
+When f$cc_turn_probe_3bp_strong_tp Return f$cc_turn_probe_size_33_id Force
+When f$cc_turn_probe_3bp_premium_draw Return f$cc_turn_probe_size_33_id Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// TP3B.06 — HU condensed coldcaller ranges
+// -----------------------------------------------------------------------------
+
+// Purpose: shared plain-postcold / squeeze-pre/postcold action. These ranges have
+// called substantial aggression and receive zero pure-air/thin-pair baseline.
+// Source/Provenance: P conservative range-condensation policy.
+##f$cc_turn_probe_3bp_coldcaller_hu_action##
+When !(f$cc_turn_probe_plain3bp_postcold_hu_context || f$cc_turn_probe_squeeze_precold_hu_context || f$cc_turn_probe_squeeze_postcold_hu_context) Return false Force
+When f$cc_hand_two_pair_or_better Return true Force
+When f$cc_turn_probe_3bp_overpair && f$cc_turn_probe_3bp_favorable_turn Return true Force
+When f$cc_turn_probe_3bp_strong_tp Return false Force
+When f$cc_hand_top_pair_or_better Return false Force
+When f$cc_turn_probe_second_pair Return false Force
+When f$cc_turn_probe_low_pair Return false Force
+When f$cc_turn_probe_3bp_premium_draw && f$cc_turn_probe_3bp_favorable_turn Return true Force
+When f$cc_turn_probe_3bp_good_draw Return false Force
+When f$cc_turn_probe_air Return false Force
+When Others Return false Force
+
+// Purpose: condensed coldcaller size map.
+// Source/Provenance: P 33/50/75 value/equity sizing.
+##f$cc_turn_probe_3bp_coldcaller_hu_size_id##
+When !f$cc_turn_probe_3bp_coldcaller_hu_action Return 0 Force
+When f$cc_hand_two_pair_or_better && f$cc_turn_completed Return f$cc_turn_probe_size_75_id Force
+When f$cc_hand_two_pair_or_better Return f$cc_turn_probe_size_50_id Force
+When f$cc_turn_probe_3bp_overpair Return f$cc_turn_probe_size_50_id Force
+When f$cc_turn_probe_3bp_premium_draw Return f$cc_turn_probe_size_33_id Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// TP3B.07 — HU squeeze opener-call
+// -----------------------------------------------------------------------------
+
+// Purpose: opener retains somewhat more natural board coverage than squeeze
+// coldcallers, but no pure-air Probe baseline is granted in this OOP Turn lead.
+// Source/Provenance: P squeeze-specific professional fill.
+##f$cc_turn_probe_squeeze_opener_hu_action##
+When !f$cc_turn_probe_squeeze_opener_hu_context Return false Force
+When f$cc_hand_two_pair_or_better Return true Force
+When f$cc_turn_probe_3bp_overpair Return true Force
+When f$cc_turn_probe_3bp_strong_tp && f$cc_turn_probe_3bp_favorable_turn Return true Force
+When f$cc_hand_top_pair_or_better Return false Force
+When f$cc_turn_probe_second_pair Return false Force
+When f$cc_turn_probe_low_pair Return false Force
+When f$cc_turn_probe_3bp_premium_draw && f$cc_turn_probe_3bp_favorable_turn Return true Force
+When f$cc_turn_probe_3bp_good_draw Return false Force
+When f$cc_turn_probe_air Return false Force
+When Others Return false Force
+
+// Purpose: squeeze opener-call size map.
+// Source/Provenance: P 33/50/75 lower-SPR sizing without jam ownership.
+##f$cc_turn_probe_squeeze_opener_hu_size_id##
+When !f$cc_turn_probe_squeeze_opener_hu_action Return 0 Force
+When f$cc_hand_two_pair_or_better && f$cc_turn_completed Return f$cc_turn_probe_size_75_id Force
+When f$cc_hand_two_pair_or_better Return f$cc_turn_probe_size_50_id Force
+When f$cc_turn_probe_3bp_overpair Return f$cc_turn_probe_size_50_id Force
+When f$cc_turn_probe_3bp_strong_tp Return f$cc_turn_probe_size_33_id Force
+When f$cc_turn_probe_3bp_premium_draw Return f$cc_turn_probe_size_33_id Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// TP3B.08 — current multiway 3BP/squeeze
+// -----------------------------------------------------------------------------
+
+// Purpose: Hero opener-call gets the widest current-multiway subset, still
+// heavily value/equity weighted. Exact 3way permits selected OP/strong TP/draw;
+// 4+ way collapses to robust value and strongest combo equity.
+// Source/Provenance: P conservative multiway 3BP policy.
+##f$cc_turn_probe_3bp_multiway_action##
+When !f$cc_turn_probe_3bp_multiway_context Return false Force
+When f$cc_hand_two_pair_or_better Return true Force
+When nplayersplaying = 3 && f$cc_turn_probe_3bp_hero_is_opener_call && f$cc_turn_probe_3bp_overpair && f$cc_turn_probe_3bp_favorable_turn Return true Force
+When nplayersplaying = 3 && f$cc_turn_probe_3bp_hero_is_opener_call && f$cc_turn_probe_3bp_strong_tp && f$cc_turn_probe_3bp_favorable_turn Return true Force
+When f$cc_hand_top_pair_or_better Return false Force
+When f$cc_turn_probe_second_pair Return false Force
+When f$cc_turn_probe_low_pair Return false Force
+When nplayersplaying = 3 && f$cc_turn_probe_3bp_premium_draw && f$cc_turn_probe_3bp_favorable_turn Return true Force
+When nplayersplaying >= 4 && f$cc_real_combo_draw && f$cc_hand_no_made && !f$cc_turn_completed Return true Force
+When f$cc_turn_probe_air Return false Force
+When Others Return false Force
+
+// Purpose: current-multiway size map.
+// Source/Provenance: P robust 33/50/75 sizing.
+##f$cc_turn_probe_3bp_multiway_size_id##
+When !f$cc_turn_probe_3bp_multiway_action Return 0 Force
+When f$cc_hand_two_pair_or_better && f$cc_turn_completed Return f$cc_turn_probe_size_75_id Force
+When f$cc_hand_two_pair_or_better Return f$cc_turn_probe_size_50_id Force
+When f$cc_turn_probe_3bp_overpair Return f$cc_turn_probe_size_33_id Force
+When f$cc_turn_probe_3bp_strong_tp Return f$cc_turn_probe_size_33_id Force
+When f$cc_turn_probe_3bp_premium_draw || (f$cc_real_combo_draw && f$cc_hand_no_made) Return f$cc_turn_probe_size_33_id Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// TP3B.09 — canonical dispatcher / coverage
+// -----------------------------------------------------------------------------
+
+// Purpose: all supported HU/multiway caller-origin contexts reviewed here.
+// Source/Provenance: P coverage metadata over A exact children.
+##f$cc_turn_probe_3bp_covered##
+f$cc_turn_probe_plain3bp_opener_hu_context ||
+f$cc_turn_probe_plain3bp_postcold_hu_context ||
+f$cc_turn_probe_squeeze_opener_hu_context ||
+f$cc_turn_probe_squeeze_precold_hu_context ||
+f$cc_turn_probe_squeeze_postcold_hu_context ||
+f$cc_turn_probe_3bp_multiway_context
+
+// Purpose: exact child action dispatcher.
+// Source/Provenance: A/P deterministic range-origin routing.
+##f$cc_turn_probe_3bp_action##
+When f$cc_turn_probe_plain3bp_opener_hu_context Return f$cc_turn_probe_plain3bp_opener_hu_action Force
+When f$cc_turn_probe_plain3bp_postcold_hu_context Return f$cc_turn_probe_3bp_coldcaller_hu_action Force
+When f$cc_turn_probe_squeeze_opener_hu_context Return f$cc_turn_probe_squeeze_opener_hu_action Force
+When f$cc_turn_probe_squeeze_precold_hu_context Return f$cc_turn_probe_3bp_coldcaller_hu_action Force
+When f$cc_turn_probe_squeeze_postcold_hu_context Return f$cc_turn_probe_3bp_coldcaller_hu_action Force
+When f$cc_turn_probe_3bp_multiway_context Return f$cc_turn_probe_3bp_multiway_action Force
+When Others Return false Force
+
+// Purpose: paired strategic size dispatcher.
+// Source/Provenance: A/P exact child routing; check/uncovered ->0.
+##f$cc_turn_probe_3bp_size_id##
+When f$cc_turn_probe_plain3bp_opener_hu_context Return f$cc_turn_probe_plain3bp_opener_hu_size_id Force
+When f$cc_turn_probe_plain3bp_postcold_hu_context Return f$cc_turn_probe_3bp_coldcaller_hu_size_id Force
+When f$cc_turn_probe_squeeze_opener_hu_context Return f$cc_turn_probe_squeeze_opener_hu_size_id Force
+When f$cc_turn_probe_squeeze_precold_hu_context Return f$cc_turn_probe_3bp_coldcaller_hu_size_id Force
+When f$cc_turn_probe_squeeze_postcold_hu_context Return f$cc_turn_probe_3bp_coldcaller_hu_size_id Force
+When f$cc_turn_probe_3bp_multiway_context Return f$cc_turn_probe_3bp_multiway_size_id Force
+When Others Return 0 Force
+
+// Purpose: supported two-raise Probe state whose caller-stage/field chronology
+// could not be proven exactly.
+// Source/Provenance: P fail-closed diagnostic.
+##f$cc_turn_probe_3bp_uncovered_context##
+f$cc_turn_probe_base_opportunity &&
+f$cc_pot_family_id = 3 &&
+!f$cc_turn_probe_3bp_covered
+
+// Purpose: action/size consistency.
+// Source/Provenance: P invariant.
+##f$cc_turn_probe_3bp_size_consistent##
+When !f$cc_turn_probe_3bp_action Return f$cc_turn_probe_3bp_size_id = 0 Force
+When f$cc_turn_probe_3bp_action Return f$cc_turn_probe_3bp_size_id >= 1 && f$cc_turn_probe_3bp_size_id <= 7 Force
+When Others Return false Force
+
+// ============================================================================
+// End Gate10H 3BP/squeeze Turn Probe.
+// ============================================================================

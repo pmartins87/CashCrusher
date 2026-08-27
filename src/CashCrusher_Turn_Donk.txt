@@ -1,0 +1,139 @@
+// ============================================================================
+// CashCrusher_Turn_Donk.txt
+// Gate 08 — canonical Turn Donk routing contract
+// ============================================================================
+// Purpose:
+//   Route a valid closed-history Turn Donk opportunity only to separately audited
+//   strategy descendants. Broad legacy scenario labels never grant strategy.
+//
+// Current reviewed children:
+//   1  = direct native three-handed `(BBorSB)v2pp` source states whose complete
+//        execution/price provenance is available;
+//   2  = HUBB BB-v-SB source mapping plus exact 3-6h BvB reduced-HU descendant;
+//   3  = `3wSBvBTN` source mapping plus exact 4-6h BTN-open/SB-call descendant;
+//   4  = `3wSBvBB` source mapping with SB-limp/BB-check and SB-open/BB-call origins;
+//   5  = NEW `3wBBvBTN` source mapping plus exact 4-6h BTN-open/BB-call descendant;
+//   6  = residual ordinary-SRP HU reviewed CHECK baseline;
+//   7  = residual ordinary-SRP current-multiway reviewed CHECK baseline;
+//   8  = proven ISO range-origin HU/MW reviewed CHECK baseline;
+//   9  = supported plain-3BP/squeeze HU/MW reviewed CHECK baseline;
+//   10 = clean supported HU 4BP reviewed CHECK baseline.
+//
+// Deliberately still fail-closed:
+//   * source descendants whose exact defensive price/class provenance is missing;
+//   * SBvBB/BBvBTN source runout gaps documented in their exact children;
+//   * unresolved ISO Hero-origin histories;
+//   * reversed/backraise/limp-reraise 3BP/4BP chronology;
+//   * multiway/other-caller 4BP and all 5BP+ Turn Donk states.
+//
+// Source/Provenance:
+//   T/A = Gate08A history owner + Gate08B direct source descendants.
+//   T/A/P = Gate08C source/high-ancestry mappings.
+//   P = Gate08D-G deliberate professional gap policies and coverage firewalls.
+//
+// Safety:
+//   A CHECK-only P family may own a state only after exact topology/range proof.
+//   It may never absorb an unresolved source descendant merely to improve coverage.
+// ============================================================================
+
+// Purpose: compact reviewed Turn-Donk family ID.
+// IDs are routing metadata only; they do not imply strategic ordering or strength.
+// Source/Provenance: P router over separately audited child contracts.
+##f$cc_turn_donk_family_id##
+When !f$cc_turn_donk_opportunity Return 0 Force
+When f$cc_turn_donk_source_native_covered Return 1 Force
+When f$cc_turn_donk_hubb_covered Return 2 Force
+When f$cc_turn_donk_sbvbtn_covered Return 3 Force
+When f$cc_turn_donk_sbvbb_covered Return 4 Force
+When f$cc_turn_donk_bbvbtn_covered Return 5 Force
+When f$cc_turn_donk_srp_residual_hu_covered Return 6 Force
+When f$cc_turn_donk_srp_residual_mw_covered Return 7 Force
+When f$cc_turn_donk_iso_covered Return 8 Force
+When f$cc_turn_donk_3bp_covered Return 9 Force
+When f$cc_turn_donk_4bp_covered Return 10 Force
+When Others Return 0 Force
+
+// Purpose: canonical Turn Donk action router.
+// Source/Provenance: A/P exact audited child only; unknown -> CHECK/fail-closed.
+##f$cc_turn_donk_router##
+When !f$cc_turn_donk_opportunity Return false Force
+When f$cc_turn_donk_source_native_covered Return f$cc_turn_donk_source_native_action Force
+When f$cc_turn_donk_hubb_covered Return f$cc_turn_donk_hubb_action Force
+When f$cc_turn_donk_sbvbtn_covered Return f$cc_turn_donk_sbvbtn_action Force
+When f$cc_turn_donk_sbvbb_covered Return f$cc_turn_donk_sbvbb_action Force
+When f$cc_turn_donk_bbvbtn_covered Return f$cc_turn_donk_bbvbtn_action Force
+When f$cc_turn_donk_srp_residual_hu_covered Return f$cc_turn_donk_srp_residual_hu_action Force
+When f$cc_turn_donk_srp_residual_mw_covered Return f$cc_turn_donk_srp_residual_mw_action Force
+When f$cc_turn_donk_iso_covered Return f$cc_turn_donk_iso_action Force
+When f$cc_turn_donk_3bp_covered Return f$cc_turn_donk_3bp_action Force
+When f$cc_turn_donk_4bp_covered Return f$cc_turn_donk_4bp_action Force
+When Others Return false Force
+
+// Purpose: paired strategic size router.
+// Source/Provenance: A/P exact owner; checks/uncovered ->0.
+##f$cc_turn_donk_size_id##
+When !f$cc_turn_donk_opportunity Return 0 Force
+When f$cc_turn_donk_source_native_covered Return f$cc_turn_donk_source_native_size_id Force
+When f$cc_turn_donk_hubb_covered Return f$cc_turn_donk_hubb_size_id Force
+When f$cc_turn_donk_sbvbtn_covered Return f$cc_turn_donk_sbvbtn_size_id Force
+When f$cc_turn_donk_sbvbb_covered Return f$cc_turn_donk_sbvbb_size_id Force
+When f$cc_turn_donk_bbvbtn_covered Return f$cc_turn_donk_bbvbtn_size_id Force
+When f$cc_turn_donk_srp_residual_hu_covered Return f$cc_turn_donk_srp_residual_hu_size_id Force
+When f$cc_turn_donk_srp_residual_mw_covered Return f$cc_turn_donk_srp_residual_mw_size_id Force
+When f$cc_turn_donk_iso_covered Return f$cc_turn_donk_iso_size_id Force
+When f$cc_turn_donk_3bp_covered Return f$cc_turn_donk_3bp_size_id Force
+When f$cc_turn_donk_4bp_covered Return f$cc_turn_donk_4bp_size_id Force
+When Others Return 0 Force
+
+// Purpose: current Turn Donk opportunity has a fully reviewed strategy owner.
+// Source/Provenance: P coverage union; exact-source missing-evidence states remain
+// outside this union even when a generic CHECK could otherwise be assigned.
+##f$cc_turn_donk_strategy_covered##
+f$cc_turn_donk_source_native_covered ||
+f$cc_turn_donk_hubb_covered ||
+f$cc_turn_donk_sbvbtn_covered ||
+f$cc_turn_donk_sbvbb_covered ||
+f$cc_turn_donk_bbvbtn_covered ||
+f$cc_turn_donk_srp_residual_hu_covered ||
+f$cc_turn_donk_srp_residual_mw_covered ||
+f$cc_turn_donk_iso_covered ||
+f$cc_turn_donk_3bp_covered ||
+f$cc_turn_donk_4bp_covered
+
+// Purpose: count reviewed owner families to detect accidental overlap.
+// Source/Provenance: P router exclusivity safety.
+##f$cc_turn_donk_reviewed_family_count##
+(f$cc_turn_donk_source_native_covered * 1) +
+(f$cc_turn_donk_hubb_covered * 1) +
+(f$cc_turn_donk_sbvbtn_covered * 1) +
+(f$cc_turn_donk_sbvbb_covered * 1) +
+(f$cc_turn_donk_bbvbtn_covered * 1) +
+(f$cc_turn_donk_srp_residual_hu_covered * 1) +
+(f$cc_turn_donk_srp_residual_mw_covered * 1) +
+(f$cc_turn_donk_iso_covered * 1) +
+(f$cc_turn_donk_3bp_covered * 1) +
+(f$cc_turn_donk_4bp_covered * 1)
+
+// Purpose: a covered Turn-Donk opportunity must have exactly one owner.
+// Source/Provenance: P fail-closed ownership invariant.
+##f$cc_turn_donk_family_exclusive##
+When !f$cc_turn_donk_strategy_covered Return f$cc_turn_donk_reviewed_family_count = 0 Force
+When Others Return f$cc_turn_donk_reviewed_family_count = 1 Force
+
+// Purpose: action/size integrity, including source-approved BetMin ID 5.
+// Source/Provenance: P safety invariant over exact child size ownership.
+##f$cc_turn_donk_size_consistent##
+When !f$cc_turn_donk_family_exclusive Return false Force
+When !f$cc_turn_donk_router Return f$cc_turn_donk_size_id = 0 Force
+When f$cc_turn_donk_router Return f$cc_turn_donk_size_id >= 1 && f$cc_turn_donk_size_id <= 5 Force
+When Others Return false Force
+
+// Purpose: visible Turn Donk opportunity not yet reviewed or lacking necessary
+// source/defense-owned provenance.
+// Source/Provenance: P fail-closed audit metadata.
+##f$cc_turn_donk_uncovered_context##
+f$cc_turn_donk_opportunity && !f$cc_turn_donk_strategy_covered
+
+// ============================================================================
+// End Gate08 strategic router.
+// ============================================================================

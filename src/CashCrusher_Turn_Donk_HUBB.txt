@@ -1,0 +1,438 @@
+// ============================================================================
+// CashCrusher_Turn_Donk_HUBB.txt
+// Gate 08C.1 — HUBB Turn Donk source mapping
+// ============================================================================
+// Purpose:
+//   Map the dedicated HUBB Starting Strategy after an ACTUAL flop X/C into
+//   CashCrusher without treating every OOP HU caller as the same range.
+//
+// Source hierarchy:
+//   T = `11- NOVO CRUSHFEST HUBB` direct Turn Donk answers:
+//       * TP+ donk if Villain 2barrels below 45%;
+//       * good draws OESD/FD/2mOC+GS -> X/C Turn;
+//       * weak GS and air -> Donk 25%;
+//       * pair+draw -> X/C;
+//       * MP/BP after big flop CBet: completed -> X/F, non-completed ->
+//         Donk 1-2bb, max 20%;
+//       * general flop 2nd/3rd pair, top-three kicker: selected Turn Donk 25%.
+//   A = mature audited DeepCrusher resolves the TP+ size gap to 75%, resolves
+//       the 1-2bb/max20 interval to BetMin, and requires >100 hands for the
+//       low-2bar exploit statistic.
+//   A/P = same BB-v-SB ordinary-SRP structure when a 3-6h deal reduced to those
+//         two players preflop. This descendant is never labelled direct T.
+//
+// Evidence boundary:
+//   The current attack layer cannot reconstruct the flop bet SIZE that Hero
+//   called. MP/BP nodes whose correct action/size changes across the >50% source
+//   boundary therefore fail closed until future Flop defense records exactly one
+//   of `user_cc_flop_donk_hubb_called_gt50` / `_called_le50`.
+//
+// Safety:
+//   No ISO, 3BP/squeeze, 4BP, BTN-v-blind or generic OOP-HU caller enters here.
+//   No stackoff, jam, HandPower, random or generic commitment threshold appears.
+//   River give-up / River Donk instructions are history for later streets, not
+//   permission to smuggle a future action into this Turn node.
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// TDHUBB.01 — exact strategic ancestry
+// -----------------------------------------------------------------------------
+
+// Purpose: literal old HUBB ordinary-SRP ancestry: true HU, SB open, BB call.
+// Source/Provenance: T positional/pot shape + A Gate00 reconstruction.
+##f$cc_turn_donk_hubb_truehu_srp_context##
+f$cc_turn_donk_opportunity &&
+f$cc_turn_donk_parent_id = 1 &&
+f$cc_hist_flop_donk_family_id = 3 &&
+f$cc_true_hu &&
+f$cc_flop_entry_count = 2 &&
+f$cc_hu &&
+f$cc_hu_oop &&
+f$cc_hero_pos_id = 6 &&
+f$cc_hu_villain_pos_id = 5 &&
+f$cc_turn_donk_hu_aggressor_is_current_villain &&
+f$cc_turn_donk_flop_aggressor_pos_id = 5 &&
+f$cc_pot_family_id = 2 &&
+f$cc_pf_one_raise_ordinary_srp &&
+f$cc_pf_role_srp_caller &&
+f$cc_pf_single_raiser_pos_id = 5
+
+// Purpose: literal old HUBB limped ancestry: true HU, SB limp, BB check option.
+// Source/Provenance: T positional/pot shape + A Gate00 reconstruction.
+##f$cc_turn_donk_hubb_truehu_limped_context##
+f$cc_turn_donk_opportunity &&
+f$cc_turn_donk_parent_id = 1 &&
+f$cc_hist_flop_donk_family_id = 3 &&
+f$cc_true_hu &&
+f$cc_flop_entry_count = 2 &&
+f$cc_hu &&
+f$cc_hu_oop &&
+f$cc_hero_pos_id = 6 &&
+f$cc_hu_villain_pos_id = 5 &&
+f$cc_turn_donk_hu_aggressor_is_current_villain &&
+f$cc_turn_donk_flop_aggressor_pos_id = 5 &&
+f$cc_pot_family_id = 1 &&
+f$cc_pf_raise_count = 0 &&
+f$cc_pf_role_bb_check &&
+f$cc_pf_call_sb
+
+// Purpose: six-max cash descendant: earlier seats folded, SB opened, BB called,
+// and exactly those two players reached flop. This is high structural ancestry,
+// not literal old true-HU range provenance.
+// Source/Provenance: A/P exact BvB range-topology adaptation.
+##f$cc_turn_donk_hubb_reducedhu_bvb_srp_context##
+f$cc_turn_donk_opportunity &&
+f$cc_turn_donk_parent_id = 1 &&
+f$cc_hist_flop_donk_family_id = 3 &&
+f$cc_hu_origin_preflop_reduced &&
+f$cc_flop_entry_count = 2 &&
+f$cc_hu &&
+f$cc_hu_oop &&
+f$cc_hero_pos_id = 6 &&
+f$cc_hu_villain_pos_id = 5 &&
+f$cc_turn_donk_hu_aggressor_is_current_villain &&
+f$cc_turn_donk_flop_aggressor_pos_id = 5 &&
+f$cc_pot_family_id = 2 &&
+f$cc_pf_one_raise_ordinary_srp &&
+f$cc_pf_role_srp_caller &&
+f$cc_pf_single_raiser_pos_id = 5
+
+// Purpose: compact HUBB source/descendant origin ID.
+// 1=trueHU SRP, 2=trueHU limped, 3=3-6h reduced-HU BvB SRP adaptation.
+// Source/Provenance: P audit metadata over T/A exact parents.
+##f$cc_turn_donk_hubb_origin_id##
+When f$cc_turn_donk_hubb_truehu_srp_context Return 1 Force
+When f$cc_turn_donk_hubb_truehu_limped_context Return 2 Force
+When f$cc_turn_donk_hubb_reducedhu_bvb_srp_context Return 3 Force
+When Others Return 0 Force
+
+// Purpose: exact reviewed HUBB ancestry only.
+// Source/Provenance: A/P union; does not broaden to arbitrary HU callers.
+##f$cc_turn_donk_hubb_context##
+f$cc_turn_donk_hubb_origin_id > 0
+
+// Purpose: distinguish literal true-HU source from 3-6h structural adaptation.
+// Source/Provenance: P provenance metadata.
+##f$cc_turn_donk_hubb_is_direct_truehu_source##
+f$cc_turn_donk_hubb_origin_id = 1 || f$cc_turn_donk_hubb_origin_id = 2
+
+// -----------------------------------------------------------------------------
+// TDHUBB.02 — source-faithful current hand/draw descriptors
+// -----------------------------------------------------------------------------
+
+// Purpose: contribution-aware TP used by mature source CF7_StrongMade.
+// Source: CF7_TopPairReal = real top pair, no board-two-pair-only promotion.
+// Provenance: T/A compact reconstruction from portable CashCrusher primitive.
+##f$cc_turn_donk_hubb_top_pair_real##
+f$cc_hand_just_top_pair && !TwoPairOnBoard && npcbits > 0
+
+// Purpose: contribution-aware overpair used by mature source CF7_StrongMade.
+// Source/Provenance: T exact mature-source meaning.
+##f$cc_turn_donk_hubb_overpair_real##
+HaveOverPair && PairInHand && npcbits > 0
+
+// Purpose: real two-pair-or-better region, excluding a board-only made category.
+// Source: compact equivalent of CF7 ExactTwoPair/RealTrips/NutClass ownership.
+// Provenance: T/A contribution-aware reconstruction.
+##f$cc_turn_donk_hubb_two_pair_plus_real##
+When HaveStraightFlush && pokerval > pokervalcommon Return true Force
+When HaveQuads && pokerval > pokervalcommon Return true Force
+When HaveFullHouse && pokerval > pokervalcommon Return true Force
+When HaveFlush && npcbits > 0 && pokerval > pokervalcommon Return true Force
+When HaveStraight && npcbits > 0 && pokerval > pokervalcommon Return true Force
+When HaveTrips && !TripsOnBoard && npcbits > 0 Return true Force
+When HaveTwoPair && !TwoPairOnBoard && npcbits > 0 Return true Force
+When Others Return false Force
+
+// Purpose: source TP+ / OP / 2P+ strong-made class.
+// Source/Provenance: T/A CF7_StrongMade reconstruction.
+##f$cc_turn_donk_hubb_strong_made##
+f$cc_turn_donk_hubb_top_pair_real ||
+f$cc_turn_donk_hubb_overpair_real ||
+f$cc_turn_donk_hubb_two_pair_plus_real
+
+// Purpose: source `2mOC` meaning persists the FLOP rank reference on Turn.
+// Source: mature DeepCrusher `rankloplayer > SecondTopFlopCard && !ispair`.
+// Provenance: T direct mechanical helper.
+##f$cc_turn_donk_hubb_two_meaningful_overcards##
+!PairInHand && rankloplayer > SecondTopFlopCard
+
+// Purpose: direct HUBB good-draw class after flop X/C.
+// Source: OESD / FD / 2mOC+GS.
+// Provenance: T source class over A/T real-draw primitives.
+##f$cc_turn_donk_hubb_good_draw##
+f$cc_hand_no_made &&
+(f$cc_real_oesd || f$cc_real_fd ||
+ (f$cc_real_gutshot && f$cc_turn_donk_hubb_two_meaningful_overcards))
+
+// Purpose: direct HUBB weak-draw class after excluding good draws.
+// Source: GS is the weak Turn Donk draw.
+// Provenance: T/A source hierarchy.
+##f$cc_turn_donk_hubb_weak_gs##
+f$cc_hand_no_made &&
+f$cc_real_gutshot &&
+!f$cc_turn_donk_hubb_good_draw &&
+!f$cc_real_oesd &&
+!f$cc_real_fd
+
+// Purpose: pure/no-frontdoor-draw air after the flop call.
+// Source: HUBB A/Khigh/backdoors/pure-air section says weak GS AND air DB Turn25.
+// Provenance: T/A portable no-made/draw reconstruction.
+##f$cc_turn_donk_hubb_air##
+f$cc_hand_no_made &&
+!f$cc_real_oesd &&
+!f$cc_real_fd &&
+!f$cc_real_gutshot
+
+// Purpose: current source MP/BP tier relevant to Q8 block-donk.
+// Source: explicit 2nd/3rd pair wording; 4th/bottom pair does not inherit it.
+// Provenance: T/A portable pair-tier reconstruction.
+##f$cc_turn_donk_hubb_current_second_or_third_pair##
+f$cc_hand_second_pair_or_pocket || f$cc_hand_third_pair_or_pocket
+
+// Purpose: current lower pair plus a real frontdoor draw -> easy X/C, no Donk.
+// Source/Provenance: T direct Q8 principle.
+##f$cc_turn_donk_hubb_pair_plus_draw##
+f$cc_hand_middle_or_bottom_pair && f$cc_real_frontdoor_draw
+
+// -----------------------------------------------------------------------------
+// TDHUBB.03 — reconstruct FLOP 2nd/3rd pair without inventing stale history
+// -----------------------------------------------------------------------------
+
+// Purpose: source Q8 requires that the pair was already FLOP 2nd/3rd pair.
+// Family-3 snapshot proves the flop primary class was lower pair; exact persistent
+// flop cards + hole ranks then recover 2nd-vs-3rd rank on unpaired flops.
+// Source/Provenance: T source condition + A deterministic reconstruction.
+##f$cc_turn_donk_hubb_flop_second_pair_source##
+When !user_cc_flop_donk_state_had_lower_pair Return false Force
+When PairOnFlop Return false Force
+When !PairInHand && (RankOfFirstHoleCard = SecondTopFlopCard || RankOfSecondHoleCard = SecondTopFlopCard) Return true Force
+When PairInHand && rankhiplayer < TopFlopCard && rankhiplayer > SecondTopFlopCard Return true Force
+When Others Return false Force
+
+// Purpose: same reconstruction for flop third pair.
+// Source/Provenance: T source condition + A deterministic reconstruction.
+##f$cc_turn_donk_hubb_flop_third_pair_source##
+When !user_cc_flop_donk_state_had_lower_pair Return false Force
+When PairOnFlop Return false Force
+When !PairInHand && (RankOfFirstHoleCard = LowestFlopCard || RankOfSecondHoleCard = LowestFlopCard) Return true Force
+When PairInHand && rankhiplayer < SecondTopFlopCard && rankhiplayer > LowestFlopCard Return true Force
+When Others Return false Force
+
+// Purpose: exact source flop pair-history prerequisite for Q2/Q8 MP/BP.
+// Source/Provenance: T/A union of reconstructed source tiers.
+##f$cc_turn_donk_hubb_flop_second_or_third_pair_source##
+f$cc_turn_donk_hubb_flop_second_pair_source ||
+f$cc_turn_donk_hubb_flop_third_pair_source
+
+// -----------------------------------------------------------------------------
+// TDHUBB.04 — flop-call price provenance bridge
+// -----------------------------------------------------------------------------
+
+// Purpose: future Flop defense proves the actual called flop bet exceeded 50%.
+// Source: HUBB MP/BP Q2 is a special line after a BIG CBet.
+// Provenance: P ownership bridge. No current attack node is allowed to set it.
+##f$cc_turn_donk_hubb_flop_call_gt50_proven##
+user_cc_flop_donk_hubb_called_gt50
+
+// Purpose: future Flop defense proves the called flop bet was <=50%.
+// Source/Provenance: P complementary defense-owned provenance marker.
+##f$cc_turn_donk_hubb_flop_call_le50_proven##
+user_cc_flop_donk_hubb_called_le50
+
+// Purpose: price proof must be mutually exclusive.
+// Source/Provenance: P fail-closed integrity.
+##f$cc_turn_donk_hubb_flop_call_price_marker_count##
+(f$cc_turn_donk_hubb_flop_call_gt50_proven * 1) +
+(f$cc_turn_donk_hubb_flop_call_le50_proven * 1)
+
+// Purpose: the source action/size can differ by flop-call size only in these
+// second/third-pair no-draw states. Completed flush/straight-mOC always checks.
+// Source/Provenance: T source branch comparison + P evidence ownership.
+##f$cc_turn_donk_hubb_mpbp_price_sensitive_state##
+f$cc_turn_donk_hubb_context &&
+f$cc_turn_donk_hubb_flop_second_or_third_pair_source &&
+f$cc_turn_donk_hubb_current_second_or_third_pair &&
+!f$cc_real_frontdoor_draw &&
+(!f$cc_turn_completed ||
+ (StraightPossibleOnTurn && !FlushPossibleOnTurn && f$cc_turn_undercard))
+
+// Purpose: diagnostic for an exact source state whose correct MP/BP Donk size
+// cannot yet be chosen because Flop defense has not recorded called sizing.
+// Source/Provenance: P evidence-gap flag, never an action.
+##f$cc_turn_donk_hubb_mpbp_needs_flop_price_provenance##
+f$cc_turn_donk_hubb_mpbp_price_sensitive_state &&
+f$cc_turn_donk_hubb_flop_call_price_marker_count != 1
+
+// -----------------------------------------------------------------------------
+// TDHUBB.05 — TP+ exploit branch
+// -----------------------------------------------------------------------------
+
+// Purpose: source exploit threshold with mature-source sample guard.
+// Source: direct answer `2barrels below 45%`; mature helper requires >100 hands
+// and a nonzero stat before classifying Villain low-2bar.
+// Provenance: T threshold + A mature sample-quality guard.
+##f$cc_turn_donk_hubb_low_turn_cbet_exploit##
+pt_hands_headsupchair > 100 &&
+pt_turn_cbet_headsupchair > 0 &&
+pt_turn_cbet_headsupchair <= 0.45
+
+// Purpose: TP+/OP/2P+ Turn Donk only versus proven low 2bar Villain.
+// Source/Provenance: T direct action in literal HUBB; A for reduced-HU descendant.
+##f$cc_turn_donk_hubb_strongmade_action##
+f$cc_turn_donk_hubb_context &&
+f$cc_turn_donk_hubb_strong_made &&
+f$cc_turn_donk_hubb_low_turn_cbet_exploit
+
+// Purpose: source leaves TP+ Turn Donk size unspecified; mature audited detailed
+// implementation uses 75%. This size is adaptation, not direct source fact.
+// Source/Provenance: A size-gap resolution.
+##f$cc_turn_donk_hubb_strongmade_size_id##
+When f$cc_turn_donk_hubb_strongmade_action Return f$cc_turn_donk_size_75_id Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// TDHUBB.06 — draws and air
+// -----------------------------------------------------------------------------
+
+// Purpose: good draws explicitly CHECK Turn, planning X/C versus 2bar.
+// Source/Provenance: T direct source check branch.
+##f$cc_turn_donk_hubb_gooddraw_check##
+f$cc_turn_donk_hubb_context && f$cc_turn_donk_hubb_good_draw
+
+// Purpose: weak GS takes initiative with a quarter-pot Turn Donk.
+// Source/Provenance: T direct source action.
+##f$cc_turn_donk_hubb_weakgs_action##
+f$cc_turn_donk_hubb_context && f$cc_turn_donk_hubb_weak_gs
+
+// Purpose: exact source weak-GS size.
+// Source/Provenance: T direct 25% sizing.
+##f$cc_turn_donk_hubb_weakgs_size_id##
+When f$cc_turn_donk_hubb_weakgs_action Return f$cc_turn_donk_size_25_id Force
+When Others Return 0 Force
+
+// Purpose: pure air after actual flop X/C also Donks quarter pot.
+// Source/Provenance: T direct source action.
+##f$cc_turn_donk_hubb_air_action##
+f$cc_turn_donk_hubb_context && f$cc_turn_donk_hubb_air
+
+// Purpose: exact source air size.
+// Source/Provenance: T direct 25% sizing.
+##f$cc_turn_donk_hubb_air_size_id##
+When f$cc_turn_donk_hubb_air_action Return f$cc_turn_donk_size_25_id Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// TDHUBB.07 — MP/BP source branches
+// -----------------------------------------------------------------------------
+
+// Purpose: pair+draw remains CHECK/X-C rather than becoming a blocker Donk.
+// Source/Provenance: T direct Q8 source exception.
+##f$cc_turn_donk_hubb_pairdraw_check##
+f$cc_turn_donk_hubb_context && f$cc_turn_donk_hubb_pair_plus_draw
+
+// Purpose: >50% flop-CBet special case is executable only with defense-owned
+// price proof and the exact source flop 2nd/3rd-pair lineage.
+// Source/Provenance: T direct Q2 state + P defense provenance.
+##f$cc_turn_donk_hubb_bigcbet_mpbp_context##
+f$cc_turn_donk_hubb_context &&
+f$cc_turn_donk_hubb_flop_second_or_third_pair_source &&
+f$cc_turn_donk_hubb_current_second_or_third_pair &&
+!f$cc_real_frontdoor_draw &&
+f$cc_turn_donk_hubb_flop_call_gt50_proven &&
+f$cc_turn_donk_hubb_flop_call_price_marker_count = 1
+
+// Purpose: big-flop-CBet MP/BP Donks only on non-completed Turn.
+// Source: CPL X/F unless draw; nCPL DB 1-2bb max20.
+// Provenance: T direct action.
+##f$cc_turn_donk_hubb_bigcbet_mpbp_action##
+f$cc_turn_donk_hubb_bigcbet_mpbp_context && !f$cc_turn_completed
+
+// Purpose: mature deterministic size inside source 1-2bb/max20 interval.
+// Source/Provenance: T interval + A BetMin resolution.
+##f$cc_turn_donk_hubb_bigcbet_mpbp_size_id##
+When f$cc_turn_donk_hubb_bigcbet_mpbp_action Return f$cc_turn_donk_size_min_id Force
+When Others Return 0 Force
+
+// Purpose: <=50% source branch for general Q8 block-donk. The explicit price
+// proof prevents absence-of-evidence from being mistaken for a small flop CBet.
+// Source/Provenance: T Q8 conditions + P defense-owned sizing disambiguation.
+##f$cc_turn_donk_hubb_general_mpbp_context##
+f$cc_turn_donk_hubb_context &&
+f$cc_turn_donk_hubb_flop_second_or_third_pair_source &&
+f$cc_turn_donk_hubb_current_second_or_third_pair &&
+!f$cc_real_frontdoor_draw &&
+f$cc_turn_donk_hubb_flop_call_le50_proven &&
+f$cc_turn_donk_hubb_flop_call_price_marker_count = 1
+
+// Purpose: direct Q8 positive region: top-three kicker, non-paired board,
+// not 2BW in SRP, and either non-completed or completed-straight undercard.
+// Source/Provenance: T direct condition translated to portable descriptors.
+##f$cc_turn_donk_hubb_general_mpbp_action##
+f$cc_turn_donk_hubb_general_mpbp_context &&
+f$cc_number_better_kickers <= 2 &&
+!PairOnBoard &&
+!(f$cc_pot_family_id = 2 && f$cc_flop_2bw) &&
+(!f$cc_turn_completed ||
+ (StraightPossibleOnTurn && !FlushPossibleOnTurn && f$cc_turn_undercard))
+
+// Purpose: exact Q8 source size.
+// Source/Provenance: T direct 25% sizing.
+##f$cc_turn_donk_hubb_general_mpbp_size_id##
+When f$cc_turn_donk_hubb_general_mpbp_action Return f$cc_turn_donk_size_25_id Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// TDHUBB.08 — dispatcher / coverage
+// -----------------------------------------------------------------------------
+
+// Purpose: HUBB action dispatcher in source-specific precedence.
+// Source/Provenance: T ordering of special states; A/P exact ancestry guard.
+##f$cc_turn_donk_hubb_action##
+When !f$cc_turn_donk_hubb_context Return false Force
+When f$cc_turn_donk_hubb_strong_made Return f$cc_turn_donk_hubb_strongmade_action Force
+When f$cc_turn_donk_hubb_good_draw Return false Force
+When f$cc_turn_donk_hubb_weak_gs Return true Force
+When f$cc_turn_donk_hubb_air Return true Force
+When f$cc_turn_donk_hubb_pair_plus_draw Return false Force
+When f$cc_turn_donk_hubb_bigcbet_mpbp_context Return f$cc_turn_donk_hubb_bigcbet_mpbp_action Force
+When f$cc_turn_donk_hubb_general_mpbp_context Return f$cc_turn_donk_hubb_general_mpbp_action Force
+When Others Return false Force
+
+// Purpose: paired HUBB size dispatcher.
+// Source/Provenance: T/A exact owner; checks ->0.
+##f$cc_turn_donk_hubb_size_id##
+When !f$cc_turn_donk_hubb_context Return 0 Force
+When f$cc_turn_donk_hubb_strong_made Return f$cc_turn_donk_hubb_strongmade_size_id Force
+When f$cc_turn_donk_hubb_good_draw Return 0 Force
+When f$cc_turn_donk_hubb_weak_gs Return f$cc_turn_donk_hubb_weakgs_size_id Force
+When f$cc_turn_donk_hubb_air Return f$cc_turn_donk_hubb_air_size_id Force
+When f$cc_turn_donk_hubb_pair_plus_draw Return 0 Force
+When f$cc_turn_donk_hubb_bigcbet_mpbp_context Return f$cc_turn_donk_hubb_bigcbet_mpbp_size_id Force
+When f$cc_turn_donk_hubb_general_mpbp_context Return f$cc_turn_donk_hubb_general_mpbp_size_id Force
+When Others Return 0 Force
+
+// Purpose: exact HUBB state is reviewed unless an MP/BP decision genuinely needs
+// missing/corrupt flop-call-size provenance.
+// Source/Provenance: P coverage contract over direct source branches.
+##f$cc_turn_donk_hubb_covered##
+f$cc_turn_donk_hubb_context &&
+!f$cc_turn_donk_hubb_mpbp_needs_flop_price_provenance &&
+f$cc_turn_donk_hubb_flop_call_price_marker_count <= 1
+
+// Purpose: action/size integrity including source MIN size ID 5.
+// Source/Provenance: P safety invariant.
+##f$cc_turn_donk_hubb_size_consistent##
+When !f$cc_turn_donk_hubb_action Return f$cc_turn_donk_hubb_size_id = 0 Force
+When f$cc_turn_donk_hubb_action Return f$cc_turn_donk_hubb_size_id >= 1 && f$cc_turn_donk_hubb_size_id <= 5 Force
+When Others Return false Force
+
+// Purpose: visible exact HUBB state held closed solely because price provenance
+// required by the source is absent/contradictory.
+// Source/Provenance: P audit diagnostic.
+##f$cc_turn_donk_hubb_uncovered_due_price##
+f$cc_turn_donk_hubb_context && !f$cc_turn_donk_hubb_covered
+
+// ============================================================================
+// End Gate08C.1 HUBB Turn Donk.
+// ============================================================================

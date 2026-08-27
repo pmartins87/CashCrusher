@@ -1,0 +1,80 @@
+// ============================================================================
+// CashCrusher_Flop_CBet_TrueHU_LimpRaised.txt
+// Gate 01D — true-HU SB/Button limp -> BB raise -> SB call, BB PFA OOP
+// ============================================================================
+// Scope:
+//   TRUE HU deal only.  This is a HU limp-raised pot, not an ISO, because there
+//   is no third player for BB to isolate.
+//
+// Source hierarchy:
+//   HUBB with Hero initiative in a limped/raised pot is the strongest legacy
+//   parent.  It contributes board-dependent TP+ sizing, protected OOP checking,
+//   and strong-draw check-raise concepts.
+//
+// Provenance:
+//   A — source hand/board/checking concepts.
+//   P — deep-stack SPR caution, backdoor air selection and 33/50/75 map.
+//   X — shallow commitment/jam conversions and literal Spin CBetMin sizing.
+//
+// OpenPPL safety: every WHEN is flat/complete; no indentation-based scope.
+// Size IDs: 1 ~33% | 2 ~50% | 3 ~75% | 0 check
+// ============================================================================
+
+// Purpose: prove the exact true-HU BB-PFA-OOP limp-raised flop context.
+// Context: SB/Button limped, BB raised, SB called; Hero is BB and acts first.
+// Source/Provenance: HUBB direct A ancestor plus Gate00 mechanical topology.
+// Safety: true HU only, valid CBet opportunity and raw SPR required.
+##f$cc_cbet_true_hu_limpraised_context##
+f$cc_srp_true_hu_bb_pfa_oop_after_limp &&
+f$cc_flop_cbet_opportunity &&
+f$cc_spr_valid
+
+// Purpose: choose flop CBet/check for true-HU BB PFA OOP after SB limp-call.
+// Source: HUBB source uses smaller TP+ on calm boards, larger on dynamic boards;
+// some strong draws skip CBet into X/R; marginal pairs and air are selective.
+// Provenance: A source architecture; P deep-stack one-pair/backdoor adjustments;
+// X removes shallow automatic commitment and assumes no exact solver frequency.
+// Decision logic: robust value bets; marginal one-pair checks deeper; dynamic
+// premium/good draws often remain in check-raise range; air needs board/backdoor.
+// Safety/Limits: a check is intentionally delegated to future Float-defense.
+##f$cc_cbet_true_hu_limpraised_action##
+When !f$cc_cbet_true_hu_limpraised_context Return false Force
+When f$cc_cbet_flop_very_strong_value Return true Force
+When f$cc_cbet_flop_overpair Return true Force
+When f$cc_cbet_flop_strong_top_pair Return true Force
+When f$cc_cbet_flop_medium_top_pair && f$cc_flop_dynamic_lowmid_parent && f$cc_cbet_high_spr Return false Force
+When f$cc_cbet_flop_medium_top_pair && !f$cc_flop_dynamic_lowmid_parent Return true Force
+When f$cc_cbet_flop_medium_top_pair && !f$cc_cbet_high_spr Return true Force
+When f$cc_cbet_flop_medium_top_pair Return false Force
+When f$cc_cbet_flop_weak_top_pair && f$cc_cbet_board_small_bet_parent && !f$cc_cbet_high_spr Return true Force
+When f$cc_cbet_flop_weak_top_pair Return false Force
+When f$cc_hand_second_pair_or_pocket && f$cc_cbet_board_small_bet_parent && !f$cc_cbet_very_high_spr Return true Force
+When f$cc_cbet_flop_showdown_pair Return false Force
+When f$cc_cbet_flop_premium_draw && (f$cc_flop_dynamic_high_parent || f$cc_flop_dynamic_lowmid_parent) Return false Force
+When f$cc_cbet_flop_good_draw && (f$cc_flop_dynamic_high_parent || f$cc_flop_dynamic_lowmid_parent) Return false Force
+When f$cc_cbet_flop_premium_draw Return true Force
+When f$cc_cbet_flop_good_draw && f$cc_cbet_board_small_bet_parent Return true Force
+When f$cc_cbet_flop_weak_draw && f$cc_flop_static_high_parent Return true Force
+When f$cc_real_frontdoor_draw Return false Force
+When f$cc_cbet_flop_quality_air && (f$cc_flop_static_high_parent || f$cc_flop_paired_parent) Return true Force
+When f$cc_cbet_flop_air_best_backdoors && f$cc_flop_dynamic_high_parent Return true Force
+When Others Return false Force
+
+// Purpose: choose size ID for positive true-HU limp-raised BB CBet.
+// Source: HUBB exact source pattern is small on calmer structures and large on
+// draw-heavy/connected TP+ structures.
+// Provenance: A pattern + P 33/50/75 normalization; exact CBetMin is not copied.
+// Safety: action=false -> size 0; no size has automatic all-in meaning.
+##f$cc_cbet_true_hu_limpraised_size_id##
+When !f$cc_cbet_true_hu_limpraised_action Return 0 Force
+When f$cc_flop_dynamic_lowmid_parent && f$cc_cbet_flop_very_strong_value Return 3 Force
+When f$cc_flop_dynamic_lowmid_parent Return 2 Force
+When f$cc_flop_dynamic_high_parent && (f$cc_cbet_flop_very_strong_value || f$cc_cbet_flop_overpair || f$cc_cbet_flop_top_pair_plus) Return 3 Force
+When f$cc_flop_dynamic_high_parent Return 2 Force
+When f$cc_flop_static_lowmid_parent && (f$cc_cbet_flop_very_strong_value || f$cc_cbet_flop_overpair) Return 2 Force
+When f$cc_cbet_board_small_bet_parent Return 1 Force
+When Others Return 1 Force
+
+// ============================================================================
+// End true-HU limp-raised baseline.
+// ============================================================================

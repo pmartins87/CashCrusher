@@ -1,0 +1,169 @@
+// ============================================================================
+// CashCrusher_Turn_Probe_History.txt
+// Gate 10A — canonical Turn Probe ownership from CLOSED flop check-through
+// ============================================================================
+// Purpose:
+//   Prove that Hero reaches a Turn PROBE only after having NO preflop/flop
+//   initiative, the flop checked through without any aggression/fold, and Hero
+//   now acts FIRST/MIDDLE with no bet facing. Exact LAST belongs to delayed-float
+//   / checked-through stab ownership, not Turn Probe.
+//
+// Source boundary:
+//   * Crusher Framework 5 routes no-initiative flop-X/X Turn leads to Probe but
+//     leaves `f$move_turn_Probe` itself empty.
+//   * DeepCrusher/Starting Strategy supply positive scenario descendants only.
+//   * PFA/3bettor/4bettor who checked flop belong Delayed CBet instead.
+//   * DeepCrusher also gives initiative to a narrow native open-limp set via
+//     `f$pot_Limped_Initiative`; those exact topologies also belong Delayed CBet.
+//
+// Source/Provenance:
+//   T = OpenHoldem closed round-2 counters, raisbits2 and current Turn facts.
+//   A = audited DeepCrusher ownership split: Probe vs Delayed CBet/Float.
+//   P = exact six-max role/position/field firewalls.
+//
+// OpenPPL safety:
+//   Every WHEN owns its full condition and Return. Unknown chronology fails closed.
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// TP-H.01 — closed flop check-through proof
+// -----------------------------------------------------------------------------
+
+// Purpose: prove Hero itself checked exactly once on flop and never called/bet/
+// raised/jammed. In a genuine check-through Hero cannot have a second flop action.
+// Source/Provenance: T closed round-2 bot counters.
+##f$cc_hist_turn_probe_hero_checked_flop_clean##
+When !IsTurn Return false Force
+When didchecround2 != 1 Return false Force
+When didcallround2 != 0 Return false Force
+When didraisround2 != 0 Return false Force
+When didbetsizeround2 != 0 Return false Force
+When didalliround2 != 0 Return false Force
+When Others Return true Force
+
+// Purpose: prove nobody produced flop aggression; `raisbits2=0` independently
+// excludes any bet/raise aggressor even when Hero counters themselves are quiet.
+// Source/Provenance: T OpenHoldem persisted round-2 aggressor mask.
+##f$cc_hist_turn_probe_no_flop_aggressor##
+IsTurn && raisbits2 = 0
+
+// Purpose: because no bet occurred, no player can legitimately have folded on
+// flop; current field therefore must equal the exact preflop survivors/flop entry.
+// Source/Provenance: T player counts + A/P consistency consequence of X/X...X.
+##f$cc_hist_turn_probe_flop_field_unchanged##
+When !IsTurn Return false Force
+When f$cc_flop_entry_count < 2 Return false Force
+When nplayersplaying != f$cc_flop_entry_count Return false Force
+When Others Return true Force
+
+// Purpose: canonical closed flop check-through parent.
+// Source/Provenance: T/A composition of exact Hero check, zero aggression and
+// unchanged live field. This proves executed history, not a pre-action plan.
+##f$cc_hist_turn_probe_flop_checkthrough_clean##
+f$cc_hist_turn_probe_hero_checked_flop_clean &&
+f$cc_hist_turn_probe_no_flop_aggressor &&
+f$cc_hist_turn_probe_flop_field_unchanged
+
+// -----------------------------------------------------------------------------
+// TP-H.02 — preflop initiative ownership
+// -----------------------------------------------------------------------------
+
+// Purpose: Hero did not own audited preflop/flop initiative. Caller/call4/BB-check
+// are non-initiative; an unraised caller is non-initiative only outside the exact
+// native open-limp families that DeepCrusher marks `f$pot_Limped_Initiative`.
+// Source: DeepCrusher `!user_Flop_Init_Hero` Probe ownership + limped-init repair.
+// Provenance: A/P exact role taxonomy over Gate00/Gate12A.0 context.
+##f$cc_turn_probe_preflop_noinitiative##
+When f$cc_pot_family_id <= 0 Return false Force
+When f$cc_pot_family_id >= 5 Return false Force
+When f$cc_pf_role_pfa Return false Force
+When f$cc_pf_role_3bettor Return false Force
+When f$cc_pf_role_4bettor Return false Force
+When f$cc_native_limped_initiative Return false Force
+When f$cc_pf_role_srp_caller Return true Force
+When f$cc_pf_role_open_call_3bet Return true Force
+When f$cc_pf_role_cold_call_3bet Return true Force
+When f$cc_pf_role_call_4bet Return true Force
+When f$cc_pf_role_unraised_caller Return true Force
+When f$cc_pf_role_bb_check Return true Force
+When Others Return false Force
+
+// Purpose: explicit Delayed-CBet firewall: final preflop aggressors and exact
+// source limped-initiative owners cannot become Probe after checking flop.
+// Source/Provenance: A exact attack-node ownership boundary.
+##f$cc_turn_probe_excluded_delayed_cbet##
+f$cc_pf_role_pfa ||
+f$cc_pf_role_3bettor ||
+f$cc_pf_role_4bettor ||
+f$cc_native_limped_initiative
+
+// Purpose: exact-last no-initiative check-through is a delayed-float/stab family,
+// not the OOP/early Turn Probe owner.
+// Source/Provenance: A Framework/DeepCrusher positional ownership boundary.
+##f$cc_turn_probe_excluded_delayed_float##
+f$cc_relpos_id = 3
+
+// -----------------------------------------------------------------------------
+// TP-H.03 — canonical Turn opportunity
+// -----------------------------------------------------------------------------
+
+// Purpose: first Hero Turn decision with no wager facing.
+// Source/Provenance: T OpenHoldem current-round action facts.
+##f$cc_turn_probe_first_turn_action_clean##
+IsTurn &&
+BotsActionsOnThisRoundIncludingChecks = 0 &&
+AmountToCall = 0 &&
+balance > 0
+
+// Purpose: canonical Turn Probe opportunity.
+// Source: Framework no-initiative FIRST/MIDDLE Probe router + DeepCrusher Gate10.
+// Provenance: T/A/P exact six-max owner.
+// Safety: FIRST/MIDDLE only; delayed owners and ambiguous 5bet+ chronology excluded.
+##f$cc_turn_probe_base_opportunity##
+When !f$cc_context_valid Return false Force
+When !f$cc_turn_probe_first_turn_action_clean Return false Force
+When !f$cc_hist_turn_probe_flop_checkthrough_clean Return false Force
+When !f$cc_turn_probe_preflop_noinitiative Return false Force
+When f$cc_turn_probe_excluded_delayed_cbet Return false Force
+When f$cc_turn_probe_excluded_delayed_float Return false Force
+When f$cc_relpos_id != 1 && f$cc_relpos_id != 2 Return false Force
+When Others Return true Force
+
+// Purpose: Turn Probe opportunity currently HU; exact HU origin remains separately
+// available and must not be erased by current player count.
+// Source/Provenance: T/A handedness split over canonical owner.
+##f$cc_turn_probe_hu_opportunity##
+f$cc_turn_probe_base_opportunity && f$cc_hu
+
+// Purpose: current multiway Turn Probe opportunity.
+// Source/Provenance: T/A current field split; exact flop/deal origin retained.
+##f$cc_turn_probe_multiway_opportunity##
+f$cc_turn_probe_base_opportunity && f$cc_multiway
+
+// Purpose: check-through means no postflop reduction can have occurred before
+// this Turn decision; current HU is therefore true-HU or preflop-reduced HU only.
+// Source/Provenance: T/P cross-street invariant useful for tests/logging.
+##f$cc_turn_probe_postflop_reduced_hu_impossible##
+f$cc_turn_probe_hu_opportunity && f$cc_hu_origin_postflop_reduced
+
+// Purpose: compact owner class: 1 true HU, 2 preflop-reduced HU, 3 current MW.
+// Source/Provenance: P metadata only; strategy still uses exact matchup/pot family.
+##f$cc_turn_probe_field_origin_id##
+When !f$cc_turn_probe_base_opportunity Return 0 Force
+When f$cc_turn_probe_hu_opportunity && f$cc_true_hu Return 1 Force
+When f$cc_turn_probe_hu_opportunity && f$cc_hu_origin_preflop_reduced Return 2 Force
+When f$cc_turn_probe_multiway_opportunity Return 3 Force
+When Others Return 0 Force
+
+// Purpose: ownership sanity.
+// Source/Provenance: P fail-closed invariant.
+##f$cc_turn_probe_history_consistent##
+When f$cc_turn_probe_postflop_reduced_hu_impossible Return false Force
+When f$cc_turn_probe_base_opportunity && f$cc_turn_probe_excluded_delayed_cbet Return false Force
+When f$cc_turn_probe_base_opportunity && f$cc_turn_probe_excluded_delayed_float Return false Force
+When f$cc_turn_probe_base_opportunity && f$cc_turn_probe_field_origin_id <= 0 Return false Force
+When Others Return true Force
+
+// ============================================================================
+// End Gate10A Turn Probe ownership/history.
+// ============================================================================

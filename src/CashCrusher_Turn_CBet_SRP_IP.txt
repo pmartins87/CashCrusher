@@ -1,0 +1,222 @@
+// ============================================================================
+// CashCrusher_Turn_CBet_SRP_IP.txt
+// Gate 02B — source-anchored HU ordinary-SRP Turn CBet, Hero IP
+// ============================================================================
+// Implemented families in this file:
+//   1) TRUE HU SB/Button PFA IP vs BB — HUSB source parent.
+//   2) 3-6h preflop-reduced BTN PFA IP vs BB — 3wBTNvBB source parent.
+//   3) 3-6h preflop-reduced BTN PFA IP vs SB — 3wBTNvSB source parent.
+//
+// Deliberately NOT generalized yet:
+//   UTG/HJ/CO-v-blind use different range topology and will receive P-heavy
+//   adaptation instead of inheriting BTN frequencies automatically.
+//
+// Source/Provenance:
+//   T/A = exact Gate01N executed CBet history + direct Starting Strategy runouts.
+//   A/P = deep-cash sizing normalization where Spin stack geometry is embedded.
+//
+// Stack-depth safety:
+//   A positive TP/OP second barrel does NOT authorize stack-off versus a turn
+//   raise. Historical HUSB `20bb+ -> 100/200%` and other Spin commitment shortcuts
+//   are not silently imported here. Exact cash overbet/jam nodes remain separate.
+//
+// Size IDs from Turn_CBet_Common:
+//   1=25 | 2=33 | 3=40 | 4=50 | 5=62.5 | 6=75 | 7=100
+// ============================================================================
+
+// -----------------------------------------------------------------------------
+// IP.00 — Exact contexts
+// -----------------------------------------------------------------------------
+
+// Purpose: true-HU ordinary SRP after SB/Button PFA CBet was actually executed.
+// Source: HUSB is the direct positional/source parent.
+// Provenance: A high-fidelity context; full-HU ranges remain wider than 6-max.
+##f$cc_turn_srp_ip_true_hu_context##
+f$cc_turn_cbet_hu_opportunity &&
+f$cc_true_hu &&
+f$cc_pot_family_id = 2 &&
+f$cc_pf_role_pfa &&
+f$cc_pf_one_raise_ordinary_srp &&
+f$cc_hu_ip &&
+f$cc_hu_matchup_id = 56
+
+// Purpose: 3-6h deal reached flop HU as BTN PFA IP versus BB.
+// Source: legacy `3wBTNvBB` is the closest direct ordinary-SRP source family.
+// Provenance: A high ancestry; exact CashCrusher flop strategy/history retained.
+##f$cc_turn_srp_ip_btn_vs_bb_context##
+f$cc_turn_cbet_hu_opportunity &&
+f$cc_hu_origin_preflop_reduced &&
+f$cc_pot_family_id = 2 &&
+f$cc_pf_role_pfa &&
+f$cc_pf_one_raise_ordinary_srp &&
+f$cc_hu_ip &&
+f$cc_hu_matchup_id = 46
+
+// Purpose: 3-6h deal reached flop HU as BTN PFA IP versus SB.
+// Source: legacy `3wBTNvSB` direct source family.
+// Provenance: A high ancestry.
+##f$cc_turn_srp_ip_btn_vs_sb_context##
+f$cc_turn_cbet_hu_opportunity &&
+f$cc_hu_origin_preflop_reduced &&
+f$cc_pot_family_id = 2 &&
+f$cc_pf_role_pfa &&
+f$cc_pf_one_raise_ordinary_srp &&
+f$cc_hu_ip &&
+f$cc_hu_matchup_id = 45
+
+// -----------------------------------------------------------------------------
+// IP.01 — TRUE HU HUSB source family
+// -----------------------------------------------------------------------------
+
+// Purpose: exact New-Crushfest HUSB "good draw" second-barrel family.
+// Source: 2HC FD; 2HC OESD+mOC; 2HC GS+OC/2mOC.
+// Provenance: A reconstruction using current portable draw/equity symbols.
+// Safety: no-made only; this descriptor has no stack-off implication.
+##f$cc_turn_husb_source_good_draw##
+f$cc_turn_srp_ip_true_hu_context &&
+f$cc_hand_no_made &&
+((f$cc_real_fd && SuitsInHand = 1) ||
+ (f$cc_real_oesd && (nstraightfillcommon - nstraightfill = 2) && f$cc_one_or_more_overcards) ||
+ (f$cc_real_gutshot && (nstraightfillcommon - nstraightfill = 2) && f$cc_one_or_more_overcards))
+
+// Purpose: true-HU HUSB second-barrel action.
+// Source: New Crushfest HUSB Turn sections plus audited compatible current source.
+// Provenance: A for branch direction; A/P for deep-cash deterministic sizing use.
+// Decision logic:
+//   * current 2P+ remains value-first;
+//   * one-pair on super-completed turn checks unless it has premium redraw equity;
+//   * carried flop TP demoted by turn OC uses smaller 50 source barrel;
+//   * current TP/OP normally value barrels;
+//   * 2nd pair 50 nCPL / 25 CPL; 3rd-or-worse pair 25;
+//   * source-good draws 75; other no-made draws check;
+//   * flop-air barrels only exact source pressure card.
+// Safety: any response to a turn raise belongs to defense, not this function.
+##f$cc_turn_srp_ip_true_hu_action##
+When !f$cc_turn_srp_ip_true_hu_context Return false Force
+When f$cc_turn_cbet_two_pair_plus Return true Force
+When (f$cc_turn_cbet_overpair || f$cc_turn_cbet_top_pair) && f$cc_turn_super_completed && !f$cc_turn_cbet_premium_draw Return false Force
+When f$cc_turn_cbet_flop_tp_demoted && f$cc_turn_overcard_to_flop Return true Force
+When f$cc_turn_cbet_overpair Return true Force
+When f$cc_turn_cbet_top_pair Return true Force
+When f$cc_turn_cbet_second_pair Return true Force
+When f$cc_turn_cbet_third_or_worse_pair Return true Force
+When f$cc_turn_husb_source_good_draw Return true Force
+When f$cc_hand_no_made && f$cc_real_frontdoor_draw Return false Force
+When f$cc_turn_cbet_air && (user_cc_flop_cbet_had_quality_air || user_cc_flop_cbet_had_pure_air) && f$cc_turn_husb_air_pressure_card_source Return true Force
+When Others Return false Force
+
+// Purpose: paired size router for true-HU HUSB second barrel.
+// Source: HUSB 75 TP+/good-draw; flop-TP+OC 50; MP 50/25; 3rd pair 25;
+// air pressure source line 75.
+// Provenance: A source sizes. Historical optional 100/200 deep Spin rule is not
+// generalized by stack depth here.
+##f$cc_turn_srp_ip_true_hu_size_id##
+When !f$cc_turn_srp_ip_true_hu_action Return 0 Force
+When f$cc_turn_cbet_two_pair_plus Return f$cc_turn_size_75_id Force
+When f$cc_turn_cbet_flop_tp_demoted && f$cc_turn_overcard_to_flop Return f$cc_turn_size_50_id Force
+When (f$cc_turn_cbet_overpair || f$cc_turn_cbet_top_pair) Return f$cc_turn_size_75_id Force
+When f$cc_turn_cbet_second_pair && f$cc_turn_completed Return f$cc_turn_size_25_id Force
+When f$cc_turn_cbet_second_pair Return f$cc_turn_size_50_id Force
+When f$cc_turn_cbet_third_or_worse_pair Return f$cc_turn_size_25_id Force
+When f$cc_turn_husb_source_good_draw Return f$cc_turn_size_75_id Force
+When f$cc_turn_cbet_air && f$cc_turn_husb_air_pressure_card_source Return f$cc_turn_size_75_id Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// IP.02 — Reduced HU BTN vs BB
+// -----------------------------------------------------------------------------
+
+// Purpose: BTN-v-BB second-barrel action using the strongest direct 3w source.
+// Source: audited `3wBTNvBB` Turn-CBet branch.
+// Provenance: A. No-made multi-street source plans are NOT reconstructed from
+// flop size alone; without their exact plan marker, no-made falls closed here.
+// Decision logic:
+//   * 2P+ / fresh turn TP -> 75 family;
+//   * carried OP: glued OC 75, ordinary mOC 50, otherwise 75;
+//   * carried TP <T kicker checks unless flop BDSD proxy exists, then 50;
+//   * carried TP T+ -> 75;
+//   * other classes remain unsupported rather than inheriting HUSB tails.
+##f$cc_turn_srp_ip_btn_vs_bb_action##
+When !f$cc_turn_srp_ip_btn_vs_bb_context Return false Force
+When f$cc_turn_cbet_two_pair_plus Return true Force
+When f$cc_turn_cbet_new_top_pair Return true Force
+When f$cc_turn_cbet_overpair Return true Force
+When f$cc_turn_cbet_carried_top_pair && f$cc_my_kicker < ten && !f$cc_turn_cbet_flop_had_bdsd Return false Force
+When f$cc_turn_cbet_carried_top_pair && f$cc_my_kicker < ten && f$cc_turn_cbet_flop_had_bdsd Return true Force
+When f$cc_turn_cbet_carried_top_pair && f$cc_my_kicker >= ten Return true Force
+When f$cc_hand_no_made Return false Force
+When Others Return false Force
+
+// Purpose: source-shaped BTN-v-BB size router.
+// Source/Provenance: A from audited source; exact no-made plan sizes deferred.
+##f$cc_turn_srp_ip_btn_vs_bb_size_id##
+When !f$cc_turn_srp_ip_btn_vs_bb_action Return 0 Force
+When f$cc_turn_cbet_two_pair_plus Return f$cc_turn_size_75_id Force
+When f$cc_turn_cbet_new_top_pair Return f$cc_turn_size_75_id Force
+When f$cc_turn_cbet_overpair && f$cc_turn_glued_overcard Return f$cc_turn_size_75_id Force
+When f$cc_turn_cbet_overpair && f$cc_turn_meaningful_overcard Return f$cc_turn_size_50_id Force
+When f$cc_turn_cbet_overpair Return f$cc_turn_size_75_id Force
+When f$cc_turn_cbet_carried_top_pair && f$cc_my_kicker < ten && f$cc_turn_cbet_flop_had_bdsd Return f$cc_turn_size_50_id Force
+When f$cc_turn_cbet_carried_top_pair && f$cc_my_kicker >= ten Return f$cc_turn_size_75_id Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// IP.03 — Reduced HU BTN vs SB
+// -----------------------------------------------------------------------------
+
+// Purpose: BTN-v-SB source-exact direction after actual flop CBet.
+// Source: `4- CRUSHFEST - 3wBTNvSB` and audited DeepCrusher correction.
+// Provenance: A high ancestry.
+// Decision logic: 2P+/OP value; TP below J takes smaller two-street value; J+
+// takes stronger value line; flop draw/air CBet gives up unless hand improved
+// into current TP+.
+// Safety: no generic draw barrel imported from HUSB.
+##f$cc_turn_srp_ip_btn_vs_sb_action##
+When !f$cc_turn_srp_ip_btn_vs_sb_context Return false Force
+When f$cc_turn_cbet_two_pair_plus Return true Force
+When f$cc_turn_cbet_overpair Return true Force
+When f$cc_turn_cbet_top_pair Return true Force
+When f$cc_hand_no_made && (user_cc_flop_cbet_had_premium_draw || user_cc_flop_cbet_had_good_draw || user_cc_flop_cbet_had_weak_draw) Return false Force
+When f$cc_hand_no_made && (user_cc_flop_cbet_had_quality_air || user_cc_flop_cbet_had_pure_air) Return false Force
+When Others Return false Force
+
+// Purpose: BTN-v-SB source size router.
+// Source: source uses 50 for TP kicker below J and 75 for stronger TP/OP/2P+.
+// Provenance: A direct source sizing; later river node consumes two-v-three-street
+// plan rather than treating both branches as equivalent.
+##f$cc_turn_srp_ip_btn_vs_sb_size_id##
+When !f$cc_turn_srp_ip_btn_vs_sb_action Return 0 Force
+When f$cc_turn_cbet_two_pair_plus Return f$cc_turn_size_75_id Force
+When f$cc_turn_cbet_overpair Return f$cc_turn_size_75_id Force
+When f$cc_turn_cbet_top_pair && f$cc_my_kicker < jack Return f$cc_turn_size_50_id Force
+When f$cc_turn_cbet_top_pair Return f$cc_turn_size_75_id Force
+When Others Return 0 Force
+
+// -----------------------------------------------------------------------------
+// IP.04 — Dispatchers / coverage
+// -----------------------------------------------------------------------------
+
+// Purpose: action dispatcher only for the three audited IP ordinary-SRP families.
+// Source/Provenance: A exact-family router; no generic SRP fallback.
+##f$cc_turn_srp_ip_source_anchored_action##
+When f$cc_turn_srp_ip_true_hu_context Return f$cc_turn_srp_ip_true_hu_action Force
+When f$cc_turn_srp_ip_btn_vs_bb_context Return f$cc_turn_srp_ip_btn_vs_bb_action Force
+When f$cc_turn_srp_ip_btn_vs_sb_context Return f$cc_turn_srp_ip_btn_vs_sb_action Force
+When Others Return false Force
+
+// Purpose: size dispatcher paired with source-anchored action router.
+// Source/Provenance: A safety router; check/uncovered -> 0.
+##f$cc_turn_srp_ip_source_anchored_size_id##
+When f$cc_turn_srp_ip_true_hu_context Return f$cc_turn_srp_ip_true_hu_size_id Force
+When f$cc_turn_srp_ip_btn_vs_bb_context Return f$cc_turn_srp_ip_btn_vs_bb_size_id Force
+When f$cc_turn_srp_ip_btn_vs_sb_context Return f$cc_turn_srp_ip_btn_vs_sb_size_id Force
+When Others Return 0 Force
+
+// Purpose: explicit coverage flag for current file.
+// Source/Provenance: P engineering metadata.
+##f$cc_turn_srp_ip_source_anchored_covered##
+f$cc_turn_srp_ip_true_hu_context || f$cc_turn_srp_ip_btn_vs_bb_context || f$cc_turn_srp_ip_btn_vs_sb_context
+
+// ============================================================================
+// End first source-anchored Turn CBet SRP IP families.
+// ============================================================================

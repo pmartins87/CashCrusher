@@ -1,0 +1,136 @@
+// ============================================================================
+// CashCrusher_Flop_Donk_ISO.txt
+// Gate 07F — multi-handed isolation-pot Flop Donk baseline
+// ============================================================================
+// Purpose:
+//   Review first-action OOP Donk opportunities in proven ISO pots while retaining
+//   original-limper versus post-raise-coldcaller range provenance. Baseline is CHECK.
+//
+// Source boundary:
+//   A = Framework GotRaised/Isolated FIRST/MIDDLE Donk ownership.
+//   A/X = mature DeepCrusher has no positive generic ISO Flop Donk strategy;
+//         supplied ISO material instead owns responses to / misses of ISO CBet.
+//   P = OOP range-check baseline until exact solver/source-backed leads exist.
+//
+// Safety:
+//   * true-HU limp-raised is excluded by `f$cc_pf_iso_proven` itself;
+//   * limper != post-raise coldcaller;
+//   * HU versus actual isolator and current multiway remain distinct parents;
+//   * no positive size, BetMax, commitment or CBet-defense action lives here.
+// ============================================================================
+
+// Purpose: canonical Hero bit for ISO Donk provenance.
+// Source/Provenance: T Gate00 six-position mapping, local mechanical adapter.
+##f$cc_flop_donk_iso_hero_pos_bit##
+When f$cc_hero_pos_id = 1 Return 1 Force
+When f$cc_hero_pos_id = 2 Return 2 Force
+When f$cc_hero_pos_id = 3 Return 4 Force
+When f$cc_hero_pos_id = 4 Return 8 Force
+When f$cc_hero_pos_id = 5 Return 16 Force
+When f$cc_hero_pos_id = 6 Return 32 Force
+When Others Return 0 Force
+
+// Purpose: Hero was an original limper before the isolation raise.
+// Source/Provenance: T/A Gate01E persisted pre-raise-limper mask.
+##f$cc_flop_donk_iso_hero_was_limper##
+f$cc_pf_iso_proven &&
+f$cc_flop_donk_iso_hero_pos_bit > 0 &&
+((f$cc_pf_pre_raise_limper_mask BitAnd f$cc_flop_donk_iso_hero_pos_bit) > 0)
+
+// Purpose: Hero entered only after the isolation raise as a coldcaller.
+// Source/Provenance: T/A Gate01E post-raise-coldcaller mask.
+##f$cc_flop_donk_iso_hero_was_postraise_coldcaller##
+f$cc_pf_iso_proven &&
+f$cc_flop_donk_iso_hero_pos_bit > 0 &&
+((f$cc_pf_post_raise_coldcaller_mask BitAnd f$cc_flop_donk_iso_hero_pos_bit) > 0)
+
+// Purpose: exactly one ISO caller origin must be provable.
+// Source/Provenance: P fail-closed integrity over T/A masks.
+##f$cc_flop_donk_iso_hero_origin_count##
+(f$cc_flop_donk_iso_hero_was_limper * 1) +
+(f$cc_flop_donk_iso_hero_was_postraise_coldcaller * 1)
+
+// Purpose: reject unknown/overlapping Hero ISO provenance.
+// Source/Provenance: P safety invariant.
+##f$cc_flop_donk_iso_hero_origin_consistent##
+f$cc_pf_iso_proven && f$cc_flop_donk_iso_hero_origin_count = 1
+
+// Purpose: preflop-reduced HU ISO, Hero OOP caller versus actual isolator.
+// Source/Provenance: T exact HU/PFA identity + A/P ISO ownership.
+##f$cc_flop_donk_iso_hu_context##
+f$cc_flop_donk_opportunity &&
+f$cc_hu_origin_preflop_reduced &&
+f$cc_flop_entry_count = 2 &&
+f$cc_hu &&
+f$cc_hu_oop &&
+f$cc_pot_family_id = 2 &&
+f$cc_pf_iso_proven &&
+f$cc_pf_role_srp_caller &&
+f$cc_hu_villain_pos_id = f$cc_pf_single_raiser_pos_id &&
+f$cc_flop_donk_iso_hero_origin_consistent
+
+// Purpose: current multiway ISO, Hero FIRST/MIDDLE and not the isolation raiser.
+// Source/Provenance: T current multiway + A/P exact caller-origin owner.
+##f$cc_flop_donk_iso_multiway_context##
+f$cc_flop_donk_opportunity &&
+f$cc_multiway &&
+f$cc_flop_entry_count >= 3 &&
+f$cc_pot_family_id = 2 &&
+f$cc_pf_iso_proven &&
+f$cc_pf_role_srp_caller &&
+f$cc_flop_donk_iso_hero_origin_consistent
+
+// Purpose: HU original-limper ISO parent.
+// Source/Provenance: T/A exact origin + P separate range metadata.
+##f$cc_flop_donk_iso_hu_limper_context##
+f$cc_flop_donk_iso_hu_context && f$cc_flop_donk_iso_hero_was_limper
+
+// Purpose: HU post-raise-coldcaller ISO parent.
+// Source/Provenance: T/A exact origin + P separate range metadata.
+##f$cc_flop_donk_iso_hu_coldcaller_context##
+f$cc_flop_donk_iso_hu_context && f$cc_flop_donk_iso_hero_was_postraise_coldcaller
+
+// Purpose: current-multiway original-limper ISO parent.
+// Source/Provenance: T/A exact origin + P separate range metadata.
+##f$cc_flop_donk_iso_mw_limper_context##
+f$cc_flop_donk_iso_multiway_context && f$cc_flop_donk_iso_hero_was_limper
+
+// Purpose: current-multiway post-raise-coldcaller ISO parent.
+// Source/Provenance: T/A exact origin + P separate range metadata.
+##f$cc_flop_donk_iso_mw_coldcaller_context##
+f$cc_flop_donk_iso_multiway_context && f$cc_flop_donk_iso_hero_was_postraise_coldcaller
+
+// Purpose: compact ISO Donk parent ID.
+// 1 HU limper; 2 HU coldcaller; 3 MW limper; 4 MW coldcaller; 0 unsupported.
+// Source/Provenance: P audit metadata over T/A exact parents.
+##f$cc_flop_donk_iso_parent_id##
+When f$cc_flop_donk_iso_hu_limper_context Return 1 Force
+When f$cc_flop_donk_iso_hu_coldcaller_context Return 2 Force
+When f$cc_flop_donk_iso_mw_limper_context Return 3 Force
+When f$cc_flop_donk_iso_mw_coldcaller_context Return 4 Force
+When Others Return 0 Force
+
+// Purpose: all Gate07F ISO parents deliberately CHECK first action.
+// Source/Provenance: A source architecture + P OOP range-check baseline.
+##f$cc_flop_donk_iso_action##
+When f$cc_flop_donk_iso_parent_id > 0 Return false Force
+When Others Return false Force
+
+// Purpose: check-only ISO family has no strategic size.
+// Source/Provenance: P paired-size owner.
+##f$cc_flop_donk_iso_size_id##
+When Others Return 0 Force
+
+// Purpose: recognized ISO Donk state is reviewed even though action is CHECK.
+// Source/Provenance: P coverage contract.
+##f$cc_flop_donk_iso_covered##
+f$cc_flop_donk_iso_parent_id > 0
+
+// Purpose: action/size integrity for check-only ISO baseline.
+// Source/Provenance: P engineering invariant.
+##f$cc_flop_donk_iso_size_consistent##
+!f$cc_flop_donk_iso_action && f$cc_flop_donk_iso_size_id = 0
+
+// ============================================================================
+// End Gate07F isolation-pot Flop Donk baseline.
+// ============================================================================

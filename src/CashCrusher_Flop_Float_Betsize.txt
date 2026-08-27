@@ -1,0 +1,62 @@
+// ============================================================================
+// CashCrusher_Flop_Float_Betsize.txt
+// Gate 04G.1 — OpenPPL runtime adapter for reviewed Flop Float sizes
+// ============================================================================
+// Purpose:
+//   Translate strategic Float size IDs into exact OpenPPL actions. This file does
+//   not decide whether to Float and does not decide strategic stack commitment.
+//
+// Runtime basis:
+//   * native BetThirdPot / BetHalfPot / BetThreeFourthPot / BetPot;
+//   * verified OpenPPL `RaiseBy X%` for exact non-native 25%;
+//   * canonical Float opportunity has AmountToCall=0, so percentage sizing is a
+//     direct pot fraction rather than call-plus-raise ambiguity.
+//
+// Source/Provenance:
+//   T = OpenPPL parser/runtime semantics.
+//   A/P = reviewed Float 25/33/50/75/100 palette.
+// ============================================================================
+
+// Purpose: positive reviewed Float owns one valid runtime size.
+// Source/Provenance: P engineering guard over A/P strategy router.
+##f$cc_flop_float_runtime_size_ready##
+When !f$cc_flop_float_router Return false Force
+When !f$cc_flop_float_size_consistent Return false Force
+When f$cc_flop_float_size_id >= 1 && f$cc_flop_float_size_id <= 5 Return true Force
+When Others Return false Force
+
+// Purpose: map strategic size ID to exact pot fraction for stack geometry/tests.
+// Source/Provenance: A/P frozen Float size palette.
+##f$cc_flop_float_requested_pot_fraction##
+When !f$cc_flop_float_runtime_size_ready Return 0 Force
+When f$cc_flop_float_size_id = 1 Return 0.25 Force
+When f$cc_flop_float_size_id = 2 Return 0.333 Force
+When f$cc_flop_float_size_id = 3 Return 0.50 Force
+When f$cc_flop_float_size_id = 4 Return 0.75 Force
+When f$cc_flop_float_size_id = 5 Return 1.00 Force
+When Others Return 0 Force
+
+// Purpose: exact OpenPPL execution size before natural-all-in equivalence.
+// Source: T verified native/percentage actions.
+// Provenance: T runtime adapter over A/P Float size IDs.
+##f$cc_flop_float_requested_betsize##
+When !f$cc_flop_float_runtime_size_ready Return 0 Force
+When f$cc_flop_float_size_id = 1 RaiseBy 25% Force
+When f$cc_flop_float_size_id = 2 Return BetThirdPot Force
+When f$cc_flop_float_size_id = 3 Return BetHalfPot Force
+When f$cc_flop_float_size_id = 4 Return BetThreeFourthPot Force
+When f$cc_flop_float_size_id = 5 Return BetPot Force
+When Others Return 0 Force
+
+// Purpose: positive action must resolve to exactly one positive pot fraction.
+// Source/Provenance: P invariant over T/A runtime map.
+##f$cc_flop_float_runtime_mapping_valid##
+When !f$cc_flop_float_router Return f$cc_flop_float_requested_pot_fraction = 0 Force
+When !f$cc_flop_float_runtime_size_ready Return false Force
+When f$cc_flop_float_requested_pot_fraction <= 0 Return false Force
+When f$cc_flop_float_size_id < 1 || f$cc_flop_float_size_id > 5 Return false Force
+When Others Return true Force
+
+// ============================================================================
+// End Gate04G.1 Float runtime adapter.
+// ============================================================================

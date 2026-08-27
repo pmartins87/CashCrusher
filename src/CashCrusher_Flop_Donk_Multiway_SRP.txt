@@ -1,0 +1,68 @@
+// ============================================================================
+// CashCrusher_Flop_Donk_Multiway_SRP.txt
+// Gate 07E — residual current-multiway ordinary-SRP Flop Donk baseline
+// ============================================================================
+// Purpose:
+//   Review ordinary one-raise multiway OOP caller states outside the exact
+//   BTN+both-blinds Gate07B/C families.  Baseline action is deliberate CHECK.
+//
+// Source boundary:
+//   A = Framework first/middle no-initiative SRP Donk ownership.
+//   A/X = mature DeepCrusher has no positive generic SRP Donk branch outside
+//         `(BBorSB)v2pp`; 3wSBvBTN/3wBBvBTN source is check-response oriented.
+//   P = full-range multiway check-to-PFA simplification until exact solver-backed
+//       matchup/board lead subsets exist.
+//
+// Safety:
+//   * exact BTN+both-blinds source/adaptation are excluded;
+//   * Hero must be ordinary-SRP caller, never PFA;
+//   * no unraised/ISO/3BP/4BP leakage;
+//   * no positive size, BetMax, commitment or defense action.
+// ============================================================================
+
+// Purpose: residual ordinary-SRP multiway OOP caller Donk opportunity.
+// Source/Provenance: T exact pot/role/player facts + A/P ownership boundary.
+##f$cc_flop_donk_mw_srp_check_context##
+f$cc_flop_donk_opportunity &&
+f$cc_multiway &&
+f$cc_flop_entry_count >= 3 &&
+f$cc_pot_family_id = 2 &&
+f$cc_pf_one_raise_ordinary_srp &&
+f$cc_pf_role_srp_caller &&
+f$cc_pf_single_raiser_pos_id > 0 &&
+!f$cc_flop_donk_source_covered &&
+!f$cc_flop_donk_6max_covered
+
+// Purpose: reviewed residual multiway ordinary-SRP policy is CHECK.
+// Source/Provenance: A source-negative architecture + P range-check baseline.
+##f$cc_flop_donk_mw_srp_action##
+When f$cc_flop_donk_mw_srp_check_context Return false Force
+When Others Return false Force
+
+// Purpose: check-only family has no strategic size.
+// Source/Provenance: P exact paired-size owner.
+##f$cc_flop_donk_mw_srp_size_id##
+When Others Return 0 Force
+
+// Purpose: mark residual ordinary-SRP multiway state as deliberately reviewed.
+// Source/Provenance: P coverage metadata.
+##f$cc_flop_donk_mw_srp_covered##
+f$cc_flop_donk_mw_srp_check_context
+
+// Purpose: prove this family does not overlap the exact source/adapted BTN+blind
+// parents that own positive Donk policies.
+// Source/Provenance: P exclusivity invariant.
+##f$cc_flop_donk_mw_srp_disjoint##
+When !f$cc_flop_donk_mw_srp_covered Return true Force
+When f$cc_flop_donk_source_covered Return false Force
+When f$cc_flop_donk_6max_covered Return false Force
+When Others Return true Force
+
+// Purpose: check-only action/size integrity.
+// Source/Provenance: P engineering invariant.
+##f$cc_flop_donk_mw_srp_size_consistent##
+!f$cc_flop_donk_mw_srp_action && f$cc_flop_donk_mw_srp_size_id = 0
+
+// ============================================================================
+// End Gate07E residual multiway ordinary-SRP review.
+// ============================================================================
