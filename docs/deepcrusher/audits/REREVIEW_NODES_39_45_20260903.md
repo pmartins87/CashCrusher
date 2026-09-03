@@ -3,7 +3,7 @@
 Date: 2026-09-03
 Branch: `deepcrusher-rereview-20260903`
 Baseline SHA-256: `26302fa14a426da578767759005ab09e60e4d9b5c3e42ca101d920dc651f08ab`
-Candidate B SHA-256: `137e7e32caf6831d288a25e70387b2113068ae6b09323365e5a3b8f62954cb89`
+Candidate B SHA-256: `786c4519b1790c871b51b1bd34201bcf09b2b174811672fa1e8621787930afe9`
 
 ## Review rule
 
@@ -56,7 +56,7 @@ CrusherTBP supplies a broad residual delayed-float rule, but that residual must 
 
 ## Candidate B repair
 
-Only the confirmed executable precedence defect was changed in node 45:
+The confirmed executable precedence defect was changed in node 45:
 
 ```text
 When !f$game_3wBBvSB && !f$game_HUSB Return true Force
@@ -70,6 +70,8 @@ and the earlier blanket HUSB return-false was removed, allowing the existing det
 
 The residual CrusherTBP rule remains active for otherwise-uncovered exact delayed-float routes. The 3wBBvSB source-specific tree is unchanged.
 
+A later transversal pass also found and fixed a separate shared-helper scope leak in `f$hand_slowplay`; that finding is documented separately and is included in the Candidate B hash above.
+
 ## Comment correction
 
 The candidate also replaces 25 stale comments that claimed:
@@ -82,7 +84,7 @@ This is comment-only; it does not change those 25 nodes' executable behavior.
 
 ## Regression validation
 
-`test_deepcrusher_candidateB_rereview.py` passes 16/16 checks:
+`test_deepcrusher_candidateB_rereview.py` passes **18/18** checks:
 
 - frozen baseline SHA unchanged;
 - candidate has a distinct SHA;
@@ -95,8 +97,9 @@ This is comment-only; it does not change those 25 nodes' executable behavior.
 - 2P+ -> Turn75 contract present;
 - TP/OP -> Turn50 contract present;
 - unchanged medium-made -> check contract present;
-- executable delta limited to the confirmed node-45 repair;
-- legacy delimiter imbalances preserved exactly relative to the frozen baseline.
+- executable delta remains tightly bounded to confirmed repairs;
+- global dry-TP slowplay is no longer allowed outside its 3wBTNvBB source scenario;
+- legacy delimiter imbalances are preserved exactly relative to the frozen baseline.
 
 This is static regression only. It is not OpenHoldem runtime certification and Candidate B is not promoted over the frozen good-results baseline yet.
 
@@ -106,7 +109,7 @@ Next review target is not another numeric threshold sweep. It is the shared mach
 
 1. initiative/history writers and readers;
 2. pot classifiers including SRP/ISO overlap;
-3. `f$hand_slowplay` scope;
+3. remaining `f$hand_slowplay` clauses and other shared helper scope;
 4. `f$Raise_Committed` call-to-jam conversion;
 5. action-size router ownership and generic High/Over fallbacks;
 6. current-hand-strength classifiers versus stale historical class;
