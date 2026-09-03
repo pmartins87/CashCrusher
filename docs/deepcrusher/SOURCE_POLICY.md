@@ -53,7 +53,17 @@ The frozen 2026-09-03 DeepCrusher good-results baseline must never be overwritte
 
 A known-good-results baseline is not a claim of strategic perfection. A new candidate is not promoted merely because it appears theoretically cleaner; it must preserve intended source behavior and pass regression/runtime validation.
 
-## 6. Prohibited review shortcuts
+## 6. Material errors versus deliberate margins
+
+Small numerical differences are **not errors by themselves**. Thresholds such as written `50%` implemented near `52%`, or `75%` represented near `76%`, may deliberately provide operational tolerance, bucket separation, scraper robustness or a practical margin.
+
+Do not spend review effort literalizing a threshold merely because two sources differ by a few percentage points. Preserve an existing small margin unless there is concrete evidence that it creates a material strategic problem.
+
+Escalate or change sizing thresholds only when the difference causes a meaningful and unsupported change of strategy — for example a broad class changing from CALL/RAISE to FOLD solely because routing crosses a generic bucket boundary — or when the sources clearly show that the numerical distinction itself is strategically intentional.
+
+The audit target is material poker behavior: grossly wrong actions, lost scenario rules, scope leaks, precedence faults, unreachable code, excessive generic restrictions, or unsupported action cliffs.
+
+## 7. Prohibited review shortcuts
 
 Do not:
 
@@ -63,9 +73,10 @@ Do not:
 - allow commitment helpers to silently transform a source-mandated CALL into a raise/jam without auditing that interaction;
 - copy a broad CrusherTBP condition when its comment/source shows it was meant for a narrower scenario;
 - treat `user_hardcoded.cpp` as higher authority merely because it is newer or more explicit;
-- make hand+board-specific patches where a source-supported strategic class can be represented correctly.
+- make hand+board-specific patches where a source-supported strategic class can be represented correctly;
+- classify a 1–3 percentage-point threshold mismatch as a strategic defect without showing material consequence.
 
-## 7. Change checklist
+## 8. Change checklist
 
 Before modifying executable strategy:
 
@@ -73,10 +84,10 @@ Before modifying executable strategy:
 2. read the relevant Starting Strategy passage;
 3. inspect CrusherTBP implementation and development comments;
 4. inspect relevant `user_hardcoded.cpp` behavior;
-5. check professional poker coherence, especially discontinuities at sizing/SPR boundaries;
+5. check professional poker coherence, especially material action discontinuities rather than harmless numerical margins;
 6. reconcile the sources and document provenance;
 7. update stale comments together with code;
-8. add class-level regression cases, including boundary cases around sizing buckets;
+8. add class-level regressions targeted at the actual defect; use boundary cases only when the boundary itself is strategically material;
 9. run static/parser/runtime checks available for the project;
 10. compare against the frozen good-results baseline and keep rollback possible.
 
