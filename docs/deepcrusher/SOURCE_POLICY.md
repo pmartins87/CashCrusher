@@ -23,7 +23,7 @@ Function names, labels and comments are evidence, not the definition of runtime 
 
 Required trace where relevant:
 
-`pot classifier -> preflop/history state -> initiative -> scenario -> position -> sizing bucket -> raise/call router -> strategic node -> sizing/commitment helper -> final action`
+`pot classifier -> preflop/history state -> initiative -> scenario -> position -> sizing bucket -> exceptional geometry/price helpers -> raise/call router -> strategic node -> sizing helper -> final action`
 
 Example already confirmed in the legacy runtime: a pot created by `SB limp -> Hero BB raise -> SB call` can execute through the **SingleRaised/SRP** family because Hero raised and no opponent raised, even though `user_did_ISO` also records the isolation history. Therefore `SRP`, `ISO`, `limped` and similar names must never be treated as mutually exclusive merely from their labels.
 
@@ -63,32 +63,61 @@ Escalate or change sizing thresholds only when the difference causes a meaningfu
 
 The audit target is material poker behavior: grossly wrong actions, lost scenario rules, scope leaks, precedence faults, unreachable code, excessive generic restrictions, or unsupported action cliffs.
 
-## 7. Prohibited review shortcuts
+## 7. Exceptional geometry and price have legitimate precedence
+
+The written Crusher strategy generally describes the ordinary strategic tree unless it explicitly states an exceptional stack/price state. It does not enumerate every short-stack, effectively committed, all-in-adjacent, or abnormally tiny-bet geometry at every node.
+
+Therefore do **not** apply a normal source action literally when runtime has entered an explicit exceptional helper state merely because the source says CALL/FOLD in the ordinary node.
+
+### `f$Raise_Committed`
+
+`f$Raise_Committed` is an intentional exceptional stack-geometry helper. Its purpose is to complete all-in when the ordinary strategy already wants to continue and the remaining effective stack is economically trivial. A normal source CALL does not automatically prohibit this conversion.
+
+Default precedence for new/reconciled rules is:
+
+`f$Raise_Committed -> scenario-specific normal strategy -> generic scenario fallback`
+
+Only override or bypass commitment when there is **specific evidence about the committed geometry itself** showing that the helper action is materially wrong. A normal-stack line from Starting Strategy is not sufficient evidence by itself.
+
+### `f$Call_MicroBets`
+
+`f$Call_MicroBets` is an intentional extreme-price exception. A normal-price source fold/call should not automatically suppress it. Preserve microbet precedence unless the source explicitly covers that tiny sizing or the helper itself is shown to make a materially bad call.
+
+### General rule
+
+Before overriding any global helper, ask whether the helper represents a real exceptional game state that the written source did not intend to enumerate. Judge that state with poker logic, stack/pot geometry, source material and runtime semantics together.
+
+Exceptional helpers are not immune from review. They simply are not defects merely because they differ from an ordinary source action.
+
+## 8. Prohibited review shortcuts
 
 Do not:
 
 - infer strategy from a function name without tracing its callers and state conditions;
 - invent kicker/SPR/board/sizing restrictions merely to make a generic fallback appear safer;
 - allow a generic High/Over fallback to erase a more specific scenario rule without explicit justification;
-- allow commitment helpers to silently transform a source-mandated CALL into a raise/jam without auditing that interaction;
+- disable `f$Raise_Committed` merely because the ordinary source tree says CALL; first prove the committed all-in is wrong in that exceptional geometry;
+- disable `f$Call_MicroBets` merely because the ordinary source tree says FOLD; first analyze the exceptional price;
 - copy a broad CrusherTBP condition when its comment/source shows it was meant for a narrower scenario;
 - treat `user_hardcoded.cpp` as higher authority merely because it is newer or more explicit;
 - make hand+board-specific patches where a source-supported strategic class can be represented correctly;
 - classify a 1–3 percentage-point threshold mismatch as a strategic defect without showing material consequence.
 
-## 8. Change checklist
+## 9. Change checklist
 
 Before modifying executable strategy:
 
 1. identify the real runtime route and all helpers with precedence over the target node;
-2. read the relevant Starting Strategy passage;
-3. inspect CrusherTBP implementation and development comments;
-4. inspect relevant `user_hardcoded.cpp` behavior;
-5. check professional poker coherence, especially material action discontinuities rather than harmless numerical margins;
-6. reconcile the sources and document provenance;
-7. update stale comments together with code;
-8. add class-level regressions targeted at the actual defect; use boundary cases only when the boundary itself is strategically material;
-9. run static/parser/runtime checks available for the project;
-10. compare against the frozen good-results baseline and keep rollback possible.
+2. classify the state as ordinary strategy or exceptional geometry/price/all-in-adjacent state;
+3. read the relevant Starting Strategy passage and determine whether it actually covers that exceptional state;
+4. inspect CrusherTBP implementation and development comments;
+5. inspect relevant `user_hardcoded.cpp` behavior;
+6. check professional poker coherence, including stack/pot commitment and pot-odds logic;
+7. reconcile the sources and document provenance;
+8. preserve legitimate exceptional-helper precedence unless its exceptional action is itself shown wrong;
+9. update stale comments together with code;
+10. add class-level regressions targeted at the actual defect; use boundary cases only when the boundary itself is strategically material;
+11. run static/parser/runtime checks available for the project;
+12. compare against the frozen good-results baseline and keep rollback possible.
 
 This policy is a development constraint, not optional documentation.
